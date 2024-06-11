@@ -1,0 +1,19 @@
+{
+    "formats": ["fsnative", "170k"],
+    "extensions": ["func.gii", "dtseries.nii"],
+    "maps_names_vert_area": ["vert_area"],
+    "subjects" : ["sub-01", "sub-02"],
+    "TR": 1.2,
+    "task_names": ["pRF", "MotConf"],
+    "prf_task_name": "pRF",
+    "high_pass_threshold": 0.01,
+    "sessions" : ["ses-01", "ses-02","ses-03"],
+    "anat_session": ["ses-02"],
+    "cluster_name": "skylake",
+    "project_name": "MotConf",
+    "fdr_alpha": [0.05, 0.01],
+    "maps_names_corr": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
+    "alpha_range":[0, 0.4],
+    "stats_th": 0.05
+
+}
