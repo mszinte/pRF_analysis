@@ -4,6 +4,7 @@
     "maps_names_vert_area": ["vert_area"],
     "subjects" : ["sub-01", "sub-02"],
     "TR": 1.2,
+    "TRs": [208, 396],
     "task_names": ["pRF", "MotConf"],
     "prf_task_name": "pRF",
     "high_pass_threshold": 0.01,
@@ -14,6 +15,15 @@
     "fdr_alpha": [0.05, 0.01],
     "maps_names_corr": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "alpha_range":[0, 0.4],
-    "stats_th": 0.05
-
+    "stats_th": 0.05,
+    "screen_size_pix": [1080, 1080],
+    "screen_size_cm" : [77.3, 43.5],
+    "screen_distance_cm": 120, 
+    "vdm_size_pix": [50, 50],
+    "gauss_grid_nr": 36,
+    "max_ecc_size": 20,
+    "rsqr_th": 0,
+    "size_th": [0.05, 20],
+    "ecc_th": [0.05, 20],
+    "maps_names_gauss": ["rsq", "ecc", "polar_real", "polar_imag", "size", "amplitude", "baseline", "x", " y", "hrf_1", "hrf_2"]
 }

@@ -56,7 +56,6 @@ from surface_utils import make_surface_image , load_surface
 # Get inputs
 start_time = datetime.datetime.now()
 
-
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
@@ -107,7 +106,6 @@ sizes = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
 eccs = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
 polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
 
-
 # load data
 img, raw_data = load_surface(fn=input_fn)
 
@@ -115,7 +113,6 @@ img, raw_data = load_surface(fn=input_fn)
 valid_vertices = ~np.isnan(raw_data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
-
 
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1], 
@@ -138,8 +135,6 @@ gauss_fitter.grid_fit(ecc_grid=eccs,
                       verbose=verbose, 
                       n_batches=n_batches)
 
-
-
 # rearange result of Gauss model 
 gauss_fit = gauss_fitter.gridsearch_params
 gauss_fit_mat = np.zeros((raw_data.shape[1],gauss_params_num))
@@ -158,12 +153,10 @@ for est,vert in enumerate(valid_vertices_idx):
 gauss_fit_mat = np.where(gauss_fit_mat == 0, np.nan, gauss_fit_mat)
 gauss_pred_mat = np.where(gauss_pred_mat == 0, np.nan, gauss_pred_mat)
 
-
 #export data from gauss model fit
 maps_names = ['mu_x', 'mu_y', 'prf_size', 'prf_amplitude', 'bold_baseline', 
               'hrf_1','hrf_2', 'r_squared']
               
-
 # export fit
 img_gauss_gridfit_fit_mat = make_surface_image(data=gauss_fit_mat.T, source_img=img, maps_names=maps_names)
 nb.save(img_gauss_gridfit_fit_mat,'{}/{}'.format(prf_fit_dir, fit_fn_gauss_gridfit)) 
@@ -172,14 +165,7 @@ nb.save(img_gauss_gridfit_fit_mat,'{}/{}'.format(prf_fit_dir, fit_fn_gauss_gridf
 img_gauss_gridfit_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
 nb.save(img_gauss_gridfit_pred_mat,'{}/{}'.format(prf_fit_dir, pred_fn_gauss_gridfit)) 
 
-
-
 # Print duration
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
 start_time=start_time, end_time=end_time, dur=end_time - start_time))
-
-
-
-
-

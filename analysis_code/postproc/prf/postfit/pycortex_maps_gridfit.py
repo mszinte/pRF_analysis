@@ -23,9 +23,9 @@ To run:
                                     [subject num] [save_in_svg]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/postproc/prf/postfit/
-python pycortex_maps_gridfit.py ~/disks/meso_shared RetinoMaps sub-01 n
-python pycortex_maps_gridfit.py ~/disks/meso_shared RetinoMaps sub-170k n
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

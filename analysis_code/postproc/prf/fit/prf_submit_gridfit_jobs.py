@@ -17,13 +17,13 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/RetinoMaps/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_gridfit_jobs.py [main directory] [project name] [subject] 
                                   [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_submit_gridfit_jobs.py /scratch/mszinte/data RetinoMaps sub-21 327 b327
+python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -62,13 +62,12 @@ cluster_name  = analysis_info['cluster_name']
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # define permission cmd
-chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
-chgrp_cmd = "chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
+chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
+chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
 dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-pRF_*avg*.dtseries.nii".format(pp_dir,subject)
 dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-pRF_*avg*.func.gii".format(pp_dir,subject)
-
 
 pp_fns=  glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
 for fit_num, pp_fn in enumerate(pp_fns):
