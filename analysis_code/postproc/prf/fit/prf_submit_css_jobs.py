@@ -23,8 +23,8 @@ python prf_submit_css_jobs.py [main directory] [project name] [subject]
                                   [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/fit
-python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
