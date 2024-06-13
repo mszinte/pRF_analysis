@@ -25,6 +25,8 @@
     "rsqr_th": 0,
     "size_th": [0.05, 20],
     "ecc_th": [0.05, 20],
+    "rsq_iterative_th": 0.01,
+    "css_grid_nr": 10,
     "maps_names_gauss": ["rsq", "ecc", "polar_real", "polar_imag", "size", "amplitude", "baseline", "x", " y", "hrf_1", "hrf_2"],
     "rois": ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"],
     "mmp_rois":["V1", "V2", "V3", "V4", "V3A", "V3B", "V3CD", "LO1", "LO2", "LO3", "V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC", "V4t", "MST", "MT", "FST", "IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7Pl", "VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm", "PEF", "IFJp", "6v", "6r", "IFJa", "55b", "FEF", "i6-8", "6a", "6d", "6mp", "6ma", "SCEF", "24dv", "p32pr", "24dv"],    
