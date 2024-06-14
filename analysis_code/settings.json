@@ -36,5 +36,5 @@
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "vertex_pcm_rad": 30,
     "maps_names_pcm": ["pcm_median", "n_neighbor", "vert_geo_dist_median", "vert_prf_dist,median", "pcm_mean", "vert_geo_dist_mean", "vert_prf_dist_mean"],
-    "n_th": [0.05, 10.0],
+    "n_th": [0.05, 10.0]
 }
