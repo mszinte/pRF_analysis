@@ -132,6 +132,9 @@ def fit2deriv(fit_array, model,is_loo_r2=False):
     if is_loo_r2:
         deriv_array[-1, ...] = loo_r2
 
+    
+    
+
     deriv_array = deriv_array.astype(np.float32)
 
     return deriv_array

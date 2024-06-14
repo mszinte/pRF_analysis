@@ -3,7 +3,7 @@
 # make_rois_fig.sh
 # -----------------------------------------------------------------------------------------
 # Goal of the script:
-# Launch across subjects the function make_rois_fig.py
+# Launch across subjects the function make_rois_fig_tsv.py
 # -----------------------------------------------------------------------------------------
 # Input(s):
 # input[1]: project code directory
@@ -11,7 +11,7 @@
 # input[3]: main data directory (correspond to directory)
 # -----------------------------------------------------------------------------------------
 # Output(s):
-# All ROI based figures 
+# All ROI based tsv figures 
 # -----------------------------------------------------------------------------------------
 # To run:
 # 1. cd to function
@@ -21,7 +21,7 @@
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh make_rois_fig.sh ~/projects MotConf /scratch/mszinte/data
+# sh make_rois_fig_tsv.sh ~/projects MotConf /scratch/mszinte/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -50,6 +50,6 @@ subjects=$(python -c "import json; data = json.load(open('$settings_file')); pri
 # Loop through each subject and run the Python code
 for subject in $subjects
 do
-    echo "Processing make_rois_fig.py for: $subject"
-    python make_rois_fig.py "$data_path" "$project_name" "$subject" 327
+    echo "Processing make_rois_fig_tsv.py for: $subject"
+    python make_rois_fig_tsv.py "$data_path" "$project_name" "$subject" 327
 done

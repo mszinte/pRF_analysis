@@ -1,3 +1,6 @@
+# Debug
+import ipdb
+deb = ipdb.set_trace
 def weighted_regression(x_reg, y_reg, weight_reg, model):
     """
     Function to compute regression parameter weighted by a matrix (e.g. r2 value),
@@ -90,25 +93,101 @@ def weighted_nan_mean(data, weights):
     mean = np.sum(masked_data * masked_weights) / np.sum(masked_weights)
     return mean
 
-
 def weighted_nan_median(data, weights):
     """
-    Calculate the weighted median of an array, ignoring NaN values.
+    Calculate the weighted median of a data array, ignoring NaN values.
 
     Parameters:
-    data (np.ndarray): Array of data points, may contain NaN values.
-    weights (np.ndarray): Array of weights corresponding to the data points.
+    data (pd.Series, pd.DataFrame, np.ndarray): Data points, may contain NaN values.
+    weights (pd.Series, pd.DataFrame, np.ndarray): Weights corresponding to the data points.
 
     Returns:
     float: The weighted median of the data points, ignoring NaN values.
+           Returns NaN if the cumulative weights are not defined.
     """
-    import numpy as np 
+    import numpy as np
+    import pandas as pd
+
+    # Convert data and weights to pandas Series if they are numpy arrays
+    if isinstance(data, np.ndarray):
+        data = pd.Series(data)
+    if isinstance(weights, np.ndarray):
+        weights = pd.Series(weights)
+        
+    # If data and weights are DataFrames, ensure they have a single column
+    if isinstance(data, pd.DataFrame):
+        if data.shape[1] != 1:
+            raise ValueError("DataFrame data must have exactly one column")
+        data = data.iloc[:, 0]
+        
+    if isinstance(weights, pd.DataFrame):
+        if weights.shape[1] != 1:
+            raise ValueError("DataFrame weights must have exactly one column")
+        weights = weights.iloc[:, 0]
+
+    # Mask NaN values in the data
+    mask = ~data.isna()
+
+    # Apply the mask to data and weights
+    masked_data = data[mask].reset_index(drop=True)
+    masked_weights = weights[mask].reset_index(drop=True)
+
+    # Check if there are no valid data points
+    if masked_data.size == 0 or masked_weights.size == 0:
+        return np.nan
+
+    # Sort the data and corresponding weights
+    sorted_indices = np.argsort(masked_data)
+    sorted_data = masked_data.iloc[sorted_indices].reset_index(drop=True)
+    sorted_weights = masked_weights.iloc[sorted_indices].reset_index(drop=True)
+
+    # Calculate the cumulative sum of weights
+    cumulative_weights = np.cumsum(sorted_weights)
+
+    # Check if cumulative_weights is defined and has elements
+    if cumulative_weights.size == 0:
+        return np.nan
+
+    # Find the median position
+    median_weight = cumulative_weights.iloc[-1] / 2.0
+
+    # Find the index where the cumulative weight crosses the median weight
+    median_index = np.searchsorted(cumulative_weights, median_weight)
+
+    return sorted_data.iloc[median_index]
+
+def weighted_nan_percentile(data, weights, percentile):
+    """
+    Calculate the weighted percentile of an array or a pandas Series, ignoring NaN values.
+
+    Parameters:
+    data (np.ndarray or pd.Series): Array or pandas Series of data points, may contain NaN values.
+    weights (np.ndarray or pd.Series): Array or pandas Series of weights corresponding to the data points.
+    percentile (float): Percentile to compute, between 0 and 100.
+
+    Returns:
+    float: The weighted percentile of the data points, ignoring NaN values.
+           Returns NaN if the cumulative weights are not defined.
+    """
+    import numpy as np
+    import pandas as pd
+    
+    # Convert pandas Series to numpy array if needed
+    if isinstance(data, pd.Series):
+        data = data.values
+    if isinstance(weights, pd.Series):
+        weights = weights.values
+    
     # Mask NaN values in the data
     mask = ~np.isnan(data)
     
     # Apply the mask to data and weights
     masked_data = data[mask]
     masked_weights = weights[mask]
+    
+    # Check if there are no valid data points
+    if masked_data.size == 0 or masked_weights.size == 0:
+        return np.nan
     
     # Sort the data and corresponding weights
     sorted_indices = np.argsort(masked_data)
@@ -118,14 +197,18 @@ def weighted_nan_median(data, weights):
     # Calculate the cumulative sum of weights
     cumulative_weights = np.cumsum(sorted_weights)
     
-    # Find the median position
-    median_weight = cumulative_weights[-1] / 2.0
+    # Check if cumulative_weights is defined and has elements
+    if cumulative_weights.size == 0:
+        return np.nan
     
-    # Find the index where the cumulative weight crosses the median weight
-    median_index = np.searchsorted(cumulative_weights, median_weight)
+    # Calculate the percentile weight
+    percentile_weight = percentile / 100.0 * cumulative_weights[-1]
     
-    return sorted_data[median_index]
-
+    # Find the index where the cumulative weight crosses the percentile weight
+    percentile_index = np.searchsorted(cumulative_weights, percentile_weight)
+    
+    return float(sorted_data[percentile_index])
+        
 def gaus_2d(gauss_x, gauss_y, gauss_sd, screen_side, grain=200):
     """
     Generate 2D gaussian mesh
@@ -228,8 +311,6 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
     import numpy as np
     from scipy import stats
     from statsmodels.stats.multitest import multipletests
-    import ipdb
-    deb = ipdb.set_trace
     
     if not isinstance(alpha, list):
         alpha = [alpha]
@@ -345,7 +426,6 @@ def avg_subject_template(fns):
             
     return img, data_avg
 
-
 def make_prf_distribution_df(data, rois, max_ecc, grain):
     """
     Load the PRF TSV file and compute the PRF distribution 
@@ -400,7 +480,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
         
     return df_distribution
 
-def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_percent=0.01, ci_confidence_level=0.95):
+def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_percent=0.01):
     """
     Compute the pRF hot zone barycentre
     
@@ -419,6 +499,7 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
     """
     import pandas as pd
     import numpy as np
+
     for j, roi in enumerate(rois) :
         # Create DataFrame for the region of interest
         df_roi = df_distribution[df_distribution.roi == roi]
@@ -443,10 +524,13 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
         barycentre_y = np.mean(hot_zone_idx[0])
         
         # Calculate confidence intervals using bootstrap 
-        num_samples = len(hot_zone_idx[0])
-        lower_ci_x, upper_ci_x = bootstrap_ci_mean(hot_zone_idx[1], n_bootstrap=1000, ci_level=ci_confidence_level)
-        lower_ci_y, upper_ci_y = bootstrap_ci_mean(hot_zone_idx[0], n_bootstrap=1000, ci_level=ci_confidence_level)
-        
+        # num_samples = len(hot_zone_idx[0])
+        # lower_ci_x, upper_ci_x = bootstrap_ci_mean(hot_zone_idx[1], n_bootstrap=1000, ci_level=ci_confidence_level)
+        # lower_ci_y, upper_ci_y = bootstrap_ci_mean(hot_zone_idx[0], n_bootstrap=1000, ci_level=ci_confidence_level)
+
+        lower_ci_x, upper_ci_x = np.percentile(hot_zone_idx[1], [2.5]), np.percentile(hot_zone_idx[1], [97.5])
+        lower_ci_y, upper_ci_y = np.percentile(hot_zone_idx[0], [2.5]), np.percentile(hot_zone_idx[0], [97.5])
+
         # Convert positions to the correct reference frame
         scale_factor = max_ecc / (grain / 2)
         barycentre_x, barycentre_y = (barycentre_x * scale_factor) - max_ecc, (barycentre_y * scale_factor) - max_ecc
@@ -458,10 +542,10 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
         df_barycentre_roi['roi'] = [roi]
         df_barycentre_roi['barycentre_x'] = [barycentre_x]
         df_barycentre_roi['barycentre_y'] = [barycentre_y]
-        df_barycentre_roi['lower_ci_x'] = [lower_ci_x]
-        df_barycentre_roi['upper_ci_x'] = [upper_ci_x]
-        df_barycentre_roi['lower_ci_y'] = [lower_ci_y]
-        df_barycentre_roi['upper_ci_y'] = [upper_ci_y]
+        df_barycentre_roi['lower_ci_x'] = lower_ci_x
+        df_barycentre_roi['upper_ci_x'] = upper_ci_x
+        df_barycentre_roi['lower_ci_y'] = lower_ci_y
+        df_barycentre_roi['upper_ci_y'] = upper_ci_y
         
         if j == 0: df_barycentre = df_barycentre_roi
         else: df_barycentre = pd.concat([df_barycentre, df_barycentre_roi])
