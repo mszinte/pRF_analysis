@@ -24,6 +24,7 @@
     "rsqr_th": 0,
     "size_th": [0.05, 20],
     "ecc_th": [0.05, 20],
+    "amplitude_th": 0,
     "rsq_iterative_th": 0.01,
     "css_grid_nr": 10,
     "maps_names_gauss": ["rsq", "ecc", "polar_real", "polar_imag", "size", "amplitude", "baseline", "x", " y", "hrf_1", "hrf_2"],
