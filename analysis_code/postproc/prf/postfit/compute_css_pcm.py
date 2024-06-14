@@ -52,7 +52,7 @@ import nibabel as nb
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image 
-from maths_utils import avg_subject_template, weighted_nan_mean, weighted_nan_median
+from maths_utils import  avg_subject_template, weighted_nan_mean, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
 
 # Inputs
@@ -78,14 +78,12 @@ prf_task_name = analysis_info['prf_task_name']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-# Derivatives idx 
+# Derivatives and stats idx 
 rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx, size_idx = 0, 1, 2, 3, 4
 amp_idx, baseline_idx, x_idx, y_idx, hrf_1_idx = 5, 6, 7, 8, 9
 hrf_2_idx, n_idx, loo_rsq_idx = 10, 11, 12
-
-# Stats idx
-slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 0, 1, 2, 3
-stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 4, 5, 6, 7
+slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 13, 14, 15, 16
+stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 17, 18, 19, 20
 
 # compute duration 
 start_time = datetime.datetime.now()
@@ -150,6 +148,9 @@ if subject != 'sub-170k':
             stats_results = load_surface_pycortex(brain_fn=stats_avg_fn)
             stats_mat = stats_results['data_concat']
         
+        # Combine mat
+        deriv_mat = np.concatenate((deriv_mat, stats_mat))
+        
         # Threshold data
         deriv_mat_th = deriv_mat
         amp_down = deriv_mat_th[amp_idx,...] > 0
@@ -163,12 +164,13 @@ if subject != 'sub-170k':
         if analysis_info['stats_th'] == 0.05: stats_th_down = deriv_mat_th[corr_pvalue_5pt_idx,...] <= 0.05
         elif analysis_info['stats_th'] == 0.01: stats_th_down = deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
         all_th = np.array((amp_down,
-                           rsq_down,
-                           size_th_down,size_th_up, 
-                           ecc_th_down, ecc_th_up,
-                           n_th_down, n_th_up,
-                           stats_th_down)) 
-        th_idx = np.where(np.logical_and.reduce(all_th)==False)[0]
+                            rsq_down,
+                            size_th_down,size_th_up, 
+                            ecc_th_down, ecc_th_up,
+                            n_th_down, n_th_up,
+                            stats_th_down
+                          )) 
+        deriv_mat[loo_rsq_idx, np.logical_and.reduce(all_th)==False]=0
 
         # Get surfaces for each hemisphere
         surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
@@ -186,14 +188,6 @@ if subject != 'sub-170k':
                                   atlas_name=atlas_name, 
                                   surf_size=surf_size)
         
-        # Exclude vertex out of threshold
-        th_idx_set = set(th_idx)
-        for roi, indices in roi_verts_dict.items():
-            # Filter out the indices that are in th_idx_set
-            filtered_indices = [idx for idx in indices if idx not in th_idx_set]
-            # Update the dictionary with the filtered indices
-            roi_verts_dict[roi] = np.array(filtered_indices)
-        
         # Derivatives settings
         vert_rsq_data = deriv_mat[loo_rsq_idx, ...]
         vert_x_data = deriv_mat[x_idx, ...]
@@ -210,7 +204,7 @@ if subject != 'sub-170k':
             roi_surf_lh_idx = roi_vert_lh_idx
             roi_surf_rh_idx = roi_vert_rh_idx - lh_vert_num
         
-            # Get median distance of surounding vertices included in threshold
+            # Get mean distance of surounding vertices included in threshold
             vert_lh_rsq, vert_lh_size = vert_rsq_data[:lh_vert_num], vert_size_data[:lh_vert_num]
             vert_lh_x, vert_lh_y = vert_x_data[:lh_vert_num], vert_y_data[:lh_vert_num]
             vert_rh_rsq, vert_rh_size = vert_rsq_data[lh_vert_num:], vert_size_data[lh_vert_num:]
@@ -292,6 +286,7 @@ if subject != 'sub-170k':
                             # export median geodesic and prf distance
                             vert_cm[5, vert_idx] = vert_geo_dist_mean
                             vert_cm[6, vert_idx] = vert_prf_dist_mean
+
 
         deriv_mat_new = np.zeros((4, deriv_mat.shape[1])) * np.nan
         deriv_mat_new = vert_cm

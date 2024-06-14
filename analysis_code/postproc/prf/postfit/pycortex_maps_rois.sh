@@ -21,8 +21,8 @@
 # >> sh pycortex_maps_rois.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
-# cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/postproc/prf/postfit
-# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects RetinoMaps /home/mszinte/disks/meso_S/data
+# cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects MotConf /home/mszinte/disks/meso_S/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

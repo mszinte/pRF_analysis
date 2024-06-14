@@ -15,7 +15,6 @@
     "fdr_alpha": [0.05, 0.01],
     "maps_names_corr": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "alpha_range":[0, 0.4],
-    "stats_th": 0.05,
     "screen_size_pix": [1080, 1080],
     "screen_size_cm" : [77.3, 43.5],
     "screen_distance_cm": 120, 
@@ -35,6 +34,6 @@
     "stats_th": 0.01,
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "vertex_pcm_rad": 30,
-    "maps_names_pcm": ["pcm_median", "n_neighbor", "vert_geo_dist_median", "vert_prf_dist,median", "pcm_mean", "vert_geo_dist_mean", "vert_prf_dist_mean"],
+    "maps_names_pcm": ["pcm_median", "n_neighbor", "vert_geo_dist_median", "vert_prf_dist_median", "pcm_mean", "vert_geo_dist_mean", "vert_prf_dist_mean"],
     "n_th": [0.05, 10.0]
 }

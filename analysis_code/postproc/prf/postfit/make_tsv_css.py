@@ -21,15 +21,14 @@ To run:
 >> python make_tsv_css.py [main directory] [project name] [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/postfit/
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-170k 327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+python make_tsv_css.py /scratch/mszinte/data MotConf sub-01 327
+python make_tsv_css.py /scratch/mszinte/data MotConf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
@@ -128,9 +127,11 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                 data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                data_dict['num_vert'] = np.where(roi_verts[roi])[0]
                 df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
-            
+                
     elif format_ == '170k':
+        
 
         # Derivatives
         deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_prf-deriv-loo-avg_css.dtseries.nii'.format(
@@ -173,6 +174,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                 data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                data_dict['num_vert'] = np.where(roi_verts[roi])[0]
                 df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
 
     print('Saving tsv: {}'.format(tsv_fn))

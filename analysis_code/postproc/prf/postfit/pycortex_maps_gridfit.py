@@ -24,8 +24,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-01 n
-python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-170k n
+python pycortex_maps_gridfit.py ~/disks/meso_shared MotConf sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_shared MotConf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -67,9 +67,8 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+if subject == 'sub-170k': save_svg = save_svg
+else: save_svg = False
 
 # Define analysis parameters
 with open('../../../settings.json') as f:

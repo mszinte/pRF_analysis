@@ -22,9 +22,9 @@ To run:
 >> python pycortex_maps_css.py [main directory] [project] [subject] [save_svg_in]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/postproc/prf/postfit/
-python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+python pycortex_maps_css.py ~/disks/meso_S/data MotConf sub-01 n
+python pycortex_maps_css.py ~/disks/meso_S/data MotConf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -83,9 +83,9 @@ set_pycortex_config_file(cortex_dir)
 # Maps settings 
 rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx, size_idx = 0, 1, 2, 3, 4
 amp_idx, baseline_idx, x_idx, y_idx, hrf_1_idx = 5, 6, 7, 8, 9
-hrf_2_idx, n_idx, loo_rsq_idx, pcm_idx, slope_idx = 10, 11, 12, 13, 14
-intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, trs_idx = 15, 16, 17, 18, 19
-corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 20, 21
+hrf_2_idx, n_idx, loo_rsq_idx, pcm_idx, slope_idx = 10, 11, 12, 13, 20
+intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, trs_idx = 21, 22, 23, 24, 25
+corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 26, 27
 
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
@@ -167,8 +167,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     ecc_th_up = all_deriv_mat_th[ecc_idx,...] <= analysis_info['ecc_th'][1]
     n_th_down = all_deriv_mat_th[n_idx,...] >= analysis_info['n_th'][0]
     n_th_up = all_deriv_mat_th[n_idx,...] <= analysis_info['n_th'][1]
-    pcm_th_down = all_deriv_mat_th[pcm_idx,...] >= analysis_info['pcm_th'][0]
-    pcm_th_up = all_deriv_mat_th[pcm_idx,...] <= analysis_info['pcm_th'][1]
+    # pcm_th_down = all_deriv_mat_th[pcm_idx,...] >= analysis_info['pcm_th'][0]
+    # pcm_th_up = all_deriv_mat_th[pcm_idx,...] <= analysis_info['pcm_th'][1]
     if analysis_info['stats_th'] == 0.05: stats_th_down = all_deriv_mat_th[corr_pvalue_5pt_idx,...] <= 0.05
     elif analysis_info['stats_th'] == 0.01: stats_th_down = all_deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
     all_th = np.array((amp_down,
@@ -176,7 +176,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                        size_th_down,size_th_up, 
                        ecc_th_down, ecc_th_up,
                        n_th_down, n_th_up,
-                       pcm_th_down, pcm_th_up,
+                       # pcm_th_down, pcm_th_up,
                        stats_th_down
                       )) 
     all_deriv_mat[loo_rsq_idx, np.logical_and.reduce(all_th)==False]=0 # put this to zero to not plot it
