@@ -253,16 +253,15 @@ if subject != 'sub-170k':
 
                         if np.sum(vert_dist_th_idx) > 1:
 
-                            # Get prf parameters of vertices in geodesic distance threshold
+                            # Get prf parameters of vertices (center and surround) in geodesic distance threshold
                             vert_ctr_x, vert_ctr_y = vert_x[surf_idx], vert_y[surf_idx]
                             vert_dist_th_idx[surf_idx] = False
+                            vert_srd_x = vert_x[vert_dist_th_idx]
+                            vert_srd_y = vert_y[vert_dist_th_idx]
                             
                             # median
                             # Compute median geodesic distance 
                             vert_geo_dist_median = weighted_nan_median(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
-                            
-                            vert_srd_x = vert_x[vert_dist_th_idx]
-                            vert_srd_y = vert_y[vert_dist_th_idx]
                             
                             # Compute prf center suround distance (deg)
                             vert_prf_dist_median_array = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
@@ -271,19 +270,16 @@ if subject != 'sub-170k':
                             vert_prf_dist_median = weighted_nan_median(vert_prf_dist_median_array, vert_rsq[vert_dist_th_idx])
                             
                             # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                            vert_cm[0,vert_idx] = vert_geo_dist_median/vert_prf_dist_median
+                            vert_cm[0, vert_idx] = vert_geo_dist_median/vert_prf_dist_median
                             
                             # export median geodesic and prf distance
-                            vert_cm[2,vert_idx] = vert_geo_dist_median
-                            vert_cm[3,vert_idx] = vert_prf_dist_median
+                            vert_cm[2, vert_idx] = vert_geo_dist_median
+                            vert_cm[3, vert_idx] = vert_prf_dist_median
                             
                             # mean
                             # Compute median geodesic distance 
                             vert_geo_dist_mean = weighted_nan_mean(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
 
-                            # vert_srd_x = weighted_nan_mean(vert_x[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
-                            # vert_srd_y = weighted_nan_mean(vert_y[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
-                            
                             # Compute prf center suround distance (deg)
                             vert_prf_dist_mean_array = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
                             
@@ -291,11 +287,11 @@ if subject != 'sub-170k':
                             vert_prf_dist_mean = weighted_nan_mean(vert_prf_dist_mean_array, vert_rsq[vert_dist_th_idx])
                             
                             # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                            vert_cm[4,vert_idx] = vert_geo_dist_mean/vert_prf_dist_mean
+                            vert_cm[4, vert_idx] = vert_geo_dist_mean/vert_prf_dist_mean
                             
                             # export median geodesic and prf distance
-                            vert_cm[5,vert_idx] = vert_geo_dist_mean
-                            vert_cm[6,vert_idx] = vert_prf_dist_mean
+                            vert_cm[5, vert_idx] = vert_geo_dist_mean
+                            vert_cm[6, vert_idx] = vert_prf_dist_mean
 
         deriv_mat_new = np.zeros((4, deriv_mat.shape[1])) * np.nan
         deriv_mat_new = vert_cm
