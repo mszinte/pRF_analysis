@@ -24,8 +24,8 @@ To run:
 >> python compute_pcm.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/postfit
-python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+python compute_css_pcm.py /scratch/mszinte/data MotConf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -45,13 +45,14 @@ import sys
 import json
 import glob
 import cortex
+import datetime
 import numpy as np
 import nibabel as nb
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image 
-from maths_utils import  avg_subject_template
+from maths_utils import avg_subject_template, weighted_nan_mean, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
 
 # Inputs
@@ -77,6 +78,18 @@ prf_task_name = analysis_info['prf_task_name']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
+# Derivatives idx 
+rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx, size_idx = 0, 1, 2, 3, 4
+amp_idx, baseline_idx, x_idx, y_idx, hrf_1_idx = 5, 6, 7, 8, 9
+hrf_2_idx, n_idx, loo_rsq_idx = 10, 11, 12
+
+# Stats idx
+slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 0, 1, 2, 3
+stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 4, 5, 6, 7
+
+# compute duration 
+start_time = datetime.datetime.now()
+
 # sub-170k exeption
 if subject != 'sub-170k':
     # Compute PCM
@@ -89,6 +102,7 @@ if subject != 'sub-170k':
         prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     
         if format_ == 'fsnative':
+            # Derivatives
             atlas_name = None 
             surf_size = None        
             deriv_avg_fn_L = glob.glob('{}/{}*hemi-L*prf-deriv-*avg_css.func.gii'.format(
@@ -105,7 +119,16 @@ if subject != 'sub-170k':
             img_L = results['img_L'] 
             img_R = results['img_R']
             
+            # Stats
+            stats_avg_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_loo-avg_prf-stats.func.gii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            stats_avg_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_loo-avg_prf-stats.func.gii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            stats_results = load_surface_pycortex(L_fn=stats_avg_fn_L, R_fn=stats_avg_fn_R)
+            stats_mat = stats_results['data_concat']
+            
         elif format_ == '170k':
+            # Derivatives
             atlas_name = 'mmp_group'
             surf_size = '59k'
             deriv_avg_fn = glob.glob('{}/{}*prf-deriv-*avg_css.dtseries.nii'.format(
@@ -120,7 +143,33 @@ if subject != 'sub-170k':
             mask_59k = results['mask_59k']
             deriv_mat_170k = results['source_data'] 
             img = results['img']
-    
+            
+            # Stats
+            stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_loo-avg_prf-stats.dtseries.nii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            stats_results = load_surface_pycortex(brain_fn=stats_avg_fn)
+            stats_mat = stats_results['data_concat']
+        
+        # Threshold data
+        deriv_mat_th = deriv_mat
+        amp_down = deriv_mat_th[amp_idx,...] > 0
+        rsq_down = deriv_mat_th[loo_rsq_idx,...] >= analysis_info['rsqr_th']
+        size_th_down = deriv_mat_th[size_idx,...] >= analysis_info['size_th'][0]
+        size_th_up = deriv_mat_th[size_idx,...] <= analysis_info['size_th'][1]
+        ecc_th_down = deriv_mat_th[ecc_idx,...] >= analysis_info['ecc_th'][0]
+        ecc_th_up = deriv_mat_th[ecc_idx,...] <= analysis_info['ecc_th'][1]
+        n_th_down = deriv_mat_th[n_idx,...] >= analysis_info['n_th'][0]
+        n_th_up = deriv_mat_th[n_idx,...] <= analysis_info['n_th'][1]
+        if analysis_info['stats_th'] == 0.05: stats_th_down = deriv_mat_th[corr_pvalue_5pt_idx,...] <= 0.05
+        elif analysis_info['stats_th'] == 0.01: stats_th_down = deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
+        all_th = np.array((amp_down,
+                           rsq_down,
+                           size_th_down,size_th_up, 
+                           ecc_th_down, ecc_th_up,
+                           n_th_down, n_th_up,
+                           stats_th_down)) 
+        th_idx = np.where(np.logical_and.reduce(all_th)==False)[0]
+
         # Get surfaces for each hemisphere
         surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
         surf_lh, surf_rh = surfs[0], surfs[1]
@@ -137,8 +186,15 @@ if subject != 'sub-170k':
                                   atlas_name=atlas_name, 
                                   surf_size=surf_size)
         
+        # Exclude vertex out of threshold
+        th_idx_set = set(th_idx)
+        for roi, indices in roi_verts_dict.items():
+            # Filter out the indices that are in th_idx_set
+            filtered_indices = [idx for idx in indices if idx not in th_idx_set]
+            # Update the dictionary with the filtered indices
+            roi_verts_dict[roi] = np.array(filtered_indices)
+        
         # Derivatives settings
-        ecc_idx, size_idx, x_idx, y_idx, loo_rsq_idx = 1, 4, 7, 8, 11
         vert_rsq_data = deriv_mat[loo_rsq_idx, ...]
         vert_x_data = deriv_mat[x_idx, ...]
         vert_y_data = deriv_mat[y_idx, ...]
@@ -146,8 +202,7 @@ if subject != 'sub-170k':
         vert_ecc_data = deriv_mat[ecc_idx, ...]
         
         # Create empty results
-        vert_cm = np.zeros(vert_num)*np.nan
-    
+        vert_cm = np.zeros((7,vert_num))*np.nan
         for roi in rois:
             # Find ROI vertex
             roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
@@ -155,7 +210,7 @@ if subject != 'sub-170k':
             roi_surf_lh_idx = roi_vert_lh_idx
             roi_surf_rh_idx = roi_vert_rh_idx - lh_vert_num
         
-            # Get mean distance of surounding vertices included in threshold
+            # Get median distance of surounding vertices included in threshold
             vert_lh_rsq, vert_lh_size = vert_rsq_data[:lh_vert_num], vert_size_data[:lh_vert_num]
             vert_lh_x, vert_lh_y = vert_x_data[:lh_vert_num], vert_y_data[:lh_vert_num]
             vert_rh_rsq, vert_rh_size = vert_rsq_data[lh_vert_num:], vert_size_data[lh_vert_num:]
@@ -191,25 +246,53 @@ if subject != 'sub-170k':
                         vert_dist_th_not_in_roi_idx = [idx for idx in np.where(vert_dist_th_idx)[0] if idx not in roi_surf_idx]
                         vert_dist_th_idx[vert_dist_th_not_in_roi_idx] = False
                         vert_dist_th_dist[vert_dist_th_not_in_roi_idx] = np.nan
-        
-                        if np.sum(vert_dist_th_idx) > 0:
-        
-                            # Compute average geodesic distance excluding distance to itself (see [1:])
-                            vert_geo_dist_avg = np.nanmean(vert_dist_th_dist[1:])
-        
+                        
+                        # Compute the n neighbor of each vertex
+                        n_neighbor = np.where(vert_dist_th_idx)[0].shape[0]
+                        vert_cm[1,vert_idx] = n_neighbor
+
+                        if np.sum(vert_dist_th_idx) > 1:
+
                             # Get prf parameters of vertices in geodesic distance threshold
                             vert_ctr_x, vert_ctr_y = vert_x[surf_idx], vert_y[surf_idx]
                             vert_dist_th_idx[surf_idx] = False
-                            vert_srd_x, vert_srd_y = np.nanmean(vert_x[vert_dist_th_idx]), np.nanmean(vert_y[vert_dist_th_idx])
-        
+                            
+                            # median
+                            # Compute median geodesic distance 
+                            vert_geo_dist_median = weighted_nan_median(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                            vert_srd_x = weighted_nan_median(vert_x[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                            vert_srd_y = weighted_nan_median(vert_y[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                            
                             # Compute prf center suround distance (deg)
                             vert_prf_dist = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
-        
+                            
                             # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                            vert_cm[vert_idx] = vert_geo_dist_avg/vert_prf_dist
-    
-        deriv_mat_new = np.zeros((1, deriv_mat.shape[1])) * np.nan
-        deriv_mat_new[0, ...] = vert_cm
+                            vert_cm[0,vert_idx] = vert_geo_dist_median/vert_prf_dist
+                            
+                            # export median geodesic and prf distance
+                            vert_cm[2,vert_idx] = vert_geo_dist_median
+                            vert_cm[3,vert_idx] = vert_prf_dist
+                            
+                            # mean
+                            # Compute median geodesic distance 
+                            vert_geo_dist_mean = weighted_nan_mean(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+
+                            vert_srd_x = weighted_nan_mean(vert_x[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                            vert_srd_y = weighted_nan_mean(vert_y[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                            
+                            # Compute prf center suround distance (deg)
+                            vert_prf_dist = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
+                            
+                            # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
+                            vert_cm[4,vert_idx] = vert_geo_dist_mean/vert_prf_dist
+                            
+                            # export median geodesic and prf distance
+                            vert_cm[5,vert_idx] = vert_geo_dist_mean
+                            vert_cm[6,vert_idx] = vert_prf_dist
+
+
+        deriv_mat_new = np.zeros((4, deriv_mat.shape[1])) * np.nan
+        deriv_mat_new = vert_cm
         
         # Save data
         if format_ == 'fsnative':
@@ -223,7 +306,7 @@ if subject != 'sub-170k':
                                                         img=None, 
                                                         brain_mask_59k=None)
     
-            deriv_avg_fn_L = deriv_avg_fn_L[0].split('/')[-1].replace('deriv', 'pcm')  
+            deriv_avg_fn_L = deriv_avg_fn_L[0].split('/')[-1].replace('deriv', 'pcm')
             deriv_avg_fn_R = deriv_avg_fn_R[0].split('/')[-1].replace('deriv', 'pcm')
             print('Saving {}'.format(deriv_avg_fn_L))
             nb.save(new_img_L, '{}/{}'.format(prf_deriv_dir, deriv_avg_fn_L))
@@ -269,6 +352,12 @@ elif subject == 'sub-170k':
     sub_170k_pcm_img = make_surface_image(
         data=data_pcm_avg, source_img=img, maps_names=maps_names)
     nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
+
+# Print duration
+end_time = datetime.datetime.now()
+print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(start_time=start_time, 
+                                                                                    end_time=end_time, 
+                                                                                    dur=end_time - start_time))
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

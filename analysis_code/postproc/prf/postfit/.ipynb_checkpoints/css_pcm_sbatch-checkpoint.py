@@ -22,9 +22,9 @@ To run:
 >> python css_pcm_sbatch.py [main directory] [project] [subject] [group] [server]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/postfit
-python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-170k 327 b327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+python css_pcm_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data MotConf sub-170k 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -56,9 +56,9 @@ server_project = sys.argv[5]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
-nb_procs = 8
+nb_procs = 1
 memory_val = 48
-hour_proc = 4
+hour_proc = 20
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, 

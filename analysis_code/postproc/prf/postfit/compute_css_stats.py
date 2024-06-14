@@ -21,9 +21,9 @@ To run:
 >> python compute_css_stats.py [main directory] [project name] [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/postfit/
-python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-170k 327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+python compute_css_stats.py /scratch/mszinte/data MotConf sub-01 327
+python compute_css_stats.py /scratch/mszinte/data MotConf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -91,7 +91,7 @@ if subject != 'sub-170k':
             pp_dir, subject, format_)
         prf_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_prf-pred_css.{}'.format(
             prf_fit_dir, prf_task_name, extension))
-        
+
         for prf_pred_loo_fn in prf_pred_loo_fns_list : 
             # Find the correponding bold signal to the loo prediction
             loo_number = re.search(r'loo-(\d+)', prf_pred_loo_fn).group(1)

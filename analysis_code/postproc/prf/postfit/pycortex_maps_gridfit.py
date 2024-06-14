@@ -67,8 +67,9 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = save_svg
-else: save_svg = False
+
+if subject == 'sub-170k': save_svg = False
+else: save_svg = save_svg
 
 # Define analysis parameters
 with open('../../../settings.json') as f:
