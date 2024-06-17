@@ -51,7 +51,7 @@ from scipy import stats
 # Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface , make_surface_image
-from maths_utils import linear_regression_surf, multipletests_surface, avg_subject_template
+from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
 
 # Time
 start_time = datetime.datetime.now()
@@ -150,31 +150,31 @@ if subject != 'sub-170k':
                                               maps_names=maps_names)
                 nb.save(combi_corr_img, combi_corr_fn)
                 
-            # Averaging
+            # Median
             corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fns[0])
-            corr_stats_data_avg = np.zeros(corr_stats_data.shape)
+            corr_stats_data_median = np.zeros(corr_stats_data.shape)
             
             for n_run, corr_stats_fn in enumerate(corr_stats_fns):
                 # Load data 
                 corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fn)
         
-                # Averaging
-                if n_run == 0: corr_stats_data_avg = np.copy(corr_stats_data)
-                else: corr_stats_data_avg = np.nanmean(np.array([corr_stats_data_avg, corr_stats_data]), axis=0)
+                # median
+                if n_run == 0: corr_stats_data_median = np.copy(corr_stats_data)
+                else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]), axis=0)
     
             
             # Compute two sided corrected p-values
-            t_statistic = corr_stats_data_avg[slope_idx, :] / corr_stats_data_avg[stderr_idx, :]
-            degrees_of_freedom = corr_stats_data_avg[trs_idx, 0] - 2 
+            t_statistic = corr_stats_data_median[slope_idx, :] / corr_stats_data_median[stderr_idx, :]
+            degrees_of_freedom = corr_stats_data_median[trs_idx, 0] - 2 
             p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
             corrected_p_values = multipletests_surface(pvals=p_values, 
                                                         correction='fdr_tsbh', 
                                                         alpha=fdr_alpha)
-            corr_stats_data_avg[pvalue_idx, :] = p_values
-            corr_stats_data_avg[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            corr_stats_data_avg[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+            corr_stats_data_median[pvalue_idx, :] = p_values
+            corr_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+            corr_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
 
-            # Average across combinations
+            # Export result
             if hemi:
                 cor_fn = "{}/{}/derivatives/pp_data/{}/fsnative/corr/fmriprep_dct_corr/{}_task-{}_{}_fmriprep_dct_corr_bold.func.gii".format(
                         main_dir, project_dir, subject, subject, task, hemi)
@@ -183,7 +183,7 @@ if subject != 'sub-170k':
                         main_dir, project_dir, subject, subject, task)
     
             print("corr save: {}".format(cor_fn))
-            corr_img = make_surface_image(data=corr_stats_data_avg,
+            corr_img = make_surface_image(data=corr_stats_data_median,
                                           source_img=preproc_img, 
                                           maps_names=maps_names)
             nb.save(corr_img, cor_fn)
@@ -192,7 +192,7 @@ if subject != 'sub-170k':
     os.system("rm -Rfd {}".format(corr_temp_dir))
 
 elif subject == 'sub-170k':
-    print('sub-170, averaging corr across subject...')
+    print('sub-170, Median corr across subject...')
     # find all the subject correlations
     for task in tasks:
         subjects_task_corr = []
@@ -200,19 +200,19 @@ elif subject == 'sub-170k':
             subjects_task_corr += ["{}/{}/derivatives/pp_data/{}/170k/corr/fmriprep_dct_corr/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(
                     main_dir, project_dir, subject, subject, task)]
  
-        # Averaging across subject
-        img, data_task_corr_avg = avg_subject_template(fns=subjects_task_corr)
+        # median across subject
+        img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
         
         # Compute two sided corrected p-values
-        t_statistic = data_task_corr_avg[slope_idx, :] / data_task_corr_avg[stderr_idx, :]
-        degrees_of_freedom = data_task_corr_avg[trs_idx, 0] - 2 
+        t_statistic = data_task_corr_median[slope_idx, :] / data_task_corr_median[stderr_idx, :]
+        degrees_of_freedom = data_task_corr_median[trs_idx, 0] - 2 
         p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
         corrected_p_values = multipletests_surface(pvals=p_values, 
                                                    correction='fdr_tsbh', 
                                                    alpha=fdr_alpha)
-        data_task_corr_avg[pvalue_idx, :] = p_values
-        data_task_corr_avg[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-        data_task_corr_avg[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+        data_task_corr_median[pvalue_idx, :] = p_values
+        data_task_corr_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+        data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
             
         # Export results
         sub_170k_cor_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/corr/fmriprep_dct_corr".format(
@@ -223,7 +223,7 @@ elif subject == 'sub-170k':
         
         print("save: {}".format(sub_170k_cor_fn))
         sub_170k_corr_img = make_surface_image(
-            data=data_task_corr_avg, source_img=img, maps_names=maps_names)
+            data=data_task_corr_median, source_img=img, maps_names=maps_names)
         nb.save(sub_170k_corr_img, sub_170k_cor_fn)
             
 # Time

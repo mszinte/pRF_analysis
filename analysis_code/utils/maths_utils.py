@@ -399,7 +399,7 @@ def multipletests_surface(pvals, correction='fdr_tsbh', alpha=0.01):
 
     return corrected_pvals
 
-def avg_subject_template(fns): 
+def median_subject_template(fns): 
     """
     Averages data from different subjects in the same template space.
 
@@ -422,7 +422,7 @@ def avg_subject_template(fns):
         if n_file == 0:
             data_avg = np.copy(data)
         else:
-            data_avg = np.nanmean(np.array([data_avg, data]), axis=0)
+            data_avg = np.nanmedian(np.array([data_avg, data]), axis=0)
             
     return img, data_avg
 

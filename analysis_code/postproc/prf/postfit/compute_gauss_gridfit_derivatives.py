@@ -47,7 +47,7 @@ import nibabel as nb
 # personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from prf_utils import fit2deriv
-from maths_utils import  avg_subject_template
+from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
 
 # load settings
@@ -109,7 +109,7 @@ elif subject == 'sub-170k':
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
     # Averaging across subject
-    img, data_deriv_avg = avg_subject_template(fns=subjects_derivatives)
+    img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
         
     # Export results
     sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
@@ -120,7 +120,7 @@ elif subject == 'sub-170k':
     
     print("save: {}".format(sub_170k_deriv_fn))
     sub_170k_deriv_img = make_surface_image(
-        data=data_deriv_avg, source_img=img, maps_names=maps_names_gauss)
+        data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
 # Define permission cmd

@@ -50,7 +50,7 @@ deb = ipdb.set_trace
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import make_surface_image , load_surface
-from maths_utils import linear_regression_surf, multipletests_surface, avg_subject_template
+from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
 
 # load settings
 with open('../../../settings.json') as f:
@@ -159,9 +159,9 @@ if subject != 'sub-170k':
             print('adding {} to averaging'.format(loo_stats_fn))
             loo_stats_img, loo_stats_data = load_surface(fn=loo_stats_fn)
     
-            # Averaging
+            # median
             if n_run == 0: loo_stats_data_avg = np.copy(loo_stats_data)
-            else: loo_stats_data_avg = np.nanmean(np.array([loo_stats_data_avg, loo_stats_data]), axis=0)
+            else: loo_stats_data_avg = np.nanmedian(np.array([loo_stats_data_avg, loo_stats_data]), axis=0)
                 
         # Compute two sided corrected p-values
         t_statistic = loo_stats_data_avg[slope_idx, :] / loo_stats_data_avg[stderr_idx, :]
@@ -200,7 +200,7 @@ elif subject == 'sub-170k':
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
     # Averaging across subject
-    img, data_stat_avg = avg_subject_template(fns=subjects_stats)
+    img, data_stat_avg = median_subject_template(fns=subjects_stats)
     
     # Compute two sided corrected p-values
     t_statistic = data_stat_avg[slope_idx, :] / data_stat_avg[stderr_idx, :]
