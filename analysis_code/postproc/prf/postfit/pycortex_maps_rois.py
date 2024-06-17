@@ -23,8 +23,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_rois.py ~/disks/meso_shared MotConf sub-01 n
-python pycortex_maps_rois.py ~/disks/meso_shared MotConf sub-170k n
+python pycortex_maps_rois.py ~/disks/meso_S/data MotConf sub-01 n
+python pycortex_maps_rois.py ~/disks/meso_S/data MotConf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
