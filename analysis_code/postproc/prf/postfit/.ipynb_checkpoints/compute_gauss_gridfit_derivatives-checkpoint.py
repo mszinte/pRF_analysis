@@ -94,14 +94,16 @@ if subject != 'sub-170k':
                 fit_img, fit_data = load_surface(fit_fn)
          
                 # compute and save derivatives array
-                deriv_array = fit2deriv(fit_array=fit_data,model='gauss')
-                deriv_img = make_surface_image(
-                    data=deriv_array, source_img=fit_img, maps_names=maps_names_gauss)
+                deriv_array = fit2deriv(fit_array=fit_data, model='gauss')
+                deriv_img = make_surface_image(data=deriv_array, 
+                                               source_img=fit_img, 
+                                               maps_names=maps_names_gauss)
                 nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir,deriv_fn))
 
 # Sub-170k median                
 elif subject == 'sub-170k':
-    print('sub-170, median prf deriv across subject...')
+    print('sub-170, computing median derivatives across subject...')
+    
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
