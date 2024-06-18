@@ -87,7 +87,7 @@ if subject != 'sub-170k':
         # Find pRF fit files 
         prf_fit_dir = '{}/{}/{}/prf/fit'.format(
             pp_dir, subject, format_)
-        prf_bold_dir = '{}/{}/{}/func/fmriprep_dct_loo_median'.format(
+        prf_bold_dir = '{}/{}/{}/func/fmriprep_dct_loo_avg'.format(
             pp_dir, subject, format_)
         prf_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_prf-pred_css.{}'.format(
             prf_fit_dir, prf_task_name, extension))
@@ -123,7 +123,9 @@ if subject != 'sub-170k':
             print('Saving: {}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
             nb.save(stat_prf_loo_img, '{}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
             
-    # Compute average across LOO
+    # Compute median across LOO
+    print('Compute median across LOO')
+    
     # Get files
     prf_stats_loo_fns_list = []
     for format_, extension in zip(formats, extensions):
@@ -141,22 +143,22 @@ if subject != 'sub-170k':
     loo_stats_fns_list = [stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k]
     hemi_data_median = {'hemi-L': [], 'hemi-R': [], '170k': []}
     
-    # Averaging
+    # Computing median
     for loo_stats_fns in loo_stats_fns_list:
         if loo_stats_fns[0].find('hemi-L') != -1:  hemi = 'hemi-L'
         elif loo_stats_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
         else: hemi = None
     
-        # Averaging
+        # Computing median
         stats_img, stats_data = load_surface(fn=loo_stats_fns[0])
         loo_stats_data_median = np.zeros(stats_data.shape)
         
         for n_run, loo_stats_fn in enumerate(loo_stats_fns):
             loo_stats_median_fn = loo_stats_fn.split('/')[-1]
-            loo_stats_median_fn = re.sub(r'median_loo-\d+_prf-stats', 'loo-median_prf-stats', loo_stats_median_fn)
+            loo_stats_median_fn = re.sub(r'avg_loo-\d+_prf-stats', 'avg_prf-stats_loo-median', loo_stats_median_fn)
     
             # Load data 
-            print('adding {} to averaging'.format(loo_stats_fn))
+            print('adding {} to computing median'.format(loo_stats_fn))
             loo_stats_img, loo_stats_data = load_surface(fn=loo_stats_fn)
     
             # median
@@ -183,23 +185,24 @@ if subject != 'sub-170k':
                 pp_dir, subject, loo_stats_median_fn)
             hemi_data_median['170k'] = loo_stats_data_median
     
-        # Saving averaged data in surface format
+        # Saving data in surface format
         loo_stats_img = make_surface_image(data=loo_stats_data_median, 
                                            source_img=loo_stats_img, 
                                            maps_names=maps_names)
         print('Saving median: {}'.format(median_fn))
         nb.save(loo_stats_img, median_fn)
         
-# Sub-170k averaging                
+# Sub-170k median
 elif subject == 'sub-170k':
-    print('sub-170, averaging prf stats across subject...')
+    print('sub-170, computing median prf stats across subject...')
+    
     # find all the subject prf derivatives
     subjects_stats = []
     for subject in subjects: 
-        subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_loo-median_prf-stats.dtseries.nii".format(
+        subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
-    # Averaging across subject
+    # Computing median across subject
     img, data_stat_median = median_subject_template(fns=subjects_stats)
     
     # Compute two sided corrected p-values
@@ -218,11 +221,11 @@ elif subject == 'sub-170k':
             main_dir, project_dir)
     os.makedirs(sub_170k_stats_dir, exist_ok=True)
     
-    sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_loo-median_prf-stats.dtseries.nii".format(sub_170k_stats_dir, prf_task_name)
-    
+    sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(sub_170k_stats_dir, prf_task_name)
     print("save: {}".format(sub_170k_stat_fn))
-    sub_170k_stat_img = make_surface_image(
-        data=data_stat_median, source_img=img, maps_names=maps_names)
+    sub_170k_stat_img = make_surface_image(data=data_stat_median, 
+                                           source_img=img, 
+                                           maps_names=maps_names)
     nb.save(sub_170k_stat_img, sub_170k_stat_fn)
 
 # Define permission cmd

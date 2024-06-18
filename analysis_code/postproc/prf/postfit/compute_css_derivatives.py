@@ -77,7 +77,7 @@ set_pycortex_config_file(cortex_dir)
 # Define folders
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
-# sub-170k exeption
+# sub-170k exception
 if subject != 'sub-170k':
     for format_, extension in zip(formats, extensions):
         print(format_)
@@ -124,11 +124,13 @@ if subject != 'sub-170k':
     loo_deriv_fns_list = [deriv_fsnative_hemi_L,
                           deriv_fsnative_hemi_R, 
                           deriv_170k]
-    hemi_data_avg = {'hemi-L': [], 
+    hemi_data_median = {'hemi-L': [], 
                      'hemi-R': [], 
                      '170k': []}
     
     # Median
+    print('Compute median across LOO')
+    
     for loo_deriv_fns in loo_deriv_fns_list:
         if loo_deriv_fns[0].find('hemi-L') != -1: hemi = 'hemi-L'
         elif loo_deriv_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
@@ -137,10 +139,11 @@ if subject != 'sub-170k':
         deriv_img, deriv_data = load_surface(fn=loo_deriv_fns[0])
         loo_deriv_data_median = np.zeros(deriv_data.shape)
         for n_run, loo_deriv_fn in enumerate(loo_deriv_fns):
-            loo_deriv_avg_fn = loo_deriv_fn.split('/')[-1]
-            loo_deriv_avg_fn = re.sub(r'avg_loo-\d+_prf-deriv', 'prf-deriv-loo-avg', loo_deriv_avg_fn)
+            loo_deriv_median_fn = loo_deriv_fn.split('/')[-1]
+            loo_deriv_median_fn = re.sub(r'avg_loo-\d+_prf-deriv_css', 'avg_prf-deriv_css_loo-median', loo_deriv_median_fn)
             
-            # Load data 
+            # Load data
+            print('adding {} to computing median'.format(loo_deriv_fn))
             loo_deriv_img, loo_deriv_data = load_surface(fn=loo_deriv_fn)
             
             # Median
@@ -148,31 +151,32 @@ if subject != 'sub-170k':
             else: loo_deriv_data_median = np.nanmedian(np.array([loo_deriv_data_median, loo_deriv_data]), axis=0)
         
         if hemi:
-            avg_fn = '{}/{}/fsnative/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_deriv_avg_fn)
-            hemi_data_avg[hemi] = loo_deriv_data_median
+            median_fn = '{}/{}/fsnative/prf/prf_derivatives/{}'.format(
+                pp_dir, subject, loo_deriv_median_fn)
+            hemi_data_median[hemi] = loo_deriv_data_median
         else:
-            avg_fn = '{}/{}/170k/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_deriv_avg_fn)
-            hemi_data_avg['170k'] = loo_deriv_data_median
+            median_fn = '{}/{}/170k/prf/prf_derivatives/{}'.format(
+                pp_dir, subject, loo_deriv_median_fn)
+            hemi_data_median['170k'] = loo_deriv_data_median
             
-        # Export averaged data in surface format 
+        # Export data in surface format 
         loo_deriv_img = make_surface_image(data=loo_deriv_data_median, 
                                            source_img=loo_deriv_img, 
                                            maps_names=maps_names)
-        nb.save(loo_deriv_img, avg_fn)
-        print('Saving avg: {}'.format(avg_fn))
+        nb.save(loo_deriv_img, median_fn)
+        print('Saving median: {}'.format(median_fn))
 
-# Sub-170k averaging                
+# Sub-170k computing median       
 elif subject == 'sub-170k':
-    print('sub-170, averaging prf deriv across subject...')
+    print('sub-170, computing median prf deriv across subject...')
+    
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_prf-deriv-loo-avg_css.dtseries.nii".format(
+        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
-    # Averaging across subject
+    # Computing median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
         
     # Export results
@@ -180,11 +184,12 @@ elif subject == 'sub-170k':
             main_dir, project_dir)
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
-    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_prf-deriv-loo-avg_css.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
+    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
     
     print("save: {}".format(sub_170k_deriv_fn))
-    sub_170k_deriv_img = make_surface_image(
-        data=data_deriv_median, source_img=img, maps_names=maps_names)
+    sub_170k_deriv_img = make_surface_image(data=data_deriv_median, 
+                                            source_img=img, 
+                                            maps_names=maps_names)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
 
 # Define permission cmd

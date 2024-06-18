@@ -21,8 +21,8 @@
 # >> sh pycortex_maps_gridfit.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
-# cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/postproc/prf/postfit
-# sh pycortex_maps_gridfit.sh /home/mszinte/disks/meso_H/projects RetinoMaps /home/mszinte/disks/meso_S/data
+# cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+# sh pycortex_maps_gridfit.sh /home/mszinte/disks/meso_H/projects MotConf /home/mszinte/disks/meso_S/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -40,10 +40,10 @@ project_name="$2"
 data_path="$3"
 
 # Define the path to the settings.json file
-settings_file="${base_path}/${project_name}/analysis_code/settings.json"
+settings_file="${base_path}/pRF_analysis/analysis_code/settings.json"
 
 # Define current directory
-cd "${base_path}/${project_name}/analysis_code/postproc/prf/postfit"
+cd "${base_path}/pRF_analysis/analysis_code/postproc/prf/postfit"
 
 # Read the subjects from settings.json using Python
 subjects=$(python -c "import json; data = json.load(open('$settings_file')); print('\n'.join(data['subjects']))")

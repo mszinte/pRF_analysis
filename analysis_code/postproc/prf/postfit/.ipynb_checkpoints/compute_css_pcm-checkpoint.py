@@ -52,7 +52,7 @@ import nibabel as nb
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image 
-from maths_utils import avg_subject_template, weighted_nan_mean, weighted_nan_median
+from maths_utils import  median_subject_template, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
 
 # Inputs
@@ -78,19 +78,17 @@ prf_task_name = analysis_info['prf_task_name']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-# Derivatives idx 
+# Derivatives and stats idx 
 rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx, size_idx = 0, 1, 2, 3, 4
 amp_idx, baseline_idx, x_idx, y_idx, hrf_1_idx = 5, 6, 7, 8, 9
 hrf_2_idx, n_idx, loo_rsq_idx = 10, 11, 12
-
-# Stats idx
-slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 0, 1, 2, 3
-stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 4, 5, 6, 7
+slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 13, 14, 15, 16
+stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 17, 18, 19, 20
 
 # compute duration 
 start_time = datetime.datetime.now()
 
-# sub-170k exeption
+# sub-170k exception
 if subject != 'sub-170k':
     # Compute PCM
     for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
@@ -105,36 +103,30 @@ if subject != 'sub-170k':
             # Derivatives
             atlas_name = None 
             surf_size = None        
-            deriv_avg_fn_L = glob.glob('{}/{}*hemi-L*prf-deriv-*avg_css.func.gii'.format(
-                prf_deriv_dir, subject))
-            
-            deriv_avg_fn_R = glob.glob('{}/{}*hemi-R*prf-deriv-*avg_css.func.gii'.format(
-                prf_deriv_dir, subject))
-               
-            results = load_surface_pycortex(L_fn=deriv_avg_fn_L[0], 
-                                            R_fn=deriv_avg_fn_R[0], 
-                                            return_img=True)
-            
+            deriv_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            deriv_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            results = load_surface_pycortex(L_fn=deriv_median_fn_L, R_fn=deriv_median_fn_R, return_img=True)
             deriv_mat = results['data_concat'] 
             img_L = results['img_L'] 
             img_R = results['img_R']
-            
+
             # Stats
-            stats_avg_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_loo-avg_prf-stats.func.gii'.format(
+            stats_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name)
-            stats_avg_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_loo-avg_prf-stats.func.gii'.format(
+            stats_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name)
-            stats_results = load_surface_pycortex(L_fn=stats_avg_fn_L, R_fn=stats_avg_fn_R)
+            stats_results = load_surface_pycortex(L_fn=stats_median_fn_L, R_fn=stats_median_fn_R)
             stats_mat = stats_results['data_concat']
             
         elif format_ == '170k':
             # Derivatives
             atlas_name = 'mmp_group'
             surf_size = '59k'
-            deriv_avg_fn = glob.glob('{}/{}*prf-deriv-*avg_css.dtseries.nii'.format(
-                prf_deriv_dir, subject))
-            
-            results = load_surface_pycortex(brain_fn=deriv_avg_fn[0],
+            deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
+                prf_deriv_dir, subject, prf_task_name)
+            results = load_surface_pycortex(brain_fn=deriv_median_fn,
                                             return_img=True,
                                             return_59k_mask=True,  
                                             return_source_data=True)
@@ -145,10 +137,13 @@ if subject != 'sub-170k':
             img = results['img']
             
             # Stats
-            stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_loo-avg_prf-stats.dtseries.nii'.format(
+            stats_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
                 prf_deriv_dir, subject, prf_task_name)
-            stats_results = load_surface_pycortex(brain_fn=stats_avg_fn)
+            stats_results = load_surface_pycortex(brain_fn=stats_median_fn)
             stats_mat = stats_results['data_concat']
+        
+        # Combine mat
+        deriv_mat = np.concatenate((deriv_mat, stats_mat))
         
         # Threshold data
         deriv_mat_th = deriv_mat
@@ -163,12 +158,13 @@ if subject != 'sub-170k':
         if analysis_info['stats_th'] == 0.05: stats_th_down = deriv_mat_th[corr_pvalue_5pt_idx,...] <= 0.05
         elif analysis_info['stats_th'] == 0.01: stats_th_down = deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
         all_th = np.array((amp_down,
-                           rsq_down,
-                           size_th_down,size_th_up, 
-                           ecc_th_down, ecc_th_up,
-                           n_th_down, n_th_up,
-                           stats_th_down)) 
-        th_idx = np.where(np.logical_and.reduce(all_th)==False)[0]
+                            rsq_down,
+                            size_th_down,size_th_up, 
+                            ecc_th_down, ecc_th_up,
+                            n_th_down, n_th_up,
+                            stats_th_down
+                          )) 
+        deriv_mat[loo_rsq_idx, np.logical_and.reduce(all_th)==False]=0
 
         # Get surfaces for each hemisphere
         surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
@@ -186,14 +182,6 @@ if subject != 'sub-170k':
                                   atlas_name=atlas_name, 
                                   surf_size=surf_size)
         
-        # Exclude vertex out of threshold
-        th_idx_set = set(th_idx)
-        for roi, indices in roi_verts_dict.items():
-            # Filter out the indices that are in th_idx_set
-            filtered_indices = [idx for idx in indices if idx not in th_idx_set]
-            # Update the dictionary with the filtered indices
-            roi_verts_dict[roi] = np.array(filtered_indices)
-        
         # Derivatives settings
         vert_rsq_data = deriv_mat[loo_rsq_idx, ...]
         vert_x_data = deriv_mat[x_idx, ...]
@@ -202,7 +190,8 @@ if subject != 'sub-170k':
         vert_ecc_data = deriv_mat[ecc_idx, ...]
         
         # Create empty results
-        vert_cm = np.zeros((7,vert_num))*np.nan
+        vert_cm = np.zeros((4,vert_num))*np.nan
+        
         for roi in rois:
             # Find ROI vertex
             roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
@@ -210,7 +199,7 @@ if subject != 'sub-170k':
             roi_surf_lh_idx = roi_vert_lh_idx
             roi_surf_rh_idx = roi_vert_rh_idx - lh_vert_num
         
-            # Get median distance of surounding vertices included in threshold
+            # Get mean distance of surounding vertices included in threshold
             vert_lh_rsq, vert_lh_size = vert_rsq_data[:lh_vert_num], vert_size_data[:lh_vert_num]
             vert_lh_x, vert_lh_y = vert_x_data[:lh_vert_num], vert_y_data[:lh_vert_num]
             vert_rh_rsq, vert_rh_size = vert_rsq_data[lh_vert_num:], vert_size_data[lh_vert_num:]
@@ -249,7 +238,7 @@ if subject != 'sub-170k':
                         
                         # Compute the n neighbor of each vertex
                         n_neighbor = np.where(vert_dist_th_idx)[0].shape[0]
-                        vert_cm[1,vert_idx] = n_neighbor
+                        vert_cm[0,vert_idx] = n_neighbor
 
                         if np.sum(vert_dist_th_idx) > 1:
 
@@ -270,30 +259,12 @@ if subject != 'sub-170k':
                             vert_prf_dist_median = weighted_nan_median(vert_prf_dist_median_array, vert_rsq[vert_dist_th_idx])
                             
                             # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                            vert_cm[0, vert_idx] = vert_geo_dist_median/vert_prf_dist_median
+                            vert_cm[1, vert_idx] = vert_geo_dist_median/vert_prf_dist_median
                             
                             # export median geodesic and prf distance
                             vert_cm[2, vert_idx] = vert_geo_dist_median
                             vert_cm[3, vert_idx] = vert_prf_dist_median
                             
-                            # mean
-                            # Compute median geodesic distance 
-                            vert_geo_dist_mean = weighted_nan_mean(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
-
-                            # Compute prf center suround distance (deg)
-                            vert_prf_dist_mean_array = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
-                            
-                            # Compute mean of prf center suround distance
-                            vert_prf_dist_mean = weighted_nan_mean(vert_prf_dist_mean_array, vert_rsq[vert_dist_th_idx])
-                            
-                            # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                            vert_cm[4, vert_idx] = vert_geo_dist_mean/vert_prf_dist_mean
-                            
-                            # export median geodesic and prf distance
-                            vert_cm[5, vert_idx] = vert_geo_dist_mean
-                            vert_cm[6, vert_idx] = vert_prf_dist_mean
-
-        deriv_mat_new = np.zeros((4, deriv_mat.shape[1])) * np.nan
         deriv_mat_new = vert_cm
         
         # Save data
@@ -308,12 +279,12 @@ if subject != 'sub-170k':
                                                         img=None, 
                                                         brain_mask_59k=None)
     
-            deriv_avg_fn_L = deriv_avg_fn_L[0].split('/')[-1].replace('deriv', 'pcm')
-            deriv_avg_fn_R = deriv_avg_fn_R[0].split('/')[-1].replace('deriv', 'pcm')
-            print('Saving {}'.format(deriv_avg_fn_L))
-            nb.save(new_img_L, '{}/{}'.format(prf_deriv_dir, deriv_avg_fn_L))
-            print('Saving {}'.format(deriv_avg_fn_R))
-            nb.save(new_img_R, '{}/{}'.format(prf_deriv_dir, deriv_avg_fn_R))
+            deriv_median_fn_L = deriv_median_fn_L[0].split('/')[-1].replace('deriv', 'pcm')
+            deriv_median_fn_R = deriv_median_fn_R[0].split('/')[-1].replace('deriv', 'pcm')
+            print('Saving {}'.format(deriv_median_fn_L))
+            nb.save(new_img_L, '{}/{}'.format(prf_deriv_dir, deriv_median_fn_L))
+            print('Saving {}'.format(deriv_median_fn_R))
+            nb.save(new_img_R, '{}/{}'.format(prf_deriv_dir, deriv_median_fn_R))
                     
         elif format_ == '170k':
             # Save as image
@@ -326,33 +297,35 @@ if subject != 'sub-170k':
                                   img=img, 
                                   brain_mask_59k=mask_59k)
     
-            deriv_avg_fn = deriv_avg_fn[0].split('/')[-1].replace('deriv', 'pcm')
-            print('Saving {}'.format(deriv_avg_fn))
-            nb.save(new_img, '{}/{}'.format(prf_deriv_dir, deriv_avg_fn))
+            deriv_median_fn = deriv_median_fn[0].split('/')[-1].replace('deriv', 'pcm')
+            print('Saving {}'.format(deriv_median_fn))
+            nb.save(new_img, '{}/{}'.format(prf_deriv_dir, deriv_median_fn))
             
-# Sub-170k averaging                
+# Sub-170k computing median
 elif subject == 'sub-170k':
-    print('sub-170, averaging pcm across subject...')
+    print('sub-170, computing median pcm across subject...')
+    
     # find all the subject prf derivatives
     subjects_pcm = []
-    for subject in subjects: 
-        subjects_pcm += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_prf-pcm-loo-avg_css.dtseries.nii".format(
+    for subject in subjects:
+        subjects_pcm += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
-    # Averaging across subject
-    img, data_pcm_avg = avg_subject_template(fns=subjects_pcm)
+    # Compute median across subject
+    img, data_pcm_median = median_subject_template(fns=subjects_pcm)
         
     # Export results
     sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
             main_dir, project_dir)
     os.makedirs(sub_170k_pcm_dir, exist_ok=True)
     
-    sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_prf-pcm-loo-avg_css.dtseries.nii".format(sub_170k_pcm_dir, prf_task_name)
+    sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median_css.dtseries.nii".format(sub_170k_pcm_dir, prf_task_name)
     
-    print("save: {}".format(sub_170k_pcm_fn))
+    print("Saving: {}".format(sub_170k_pcm_fn))
     
-    sub_170k_pcm_img = make_surface_image(
-        data=data_pcm_avg, source_img=img, maps_names=maps_names)
+    sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
+                                          source_img=img, 
+                                          maps_names=maps_names)
     nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
 
 # Print duration
@@ -363,5 +336,5 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
