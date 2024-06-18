@@ -408,23 +408,23 @@ def median_subject_template(fns):
 
     Returns:
         img : Cifti image of the last subject to be used as source_img.
-        data_avg : The averaged data.
+        data_med : The averaged data.
     """
     import numpy as np
     from surface_utils import load_surface
     
     for n_file, fn in enumerate(fns) : 
-        print('adding {} to avg'.format(fn))
+        print('adding {} to '.format(fn))
         # Load data
         img, data = load_surface(fn=fn)
     
         # Average without nan
         if n_file == 0:
-            data_avg = np.copy(data)
+            data_med = np.copy(data)
         else:
-            data_avg = np.nanmedian(np.array([data_avg, data]), axis=0)
+            data_med = np.nanmedian(np.array([data_med, data]), axis=0)
             
-    return img, data_avg
+    return img, data_med
 
 def make_prf_distribution_df(data, rois, max_ecc, grain):
     """

@@ -78,7 +78,7 @@ subjects = analysis_info['subjects']
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
     trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 0, 1, 2, 3, 4, 5, 6, 7
         
-# sub-170k exeption
+# sub-170k exception
 if subject != 'sub-170k':
     print('{}, computing inter-run correlation...'.format(subject))
     

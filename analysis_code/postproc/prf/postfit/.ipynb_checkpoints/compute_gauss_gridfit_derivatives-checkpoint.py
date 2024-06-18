@@ -47,7 +47,7 @@ import nibabel as nb
 # personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from prf_utils import fit2deriv
-from maths_utils import  avg_subject_template
+from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
 
 # load settings
@@ -66,7 +66,7 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
-# sub-170k exeption
+# sub-170k exception
 if subject != 'sub-170k':
     print('{}, computing inter-run correlation...'.format(subject))
     for format_, extension in zip(formats, extensions):
@@ -99,28 +99,28 @@ if subject != 'sub-170k':
                     data=deriv_array, source_img=fit_img, maps_names=maps_names_gauss)
                 nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir,deriv_fn))
 
-# Sub-170k averaging                
+# Sub-170k median                
 elif subject == 'sub-170k':
-    print('sub-170, averaging prf deriv across subject...')
+    print('sub-170, median prf deriv across subject...')
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(
+        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_median_prf-deriv_gauss_gridfit.dtseries.nii".format(
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
-    # Averaging across subject
-    img, data_deriv_avg = avg_subject_template(fns=subjects_derivatives)
+    # Median across subject
+    img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
         
     # Export results
     sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
             main_dir, project_dir)
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
-    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
+    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_median_prf-deriv_gauss_gridfit.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
     
     print("save: {}".format(sub_170k_deriv_fn))
     sub_170k_deriv_img = make_surface_image(
-        data=data_deriv_avg, source_img=img, maps_names=maps_names_gauss)
+        data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
 # Define permission cmd
