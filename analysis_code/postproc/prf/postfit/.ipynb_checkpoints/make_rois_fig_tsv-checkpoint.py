@@ -3,7 +3,7 @@
 make_rois_fig_tsv.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Make ROIs-based CSS tsv
+Make ROIs figure specific TSV
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -66,8 +66,6 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-
-# Threshold settings
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
@@ -83,21 +81,25 @@ else:
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
 
-# Settings
-num_ecc_size_bins = 6
-num_ecc_pcm_bins = 6
-num_polar_angle_bins = 9
-max_ecc = 15
-screen_side = 20
-gaussian_mesh_grain = 100
-hot_zone_percent = 0.01
+# Figure settings
+with open('../../../figure_settings.json') as f:
+    json_s = f.read()
+    figure_info = json.loads(json_s)
+num_ecc_size_bins = figure_info['num_ecc_size_bins']
+num_ecc_pcm_bins = figure_info['num_ecc_pcm_bins']
+num_polar_angle_bins = figure_info['num_polar_angle_bins']
+max_ecc = figure_info['max_ecc']
+screen_side = figure_info['screen_side']
+gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
+hot_zone_percent = figure_info['hot_zone_percent']
 
 # Format loop
 for format_, extension in zip(formats, extensions):
     print(format_)
-    # Subject analysis
+    
+    # Individual subject analysis
     if 'group' not in subject:
-        print('subject {} is processing'.format(subject))
+        print('Subject {} is processed'.format(subject))
         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
             main_dir, project_dir, subject, format_)
         os.makedirs(tsv_dir, exist_ok=True)
@@ -105,7 +107,7 @@ for format_, extension in zip(formats, extensions):
         tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
         data = pd.read_table(tsv_fn, sep="\t")
         
-        # keep a raw data df 
+        # Keep a raw data df 
         data_raw = data.copy()
         
         # Threshold data (replace by nan)
@@ -141,31 +143,31 @@ for format_, extension in zip(formats, extensions):
         for num_roi, roi in enumerate(rois):
             df_roi = data.loc[(data.roi == roi)]
 
-            df_params_avg_roi = pd.DataFrame()
-            df_params_avg_roi['roi'] = [roi]
+            df_params_median_roi = pd.DataFrame()
+            df_params_median_roi['roi'] = [roi]
         
-            df_params_avg_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
-            df_params_avg_roi['prf_loo_r2_ci_down'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 2.5)
-            df_params_avg_roi['prf_loo_r2_ci_up'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 97.5)
+            df_params_median_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_loo_r2_ci_down'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 2.5)
+            df_params_median_roi['prf_loo_r2_ci_up'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 97.5)
             
-            df_params_avg_roi['prf_size_weighted_median'] = weighted_nan_median(df_roi.prf_size, weights=df_roi.prf_loo_r2)
-            df_params_avg_roi['prf_size_ci_down'] = weighted_nan_percentile(df_roi.prf_size, df_roi.prf_loo_r2, 2.5)
-            df_params_avg_roi['prf_size_ci_up'] = weighted_nan_percentile(df_roi.prf_size, df_roi.prf_loo_r2, 97.5)
+            df_params_median_roi['prf_size_weighted_median'] = weighted_nan_median(df_roi.prf_size, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_size_ci_down'] = weighted_nan_percentile(df_roi.prf_size, df_roi.prf_loo_r2, 2.5)
+            df_params_median_roi['prf_size_ci_up'] = weighted_nan_percentile(df_roi.prf_size, df_roi.prf_loo_r2, 97.5)
             
-            df_params_avg_roi['prf_ecc_weighted_median'] = weighted_nan_median(df_roi.prf_ecc, weights=df_roi.prf_loo_r2)
-            df_params_avg_roi['prf_ecc_ci_down'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi.prf_loo_r2, 2.5)
-            df_params_avg_roi['prf_ecc_ci_up'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi.prf_loo_r2, 97.5)
+            df_params_median_roi['prf_ecc_weighted_median'] = weighted_nan_median(df_roi.prf_ecc, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_ecc_ci_down'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi.prf_loo_r2, 2.5)
+            df_params_median_roi['prf_ecc_ci_up'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi.prf_loo_r2, 97.5)
             
-            df_params_avg_roi['prf_n_weighted_median'] = weighted_nan_median(df_roi.prf_n, weights=df_roi.prf_loo_r2)
-            df_params_avg_roi['prf_n_ci_down'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 2.5)
-            df_params_avg_roi['prf_n_ci_up'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 97.5)
+            df_params_median_roi['prf_n_weighted_median'] = weighted_nan_median(df_roi.prf_n, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_n_ci_down'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 2.5)
+            df_params_median_roi['prf_n_ci_up'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 97.5)
              
-            df_params_avg_roi['pcm_median_weighted_median'] = weighted_nan_median(df_roi.pcm_median, weights=df_roi.prf_loo_r2)
-            df_params_avg_roi['pcm_median_ci_down'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 2.5)
-            df_params_avg_roi['pcm_median_ci_up'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 97.5)
+            df_params_median_roi['pcm_median_weighted_median'] = weighted_nan_median(df_roi.pcm_median, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['pcm_median_ci_down'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 2.5)
+            df_params_median_roi['pcm_median_ci_up'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 97.5)
     
-            if num_roi == 0: df_params_avg = df_params_avg_roi
-            else: df_params_avg = pd.concat([df_params_avg, df_params_avg_roi])
+            if num_roi == 0: df_params_median = df_params_median_roi
+            else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
     
         # Ecc.size
         # -------- 
@@ -201,7 +203,6 @@ for format_, extension in zip(formats, extensions):
             df_ecc_pcm_bin['prf_loo_r2_bins_median'] = np.array(df_bins['prf_loo_r2'].median())
             df_ecc_pcm_bin['prf_pcm_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values, x['prf_loo_r2'].values, 75)).values
             df_ecc_pcm_bin['prf_pcm_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values, x['prf_loo_r2'].values, 25)).values
-    
             if num_roi == 0: df_ecc_pcm_bins = df_ecc_pcm_bin
             else: df_ecc_pcm_bins = pd.concat([df_ecc_pcm_bins, df_ecc_pcm_bin])  
     
@@ -263,7 +264,7 @@ for format_, extension in zip(formats, extensions):
             if i == 0: df_distribution = df_distribution_hemi
             else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
 
-        # Spatial distribution hot zone barycentre 
+        # Spatial distribution hot zone barycentre
         # ----------------------------------------
         hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
         for i, hemi in enumerate(hemis):
@@ -285,9 +286,9 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_violins_fn))
         df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
     
-        tsv_params_avg_fn = "{}/{}_prf_params_avg.tsv".format(tsv_dir, subject)
-        print('Saving tsv: {}'.format(tsv_params_avg_fn))
-        df_params_avg.to_csv(tsv_params_avg_fn, sep="\t", na_rep='NaN', index=False)
+        tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_dir, subject)
+        print('Saving tsv: {}'.format(tsv_params_median_fn))
+        df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
     
         tsv_ecc_size_fn = "{}/{}_prf_ecc_size.tsv".format(tsv_dir, subject)
         print('Saving tsv: {}'.format(tsv_ecc_size_fn))
@@ -334,7 +335,7 @@ for format_, extension in zip(formats, extensions):
             if i == 0: df_violins = df_violins_indiv.copy()
             else: df_violins = pd.concat([df_violins, df_violins_indiv])
     
-            # Parameters average
+            # Parameters median
             # ------------------
             # use df_violins
     
@@ -376,7 +377,7 @@ for format_, extension in zip(formats, extensions):
             if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
             else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
            
-        # Averaging and saving tsv
+        # Median and saving tsv
         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
             main_dir, project_dir, subject, format_)
         os.makedirs(tsv_dir, exist_ok=True)
@@ -395,18 +396,18 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_violins_fn))
         df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
     
-        # Parameters average
+        # Parameters median
         # ------------------
-        df_params_avg = df_violins
+        df_params_median = df_violins
         
         # compute median 
         colnames = ['prf_loo_r2', 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
-        df_params_median_indiv = df_params_avg.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
-            lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_avg.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
+        df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
+            lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
         
         for colname in colnames[1:]:
-            df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_avg.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
-                lambda x: weighted_nan_median(x[colname], df_params_avg.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
+            df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
+                lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
         df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
 
         # compute Ci
@@ -418,9 +419,9 @@ for format_, extension in zip(formats, extensions):
                 lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
 
         df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-        tsv_params_avg_fn = "{}/{}_prf_params_avg.tsv".format(tsv_dir, subject)
-        print('Saving tsv: {}'.format(tsv_params_avg_fn))
-        df_params_median.to_csv(tsv_params_avg_fn, sep="\t", na_rep='NaN', index=False)
+        tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_dir, subject)
+        print('Saving tsv: {}'.format(tsv_params_median_fn))
+        df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
         
         # Ecc.size
         # --------
@@ -478,7 +479,7 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_barycentre_fn))
         df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
     
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
