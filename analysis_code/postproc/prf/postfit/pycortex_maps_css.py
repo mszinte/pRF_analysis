@@ -84,10 +84,9 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Maps settings 
-for idx, col_name in enumerate(maps_names_css + maps_names_pcm + maps_names_css_stats):
+for idx, col_name in enumerate(maps_names_css + maps_names_css_stats + maps_names_pcm):
     exec("{}_idx = idx".format(col_name))
 
-deb()
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255
@@ -120,14 +119,6 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         deriv_results = load_surface_pycortex(L_fn=deriv_median_fn_L, R_fn=deriv_median_fn_R)
         deriv_mat = deriv_results['data_concat']
         
-        # pcm 
-        pcm_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
-            prf_deriv_dir, subject, prf_task_name)
-        pcm_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
-            prf_deriv_dir, subject, prf_task_name)
-        pcm_results = load_surface_pycortex(L_fn=pcm_median_fn_L, R_fn=pcm_median_fn_R)
-        pcm_mat = pcm_results['data_concat']
-        
         # Stats
         stats_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
             prf_deriv_dir, subject, prf_task_name)
@@ -135,6 +126,14 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             prf_deriv_dir, subject, prf_task_name)
         stats_results = load_surface_pycortex(L_fn=stats_median_fn_L, R_fn=stats_median_fn_R)
         stats_mat = stats_results['data_concat']
+
+        # pRF CM
+        pcm_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
+            prf_deriv_dir, subject, prf_task_name)
+        pcm_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
+            prf_deriv_dir, subject, prf_task_name)
+        pcm_results = load_surface_pycortex(L_fn=pcm_median_fn_L, R_fn=pcm_median_fn_R)
+        pcm_mat = pcm_results['data_concat']
         
     elif format_ == '170k':
         # Derivatives
@@ -143,20 +142,20 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         deriv_results = load_surface_pycortex(brain_fn=deriv_median_fn)
         deriv_mat = deriv_results['data_concat']
 
-        # pcm
-        pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css-loo-median.dtseries.nii'.format(
-            prf_deriv_dir, subject, prf_task_name)
-        pcm_results = load_surface_pycortex(brain_fn=pcm_median_fn)
-        pcm_mat = pcm_results['data_concat']
-
         # Stats
         stats_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         stats_results = load_surface_pycortex(brain_fn=stats_median_fn)
         stats_mat = stats_results['data_concat']
-        
+
+        # pRF CM
+        pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css-loo-median.dtseries.nii'.format(
+            prf_deriv_dir, subject, prf_task_name)
+        pcm_results = load_surface_pycortex(brain_fn=pcm_median_fn)
+        pcm_mat = pcm_results['data_concat']
+
     # Combine mat
-    all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat))
+    all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
     
     # Threshold mat
     all_deriv_mat_th = all_deriv_mat

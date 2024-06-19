@@ -70,7 +70,9 @@ task = analysis_info["prf_task_name"]
 vert_dist_th = analysis_info['vertex_pcm_rad']
 formats = analysis_info['formats']
 rois = analysis_info["rois"]
-maps_names = analysis_info['maps_names_pcm']
+maps_names_css = analysis_info['maps_names_css']
+maps_names_css_stats = analysis_info['maps_names_css_stats']
+maps_names_pcm = analysis_info['maps_names_pcm']
 subjects = analysis_info['subjects']
 prf_task_name = analysis_info['prf_task_name']
 
@@ -79,11 +81,10 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Derivatives and stats idx 
-rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx, size_idx = 0, 1, 2, 3, 4
-amp_idx, baseline_idx, x_idx, y_idx, hrf_1_idx = 5, 6, 7, 8, 9
-hrf_2_idx, n_idx, loo_rsq_idx = 10, 11, 12
-slope_idx, intercept_idx, rvalue_idx, pvalue_idx = 13, 14, 15, 16
-stderr_idx, trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 17, 18, 19, 20
+# Maps settings 
+for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
+    exec("{}_idx = idx".format(col_name))
+
 
 # compute duration 
 start_time = datetime.datetime.now()
@@ -147,14 +148,14 @@ if subject != 'sub-170k':
         
         # Threshold data
         deriv_mat_th = deriv_mat
-        amp_down = deriv_mat_th[amp_idx,...] > 0
-        rsq_down = deriv_mat_th[loo_rsq_idx,...] >= analysis_info['rsqr_th']
-        size_th_down = deriv_mat_th[size_idx,...] >= analysis_info['size_th'][0]
-        size_th_up = deriv_mat_th[size_idx,...] <= analysis_info['size_th'][1]
-        ecc_th_down = deriv_mat_th[ecc_idx,...] >= analysis_info['ecc_th'][0]
-        ecc_th_up = deriv_mat_th[ecc_idx,...] <= analysis_info['ecc_th'][1]
-        n_th_down = deriv_mat_th[n_idx,...] >= analysis_info['n_th'][0]
-        n_th_up = deriv_mat_th[n_idx,...] <= analysis_info['n_th'][1]
+        amp_down = deriv_mat_th[amplitude_idx,...] > 0
+        rsq_down = deriv_mat_th[prf_loo_r2_idx,...] >= analysis_info['rsqr_th']
+        size_th_down = deriv_mat_th[prf_size_idx,...] >= analysis_info['size_th'][0]
+        size_th_up = deriv_mat_th[prf_size_idx,...] <= analysis_info['size_th'][1]
+        ecc_th_down = deriv_mat_th[prf_ecc_idx,...] >= analysis_info['ecc_th'][0]
+        ecc_th_up = deriv_mat_th[prf_ecc_idx,...] <= analysis_info['ecc_th'][1]
+        n_th_down = deriv_mat_th[prf_n_idx,...] >= analysis_info['n_th'][0]
+        n_th_up = deriv_mat_th[prf_n_idx,...] <= analysis_info['n_th'][1]
         if analysis_info['stats_th'] == 0.05: stats_th_down = deriv_mat_th[corr_pvalue_5pt_idx,...] <= 0.05
         elif analysis_info['stats_th'] == 0.01: stats_th_down = deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
         all_th = np.array((amp_down,
@@ -164,7 +165,7 @@ if subject != 'sub-170k':
                             n_th_down, n_th_up,
                             stats_th_down
                           )) 
-        deriv_mat[loo_rsq_idx, np.logical_and.reduce(all_th)==False]=0
+        deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0
 
         # Get surfaces for each hemisphere
         surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
@@ -182,12 +183,12 @@ if subject != 'sub-170k':
                                   atlas_name=atlas_name, 
                                   surf_size=surf_size)
         
-        # Derivatives settings
-        vert_rsq_data = deriv_mat[loo_rsq_idx, ...]
-        vert_x_data = deriv_mat[x_idx, ...]
-        vert_y_data = deriv_mat[y_idx, ...]
-        vert_size_data = deriv_mat[size_idx, ...]
-        vert_ecc_data = deriv_mat[ecc_idx, ...]
+        # Derivatives settings        
+        vert_rsq_data = deriv_mat[prf_loo_r2_idx, ...]
+        vert_x_data = deriv_mat[prf_x_idx, ...]
+        vert_y_data = deriv_mat[prf_y_idx, ...]
+        vert_size_data = deriv_mat[prf_size_idx, ...]
+        vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
         
         # Create empty results
         vert_cm = np.zeros((4,vert_num))*np.nan
@@ -271,19 +272,19 @@ if subject != 'sub-170k':
         if format_ == 'fsnative':
             # Save as image
             new_img_L, new_img_R  = make_image_pycortex(data=deriv_mat_new, 
-                                                        maps_names=maps_names,
+                                                        maps_names=maps_names_pcm,
                                                         img_L=img_L, 
                                                         img_R=img_R, 
                                                         lh_vert_num=lh_vert_num, 
                                                         rh_vert_num=rh_vert_num, 
                                                         img=None, 
                                                         brain_mask_59k=None)
-    
-            deriv_median_fn_L = deriv_median_fn_L[0].split('/')[-1].replace('deriv', 'pcm')
-            deriv_median_fn_R = deriv_median_fn_R[0].split('/')[-1].replace('deriv', 'pcm')
-            print('Saving {}'.format(deriv_median_fn_L))
+
+            deriv_median_fn_L = deriv_median_fn_L.split('/')[-1].replace('deriv', 'pcm')
+            deriv_median_fn_R = deriv_median_fn_R.split('/')[-1].replace('deriv', 'pcm')
+            print('Saving {}/{}'.format(prf_deriv_dir, deriv_median_fn_L))
             nb.save(new_img_L, '{}/{}'.format(prf_deriv_dir, deriv_median_fn_L))
-            print('Saving {}'.format(deriv_median_fn_R))
+            print('Saving {}/{}'.format(prf_deriv_dir, deriv_median_fn_R))
             nb.save(new_img_R, '{}/{}'.format(prf_deriv_dir, deriv_median_fn_R))
                     
         elif format_ == '170k':
@@ -297,8 +298,8 @@ if subject != 'sub-170k':
                                   img=img, 
                                   brain_mask_59k=mask_59k)
     
-            deriv_median_fn = deriv_median_fn[0].split('/')[-1].replace('deriv', 'pcm')
-            print('Saving {}'.format(deriv_median_fn))
+            deriv_median_fn = deriv_median_fn.split('/')[-1].replace('deriv', 'pcm')
+            print('Saving {}/{}'.format(prf_deriv_dir, deriv_median_fn))
             nb.save(new_img, '{}/{}'.format(prf_deriv_dir, deriv_median_fn))
             
 # Sub-170k computing median
@@ -325,7 +326,7 @@ elif subject == 'sub-170k':
     
     sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
                                           source_img=img, 
-                                          maps_names=maps_names)
+                                          maps_names=maps_names_pcm)
     nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
 
 # Print duration

@@ -67,9 +67,8 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+if subject == 'sub-170k': save_svg = save_svg
+else: save_svg = False
 
 # Define analysis parameters
 with open('../../../settings.json') as f:
@@ -79,10 +78,11 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 prf_task_name = analysis_info['prf_task_name']
+maps_names_gauss = analysis_info['maps_names_gauss']
 
 # Maps settings
-rsq_idx, ecc_idx, polar_real_idx, polar_imag_idx , size_idx, \
-    amp_idx, baseline_idx, x_idx, y_idx = 0, 1, 2, 3, 4, 5, 6, 7, 8
+for idx, col_name in enumerate(maps_names_gauss):
+    exec("{}_idx = idx".format(col_name))
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255
@@ -131,17 +131,17 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     
     # threshold data
     deriv_mat_th = deriv_mat
-    amp_down =  deriv_mat_th[amp_idx,...] > 0
-    rsqr_th_down = deriv_mat_th[rsq_idx,...] >= analysis_info['rsqr_th']
-    size_th_down = deriv_mat_th[size_idx,...] >= analysis_info['size_th'][0]
-    size_th_up = deriv_mat_th[size_idx,...] <= analysis_info['size_th'][1]
-    ecc_th_down = deriv_mat_th[ecc_idx,...] >= analysis_info['ecc_th'][0]
-    ecc_th_up = deriv_mat_th[ecc_idx,...] <= analysis_info['ecc_th'][1]
+    amp_down =  deriv_mat_th[amplitude_idx,...] > 0
+    rsqr_th_down = deriv_mat_th[prf_rsq_idx,...] >= analysis_info['rsqr_th']
+    size_th_down = deriv_mat_th[prf_size_idx,...] >= analysis_info['size_th'][0]
+    size_th_up = deriv_mat_th[prf_size_idx,...] <= analysis_info['size_th'][1]
+    ecc_th_down = deriv_mat_th[prf_ecc_idx,...] >= analysis_info['ecc_th'][0]
+    ecc_th_up = deriv_mat_th[prf_ecc_idx,...] <= analysis_info['ecc_th'][1]
     all_th = np.array((amp_down, rsqr_th_down, size_th_down, size_th_up, ecc_th_down, ecc_th_up)) 
-    deriv_mat[rsq_idx,np.logical_and.reduce(all_th)==False]=0
+    deriv_mat[prf_rsq_idx,np.logical_and.reduce(all_th)==False]=0
     
     # r-square
-    rsq_data = deriv_mat[rsq_idx,...]
+    rsq_data = deriv_mat[prf_rsq_idx,...]
     alpha_range = analysis_info["alpha_range"]
     alpha = (rsq_data - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
     alpha[alpha>1]=1
@@ -183,7 +183,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     exec('maps_names.append("polar_{}")'.format(int(cmap_steps)))
     
     # eccentricity
-    ecc_data = deriv_mat[ecc_idx,...]
+    ecc_data = deriv_mat[prf_ecc_idx,...]
     param_ecc = {'data': ecc_data, 
                  'cmap': cmap_ecc_size, 
                  'alpha': alpha,
@@ -199,7 +199,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     maps_names.append('ecc')
     
     # size
-    size_data = deriv_mat[size_idx,...]
+    size_data = deriv_mat[prf_size_idx,...]
     param_size = {'data': size_data, 
                   'cmap': cmap_ecc_size,
                   'alpha': alpha, 
