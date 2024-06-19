@@ -40,10 +40,10 @@ project_name="$2"
 data_path="$3"
 
 # Define the path to the settings.json file
-settings_file="${base_path}/${project_name}/analysis_code/settings.json"
+settings_file="${base_path}/pRF_analysis/analysis_code/settings.json"
 
 # Define current directory
-cd "${base_path}/${project_name}/analysis_code/postproc/prf/postfit"
+cd "${base_path}/pRF_analysis/analysis_code/postproc/prf/postfit"
 
 # Read the subjects from settings.json using Python
 subjects=$(python -c "import json; data = json.load(open('$settings_file')); print('\n'.join(data['subjects']))")

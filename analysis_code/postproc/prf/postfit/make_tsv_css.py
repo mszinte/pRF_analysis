@@ -68,7 +68,7 @@ maps_names_css = analysis_info['maps_names_css']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 maps_names_vert_area = analysis_info["maps_names_vert_area"]
-maps_names = maps_names_css + maps_names_pcm + maps_names_css_stats + maps_names_vert_area
+maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm + maps_names_vert_area
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -91,17 +91,17 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         for hemi in ['hemi-L', 'hemi-R']:
             
             # Derivatives
-            deriv_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_prf-deriv-loo-avg_css.func.gii'.format(
+            deriv_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
             deriv_img, deriv_mat = load_surface(deriv_avg_fn)
             
-            # pcm
-            pcm_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_prf-pcm-loo-avg_css.func.gii'.format(
+            # CM
+            pcm_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
             pcm_img, pcm_mat = load_surface(pcm_avg_fn)
 
             # Stats
-            stats_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_loo-avg_prf-stats.func.gii'.format(
+            stats_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
             stats_img, stats_mat = load_surface(stats_avg_fn)
             
@@ -110,7 +110,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
 
             # Combine all derivatives
-            all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, vertex_area_mat))
+            all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
 
             # Get roi mask
             roi_verts = get_rois(subject=subject, 
@@ -131,20 +131,19 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                 df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
                 
     elif format_ == '170k':
-        
-
+    
         # Derivatives
-        deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_prf-deriv-loo-avg_css.dtseries.nii'.format(
+        deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         deriv_img, deriv_mat = load_surface(deriv_avg_fn)
         
-        # pcm
-        pcm_avg_fn = '{}/{}_task-{}_fmriprep_dct_prf-pcm-loo-avg_css.dtseries.nii'.format(
+        # CM
+        pcm_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         pcm_img, pcm_mat = load_surface(pcm_avg_fn)
 
         # Stats
-        stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_loo-avg_prf-stats.dtseries.nii'.format(
+        stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         stats_img, stats_mat = load_surface(stats_avg_fn)
         
@@ -153,7 +152,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
 
         # Combine all derivatives
-        all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, vertex_area_mat))
+        all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
 
         # Get roi mask
         roi_verts_L, roi_verts_R = get_rois(subject=subject,

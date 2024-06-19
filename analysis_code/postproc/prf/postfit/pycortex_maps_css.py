@@ -137,7 +137,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         
     elif format_ == '170k':
         # Derivatives
-        deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css-loo-median.dtseries.nii'.format(
+        deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         deriv_results = load_surface_pycortex(brain_fn=deriv_median_fn)
         deriv_mat = deriv_results['data_concat']
@@ -149,7 +149,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         stats_mat = stats_results['data_concat']
 
         # pRF CM
-        pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css-loo-median.dtseries.nii'.format(
+        pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         pcm_results = load_surface_pycortex(brain_fn=pcm_median_fn)
         pcm_mat = pcm_results['data_concat']
