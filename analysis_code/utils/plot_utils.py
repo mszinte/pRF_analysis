@@ -274,7 +274,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 legendgroup='size', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 20],
+                                span=[0, 30],
                                 scalemode='width', 
                                 fillcolor=roi_colors[j],
                                 line_color=roi_colors[j]), 
@@ -302,7 +302,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 legendgroup='n', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 20],
+                                span=[0, 30],
                                 scalemode='width', 
                                 fillcolor=roi_colors[j],
                                 line_color=roi_colors[j]), 
@@ -317,7 +317,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 legendgroup='pcm', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 50],
+                                span=[0, 20],
                                 scalemode='width', 
                                 fillcolor=roi_colors[j],
                                 line_color=roi_colors[j]), 
@@ -331,8 +331,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                          row=1, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 20], 
-                         nticks=5, 
+                         range=[0, 30], 
+                         nticks=7, 
                          title_text='pRF size (dva)', 
                          row=1, col=2)
         
@@ -343,14 +343,14 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
         #                  row=2, col=1)
 
         fig.update_yaxes(showline=True, 
-                         range=[0, 20], 
-                         nticks=5, 
+                         range=[0, 30], 
+                         nticks=7, 
                          title_text='pRF eccentricity (dva)', 
                          row=2, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 50],
-                         nticks=10, 
+                         range=[0, 20],
+                         nticks=5, 
                          title_text='pRF pCM (mm/dva)', 
                          row=2, col=2)
         
@@ -377,9 +377,9 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
 
     return fig
 
-def prf_params_avg_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
+def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
     """
-    Make parameters average plots for pRF loo_r2, size, n and pcm
+    Make parameters median plots for pRF loo_r2, size, n and pcm
 
     Parameters
     ----------
@@ -421,7 +421,6 @@ def prf_params_avg_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
         ci_up = df.prf_loo_r2_ci_up
         ci_down = df.prf_loo_r2_ci_down
         
-
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
                                  mode='markers', 
@@ -551,8 +550,8 @@ def prf_params_avg_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
                          row=1, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 20], 
-                         nticks=5, 
+                         range=[0, 15], 
+                         nticks=6, 
                          title_text='pRF size (dva)', 
                          row=1, col=2)
         
@@ -569,8 +568,8 @@ def prf_params_avg_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
                          row=2, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 20], 
-                         nticks=10, 
+                         range=[0, 15], 
+                         nticks=6, 
                          title_text='pRF pCM (mm/dva)', 
                          row=2, col=2)
         
@@ -815,7 +814,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
                           row=1, col=l + 1)
             
             # Add legend
-            annotation = go.layout.Annotation(x=12, y=(max_ecc+15)-j*3, text=roi, xanchor='left',
+            annotation = go.layout.Annotation(x=12, y=(20)-j*2, text=roi, xanchor='left',
                                               showarrow=False, font_color=roi_color, 
                                               font_family=template_specs['font'],
                                               font_size=template_specs['axes_font_size'],
@@ -825,7 +824,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
         # Set axis titles only for the left-most column and bottom-most row
         fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', row=1, col=1)
         fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True, row=1, col=l+1)
-        fig.update_yaxes(range=[0, max_ecc + 15], showline=True)
+        fig.update_yaxes(range=[0, 20], showline=True)
         fig.update_layout(height=fig_height, width=fig_width, showlegend=False, template=fig_template,
                          margin_l=100, margin_r=50, margin_t=50, margin_b=100)
         
@@ -1039,12 +1038,12 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
             
             # x line
             fig.add_trace(go.Scatter(x=[0,0],
-                                     y=[-20,20],
+                                     y=[-10,10],
                                      mode='lines',
                                      line=dict(dash='2px',color='rgba(0, 0, 0, 0.6)', width=line_width)
                                     ),row=1, col=j+1)
             # y line
-            fig.add_trace(go.Scatter(x=[-20,20], 
+            fig.add_trace(go.Scatter(x=[-10,10], 
                                      y=[0,0], 
                                      mode='lines', 
                                      line=dict(dash='2px',color='rgba(0, 0, 0, 0.6)', width=line_width)),row=1, col=j+1)
@@ -1057,8 +1056,8 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
             #               y1=10, 
             #               line=dict(dash='2px',color='black', width=line_width),row=1, col=j+1)
             
-        fig.update_xaxes(range=[-20,20], color= ('rgba(255,255,255,0)'))
-        fig.update_yaxes(range=[-20,20], color= ('rgba(255,255,255,0)'))
+        fig.update_xaxes(range=[-10,10], color= ('rgba(255,255,255,0)'))
+        fig.update_yaxes(range=[-10,10], color= ('rgba(255,255,255,0)'))
         
         # Define parameters
         fig.update_layout(height=fig_height, 
