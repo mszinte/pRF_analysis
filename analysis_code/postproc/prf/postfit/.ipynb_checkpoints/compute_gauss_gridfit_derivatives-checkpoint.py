@@ -107,18 +107,18 @@ elif subject == 'sub-170k':
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_median_prf-deriv_gauss_gridfit.dtseries.nii".format(
+        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(
                 main_dir, project_dir, subject, subject, prf_task_name)]
 
     # Median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
-        
+    
     # Export results
     sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
             main_dir, project_dir)
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
-    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_median_prf-deriv_gauss_gridfit.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
+    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
     
     print("save: {}".format(sub_170k_deriv_fn))
     sub_170k_deriv_img = make_surface_image(

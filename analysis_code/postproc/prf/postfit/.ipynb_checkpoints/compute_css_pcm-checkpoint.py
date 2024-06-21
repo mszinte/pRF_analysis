@@ -26,6 +26,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python compute_css_pcm.py /scratch/mszinte/data MotConf sub-01 327
+python compute_css_pcm.py /scratch/mszinte/data MotConf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -320,7 +321,7 @@ elif subject == 'sub-170k':
             main_dir, project_dir)
     os.makedirs(sub_170k_pcm_dir, exist_ok=True)
     
-    sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median_css.dtseries.nii".format(sub_170k_pcm_dir, prf_task_name)
+    sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(sub_170k_pcm_dir, prf_task_name)
     
     print("Saving: {}".format(sub_170k_pcm_fn))
     
