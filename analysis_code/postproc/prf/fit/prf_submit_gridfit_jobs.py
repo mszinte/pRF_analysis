@@ -69,7 +69,7 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-pRF_*avg*.dtseries.nii".format(pp_dir,subject)
 dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-pRF_*avg*.func.gii".format(pp_dir,subject)
 
-pp_fns=  glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
+pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):
