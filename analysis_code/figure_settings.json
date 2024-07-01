@@ -1,0 +1,11 @@
+{
+    "num_ecc_size_bins": 6,
+    "num_ecc_pcm_bins": 6,
+    "num_polar_angle_bins": 9,
+    "max_ecc": 15,
+    "screen_side": 20,
+    "gaussian_mesh_grain": 100,
+    "hot_zone_percent": 0.01,
+    "plot_groups": [["V1", "V2", "V3"], ["V3AB", "LO", "VO"], ["hMT+", "iIPS", "sIPS"], ["iPCS", "sPCS", "mPCS"]],
+    "fig_width": 1440
+}

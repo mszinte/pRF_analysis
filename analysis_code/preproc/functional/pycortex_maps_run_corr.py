@@ -23,8 +23,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
-python pycortex_maps_run_corr.py ~/disks/meso_shared MotConf sub-01 n
-python pycortex_maps_run_corr.py ~/disks/meso_shared MotConf sub-170k n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data MotConf sub-01 n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data MotConf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -75,6 +75,7 @@ else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 tasks = analysis_info['task_names']
 alpha_range = analysis_info["alpha_range"]
+maps_names_corr = analysis_info['maps_names_corr']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -84,8 +85,8 @@ set_pycortex_config_file(cortex_dir)
 cmap_corr = 'BuBkRd'
 
 # Index
-slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
-    trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 0, 1, 2, 3, 4, 5, 6, 7
+for idx, col_name in enumerate(maps_names_corr):
+    exec("{}_idx = idx".format(col_name))
 
 # Plot scales
 corr_scale = [-1, 1]
