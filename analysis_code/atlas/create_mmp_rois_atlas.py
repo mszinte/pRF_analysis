@@ -29,34 +29,44 @@ Edited by Martin Szinte (mail@martinszinte.net)
 -----------------------------------------------------------------------------------------
 """
 
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Debug 
+import ipdb
+deb = ipdb.set_trace
+
 # General imports
 import os
 import sys
+import json
 import cortex
 import numpy as np
-import ipdb
-deb = ipdb.set_trace
+
 
 # Personals Import 
 sys.path.append("{}/../utils".format(os.getcwd()))
 from cifti_utils import from_170k_to_59k
 from surface_utils import load_surface
-from pycortex_utils import get_rois, set_pycortex_config_file
+from pycortex_utils import set_pycortex_config_file
+
+# Get input
+main_dir = sys.argv[1]
+code_dir = sys.argv[2]
+project_dir = sys.argv[3]
 
 # Load settings
-import json
-with open('../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois = analysis_info['rois']
 rois_groups = analysis_info['rois_groups']
-
-# Get input
-main_dir = sys.argv[1]
-code_dir = sys.argv[2]
-project_dir = sys.argv[3]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)

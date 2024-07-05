@@ -22,8 +22,12 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python compute_css_stats.py /scratch/mszinte/data MotConf sub-01 327
 python compute_css_stats.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -34,6 +38,10 @@ Edited by Martin Szinte (martin.szinte@gmail.com)
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 # General imports
 import os
 import re
@@ -43,8 +51,6 @@ import json
 import numpy as np
 import nibabel as nb
 from scipy import stats
-import ipdb
-deb = ipdb.set_trace
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -52,8 +58,17 @@ from pycortex_utils import set_pycortex_config_file
 from surface_utils import make_surface_image , load_surface
 from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
 
+# Inputs
+main_dir = sys.argv[1]
+project_dir = sys.argv[2]
+subject = sys.argv[3]
+group = sys.argv[4]
+
 # load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 fdr_alpha = analysis_info['fdr_alpha']
@@ -63,12 +78,6 @@ TRs = analysis_info['TRs']
 maps_names = analysis_info['maps_names_css_stats']
 prf_task_name = analysis_info['prf_task_name']
 subjects = analysis_info['subjects']
-
-# Inputs
-main_dir = sys.argv[1]
-project_dir = sys.argv[2]
-subject = sys.argv[3]
-group = sys.argv[4]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
