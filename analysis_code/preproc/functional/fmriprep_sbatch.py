@@ -41,14 +41,15 @@ Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
+# Debug 
+import ipdb
+deb = ipdb.set_trace
 
 # imports modules
-import sys
 import os
-import json
+import sys
 import ipdb
 opj = os.path.join
-deb = ipdb.set_trace
 
 # inputs
 main_dir = sys.argv[1]

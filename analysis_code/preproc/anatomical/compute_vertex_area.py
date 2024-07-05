@@ -43,7 +43,6 @@ import sys
 import glob
 import json
 import cortex
-import numpy as np
 import nibabel as nb
 
 # Personal imports
@@ -63,7 +62,10 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Load settings
-with open('../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']

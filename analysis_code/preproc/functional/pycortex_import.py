@@ -27,24 +27,20 @@ python pycortex_import.py /scratch/mszinte/data MotConf sub-01 327
 Written by Martin Szinte (mail@martinszinte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # stop warnings
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 # imports
 import os
 import sys
-
-
-import json
-import glob
-import numpy as np
 import cortex
 import importlib
-import nibabel as nb
-import ipdb
-deb = ipdb.set_trace
+import numpy as np
 
 # functions import
 sys.path.append("{}/../../utils".format(os.getcwd()))
@@ -55,9 +51,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
-
-
-
 
 # define directories and get fns
 fmriprep_dir = "{}/{}/derivatives/fmriprep".format(main_dir, project_dir)

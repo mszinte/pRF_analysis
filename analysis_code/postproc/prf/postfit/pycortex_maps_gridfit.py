@@ -24,8 +24,12 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-01 n
 python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -71,7 +75,10 @@ if subject == 'sub-170k': save_svg = save_svg
 else: save_svg = False
 
 # Define analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
@@ -82,7 +89,7 @@ maps_names_gauss = analysis_info['maps_names_gauss']
 
 # Maps settings
 for idx, col_name in enumerate(maps_names_gauss):
-    exec("{}_idx = idx".format(col_name))
+    exec("{}_idx = idx".format(col_name)) 
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255

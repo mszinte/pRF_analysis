@@ -43,12 +43,10 @@ import os
 import sys
 import json
 import cortex
-import numpy as np
-import matplotlib.pyplot as plt
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex, create_colormap
+from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
@@ -60,7 +58,10 @@ if recache == '1': recache = True
 else: recache = False
 
 # Define analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']

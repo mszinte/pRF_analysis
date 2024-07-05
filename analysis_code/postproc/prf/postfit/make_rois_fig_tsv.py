@@ -47,7 +47,7 @@ import pandas as pd
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from maths_utils import make_prf_distribution_df, make_prf_barycentre_df, weighted_nan_median, weighted_nan_percentile
+from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_nan_percentile
 
 # Inputs
 main_dir = sys.argv[1]
@@ -56,7 +56,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': 

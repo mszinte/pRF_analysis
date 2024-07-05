@@ -67,7 +67,10 @@ except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
 
 # Define analysis parameters
-with open('../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']

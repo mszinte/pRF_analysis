@@ -31,27 +31,27 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 # General imports
 import os
 import sys
 import json
-import ipdb
 import datetime
-import importlib
 import numpy as np
-deb = ipdb.set_trace
 
 # MRI analysis imports
+import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel, CSS_Iso2DGaussianModel
 from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
-import nibabel as nb
-import cortex
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import load_surface ,make_surface_image
-from pycortex_utils import set_pycortex_config_file, data_from_rois
+from pycortex_utils import data_from_rois
 from maths_utils import r2_score_surf
 
 # Get inputs
@@ -68,7 +68,10 @@ verbose = True
 css_params_num = 9
 
 # Analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 screen_size_cm = analysis_info['screen_size_cm']

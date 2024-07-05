@@ -29,22 +29,18 @@ Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
 
-# General imports
-import json
-import os
-import sys
+# Debug 
 import ipdb
 deb = ipdb.set_trace
 
-# Define analysis parameters
-with open('../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# General imports
+import os
+import sys
+import json
 
 # Inputs
 main_dir = sys.argv[1]
@@ -52,6 +48,14 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+
+# Define analysis parameters
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
+    json_s = f.read()
+    analysis_info = json.loads(json_s)
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']

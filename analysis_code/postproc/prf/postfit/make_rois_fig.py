@@ -55,7 +55,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': 
@@ -91,7 +94,9 @@ colormap_dict = {'V1': (243, 231, 155),
                 }
 roi_colors = ['rgb({},{},{})'.format(*rgb) for rgb in colormap_dict.values()]
 
-with open('../../../figure_settings.json') as f:
+fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
 num_ecc_size_bins = figure_info['num_ecc_size_bins']

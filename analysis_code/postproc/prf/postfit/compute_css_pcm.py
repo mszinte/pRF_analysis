@@ -25,8 +25,12 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+
 python compute_css_pcm.py /scratch/mszinte/data MotConf sub-01 327
 python compute_css_pcm.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -44,7 +48,6 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
-import glob
 import cortex
 import datetime
 import numpy as np
@@ -63,7 +66,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Define analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 

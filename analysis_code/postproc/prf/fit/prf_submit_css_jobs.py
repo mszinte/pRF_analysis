@@ -35,13 +35,16 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
-# General imports
-import os
-import json
-import sys
-import glob
+# Debug 
 import ipdb
 deb = ipdb.set_trace
+
+# General imports
+import os
+import sys
+import glob
+import json
+
 
 # Inputs
 main_dir = sys.argv[1]
@@ -54,7 +57,10 @@ hour_proc = 6
 nb_procs = 32
 
 # Cluster settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
