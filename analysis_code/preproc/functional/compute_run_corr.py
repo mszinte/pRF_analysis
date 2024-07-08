@@ -181,8 +181,6 @@ if subject != 'sub-170k':
             corr_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
 
             # Export result
-            
-            
             if hemi:
                 corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/fmriprep_dct_corr/".format(main_dir, project_dir, subject)
                 os.makedirs(corr_dir, exist_ok=True)
@@ -244,3 +242,8 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
         start_time=start_time,
         end_time=end_time,
         dur=end_time - start_time))
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

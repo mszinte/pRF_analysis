@@ -22,9 +22,14 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf sub-01 327
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf sub-170k 327
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf group 327
+
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -84,8 +89,8 @@ else:
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
 
-# Figure settings
-with open('../../../figure_settings.json') as f:
+fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
+with open(fig_settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
 num_ecc_size_bins = figure_info['num_ecc_size_bins']

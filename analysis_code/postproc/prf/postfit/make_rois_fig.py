@@ -25,6 +25,10 @@ cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig.py /scratch/mszinte/data MotConf sub-01 327
 python make_rois_fig.py /scratch/mszinte/data MotConf sub-170k 327
 python make_rois_fig.py /scratch/mszinte/data MotConf group 327
+
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -96,7 +100,7 @@ roi_colors = ['rgb({},{},{})'.format(*rgb) for rgb in colormap_dict.values()]
 
 fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
 
-with open(settings_path) as f:
+with open(fig_settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
 num_ecc_size_bins = figure_info['num_ecc_size_bins']
@@ -210,7 +214,7 @@ for format_, extension in zip(formats, extensions):
     # print('Saving pdf: {}'.format(fig_fn))
     # fig.write_image(fig_fn)
     
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
