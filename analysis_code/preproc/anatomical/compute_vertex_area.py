@@ -22,8 +22,12 @@ python compute_vertex_area.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
+
 python compute_vertex_area.py /scratch/mszinte/data MotConf sub-01 327
 python compute_vertex_area.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_vertex_area.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_vertex_area.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

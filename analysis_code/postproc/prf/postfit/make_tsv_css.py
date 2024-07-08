@@ -21,9 +21,13 @@ To run:
 >> python make_tsv_css.py [main directory] [project name] [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
+    
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_tsv_css.py /scratch/mszinte/data MotConf sub-01 327
 python make_tsv_css.py /scratch/mszinte/data MotConf sub-170k 327
+
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
