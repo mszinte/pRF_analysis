@@ -22,11 +22,15 @@ python compute_run_corr.py [main directory] [project name] [subject name] [group
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
+
 python compute_run_corr.py /scratch/mszinte/data MotConf sub-01 327
 python compute_run_corr.py /scratch/mszinte/data MotConf sub-170k 327
 
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

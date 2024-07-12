@@ -31,6 +31,9 @@ python compute_css_pcm.py /scratch/mszinte/data MotConf sub-170k 327
 
 python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

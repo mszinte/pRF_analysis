@@ -25,6 +25,7 @@
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # sh pycortex_maps_gridfit.sh ~/disks/meso_H/projects MotConf ~/disks/meso_S/data n
 # sh pycortex_maps_gridfit.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_S/data n 
+# sh pycortex_maps_gridfit.sh ~/disks/meso_H/projects amblyo_prf ~/disks/meso_S/data n 
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,7 +42,6 @@ base_path="$1"
 project_name="$2"
 data_path="$3"
 save_in_overlay="$4"
-echo "Value of save_in_overlay: $save_in_overlay" 
 # Define the path to the settings.json file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.json"
 
