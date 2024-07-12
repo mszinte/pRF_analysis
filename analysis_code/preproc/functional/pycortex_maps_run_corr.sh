@@ -24,6 +24,7 @@
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
 # sh pycortex_maps_run_corr.sh~/disks/meso_H/projects MotConf ~/disks/meso_S/data
 # sh pycortex_maps_run_corr.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_S/data
+# sh pycortex_maps_run_corr.sh ~/disks/meso_H/projects amblyo_prf ~/disks/meso_S/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

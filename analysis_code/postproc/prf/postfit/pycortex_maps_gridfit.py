@@ -30,6 +30,9 @@ python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-170k n
 
 python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-01 n
 python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -71,8 +74,8 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = save_svg
-else: save_svg = False
+if subject == 'sub-170k': save_svg = False
+else: save_svg = save_svg
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))

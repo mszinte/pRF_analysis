@@ -28,6 +28,9 @@ python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
 
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -199,7 +202,7 @@ elif subject == 'sub-170k':
                                             maps_names=maps_names)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
