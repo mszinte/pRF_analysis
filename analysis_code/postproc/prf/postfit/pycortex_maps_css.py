@@ -29,6 +29,9 @@ python pycortex_maps_css.py ~/disks/meso_S/data MotConf sub-170k n
 
 python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-01 n
 python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
+
+python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-01 n
+python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
