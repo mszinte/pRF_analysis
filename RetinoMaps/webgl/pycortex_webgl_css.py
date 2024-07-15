@@ -17,12 +17,12 @@ Pycortex webgl
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/webgl/
+>> cd ~/projects/pRF_analysis/RetinoMaps/webgl/
 2. run python command
 >> python pycortex_webgl_css.py [main dir] [project] [subject] [group] [recache]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/prf/webgl/
+cd ~/projects/pRF_analysis/RetinoMaps/webgl/
 python pycortex_webgl_css.py /scratch/mszinte/data RetinoMaps sub-01 327 1
 python pycortex_webgl_css.py /scratch/mszinte/data RetinoMaps sub-170k 327 1
 -----------------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Personal import
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex, create_colormap
 
 # Inputs
@@ -60,7 +60,7 @@ if recache == '1': recache = True
 else: recache = False
 
 # Define analysis parameters
-with open('../../../settings.json') as f:
+with open('../settings.json') as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
@@ -79,14 +79,14 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     cor_datasets_dir = '{}/corr/pycortex/datasets_inter-run-corr'.format(pp_dir)
     gridfit_datasets_dir = '{}/prf/pycortex/datasets_avg_gauss_gridfit'.format(pp_dir)
     rois_datasets_dir = '{}/rois/pycortex/datasets_rois'.format(pp_dir)
-    css_dataset_dir = "{}/prf/pycortex/datasets_loo-avg_css".format(pp_dir)
+    css_dataset_dir = "{}/prf/pycortex/datasets_css_loo-median".format(pp_dir)
 
     # Define filenames
     cor_datasets_fn = []
     cor_datasets_fn.append("{}/{}_task-{}_inter-run-corr.hdf".format(cor_datasets_dir, subject, prf_task_name)) 
     rois_datasets_fn = "{}/{}_task-{}_rois.hdf".format(rois_datasets_dir, subject, prf_task_name)
     gridfit_datasets_fn = "{}/{}_task-{}_avg_gauss_gridfit.hdf".format(gridfit_datasets_dir, subject, prf_task_name)
-    css_datasets_fn = "{}/{}_task-{}_loo-avg_css.hdf".format(css_dataset_dir, subject, prf_task_name)
+    css_datasets_fn = "{}/{}_task-{}_css_loo-median.hdf".format(css_dataset_dir, subject, prf_task_name)
 
     # Concatenate filenames
     dateset_list_fns = []
@@ -119,7 +119,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                              title="Project:{}; Subject:{}; Format:{}".format(project_dir, subject, format_),
                              recache=recache)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

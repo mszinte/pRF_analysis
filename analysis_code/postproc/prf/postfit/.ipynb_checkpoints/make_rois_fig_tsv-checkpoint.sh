@@ -23,7 +23,6 @@
 # cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # sh make_rois_fig_tsv.sh ~/projects MotConf /scratch/mszinte/data
 # sh make_rois_fig_tsv.sh ~/projects RetinoMaps /scratch/mszinte/data
-# sh make_rois_fig_tsv.sh ~/projects amblyo_prf /scratch/mszinte/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

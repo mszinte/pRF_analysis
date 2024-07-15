@@ -20,8 +20,8 @@
 # >> sh pycortex_webgl_css.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
-# cd ~/projects/RetinoMaps/analysis_code/postproc/prf/webgl/
-# sh pycortex_webgl_css.sh /home/mszinte/projects RetinoMaps /scratch/mszinte/data
+# cd ~/projects/amblyo_prf/analysis_code/postproc/prf/webgl/
+# sh pycortex_webgl_css.sh /home/mszinte/projects amblyo_prf /scratch/mszinte/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

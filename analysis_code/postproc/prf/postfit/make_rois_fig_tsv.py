@@ -30,6 +30,16 @@ python make_rois_fig_tsv.py /scratch/mszinte/data MotConf group 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
+
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf sub-01 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_patient 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_aniso 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_mixed 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_strab 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_control 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_excluded 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -486,7 +496,7 @@ for format_, extension in zip(formats, extensions):
         # print('Saving tsv: {}'.format(tsv_barycentre_fn))
         # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
     
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    

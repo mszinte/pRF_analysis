@@ -15,12 +15,12 @@ sent data
 To run:
 On invibe.nohost.me
 1. cd to function
->> cd cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/webgl/
+>> cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/webgl/
 2. run python command
 >> python publish_webgl.py [main directory] [project name]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/postproc/prf/webgl/
+cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/webgl/
 python publish_webgl.py ~/disks/meso_S/data RetinoMaps
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
@@ -46,10 +46,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 
 # Define analysis parameters
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
+with open('../settings.json') as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 webapp_login = analysis_info['webapp_login']
