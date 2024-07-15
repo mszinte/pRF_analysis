@@ -51,7 +51,7 @@ from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import load_surface ,make_surface_image
-from pycortex_utils import data_from_rois
+from pycortex_utils import data_from_rois, set_pycortex_config_file
 from maths_utils import r2_score_surf
 
 # Get inputs
@@ -84,6 +84,10 @@ max_ecc_size = analysis_info['max_ecc_size']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
+
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Define directories and files names (fn)
 if input_fn.endswith('.nii'):
