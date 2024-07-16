@@ -85,7 +85,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     vert_area_dir = "{}/{}/derivatives/pp_data/{}/{}/vertex_area".format(main_dir, project_dir, subject, format_)
     inter_task_dir = "{}/{}/derivatives/pp_data/{}/{}/inter_task".format(main_dir, project_dir, subject, format_)
     
-    tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/inter_task/tsv/".format(main_dir, project_dir, subject, format_)
+    tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/".format(main_dir, project_dir, subject, format_)
     os.makedirs(tsv_dir, exist_ok=True)
     tsv_fn = '{}/{}_inter_task-all_derivatives.tsv'.format(tsv_dir, subject)
 

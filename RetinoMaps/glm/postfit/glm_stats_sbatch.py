@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-css_stats_sbatch.py
+glm_stats_sbatch.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Run computation of CSS pRF stats
+Run computation of glm stats
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -17,16 +17,13 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/stats
+>> cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
 2. run python command
 >> python css_stats_sbatch.py [main directory] [project] [subject] [group] [server]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-
-python css_stats_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
-python css_stats_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python css_stats_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
+cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
+python glm_stats_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -53,11 +50,8 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 
-# Define analysis parameters
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
+# load settings
+with open('../../settings.json') as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 
@@ -92,7 +86,7 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_stats_cmd = "python compute_css_stats.py {} {} {} {}".format(
+compute_stats_cmd = "python compute_glm_stats.py {} {} {} {}".format(
     main_dir, project_dir, subject, group)
 
 # Create sh fn

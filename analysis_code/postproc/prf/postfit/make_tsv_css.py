@@ -101,19 +101,19 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         for hemi in ['hemi-L', 'hemi-R']:
             
             # Derivatives
-            deriv_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
+            deriv_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
-            deriv_img, deriv_mat = load_surface(deriv_avg_fn)
+            deriv_img, deriv_mat = load_surface(deriv_median_fn)
             
             # CM
-            pcm_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
+            pcm_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
-            pcm_img, pcm_mat = load_surface(pcm_avg_fn)
+            pcm_img, pcm_mat = load_surface(pcm_median_fn)
 
             # Stats
-            stats_avg_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
+            stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
                 prf_deriv_dir, subject, prf_task_name, hemi)
-            stats_img, stats_mat = load_surface(stats_avg_fn)
+            stats_img, stats_mat = load_surface(stats_median_fn)
             
             # Vertex area
             vertex_area_fn = '{}/{}_{}_vertex_area.func.gii'.format(vert_area_dir, subject, hemi)
@@ -143,19 +143,19 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     elif format_ == '170k':
     
         # Derivatives
-        deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
+        deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
-        deriv_img, deriv_mat = load_surface(deriv_avg_fn)
+        deriv_img, deriv_mat = load_surface(deriv_median_fn)
         
         # CM
-        pcm_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii'.format(
+        pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
-        pcm_img, pcm_mat = load_surface(pcm_avg_fn)
+        pcm_img, pcm_mat = load_surface(pcm_median_fn)
 
         # Stats
-        stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
+        stats_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
-        stats_img, stats_mat = load_surface(stats_avg_fn)
+        stats_img, stats_mat = load_surface(stats_median_fn)
         
         # Vertex area
         vertex_area_fn = '{}/{}_vertex_area.dtseries.nii'.format(vert_area_dir, subject)

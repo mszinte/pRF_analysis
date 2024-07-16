@@ -10,7 +10,7 @@
     "task_names": ["rest", "pMF", "pRF", "PurLoc", "SacLoc", "PurVELoc", "SacVELoc"],
     "prf_task_name": "pRF",
     "task_glm": ["PurLoc", "SacLoc", "PurVELoc", "SacVELoc"],
-    "task_inter_task": ["PurLoc", "SacLoc", "pRF"],
+    "task_intertask": [["PurLoc", "SacLoc", "pRF"], ["PurVELoc", "SacVELoc", "pRF"]],
     "cluster_name": "skylake",
     "TR": 1.2,
     "TRs": 208,
@@ -56,5 +56,5 @@
     "maps_names_vert_area": ["vert_area"],
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "glm_code_names": {"non_responding":0, "pursuit":1, "saccade":2, "pursuit_and_saccade":3, "vision":4, "vision_and_pursuit":5, "vision_and_saccade":6, "vision_and_pursuit_and_saccade" :7},
-    "maps_names_inter_task": ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"]
+    "maps_names_intertask": ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"]
 }
