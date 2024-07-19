@@ -26,6 +26,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ### Inter task analysis
 - [x] Make intertasks image [make_intertask_img.py](intertask/make_intertask_img.py)
-- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py)
-- [] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py) or [make_rois_fig.sh](analysis_code/postproc/prf/postfit/make_rois_fig.sh)
-- [] Make final satistiques maps maps with pycortex [pycortex_maps_stats_final.py](analysis_code/postproc/stats/pycortex_maps_stats_final.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_rois_fig_tsv.py) 
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
+- [x] Make final satistiques maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
