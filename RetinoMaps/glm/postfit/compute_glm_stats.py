@@ -159,7 +159,7 @@ for loo_stats_fns in loo_stats_fns_list:
         
         for n_run, loo_stats_fn in enumerate(loo_stats_fns_task):
             loo_stats_median_fn = loo_stats_fn.split('/')[-1]
-            loo_stats_median_fn = re.sub(r'avg_loo-\d+_glm-stats', 'loo-avg_glm-stats', loo_stats_median_fn)
+            loo_stats_median_fn = re.sub(r'avg_loo-\d+_glm-stats', 'avg_glm-stats_loo-median', loo_stats_median_fn)
             
             # load data 
             print('adding {} to averaging'.format(loo_stats_fn))
