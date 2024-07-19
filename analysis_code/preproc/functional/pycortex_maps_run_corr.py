@@ -49,9 +49,9 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
-import numpy as np
 import copy
 import cortex
+import numpy as np
 import matplotlib.pyplot as plt
 
 # Personal imports
@@ -63,6 +63,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -122,10 +123,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         elif format_ == '170k':
             cor_fn = '{}/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii'.format(corr_dir, subject, task)
             results = load_surface_pycortex(brain_fn=cor_fn)
-            if subject == 'sub-170k':
-                save_svg = save_svg
-            else: 
-                save_svg = False
+            if subject == 'sub-170k': save_svg = save_svg
+            else: save_svg = False
         corr_mat = results['data_concat']
         maps_names = []        
         
@@ -133,7 +132,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         corr_mat_uncorrected = corr_mat[rvalue_idx, :]
         
         # Compute alpha
-        alpha_uncorrected = np.abs(corr_mat_uncorrected)
+        alpha_uncorrected = corr_mat_uncorrected**2 # compute R2 from r # np.abs(corr_mat_uncorrected) !!!!!!!!!!!
         alpha_uncorrected = (alpha_uncorrected - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
         alpha_uncorrected[alpha_uncorrected>1] = 1
         

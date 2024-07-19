@@ -63,10 +63,10 @@ with open('../settings.json') as f:
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-group_tasks = analysis_info['task_inter_task']
+group_tasks = analysis_info['task_intertask']
 fdr_alpha = analysis_info['stats_th']
 glm_code_names = analysis_info['glm_code_names']
-maps_names_inter_task = analysis_info['maps_names_inter_task']
+maps_names_inter_task = analysis_info['maps_names_intertask']
 
 #Set treshold
 if fdr_alpha == 0.05: fdr_p_map_idx = corr_pvalue_5pt_idx
@@ -76,9 +76,9 @@ elif fdr_alpha == 0.01: fdr_p_map_idx = corr_pvalue_1pt_idx
 glm_stats_fns = []
 prf_stats_fns = []
 for format_, extension in zip(formats, extensions):
-    list_glm = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-avg*stats.{}".format(
+    list_glm = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*stats_loo-median.{}".format(
         main_dir, project_dir, subject, format_, extension))
-    list_prf = glob.glob("{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives/*loo-avg*stats.{}".format(
+    list_prf = glob.glob("{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives/*stats_loo-median.{}".format(
         main_dir, project_dir, subject, format_, extension))
     
     glm_stats_fns.extend(list_glm)
@@ -112,6 +112,7 @@ for tasks in group_tasks:
         else: hemi = None
         
         for task in tasks:
+            print(task)
             # defind output files names 
             stats_files_tasks = [file for file in stats_files if task in file]
             
@@ -124,7 +125,6 @@ for tasks in group_tasks:
                 # load data 
                 stats_img_task, stats_data_task = load_surface(fn=stats_file)
                 fdr_p_map = stats_data_task[fdr_p_map_idx, :]
-                
                 for vert, fdr_value in enumerate(fdr_p_map):
                     if fdr_value < fdr_alpha:
                         final_map[task_idx,vert] += task_idx
@@ -140,7 +140,6 @@ for tasks in group_tasks:
         # Export finals map
         if 'SacVELoc' in tasks: suffix = 'SacVE_PurVE'
         else : suffix = 'Sac_Pur'
-
         if hemi:
             inter_task_dir = '{}/{}/derivatives/pp_data/{}/fsnative/intertask'.format(main_dir, project_dir, subject)
             os.makedirs(inter_task_dir, exist_ok=True)
