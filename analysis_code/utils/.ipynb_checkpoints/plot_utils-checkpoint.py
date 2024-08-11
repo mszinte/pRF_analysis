@@ -1254,7 +1254,7 @@ def categories_proportions_roi_plot(df_categories, fig_height, fig_width, rois, 
                            showarrow=False, 
                            font=dict(size=13,color=roi_colors[i]), 
                            row=2, col=i+1)
-        
+   
     # Define parameters
     fig.update_layout(height=fig_height, 
                       width=fig_width, 
