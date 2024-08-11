@@ -16,12 +16,12 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/glm/fit
+>> cd ~/projects/pRF_analysis/RetinoMaps/intertask/
 2. run python command
 >> python glm_sbatch.py [main directory] [project name] [subject num] [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/postproc/intertask
+cd ~/projects/pRF_analysis/RetinoMaps/intertask/
 python make_intertask_rois_fig_tsv_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -40,7 +40,6 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
-
 
 # inputs
 main_dir = sys.argv[1]
@@ -89,7 +88,6 @@ of = open(sh_fn, 'w')
 
 of.write("{} \n{}".format(slurm_cmd, glm_fit_cmd))
 of.close()
-
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))

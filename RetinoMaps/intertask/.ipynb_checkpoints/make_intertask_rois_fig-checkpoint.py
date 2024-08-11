@@ -93,13 +93,13 @@ colormap_dict = {'V1': (243, 231, 155),
                 }
 roi_colors = ['rgb({},{},{})'.format(*rgb) for rgb in colormap_dict.values()]
 
-categorie_color_map = {'pursuit': 'rgba(255,255,255,0)', 
-                        'saccade': 'rgba(255,255,255,0)', 
-                        'pursuit_and_saccade': '#9467BD', 
-                        'vision': '#D62728', 
-                        'vision_and_pursuit': 'rgba(255,255,255,0)', 
-                        'vision_and_saccade': 'rgba(255,255,255,0)', 
-                        'vision_and_pursuit_and_saccade': '#1F77B4'}
+categorie_color_map = {'pursuit': '#E377C2', 
+                       'saccade': '#8C564B', 
+                       'pursuit_and_saccade': '#9467BD', 
+                       'vision': '#D62728', 
+                       'vision_and_pursuit': '#2CA02C', 
+                       'vision_and_saccade': '#FF7F0E', 
+                       'vision_and_pursuit_and_saccade': '#1F77B4'}
 
 with open('../figure_settings.json') as f:
     json_s = f.read()
