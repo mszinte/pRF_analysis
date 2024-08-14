@@ -1025,15 +1025,17 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
             fig.add_trace(go.Contour(x=df_roi.x, 
                                      y=df_roi.y, 
                                      z=gauss_z_tot, 
-                                     colorscale=[[0, 'white'],[0.25, 'white'], [1, roi_colors[j]]],  
+                                     colorscale=[[0, 'white'],[0.1, 'white'], [1, roi_colors[j]]],  
                                      showscale=False,  
                                      line=dict(color='black', width=contour_width),  
-                                     # ncontours=6, 
                                      contours=dict(coloring='fill', 
-                                                   start=0, 
-                                                   end=1, 
-                                                   size=0.25, 
-                                                   showlines=True)
+                                                   start=0.1, 
+                                                   end=0.9, 
+                                                   size=0.2, 
+                                                   showlines=True, 
+                                                   showlabels = True, 
+                                                   labelfont = dict(size=5, 
+                                                                    color='black')),
                                      ),row=1, col=j+1)
             
             # x line
