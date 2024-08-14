@@ -109,24 +109,24 @@ for tasks in group_tasks :
             
             tsv_fn = '{}/{}_intertask-all_derivatives_{}.tsv'.format(tsv_dir, subject, suffix)
             data = pd.read_table(tsv_fn, sep="\t")
-            
-            # # Keep a raw data df 
-            # data_raw = data.copy()
-            
-            # # Threshold data (replace by nan)
-            # if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-            # elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-            # data.loc[(data.amplitude < amplitude_threshold) |
-            #           (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-            #           (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
-            #           (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-            #           (data.prf_loo_r2 < rsqr_threshold) |
-            #           (data[stats_col] > stats_threshold)] = np.nan
-            # data = data.dropna()
-            
+            raw_data = data.copy()
+
+
+            # Threshold data (replace by nan)
+            data.loc[data['all'] != 'vision', 
+['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
+['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
+
+            data.loc[(data.amplitude < amplitude_threshold) |
+                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                     (data.prf_loo_r2 < rsqr_threshold)] = np.nan
+            data = data.dropna()
+
             # Categories proportions 
             # ----------------------
-            df_categories = data[data['all'] != 'non_responding']
+            df_categories = raw_data[raw_data['all'] != 'non_responding']
             # Sort categories to have categories in the good order for plot 
             categories_order = ['vision', 'vision_and_pursuit_and_saccade', 'pursuit_and_saccade', 'vision_and_saccade', 'vision_and_pursuit', 'saccade', 'pursuit']
             df_categories['all'] = pd.Categorical(df_categories['all'], categories=categories_order, ordered=True)
@@ -175,10 +175,14 @@ for tasks in group_tasks :
                     df_params_median_roi['prf_n_weighted_median'] = weighted_nan_median(df_roi.prf_n, weights=df_roi.prf_loo_r2)
                     df_params_median_roi['prf_n_ci_down'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 25)
                     df_params_median_roi['prf_n_ci_up'] = weighted_nan_percentile(df_roi.prf_n, df_roi.prf_loo_r2, 75)
-                     
-                    df_params_median_roi['pcm_median_weighted_median'] = weighted_nan_median(df_roi.pcm_median, weights=df_roi.prf_loo_r2)
-                    df_params_median_roi['pcm_median_ci_down'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 25)
-                    df_params_median_roi['pcm_median_ci_up'] = weighted_nan_percentile(df_roi.pcm_median, df_roi.prf_loo_r2, 75)
+                    
+                    pcm_median_col = df_roi.loc[df_roi.pcm_median != 'non_computed', 'pcm_median'].values.astype(float)
+                    prf_loo_r2_col = df_roi.loc[df_roi.pcm_median != 'non_computed', 'prf_loo_r2'].values.astype(float)
+
+                    
+                    df_params_median_roi['pcm_median_weighted_median'] = weighted_nan_median(data=pcm_median_col, weights=prf_loo_r2_col)
+                    df_params_median_roi['pcm_median_ci_down'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=25)
+                    df_params_median_roi['pcm_median_ci_up'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=75)
             
                     if num_roi == 0: df_params_median = df_params_median_roi
                     else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
@@ -186,7 +190,7 @@ for tasks in group_tasks :
                 tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
                 print('Saving tsv: {}'.format(tsv_params_median_fn))
                 df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
-            
+
                 # Ecc.size
                 # --------
                 ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
@@ -212,7 +216,7 @@ for tasks in group_tasks :
                 
                 # Ecc.pCM
                 # --------
-                data_pcm = data
+                data_pcm = data.loc[data.pcm_median != 'non_computed']
                 ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_pcm.loc[(data.roi == roi)]
@@ -223,8 +227,8 @@ for tasks in group_tasks :
                     df_ecc_pcm_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x['prf_loo_r2'].values)).values
                     df_ecc_pcm_bin['prf_pcm_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['pcm_median'].values, x['prf_loo_r2'].values)).values
                     df_ecc_pcm_bin['prf_loo_r2_bins_median'] = np.array(df_bins['prf_loo_r2'].median())
-                    df_ecc_pcm_bin['prf_pcm_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values, x['prf_loo_r2'].values, 75)).values
-                    df_ecc_pcm_bin['prf_pcm_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values, x['prf_loo_r2'].values, 25)).values
+                    df_ecc_pcm_bin['prf_pcm_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x['prf_loo_r2'].values.astype(float), 75)).values
+                    df_ecc_pcm_bin['prf_pcm_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x['prf_loo_r2'].values.astype(float), 25)).values
                     if num_roi == 0: df_ecc_pcm_bins = df_ecc_pcm_bin
                     else: df_ecc_pcm_bins = pd.concat([df_ecc_pcm_bins, df_ecc_pcm_bin])  
             

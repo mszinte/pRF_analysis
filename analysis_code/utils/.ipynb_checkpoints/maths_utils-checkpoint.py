@@ -172,14 +172,25 @@ def weighted_nan_percentile(data, weights, percentile):
     import numpy as np
     import pandas as pd
     
-    # Convert pandas Series to numpy array if needed
-    if isinstance(data, pd.Series):
-        data = data.values
-    if isinstance(weights, pd.Series):
-        weights = weights.values
-    
+    # Convert data and weights to pandas Series if they are numpy arrays
+    if isinstance(data, np.ndarray):
+        data = pd.Series(data)
+    if isinstance(weights, np.ndarray):
+        weights = pd.Series(weights)
+        
+    # If data and weights are DataFrames, ensure they have a single column
+    if isinstance(data, pd.DataFrame):
+        if data.shape[1] != 1:
+            raise ValueError("DataFrame data must have exactly one column")
+        data = data.iloc[:, 0]
+        
+    if isinstance(weights, pd.DataFrame):
+        if weights.shape[1] != 1:
+            raise ValueError("DataFrame weights must have exactly one column")
+        weights = weights.iloc[:, 0]
+
     # Mask NaN values in the data
-    mask = ~np.isnan(data)
+    mask = ~data.isna()
     
     # Apply the mask to data and weights
     masked_data = data[mask]
