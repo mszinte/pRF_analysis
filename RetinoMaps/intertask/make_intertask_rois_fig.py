@@ -128,16 +128,16 @@ for tasks in group_tasks :
         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv'.format(
             main_dir, project_dir, subject, format_)
         
-        # Categories proportion plots
-        tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
-        df_categories = pd.read_table(tsv_categories_fn, sep="\t")
-        fig_fn = "{}/{}_categories_proportions_{}.pdf".format(fig_dir, subject, suffix)
-        fig = categories_proportions_roi_plot(df_categories=df_categories, 
-                                              fig_width=fig_width, fig_height=300, 
-                                              rois=rois, roi_colors=roi_colors, 
-                                              categorie_color_map=categorie_color_map)
-        print('Saving pdf: {}'.format(fig_fn))
-        fig.write_image(fig_fn)
+        # # Categories proportion plots
+        # tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
+        # df_categories = pd.read_table(tsv_categories_fn, sep="\t")
+        # fig_fn = "{}/{}_categories_proportions_{}.pdf".format(fig_dir, subject, suffix)
+        # fig = categories_proportions_roi_plot(df_categories=df_categories, 
+        #                                       fig_width=fig_width, fig_height=300, 
+        #                                       rois=rois, roi_colors=roi_colors, 
+        #                                       categorie_color_map=categorie_color_map)
+        # print('Saving pdf: {}'.format(fig_fn))
+        # fig.write_image(fig_fn)
     
         # loop over categories
         for categorie_to_plot in categories_to_plot : 
@@ -157,14 +157,14 @@ for tasks in group_tasks :
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
         
-            # Parameters median plot
-            tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            df_params_median = pd.read_table(tsv_params_median_fn, sep="\t")
-            fig = prf_params_median_plot(df_params_avg=df_params_median, fig_width=fig_width, fig_height=600, 
-                                      rois=rois, roi_colors=roi_colors)
-            fig_fn = "{}/{}_{}_prf_params_median_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
-            print('Saving pdf: {}'.format(fig_fn))
-            fig.write_image(fig_fn)
+            # # Parameters median plot
+            # tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
+            # df_params_median = pd.read_table(tsv_params_median_fn, sep="\t")
+            # fig = prf_params_median_plot(df_params_avg=df_params_median, fig_width=fig_width, fig_height=600, 
+            #                           rois=rois, roi_colors=roi_colors)
+            # fig_fn = "{}/{}_{}_prf_params_median_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
+            # print('Saving pdf: {}'.format(fig_fn))
+            # fig.write_image(fig_fn)
             
             # Ecc.size plots
             tsv_ecc_size_fn = "{}/{}_{}_prf_ecc_size_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
