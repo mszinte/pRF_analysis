@@ -134,6 +134,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             prf_deriv_dir, subject, prf_task_name)
         results = load_surface_pycortex(brain_fn=deriv_avg_fn)
         deriv_mat = results['data_concat']
+        if subject == 'sub-170k': save_svg = save_svg
+        else: save_svg = False
     
     print('Creating flatmaps...')
     
