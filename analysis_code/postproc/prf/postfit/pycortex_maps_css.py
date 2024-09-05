@@ -163,6 +163,9 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             prf_deriv_dir, subject, prf_task_name)
         pcm_results = load_surface_pycortex(brain_fn=pcm_median_fn)
         pcm_mat = pcm_results['data_concat']
+        
+        if subject == 'sub-170k': save_svg = save_svg
+        else: save_svg = False
 
     # Combine mat
     all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))

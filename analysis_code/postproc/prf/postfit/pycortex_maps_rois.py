@@ -132,7 +132,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         roi_fn = '{}/{}_rois.dtseries.nii'.format(rois_dir, subject)
         results = load_surface_pycortex(brain_fn=roi_fn)
         roi_mat = results['data_concat']
-
+        if subject == 'sub-170k': save_svg = save_svg
+        else: save_svg = False
     rois_opacity = 0.5
     alpha_mat = roi_mat*0+rois_opacity
     alpha_mat[roi_mat==0]=0
