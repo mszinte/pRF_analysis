@@ -132,7 +132,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         corr_mat_uncorrected = corr_mat[rvalue_idx, :]
         
         # Compute alpha
-        alpha_uncorrected = corr_mat_uncorrected**2 # compute R2 from r # np.abs(corr_mat_uncorrected) !!!!!!!!!!!
+        alpha_uncorrected = corr_mat_uncorrected**2 
         alpha_uncorrected = (alpha_uncorrected - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
         alpha_uncorrected[alpha_uncorrected>1] = 1
         
@@ -161,7 +161,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         corr_mat_corrected = corr_mat_corrected[rvalue_idx, :]
 
         # Compute alpha
-        alpha_corrected = np.abs(corr_mat_corrected)
+        alpha_corrected = corr_mat_corrected**2
         alpha_corrected = (alpha_corrected - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
         alpha_corrected[alpha_corrected>1]=1
         

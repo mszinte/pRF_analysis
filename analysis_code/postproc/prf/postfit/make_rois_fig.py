@@ -93,20 +93,18 @@ n_th = analysis_info['n_th']
 subjects = analysis_info['subjects']
 
 # Figure settings
-colormap_dict = {'V1': (243, 231, 155),
-                 'V2': (250, 196, 132),
-                 'V3': (248, 160, 126),
-                 'V3AB': (235, 127, 134),
-                 'LO': (150, 0, 90), 
-                 'VO': (0, 0, 200),
-                 'hMT+': (0, 25, 255),
-                 'iIPS': (0, 152, 255),
-                 'sIPS': (44, 255, 150),
-                 'iPCS': (151, 255, 0),
-                 'sPCS': (255, 234, 0),
-                 'mPCS': (255, 111, 0)
-                }
-roi_colors = ['rgb({},{},{})'.format(*rgb) for rgb in colormap_dict.values()]
+roi_colors = {'V1': 'rgb(243, 231, 155)', 
+              'V2': 'rgb(250, 196, 132)', 
+              'V3': 'rgb(248, 160, 126)', 
+              'V3AB': 'rgb(235, 127, 134)', 
+              'LO': 'rgb(150, 0, 90)',  
+              'VO': 'rgb(0, 0, 200)', 
+              'hMT+': 'rgb(0, 25, 255)', 
+              'iIPS': 'rgb(0, 152, 255)', 
+              'sIPS': 'rgb(44, 255, 150)', 
+              'iPCS': 'rgb(151, 255, 0)', 
+              'sPCS': 'rgb(255, 234, 0)', 
+              'mPCS': 'rgb(255, 111, 0)'}
 
 fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
 

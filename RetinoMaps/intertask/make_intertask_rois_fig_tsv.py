@@ -463,10 +463,13 @@ for tasks in group_tasks :
             
                 # Contralaterality
                 # ----------------
-                df_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()
+                df_median_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()                
+                df_ci_down_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.025).reset_index().rename(columns={'contralaterality_prct': 'ci_down'})
+                df_ci_up_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.975).reset_index().rename(columns={'contralaterality_prct': 'ci_up'})
+                df_contralaterality_group = pd.concat([df_median_contralaterality, df_ci_down_contralaterality['ci_down'], df_ci_up_contralaterality['ci_up']], axis=1)
                 tsv_contralaterality_fn = "{}/{}_{}_prf_contralaterality_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
                 print('Saving tsv: {}'.format(tsv_contralaterality_fn))
-                df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
+                df_contralaterality_group.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
                 
                 # Spatial distribution 
                 # -------------------
