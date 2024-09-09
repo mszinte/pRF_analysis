@@ -22,6 +22,7 @@ python stats_final.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/intertask/
 python make_intertask_img.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_intertask_img.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net) 
@@ -61,8 +62,12 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 with open('../settings.json') as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
-formats = analysis_info['formats']
-extensions = analysis_info['extensions']
+if subject == 'sub-170k': 
+    formats = ['170k']
+    extensions = ['dtseries.nii']
+else: 
+    formats = analysis_info['formats']
+    extensions = analysis_info['extensions']
 group_tasks = analysis_info['task_intertask']
 fdr_alpha = analysis_info['stats_th']
 glm_code_names = analysis_info['glm_code_names']
@@ -87,18 +92,20 @@ for format_, extension in zip(formats, extensions):
 stats_fns = glm_stats_fns + prf_stats_fns
 
 # split filtered files  depending of their nature
-stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
-for subtype in stats_fns:
-    if "hemi-L" in subtype:
-        stats_fsnative_hemi_L.append(subtype)
-    elif "hemi-R" in subtype:
-        stats_fsnative_hemi_R.append(subtype)
-    elif "170k" in subtype:
-        stats_170k.append(subtype)
-        
-stats_files_list = [stats_fsnative_hemi_L, 
-                    stats_fsnative_hemi_R, 
-                    stats_170k]
+if subject != 'sub-170k':
+    stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
+    for subtype in stats_fns:
+        if "hemi-L" in subtype:
+            stats_fsnative_hemi_L.append(subtype)
+        elif "hemi-R" in subtype:
+            stats_fsnative_hemi_R.append(subtype)
+        elif "170k" in subtype:
+            stats_170k.append(subtype)
+            
+    stats_files_list = [stats_fsnative_hemi_L, 
+                        stats_fsnative_hemi_R, 
+                        stats_170k]
+else: stats_files_list = [stats_fns]
 
 # loop for different group of tasks (sac/pur, sacVE/purVE)
 for tasks in group_tasks: 
