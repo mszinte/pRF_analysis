@@ -23,6 +23,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/intertask
 python pycortex_maps_intertask.py ~/disks/meso_shared RetinoMaps sub-01 n
+python pycortex_maps_intertask.py ~/disks/meso_shared RetinoMaps sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
