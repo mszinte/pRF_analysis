@@ -22,8 +22,15 @@ python compute_run_corr.py [main directory] [project name] [subject name] [group
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
+
 python compute_run_corr.py /scratch/mszinte/data MotConf sub-01 327
+python compute_run_corr.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -63,7 +70,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-with open('../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 tasks = analysis_info['task_names']
@@ -176,11 +186,15 @@ if subject != 'sub-170k':
 
             # Export result
             if hemi:
-                cor_fn = "{}/{}/derivatives/pp_data/{}/fsnative/corr/fmriprep_dct_corr/{}_task-{}_{}_fmriprep_dct_corr_bold.func.gii".format(
-                        main_dir, project_dir, subject, subject, task, hemi)
+                corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/fmriprep_dct_corr/".format(main_dir, project_dir, subject)
+                os.makedirs(corr_dir, exist_ok=True)
+                cor_fn = "{}/{}_task-{}_{}_fmriprep_dct_corr_bold.func.gii".format(
+                        corr_dir, subject, task, hemi)
             else:
-                cor_fn = "{}/{}/derivatives/pp_data/{}/170k/corr/fmriprep_dct_corr/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(
-                        main_dir, project_dir, subject, subject, task)
+                corr_dir = "{}/{}/derivatives/pp_data/{}/170k/corr/fmriprep_dct_corr/".format(main_dir, project_dir, subject)
+                os.makedirs(corr_dir, exist_ok=True)
+                cor_fn = "{}/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(
+                        corr_dir, subject, task)
     
             print("corr save: {}".format(cor_fn))
             corr_img = make_surface_image(data=corr_stats_data_median,
@@ -232,3 +246,8 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
         start_time=start_time,
         end_time=end_time,
         dur=end_time - start_time))
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

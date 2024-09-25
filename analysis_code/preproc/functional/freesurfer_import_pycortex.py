@@ -25,18 +25,20 @@ cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python freesurfer_import_pycortex.py /scratch/mszinte/data MotConf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # stop warnings
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug 
+import ipdb
+deb = ipdb.set_trace
+
 # imports
 import os
 import sys
-import ipdb
-deb = ipdb.set_trace
 
 # functions import
 sys.path.append("{}/../../utils".format(os.getcwd()))

@@ -23,8 +23,15 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
+
 python pycortex_maps_run_corr.py ~/disks/meso_S/data MotConf sub-01 n
 python pycortex_maps_run_corr.py ~/disks/meso_S/data MotConf sub-170k n
+
+python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-170k n
+
+python pycortex_maps_run_corr.py ~/disks/meso_S/data amblyo_prf sub-01 n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data amblyo_prf sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -42,9 +49,9 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
-import numpy as np
 import copy
 import cortex
+import numpy as np
 import matplotlib.pyplot as plt
 
 # Personal imports
@@ -56,6 +63,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -65,9 +73,14 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
+if subject == 'sub-170k': save_svg = False
+else: save_svg = save_svg
 
 # Define analysis parameters
-with open('../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
@@ -110,10 +123,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         elif format_ == '170k':
             cor_fn = '{}/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii'.format(corr_dir, subject, task)
             results = load_surface_pycortex(brain_fn=cor_fn)
-            if subject == 'sub-170k':
-                save_svg = save_svg
-            else: 
-                save_svg = False
+            if subject == 'sub-170k': save_svg = save_svg
+            else: save_svg = False
         corr_mat = results['data_concat']
         maps_names = []        
         
@@ -121,7 +132,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         corr_mat_uncorrected = corr_mat[rvalue_idx, :]
         
         # Compute alpha
-        alpha_uncorrected = np.abs(corr_mat_uncorrected)
+        alpha_uncorrected = corr_mat_uncorrected**2 
         alpha_uncorrected = (alpha_uncorrected - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
         alpha_uncorrected[alpha_uncorrected>1] = 1
         
@@ -150,7 +161,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         corr_mat_corrected = corr_mat_corrected[rvalue_idx, :]
 
         # Compute alpha
-        alpha_corrected = np.abs(corr_mat_corrected)
+        alpha_corrected = corr_mat_corrected**2
         alpha_corrected = (alpha_corrected - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
         alpha_corrected[alpha_corrected>1]=1
         

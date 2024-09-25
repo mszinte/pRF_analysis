@@ -22,10 +22,18 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data MotConf sub-01 327
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -50,8 +58,17 @@ from prf_utils import fit2deriv
 from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
 
+# Inputs
+main_dir = sys.argv[1]
+project_dir = sys.argv[2]
+subject = sys.argv[3]
+group = sys.argv[4]
+
 # load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
@@ -59,12 +76,6 @@ extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
 prf_task_name = analysis_info['prf_task_name']
 maps_names_gauss = analysis_info['maps_names_gauss']
-
-# Inputs
-main_dir = sys.argv[1]
-project_dir = sys.argv[2]
-subject = sys.argv[3]
-group = sys.argv[4]
 
 # sub-170k exception
 if subject != 'sub-170k':

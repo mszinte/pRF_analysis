@@ -25,16 +25,15 @@ Exemple:
 python sagital_view.py ~/disks/meso_S/data/ RetinoMaps sub-01 before_edit
 -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (mail@martinszinte.net)
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # imports modules
-import subprocess as sb
 import os
-import ipdb
 import sys
-import json
+import ipdb
 import numpy as np
+import subprocess as sb
 deb = ipdb.set_trace
 
 # Inputs

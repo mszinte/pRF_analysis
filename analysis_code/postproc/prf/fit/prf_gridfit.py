@@ -34,20 +34,23 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 # General imports
 import os
 import sys
 import json
-import ipdb
 import datetime
 import numpy as np
-deb = ipdb.set_trace
 
 # MRI analysis imports
+import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel 
 from prfpy.fit import Iso2DGaussianFitter 
-import nibabel as nb
+
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -67,7 +70,10 @@ verbose = True
 gauss_params_num = 8
 
 # Analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 screen_size_cm = analysis_info['screen_size_cm']

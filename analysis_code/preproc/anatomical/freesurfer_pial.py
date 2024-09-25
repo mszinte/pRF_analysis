@@ -24,13 +24,12 @@ Exemple:
 python freesurfer_pial.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # imports modules
 import os
 import sys
-import json
 
 # inputs
 main_dir = sys.argv[1]
@@ -44,7 +43,6 @@ cluster_name = 'skylake'
 hour_proc = 20
 nb_procs = 8
 memory_val = 48
-
 
 # define directory and freesurfer licence
 log_dir = "{}/{}/derivatives/freesurfer_pial/log_outputs".format(main_dir,project_dir)
@@ -85,7 +83,7 @@ recon-all -autorecon-pial -subjid {} -no-isrunning\n""".format(main_dir, project
 sh_dir = "{}/{}_freesurfer-pial.sh".format(job_dir, subject)
 
 of = open(sh_dir, 'w')
-of.write("{}{}{}{}".format(slurm_cmd, chmod_cmd, chgrp_cmd, freesurfer_cmd, chmod_cmd, chgrp_cmd))
+of.write("{} \n{} \n{} \n{} \n{} \n{}".format(slurm_cmd, chmod_cmd, chgrp_cmd, freesurfer_cmd, chmod_cmd, chgrp_cmd))
 of.close()
 
 # submit jobs
