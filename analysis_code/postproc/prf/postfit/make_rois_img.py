@@ -22,8 +22,15 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+
 python make_rois_img.py /scratch/mszinte/data MotConf sub-01 327
 python make_rois_img.py /scratch/mszinte/data MotConf sub-170k 327
+
+python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python make_rois_img.py /scratch/mszinte/data amblyo_prf sub-01 327
+python make_rois_img.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -55,7 +62,11 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
-with open('../../../settings.json') as f:
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 rois = analysis_info["rois"]

@@ -23,29 +23,30 @@ To run:
                                                                             [server num]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/preproc/functional
+cd ~/projects/pRF_analysis/analysis_code/preproc/functional
+
+python compute_run_corr_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+
 python compute_run_corr_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+
+python compute_run_corr_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
 
-# General imports
-import json
-import os
-import sys
+# Debug 
 import ipdb
 deb = ipdb.set_trace
 
-# Define analysis parameters
-with open('../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# General imports
+import os
+import sys
+import json
 
 # Inputs
 main_dir = sys.argv[1]
@@ -53,6 +54,14 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+
+# Define analysis parameters
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
+    json_s = f.read()
+    analysis_info = json.loads(json_s)
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
@@ -77,12 +86,12 @@ slurm_cmd = """\
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_run_corr_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_run_corr_%N_%j_%a.out
-#SBATCH -J {subject}_preproc_end
+#SBATCH -J {subject}_run_corr
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
     
-run_corr_surf_cmd = "python run_corr.py {} {} {} {}".format(main_dir, project_dir, subject, group)
+run_corr_surf_cmd = "python compute_run_corr.py {} {} {} {}".format(main_dir, project_dir, subject, group)
 
 # Create sh fn
 sh_fn = "{}/{}_run_corr.sh".format(job_dir, subject)

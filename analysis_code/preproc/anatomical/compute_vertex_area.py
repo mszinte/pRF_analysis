@@ -22,8 +22,15 @@ python compute_vertex_area.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
+
 python compute_vertex_area.py /scratch/mszinte/data MotConf sub-01 327
 python compute_vertex_area.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_vertex_area.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_vertex_area.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_vertex_area.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_vertex_area.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -43,7 +50,6 @@ import sys
 import glob
 import json
 import cortex
-import numpy as np
 import nibabel as nb
 
 # Personal imports
@@ -63,7 +69,10 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Load settings
-with open('../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']

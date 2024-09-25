@@ -124,7 +124,7 @@ def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
     df_roi_area : dataframe for corresponding plot
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     
     Returns
     -------
@@ -142,6 +142,9 @@ def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    
+    # colors 
+    roi_colors = list(roi_colors.values())
     
     # General settings
     fig = make_subplots(rows=1, 
@@ -219,7 +222,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     
     Returns
     -------
@@ -261,8 +264,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 spanmode='manual', 
                                 span=[0, 1],
                                 scalemode='width', 
-                                fillcolor=roi_colors[j],
-                                line_color=roi_colors[j]), 
+                                fillcolor=roi_colors[roi],
+                                line_color=roi_colors[roi]), 
                       row=1, col=1)
                 
         # pRF size
@@ -276,8 +279,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 spanmode='manual', 
                                 span=[0, 30],
                                 scalemode='width', 
-                                fillcolor=roi_colors[j],
-                                line_color=roi_colors[j]), 
+                                fillcolor=roi_colors[roi],
+                                line_color=roi_colors[roi]), 
                       row=1, col=2)
         
         # # pRF n
@@ -289,8 +292,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
         #                         legendgroup='n', 
         #                         points=False, 
         #                         scalemode='width', 
-        #                         fillcolor=roi_colors[j],
-        #                         line_color=roi_colors[j]), 
+        #                         fillcolor=roi_colors[roi],
+        #                         line_color=roi_colors[roi]), 
         #               row=2, col=1)
 
         # pRF ecc
@@ -304,8 +307,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 spanmode='manual', 
                                 span=[0, 30],
                                 scalemode='width', 
-                                fillcolor=roi_colors[j],
-                                line_color=roi_colors[j]), 
+                                fillcolor=roi_colors[roi],
+                                line_color=roi_colors[roi]), 
                       row=2, col=1)
         
         # pcm
@@ -319,8 +322,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                                 spanmode='manual', 
                                 span=[0, 20],
                                 scalemode='width', 
-                                fillcolor=roi_colors[j],
-                                line_color=roi_colors[j]), 
+                                fillcolor=roi_colors[roi],
+                                line_color=roi_colors[roi]), 
                       row=2, col=2)
         
         # Set axis titles only for the left-most column and bottom-most row
@@ -387,7 +390,7 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     
     Returns
     -------
@@ -431,11 +434,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                                               visible=True, 
                                               thickness=3,
                                               width=0, 
-                                              color=roi_colors[j]),
+                                              color=roi_colors[roi]),
                                  marker=dict(symbol="square",
-                                             color=roi_colors[j],
+                                             color=roi_colors[roi],
                                              size=12, 
-                                             line=dict(color=roi_colors[j], 
+                                             line=dict(color=roi_colors[roi], 
                                                        width=3)),
                                  legendgroup='loo',
                                  showlegend=False), 
@@ -456,11 +459,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                                               visible=True, 
                                               thickness=3,
                                               width=0, 
-                                              color=roi_colors[j]),
+                                              color=roi_colors[roi]),
                                  marker=dict(symbol="square",
-                                             color=roi_colors[j],
+                                             color=roi_colors[roi],
                                              size=12, 
-                                             line=dict(color=roi_colors[j], 
+                                             line=dict(color=roi_colors[roi], 
                                                        width=3)),
                                  legendgroup='size',
                                  showlegend=False), 
@@ -481,11 +484,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
         #                                       visible=True, 
         #                                       thickness=3,
         #                                       width=0, 
-        #                                       color=roi_colors[j]),
+        #                                       color=roi_colors[roi]),
         #                          marker=dict(symbol="square",
-        #                                      color=roi_colors[j],
+        #                                      color=roi_colors[roi],
         #                                      size=12, 
-        #                                      line=dict(color=roi_colors[j], 
+        #                                      line=dict(color=roi_colors[roi], 
         #                                                width=3)),
         #                          legendgroup='n',
         #                          showlegend=False), 
@@ -506,11 +509,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                                               visible=True, 
                                               thickness=3,
                                               width=0, 
-                                              color=roi_colors[j]),
+                                              color=roi_colors[roi]),
                                  marker=dict(symbol="square",
-                                             color=roi_colors[j],
+                                             color=roi_colors[roi],
                                              size=12, 
-                                             line=dict(color=roi_colors[j], 
+                                             line=dict(color=roi_colors[roi], 
                                                        width=3)),
                                  legendgroup='ecc',
                                  showlegend=False), 
@@ -531,11 +534,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                                               visible=True, 
                                               thickness=3,
                                               width=0, 
-                                              color=roi_colors[j]),
+                                              color=roi_colors[roi]),
                                  marker=dict(symbol="square",
-                                             color=roi_colors[j],
+                                             color=roi_colors[roi],
                                              size=12, 
-                                             line=dict(color=roi_colors[j], 
+                                             line=dict(color=roi_colors[roi], 
                                                        width=3)),
                                  legendgroup='pcm',
                                  showlegend=False), 
@@ -605,7 +608,7 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     plot_groups : groups of roi to plot together
     max_ecc : maximum eccentricity 
     
@@ -636,7 +639,7 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
         for j, roi in enumerate(line_label):
             
             # Parametring colors
-            roi_color = roi_colors[j + l * 3]
+            roi_color = roi_colors[roi]
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
@@ -719,7 +722,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     plot_groups : groups of roi to plot together
     max_ecc : maximum eccentricity
     
@@ -750,7 +753,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
         for j, roi in enumerate(line_label):
 
             # Parametring colors
-            roi_color = roi_colors[j + l * 3]
+            roi_color = roi_colors[roi]
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
@@ -840,7 +843,7 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     num_bins : bins for the polar angle 
      
     Returns
@@ -880,7 +883,7 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
             # barpolar
             fig.add_trace(go.Barpolar(r=df.loo_r2_sum, 
                                       theta=df.theta_slices, 
-                                      marker_color=roi_colors[j], 
+                                      marker_color=roi_colors[roi], 
                                       width=360/(num_polar_angle_bins),
                                       marker_line_color='white', 
                                       marker_line_width=3, 
@@ -925,7 +928,7 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
      
     Returns
     -------
@@ -960,7 +963,7 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
 
 
         fig.add_trace(go.Pie(values=values,
-                             marker=dict(colors=[roi_colors[j], 'white'])
+                             marker=dict(colors=[roi_colors[roi], 'white'])
                             ),
                       row=1, col=j+1)
 
@@ -986,7 +989,7 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     screen_side: mesh screen side (square) im dva (e.g. 20 dva from -10 to 10 dva)
      
     Returns
@@ -1025,15 +1028,17 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
             fig.add_trace(go.Contour(x=df_roi.x, 
                                      y=df_roi.y, 
                                      z=gauss_z_tot, 
-                                     colorscale=[[0, 'white'],[0.25, 'white'], [1, roi_colors[j]]],  
+                                     colorscale=[[0, 'white'],[0.1, 'white'], [1, roi_colors[roi]]],  
                                      showscale=False,  
                                      line=dict(color='black', width=contour_width),  
-                                     # ncontours=6, 
                                      contours=dict(coloring='fill', 
-                                                   start=0, 
-                                                   end=1, 
-                                                   size=0.25, 
-                                                   showlines=True)
+                                                   start=0.1, 
+                                                   end=0.9, 
+                                                   size=0.2, 
+                                                   showlines=True, 
+                                                   showlabels = True, 
+                                                   labelfont = dict(size=5, 
+                                                                    color='black')),
                                      ),row=1, col=j+1)
             
             # x line
@@ -1082,7 +1087,7 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     rois : list of rois
-    roi_colors : list of rgb colors for plotly
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
     screen_side: mesh screen side (square) im dva (e.g. 20 dva from -10 to 10 dva)
      
     Returns
@@ -1117,7 +1122,7 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
                                      mode='markers', 
                                      name = roi,
                                      marker=dict(symbol=symbol, 
-                                                 color=roi_colors[j], 
+                                                 color=roi_colors[roi], 
                                                  size=12),
                                      error_x=dict(type='data', 
                                                   array=[df_roi.upper_ci_x - df_roi.barycentre_x], 
@@ -1125,14 +1130,14 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
                                                   visible=True, 
                                                   thickness=3, 
                                                   width=0, 
-                                                  color=roi_colors[j]),
+                                                  color=roi_colors[roi]),
                                      error_y=dict(type='data', 
                                                   array=[df_roi.upper_ci_y - df_roi.barycentre_y], 
                                                   arrayminus=[df_roi.barycentre_y - df_roi.lower_ci_y],
                                                   visible=True, 
                                                   thickness=3, 
                                                   width=0, 
-                                                  color=roi_colors[j]),
+                                                  color=roi_colors[roi]),
                                  showlegend=showlegend))
         # Center lignes
         fig.add_trace(go.Scatter(x=[0,0], 
@@ -1182,40 +1187,44 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
         
     return fig
 
-def categories_proportions_roi_plot(data, subject, fig_height, fig_width):
-    data = data.copy()
-    filtered_data = data[data['stats_final'] != 'non_responding']
+def categories_proportions_roi_plot(df_categories, fig_height, fig_width, rois, roi_colors, categorie_color_map):
+    """
+    Make categories proportions pie plot
     
-    # Sort categories
-    categories_order = ['vision', 'vision_and_pursuit_and_saccade', 'pursuit_and_saccade', 'vision_and_saccade', 'vision_and_pursuit', 'saccade', 'pursuit']
-    filtered_data['stats_final'] = pd.Categorical(filtered_data['stats_final'], categories=categories_order, ordered=True)
-    filtered_data = filtered_data.sort_values(['rois', 'stats_final'])
-
-    
-    #  Defines colors settings 
-    roi_colors = px.colors.sequential.Sunset[:4] + px.colors.sequential.Rainbow[:]
-    stats_categories_colors = list(reversed(px.colors.qualitative.D3))[2:]
-    
-    # To write make the percent visible only for choose categories 
-    percent_color =  {'pursuit': 'rgba(255,255,255,0)', 
-                      'saccade': 'rgba(255,255,255,0)', 
+    Parameters
+    ----------
+    df_categories : dataframe
+    fig_width : figure width in pixels
+    fig_height : figure height in pixels
+    rois : list of rois
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
+    categorie_color_map : list of rgb colors for plotly
+     
+    Returns
+    -------
+    fig : contralaterality figure
+    """
+    percent_color =  {'pursuit': 'rgba(0, 0, 0, 1)', 
+                      'saccade': 'rgba(0, 0, 0, 1)', 
                       'pursuit_and_saccade': 'rgba(0, 0, 0, 1)', 
                       'vision': 'rgba(0, 0, 0, 1)', 
-                      'vision_and_pursuit': 'rgba(255,255,255,0)', 
-                      'vision_and_saccade': 'rgba(255,255,255,0)', 
-                      'vision_and_pursuit_and_saccade': 'rgba(0, 0, 0, 1)'}
+                      'vision_and_pursuit': 'rgba(0, 0, 0, 1)', 
+                      'vision_and_saccade': 'rgba(0, 0, 0, 1)', 
+                      'vision_and_pursuit_and_saccade': 'rgba(0, 0, 0, 1)'
+                     }
+
+    # General figure settings
+    template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          plot_width=1.5)
     
-    categorie_color_map = {'pursuit': 'rgba(255,255,255,0)', 
-                           'saccade': 'rgba(255,255,255,0)', 
-                           'pursuit_and_saccade': stats_categories_colors[3], 
-                           'vision': stats_categories_colors[4], 
-                           'vision_and_pursuit': 'rgba(255,255,255,0)', 
-                           'vision_and_saccade': 'rgba(255,255,255,0)', 
-                           'vision_and_pursuit_and_saccade': stats_categories_colors[7]}
-    
-    rois = pd.unique(data.rois)
-    #  Make the subplot
-    # fig_height, fig_width = 300, 1920
+    # General figure settings
+    fig_template = plotly_template(template_specs)
+
     rows = 2 
     cols =len(rois)
     specs = [[{'type': 'domain'}] * cols,  [{'type': 'xy'}] * cols]
@@ -1225,15 +1234,15 @@ def categories_proportions_roi_plot(data, subject, fig_height, fig_width):
     
     
     for i, roi in enumerate(rois):
-        df_rois = filtered_data.loc[filtered_data.rois == roi]
+        df_rois = df_categories.loc[df_categories.roi == roi]
         #  Colors for categories 
-        categorie_colors = [categorie_color_map[label] for label in df_rois.stats_final]
+        categorie_colors = [categorie_color_map[label] for label in df_rois['all']]
         #  Colors for the percentages 
-        percentage_colors = [percent_color[label] for label in df_rois.stats_final]
+        percentage_colors = [percent_color[label] for label in df_rois['all']]
         
         
-        fig.add_trace(go.Pie(labels=df_rois.stats_final, 
-                             values=df_rois.vertex_surf, 
+        fig.add_trace(go.Pie(labels=df_rois['all'], 
+                             values=df_rois['vert_area'], 
                              showlegend=False, 
                              sort=False,
                              textinfo='percent',
@@ -1250,12 +1259,16 @@ def categories_proportions_roi_plot(data, subject, fig_height, fig_width):
                            showarrow=False, 
                            font=dict(size=13,color=roi_colors[i]), 
                            row=2, col=i+1)
-    
-    
         
+    # Define parameters
     fig.update_layout(height=fig_height, 
-                      width=fig_width,
-                      template='simple_white')  
+                      width=fig_width, 
+                      showlegend=False,
+                      template=fig_template,
+                      margin_l=50, 
+                      margin_r=50, 
+                      margin_t=50, 
+                      margin_b=50)
     
     fig.update_xaxes(showline=True, 
                      ticklen=0, 
