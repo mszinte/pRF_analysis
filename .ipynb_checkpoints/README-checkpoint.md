@@ -1,13 +1,13 @@
-# MOTCONF
+# pRF analysis
 
 ## About
 ---
-*General code for main analysis of MotConf project.</br>*
+*Main codes for pRF analysis on surface base fMRI </br>*
 
 ---
 ## Authors (alphabetic order): 
 ---
-Sina KLING, Uriel LASCOMBES, Guillaume MASSON, Pascal MAMASSIAN, Can OLUK, & Martin SZINTE
+Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
 ## Data analysis
 ---
@@ -96,3 +96,9 @@ or we ran a ROI based group analysis determined individually on subject surfaces
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py)
 - [x] Merge all figures for **sub-170k** and **group** [merge_fig_css.py](analysis_code/postproc/prf/postfit/merge_fig_css.py)
+
+## Data analysis
+---
+After pRF analysis each project have is one analysis, project's read me can be find at : 
+
+RetinoMaps [README.md](RetinoMaps/README.md)
