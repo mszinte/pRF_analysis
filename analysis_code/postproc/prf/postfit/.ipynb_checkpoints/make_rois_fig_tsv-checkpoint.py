@@ -22,9 +22,24 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf sub-01 327
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf sub-170k 327
 python make_rois_fig_tsv.py /scratch/mszinte/data MotConf group 327
+
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
+
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf sub-01 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_patient 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_aniso 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_mixed 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_strab 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_control 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_excluded 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -47,7 +62,7 @@ import pandas as pd
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from maths_utils import make_prf_distribution_df, make_prf_barycentre_df, weighted_nan_median, weighted_nan_percentile
+from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_nan_percentile
 
 # Inputs
 main_dir = sys.argv[1]
@@ -56,7 +71,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': 
@@ -81,8 +99,8 @@ else:
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
 
-# Figure settings
-with open('../../../figure_settings.json') as f:
+fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
+with open(fig_settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
 num_ecc_size_bins = figure_info['num_ecc_size_bins']
