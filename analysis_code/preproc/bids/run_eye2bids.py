@@ -8,7 +8,8 @@ folder and deletes original files. By default metedata_file.yml is expected in p
 is saved in project_input_directory as well. 
 -------------------------------------------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: project input directory
+sys.argv[1]: project input directory path 
+sys.argv[2]: project name
 
 Option(s):
 --make_copy
@@ -21,12 +22,13 @@ sub-02_ses-01_task-pRF_run-03_eyeData.edf -> sub-02_ses-01_task-pRF_run-03_eyeDa
                                              sub-02_ses-01_task-pRF_run-03_eyeData_recording-eye1_physioevents.json
                                              sub-02_ses-01_task-pRF_run-03_eyeData_recording-eye1_physiosevents.tsv.gz
 -------------------------------------------------------------------------------------------------------------------------
-To run on mesocentre directly: 
+To run locally: 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
-python run_eye2bids.py /path/to/project --make_copy --delete_original  
+python run_eye2bids.py /path/to/project project_name --make_copy --delete_original  
+example: run_eye2bids.py /Users/sinakling/disks/meso_shared/  RetinoMaps  --make_copy --delete_original
 -------------------------------------------------------------------------------------------------------------------------
 """
-#%%
+
 import os
 import subprocess
 import sys
@@ -55,6 +57,16 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                     edf_file_path = os.path.join(root, file)
                     # Create sourcedata folder
                     entity_dict = parse_file_entities(edf_file_path)
+
+                    # Construct the expected output filename
+                    expected_output_file = f"sub-{entity_dict['subject']}_ses-{entity_dict['session']}_task-{entity_dict['task']}_run-{entity_dict['run']}_eyetrack_recording-eye1_physio.tsv.gz"
+                    
+                    # Check if the output file already exists in the directory
+                    if os.path.exists(os.path.join(root, expected_output_file)):
+                        print(f"---Output file {expected_output_file} already exists. Skipping {edf_file_path}---")
+                        continue  # Skip to the next file
+
+                    # Create Sourcedata directory
                     if make_copy: 
                         sourcedata_folder = '{}/sourcedata/sub-{}/ses-{}/{}'.format(input_directory, 
                                                                             entity_dict['subject'], 
@@ -85,19 +97,24 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert eyetracking files to BIDS format.')
-    parser.add_argument('input_directory', type=str, help='Project input directory')
+    parser.add_argument('input_directory_path ', type=str, help='Project input directory path')
+    parser.add_argument('input_directory_name ', type=str, help='Project input directory name')
     parser.add_argument('--make_copy', action='store_true', help='Make a copy of the original files')
     parser.add_argument('--delete_original', action='store_true', help='Delete original files after copying')
     
     args = parser.parse_args()
 
     # Get inputs
-    input_directory = args.input_directory
+    input_directory_path = args.input_directory_path
+    input_directory_name = args.input_directory_name
+    input_directory = os.path.join(input_directory_path, input_directory_name)
     make_copy = args.make_copy
     delete_original = args.delete_original
 
-    metadata_path = os.path.join(input_directory, 'metadata.yml')
-    output_script_path = os.path.join(input_directory, 'convert_eyetracking.sh')
+    parent_path = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
+    metadata_path = os.join(parent_path, 'metadata.yml')
+
+    output_script_path = os.path.join(parent_path, 'convert_eyetracking.sh')
 
     # Call the main function
     main(input_directory, metadata_path, output_script_path, make_copy, delete_original)

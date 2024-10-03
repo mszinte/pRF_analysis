@@ -1,9 +1,4 @@
-{
-    "edf2asc_dir_mac":"/Applications/Eyelink/EDF_Access_API/Example",
-    "edf2asc_dir_win":"/Applications/Eyelink/EDF_Access_API/Example",
-    "main_dir_mac":"/Users/sinakling/disks/meso_shared/RetinoMaps",
-    "main_dir_pc":"C:/Users/invibe/Experiments/pMFexp/",
-    "main_dir_unix":"/home/mv/Experiments/locEMexp",
+{  "main_dir_mac":"/Users/sinakling/disks/meso_shared/RetinoMaps",
     "num_run": 2,
     "num_seq": 9,
     "seq_trs": 32,
