@@ -42,6 +42,7 @@ cd /Users/martin/Dropbox/Experiments/pMFexp/stats/
 python behav_analysis/extract_saccades.py sub-01 EyeMov
 -----------------------------------------------------------------------------------------
 """
+#%%
 # Stop warnings
 # -------------
 import warnings
@@ -64,13 +65,16 @@ from sac_utils import vecvel, microsacc_merge, saccpar, isincircle
 
 # Get inputs
 # ----------
-subject = sys.argv[1]
-task = sys.argv[2]
+#subject = sys.argv[1]
+#task = sys.argv[2]
+
+subject = 'sub-04'
+task = 'PurLoc'
 
 
 # Define analysis parameters
 # --------------------------
-with open('/Users/sinakling/projects/PredictEye/locEMexp/stats/behavior_settings.json') as f:
+with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json') as f:
 	json_s = f.read()
 	analysis_info = json.loads(json_s)
 
@@ -89,10 +93,12 @@ seq_type = analysis_info['seq_type']
 
 # Load data
 # ---------
-file_dir = '{exp_dir}/data/{sub}'.format(exp_dir = main_dir, sub = subject)
-file_dir_save = '/Users/sinakling/projects/PredictEye/data'
+#file_dir = '{exp_dir}/data/{sub}'.format(exp_dir = main_dir, sub = subject)
+file_dir = f'/Users/sinakling/Desktop/RetinoMaps_Data/{subject}'
+file_dir_save = f'/Users/sinakling/Desktop/RetinoMaps_Data/{subject}'
 h5_filename = '{file_dir}/{sub}_task-{task}_eyedata.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
 h5_file = h5py.File(h5_filename,'r')
+print(h5_file.keys())
 eye_data_runs = np.array(h5_file['eye_data_runs'])
 eye_data_runs_nan_blink = np.array(h5_file['eye_data_runs_nan_blink'])
 time_start_seq = np.array(h5_file['time_start_seq'])
@@ -110,6 +116,7 @@ min_dur = analysis_info['min_dur']
 merge_interval = analysis_info['merge_interval']
 tolerance_ratio = analysis_info['tolerance_ratio']
 
+#%%
 # Main loop
 # ---------
 mat = 0
