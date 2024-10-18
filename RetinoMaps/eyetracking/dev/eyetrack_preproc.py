@@ -20,22 +20,6 @@ cd /projects/prf_analysis/RetinoMaps/eyetracking/dev
 python extract_eyetraces.py sub-01 PurLoc ses-01 eye1
 -----------------------------------------------------------------------------------------
 """
-
-import pandas as pd
-import json
-import numpy as np
-import re
-import matplotlib.pyplot as plt
-import glob 
-import math
-import h5py
-import os
-from statistics import median
-from sklearn.preprocessing import MinMaxScaler
-import sys 
-from scipy.signal import detrend
-
-
 import pandas as pd
 import json
 import numpy as np
@@ -157,8 +141,7 @@ def main_preprocessing_pipeline():
                                  eye_data_run_y, 
                                  eye_data_run_p), axis=1)
 
-         # Work in these 2 steps 
-         #TODO: make functions take 4d array, return 4d array
+        
         if settings.get('downsampling'):
             eye_data_run   = downsample_data(eye_data_run, 1000, 100)
             

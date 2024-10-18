@@ -174,9 +174,18 @@ def downsample_to_tr(original_data, eyetracking_rate):
 def downsample_to_targetrate(original_data, eyetracking_rate, target_rate):
     from scipy.signal import resample
     # Calculate total number of data points in target rate
+
     eyetracking_in_sec = len(original_data) / eyetracking_rate  
     total_target_points = int(eyetracking_in_sec * target_rate) 
-    downsampled_data = resample(original_data, total_target_points) # resample into amount of wanted data points
+    downsampled_t = resample(original_data[:,0], total_target_points)  # resample into amount of wanted data points
+    downsampled_x = resample(original_data[:,1], total_target_points)
+    downsampled_y = resample(original_data[:,2], total_target_points)
+    downsampled_p = resample(original_data[:,3], total_target_points)
+
+    downsampled_data = np.stack((downsampled_t,
+                                 downsampled_x,
+                                 downsampled_y, 
+                                 downsampled_p))
 
     return downsampled_data
 
