@@ -57,6 +57,7 @@ import numpy as np
 import json
 import h5py
 import ipdb
+import pandas as pd
 deb = ipdb.set_trace
 
 # Specific imports
@@ -68,7 +69,7 @@ from sac_utils import vecvel, microsacc_merge, saccpar, isincircle
 #subject = sys.argv[1]
 #task = sys.argv[2]
 
-subject = 'sub-04'
+subject = 'sub-01'
 task = 'PurLoc'
 
 
@@ -80,7 +81,8 @@ with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/Pur
 
 # Platform settings
 # -----------------
-main_dir = analysis_info['main_dir_mac']
+main_dir = '/Users/sinakling/Desktop/'
+#analysis_info['main_dir_mac']
 
 runs = np.arange(0,analysis_info['num_run'],1)
 sequences = np.arange(0,analysis_info['num_seq'],1)
@@ -94,19 +96,24 @@ seq_type = analysis_info['seq_type']
 # Load data
 # ---------
 #file_dir = '{exp_dir}/data/{sub}'.format(exp_dir = main_dir, sub = subject)
-file_dir = f'/Users/sinakling/Desktop/RetinoMaps_Data/{subject}'
-file_dir_save = f'/Users/sinakling/Desktop/RetinoMaps_Data/{subject}'
-h5_filename = '{file_dir}/{sub}_task-{task}_eyedata.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
-h5_file = h5py.File(h5_filename,'r')
-print(h5_file.keys())
-eye_data_runs = np.array(h5_file['eye_data_runs'])
-eye_data_runs_nan_blink = np.array(h5_file['eye_data_runs_nan_blink'])
+file_dir = f'/Users/sinakling/Desktop'
+file_dir_save = f'/Users/sinakling/Desktop'
+h5_filename = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
+h5_file = h5py.File(h5_filename,'r') 
 time_start_seq = np.array(h5_file['time_start_seq'])
 time_end_seq = np.array(h5_file['time_end_seq'])
 #print(time_end_seq)  #important: sequence end times need to be non zero, otherwise the script wont run
 time_start_trial = np.array(h5_file['time_start_trial'])
 time_end_trial = np.array(h5_file['time_end_trial'])
 amp_sequence = np.array(h5_file['amp_sequence'])
+
+
+eye_data_run_01_nan_blink_interpol = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_01_nan_blink_interpol = eye_data_run_01_nan_blink_interpol[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+eye_data_run_02_nan_blink_interpol = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+
+eye_data_all_runs = [eye_data_run_01_nan_blink_interpol,eye_data_run_02_nan_blink_interpol]
 
 # Get saccade model
 # -----------------
@@ -120,24 +127,21 @@ tolerance_ratio = analysis_info['tolerance_ratio']
 # Main loop
 # ---------
 mat = 0
-for run in runs:
-	print(f"-- Extracting data from run: {run} --")
-	run_data_logic = eye_data_runs[:,4] == run
-	
-
+for run, eye_data_run in enumerate(eye_data_all_runs):
+	print(f'--extracting saccades from run: {run}--')
 	for sequence in sequences:
 		print('sequence: {}'.format(sequence))
 		trials = np.arange(0,trials_seq[sequence],1)
-		seq_data_logic = np.logical_and(eye_data_runs[:,0] >= time_start_seq[sequence,run],\
-										eye_data_runs[:,0] <= time_end_seq[sequence,run])
+		seq_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_seq[sequence,run],\
+										eye_data_run[:,0] <= time_end_seq[sequence,run])
 
 		trial_with_sac = 0
 		for trial in trials:
 			print('trial: {}'.format(trial))
-			trial_data_logic = np.logical_and(eye_data_runs[:,0] >= time_start_trial[trial,sequence,run],\
-											  eye_data_runs[:,0] <= time_end_trial[trial,sequence,run])
+			trial_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_trial[trial,sequence,run],\
+											  eye_data_run[:,0] <= time_end_trial[trial,sequence,run])
 
-			data_logic = np.logical_and.reduce(np.array((run_data_logic,seq_data_logic,trial_data_logic)))
+			data_logic = np.logical_and.reduce(np.array((seq_data_logic,trial_data_logic)))
 
 			# fixation target position
 			if (amp_sequence[sequence] == 5) :
@@ -155,7 +159,7 @@ for run in runs:
 			t_trial_start = time_start_trial[trial,sequence,run]
 			t_trial_end = time_end_trial[trial,sequence,run]
 			dur_trial = t_trial_end - t_trial_start
-			time_prct = ((eye_data_runs[data_logic][:,0]- t_trial_start)/dur_trial)
+			time_prct = ((eye_data_run[data_logic][:,0]- t_trial_start)/dur_trial)
 			
 
 			# Indicators
@@ -178,13 +182,13 @@ for run in runs:
 
 			#1 Missing data point
    			
-			if np.sum(np.diff(eye_data_runs[trial_data_logic,0])>1000/sampling_rate) > 0:
+			if np.sum(np.diff(eye_data_run[trial_data_logic,0])>1000/sampling_rate) > 0:
 				miss_time = 1
 
 				
 			#2 saccade detection
 			if not miss_time:
-				t, p, x, y = eye_data_runs[trial_data_logic,0],time_prct,eye_data_runs[trial_data_logic,1],eye_data_runs[trial_data_logic,2]
+				t, p, x, y = eye_data_run[trial_data_logic,0],time_prct,eye_data_run[trial_data_logic,1],eye_data_run[trial_data_logic,2]
 				vx, vy = vecvel(x,y,sampling_rate)
 				sac = microsacc_merge(x,y,vx,vy,velocity_th,min_dur,merge_interval)
 				ms = saccpar(sac)
@@ -270,8 +274,11 @@ for run in runs:
 																blink_saccade])))
 
 
+#%%
+#TODO blink saccades to include? 
+# save nan blink from preproc??
 #5 blink saccades
-
+'''
 # Detect and put nan during blink saccades
 blinkNum = 0
 blink_start = False
@@ -334,16 +341,18 @@ for tBlink in np.arange(0,blinkNum,1):
 		eye_data_runs_int_blink[np.logical_and(	eye_data_runs_int_blink[:,0] >= blink_pre_sac_t_onset,\
 											  	eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),2] =\
 												np.linspace(blink_sac_y_coord[0],blink_sac_y_coord[-1],blink_sac_y_coord.shape[0])
+'''
 
+#%%
 
 # Save all
 # --------
-h5_file = "{file_dir}/{sub}_task-{task}_eyedata.h5".format(file_dir = file_dir_save, sub = subject, task = task)
+h5_file = "{file_dir}/{sub}_task-{task}_eyedata_stats.h5".format(file_dir = file_dir_save, sub = subject, task = task)
 
 
 h5file = h5py.File(h5_file, "a")
 
-h5file.create_dataset('eye_data_runs_int_blink',data = eye_data_runs_int_blink,dtype ='float32')
+#h5file.create_dataset('eye_data_runs_int_blink',data = eye_data_runs_int_blink,dtype ='float32')
 h5file.create_dataset('saccades_output',data = vals_all,dtype ='float32')
 
 h5file.close()
