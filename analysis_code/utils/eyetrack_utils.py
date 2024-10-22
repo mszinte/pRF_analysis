@@ -129,6 +129,21 @@ def blinkrm_pupil_off(samples, sampling_rate=1000):
     
     return cleaned_samples
 
+def convert_to_dva(eye_data, center, ppd):
+    """
+    Convert eye-tracking data to degrees of visual angle (dva), center it, and flip Y-axis.
+
+    Args:
+        eye_data (np.array): Eye-tracking data in screen pixel coordinates (n_samples, n_features).
+        center (tuple): Screen center (x, y) in pixels.
+        ppd (float): Pixels per degree for the conversion.
+
+    Returns:
+        np.array: Converted eye-tracking data (centered and converted to dva).
+    """
+    eye_data[:, 1] = (eye_data[:, 1] - center[0]) / ppd
+    eye_data[:, 2] = -1.0 * (eye_data[:, 2] - center[1]) / ppd
+    return eye_data
 
 
 def downsample_to_tr(original_data, eyetracking_rate):
@@ -209,6 +224,50 @@ def gaussian_smoothing(df, column, sigma):
     from scipy.ndimage import gaussian_filter1d
     return gaussian_filter1d(df[column], sigma=sigma)
 
+
+def linear_detrending(eyetracking_1D): 
+    from scipy.signal import detrend
+    import numpy as np
+    from scipy.signal import resample
+    import matplotlib.pyplot as plt
+
+    fixation_trials = load_design_matrix_fixations('trial_type_fixation')
+    resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
+
+    # Convert resampled fixation type to a boolean mask
+    fixation_bool = resampled_fixation_type > 0.5  
+
+    # Filter the eye data based on fixation periods
+    fixation_data = eyetracking_1D[fixation_bool]
+
+    # Detrend the fixation data (remove linear trend)
+    detrended_fixation_data = detrend(fixation_data)
+
+    # Generate indices for fixation and the full time series
+    fixation_indices = np.where(fixation_bool)[0]
+    full_indices = np.arange(len(eyetracking_1D))
+
+    # Fit a linear model 
+    trend_coefficients = np.polyfit(fixation_indices, fixation_data, deg=1)
+
+    # Use this model to predict the linear trend across the entire time series
+    linear_trend_full = np.polyval(trend_coefficients, full_indices)
+
+    # Subtract the linear trend from the entire dataset
+    detrended_full_data = eyetracking_1D - linear_trend_full
+
+    # Plot the detrended full dataset
+    plt.plot(eyetracking_1D)
+    plt.plot(detrended_full_data)
+    plt.title("Detrended Full Eye Data")
+    plt.xlabel("Time")
+    plt.ylabel("Detrended Eye Position")
+    plt.show()
+
+    return detrended_full_data
+
+    
+
 """
 
 ------------- Other Utils ----------------------------------------------
@@ -246,3 +305,12 @@ def load_event_files(main_dir, subject, ses, task):
     assert len(data_events) > 0, "No event files found"
 
     return data_events
+
+
+def load_design_matrix_fixations(fixation_column): 
+    "path: default project/"
+    import pandas as pd
+    design_matrix = pd.read_csv("/Users/sinakling/Desktop/design_matrix.csv")
+    fixation_trials = np.array(design_matrix[fixation_column])
+
+    return fixation_trials

@@ -130,11 +130,16 @@ def main_preprocessing_pipeline():
         
         # Apply preprocessing steps based on settings
         eye_data_run = remove_blinks(eye_data_run, settings['blinks_remove'], settings['eyetrack_sampling'])
-        #eye_data_run = drift_correction(eye_data_run, settings['drift_corr'], extract_fixation_periods(eye_data_run, settings))
+        eye_data_run = convert_to_dva(eye_data_run, settings['center'], settings['ppd'])
         eye_data_run_x = interpolate_nans(eye_data_run[:,1])
         eye_data_run_y = interpolate_nans(eye_data_run[:,2])
         eye_data_run_p = interpolate_nans(eye_data_run[:,3])
         eye_data_run_p = normalize_data(eye_data_run_p)
+
+        if settings.get('drift_corr'):
+            eye_data_run_x = linear_detrending(eye_data_run_x)
+            eye_data_run_y = linear_detrending(eye_data_run_y)
+            
         
         eye_data_run = np.stack((eye_data_run[:,0],
                                  eye_data_run_x, 
@@ -152,8 +157,6 @@ def main_preprocessing_pipeline():
         tsv_file_path = f'{file_dir_save}/timeseries/{subject}_task-{task}_run_{run_idx+1}_eyedata.tsv.gz'
         save_preprocessed_data(pd.DataFrame(eye_data_run, columns=['timestamp', 'x', 'y', 'pupil_size']), tsv_file_path)
 
-        # Save tsv triggers 
-        #TODO append to event files
         
         print(f"Run {run_idx+1} preprocessed and saved at {tsv_file_path}")
 
