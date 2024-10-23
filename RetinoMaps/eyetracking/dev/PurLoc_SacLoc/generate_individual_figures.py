@@ -1,7 +1,5 @@
-<<<<<<< HEAD
+
 #%%
-=======
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 import numpy as np
 import h5py
 import json
@@ -21,7 +19,6 @@ import cortex
 
 from sac_utils import plotly_layout_template
 
-<<<<<<< HEAD
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking"
     if not os.path.exists(save_dir):
@@ -31,10 +28,7 @@ def ensure_save_dir(base_dir, subject):
 
 subjects = ['sub-01']
 task = "SacLoc"
-=======
-subjects = ['sub-01']
-task = "PurLoc"
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
+
 
 with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json') as f:
     json_s = f.read()
@@ -51,22 +45,13 @@ for subject in subjects:
 
     # Load data
     # ---------
-<<<<<<< HEAD
+
     main_dir = settings['main_dir_mac']
     file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
     fig_dir_save = f'{file_dir_save}/figures'
     if not os.path.exists(fig_dir_save):
         os.makedirs(fig_dir_save)
     h5_filename = '{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
-=======
-    #file_dir = '{exp_dir}/{sub}/ses-02'.format(exp_dir = main_dir, sub = subject)
-    file_dir = '/Users/sinakling/Desktop'
-    fig_dir_save = '/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/eye_tracking/{sub}/figures/{task}'.format(sub = subject, task = task)
-    if not os.path.exists(fig_dir_save):
-        os.makedirs(fig_dir_save)
-    file_dir_save = '/Users/sinakling/Desktop/'
-    h5_filename = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     h5_file = h5py.File(h5_filename,'r')
     time_start_seq = np.array(h5_file['time_start_seq'])
     time_end_seq = np.array(h5_file['time_end_seq'])
@@ -76,18 +61,11 @@ for subject in subjects:
     saccades_output = np.array(h5_file['saccades_output'])
 
     
-<<<<<<< HEAD
+
     eye_data_run_1 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
     eye_data_run_1 = eye_data_run_1[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
     eye_data_run_2 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
     eye_data_run_2 = eye_data_run_2[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
-=======
-    eye_data_run_1 = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
-    eye_data_run_1 = eye_data_run_1[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
-    eye_data_run_2 = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
-    eye_data_run_2 = eye_data_run_2[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
-
     eye_data_all_runs = [eye_data_run_1,eye_data_run_2]
 
     if task == 'SacLoc': 
@@ -180,20 +158,16 @@ for subject in subjects:
                                 fig.add_vrect(x0=sac_p_onset,x1=sac_p_offset, row="all", col=1,
                                 fillcolor="darkgrey", opacity=0.45, line_width=0)
 
-<<<<<<< HEAD
+
                     #fig.show()
-=======
-                    fig.show()
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
+
 
                     #fig_fn = f"{file_dir_save}/figures/{task}/per_trial/{subject}_task-{task}_run-0{run+1}_seq-0{sequence+ 1}_trial-0{trial+1}_eyetrace.pdf"
                     fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_seq-0{sequence+ 1}_trial-0{trial+1}_eyetrace.pdf"
                     print('Saving {}'.format(fig_fn))
-<<<<<<< HEAD
+
                     fig.write_image(fig_fn)
-=======
-                    #fig.write_image(fig_fn)
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
+
 
     elif task == 'PurLoc': 
 
