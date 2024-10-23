@@ -76,7 +76,11 @@ def ensure_save_dir(base_dir, subject):
 #task = sys.argv[2]
 
 subject = 'sub-01'
+<<<<<<< HEAD
 task = 'SacLoc'
+=======
+task = 'PurLoc'
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 
 
 # Define analysis parameters
@@ -87,7 +91,12 @@ with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/Pur
 
 # Platform settings
 # -----------------
+<<<<<<< HEAD
 main_dir = settings['main_dir_mac']
+=======
+main_dir = '/Users/sinakling/Desktop/'
+#analysis_info['main_dir_mac']
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 
 runs = np.arange(0,settings['num_run'],1)
 sequences = np.arange(0,settings['num_seq'],1)
@@ -100,8 +109,15 @@ seq_type = settings['seq_type']
 
 # Load data
 # ---------
+<<<<<<< HEAD
 file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
 h5_filename = '{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
+=======
+#file_dir = '{exp_dir}/data/{sub}'.format(exp_dir = main_dir, sub = subject)
+file_dir = f'/Users/sinakling/Desktop'
+file_dir_save = f'/Users/sinakling/Desktop'
+h5_filename = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 h5_file = h5py.File(h5_filename,'r') 
 time_start_seq = np.array(h5_file['time_start_seq'])
 time_end_seq = np.array(h5_file['time_end_seq'])
@@ -111,10 +127,17 @@ time_end_trial = np.array(h5_file['time_end_trial'])
 amp_sequence = np.array(h5_file['amp_sequence'])
 
 
+<<<<<<< HEAD
 eye_data_run_01_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
 eye_data_run_01_nan_blink_interpol = eye_data_run_01_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
 eye_data_run_02_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
 eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
+=======
+eye_data_run_01_nan_blink_interpol = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_01_nan_blink_interpol = eye_data_run_01_nan_blink_interpol[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+eye_data_run_02_nan_blink_interpol = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 
 eye_data_all_runs = [eye_data_run_01_nan_blink_interpol,eye_data_run_02_nan_blink_interpol]
 
@@ -350,7 +373,11 @@ for tBlink in np.arange(0,blinkNum,1):
 
 # Save all
 # --------
+<<<<<<< HEAD
 h5_file = "{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5".format(file_dir = file_dir_save, sub = subject, task = task)
+=======
+h5_file = "{file_dir}/{sub}_task-{task}_eyedata_stats.h5".format(file_dir = file_dir_save, sub = subject, task = task)
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 
 
 h5file = h5py.File(h5_file, "a")
