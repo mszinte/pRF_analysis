@@ -76,12 +76,7 @@ def ensure_save_dir(base_dir, subject):
 #task = sys.argv[2]
 
 subject = 'sub-01'
-<<<<<<< HEAD
 task = 'SacLoc'
-=======
-task = 'PurLoc'
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
-
 
 # Define analysis parameters
 # --------------------------
