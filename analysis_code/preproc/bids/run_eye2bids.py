@@ -97,8 +97,8 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert eyetracking files to BIDS format.')
-    parser.add_argument('input_directory_path ', type=str, help='Project input directory path')
-    parser.add_argument('input_directory_name ', type=str, help='Project input directory name')
+    parser.add_argument('input_directory_path', type=str, help='Project input directory path')
+    parser.add_argument('input_directory_name', type=str, help='Project input directory name')
     parser.add_argument('--make_copy', action='store_true', help='Make a copy of the original files')
     parser.add_argument('--delete_original', action='store_true', help='Delete original files after copying')
     
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     delete_original = args.delete_original
 
     parent_path = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
-    metadata_path = os.join(parent_path, 'metadata.yml')
+    metadata_path = os.path.join(parent_path, 'metadata.yml')
 
     output_script_path = os.path.join(parent_path, 'convert_eyetracking.sh')
 

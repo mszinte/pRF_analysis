@@ -1,5 +1,20 @@
 def extract_data(main_dir, subject, task, ses, runs, eye, file_type):
-    '''read tsv.gsv data as pandas dataframes. Use information from json as columns'''
+    """
+    Load and process eye-tracking data and associated metadata from TSV and JSON files.
+
+    Args:
+        main_dir (str): Directory containing the data.
+        subject (str): Subject ID.
+        task (str): Task name.
+        ses (str): Session identifier.
+        runs (int): Number of runs.
+        eye (str): Eye being tracked (e.g., 'left', 'right').
+        file_type (str): Type of the file (e.g., 'recording').
+
+    Returns:
+        list: A list of pandas dataframes, each containing the data for one run, with columns defined by the JSON metadata.
+    """
+
     import json 
     import pandas as pd
     df_runs = []
@@ -28,8 +43,21 @@ def extract_data(main_dir, subject, task, ses, runs, eye, file_type):
     return df_runs
 
 def extract_eye_data_and_triggers(df_event, df_data, onset_pattern, offset_pattern): 
-# Extract triggers
-# Initialize arrays to store results
+    """
+    Extract eye-tracking data and trial trigger events from event and data frames.
+
+    Args:
+        df_event (pd.DataFrame): Event dataframe (physioevents)
+        df_data (pd.DataFrame): Eye-tracking data with timestamps (physio)
+        onset_pattern (str): Regex pattern to detect the start of trials.
+        offset_pattern (str): Regex pattern to detect the end of trials.
+
+    Returns:
+        tuple: Numpy array of eye-tracking data within the trial period, start time, and end time of the trial.
+    """
+
+    # Extract triggers
+    # Initialize arrays to store results
     import re 
     import pandas as pd
     import matplotlib.pyplot as plt
@@ -77,22 +105,15 @@ import numpy as np
 
 def blinkrm_pupil_off(samples, sampling_rate=1000):
     """
-    ----------------------------------------------------------------------
-    blinkrm_pupil_off(samples, sampling_rate)
-    ----------------------------------------------------------------------
-    Goal of the function :
-    Replace blinks indicated by pupil = 0 with nan. 
-    ----------------------------------------------------------------------
-    Input(s) :
-    samples: 4D data to be adapted (t,X,Y,P)
-    sampling_rate: 1000 by default
-    ----------------------------------------------------------------------
-    Output(s) :
-    cleaned_samples
-    ----------------------------------------------------------------------
-    Function created by Sina Kling
-    ----------------------------------------------------------------------
-    """
+    Replace blinks in eye-tracking data (where pupil size is zero) with NaN and extend blink duration for smoothing.
+
+    Args:
+        samples (np.array): 4D array of eye-tracking data (time, X, Y, pupil).
+        sampling_rate (int): Sampling rate of the data, default is 1000 Hz.
+
+    Returns:
+        np.array: Cleaned eye-tracking data with blinks replaced by NaN.
+"""
     import numpy as np 
     import matplotlib.pyplot as plt
     print(' - blink replacement with NaN')
@@ -129,24 +150,33 @@ def blinkrm_pupil_off(samples, sampling_rate=1000):
     
     return cleaned_samples
 
+def convert_to_dva(eye_data, center, ppd):
+    """
+    Convert eye-tracking data to degrees of visual angle (dva), center it, and flip Y-axis.
+
+    Args:
+        eye_data (np.array): Eye-tracking data in screen pixel coordinates (n_samples, n_features).
+        center (tuple): Screen center (x, y) in pixels.
+        ppd (float): Pixels per degree for the conversion.
+
+    Returns:
+        np.array: Converted eye-tracking data (centered and converted to dva).
+    """
+    eye_data[:, 1] = (eye_data[:, 1] - center[0]) / ppd
+    eye_data[:, 2] = -1.0 * (eye_data[:, 2] - center[1]) / ppd
+    return eye_data
 
 
 def downsample_to_tr(original_data, eyetracking_rate):
     """
-    ----------------------------------------------------------------------
-    downsample_to_tr(original_data)
-    ----------------------------------------------------------------------
-    Goal of the function :
-    Resample eyetracking signal to wanted resolution
-    ----------------------------------------------------------------------
-    Input(s) :
-    original_data : 1D eyetracking data to be resampled (x or y coordinates)
-    ----------------------------------------------------------------------
-    Output(s) :
-    reshaped_data : 1D resampled and reshaped data (x or y coordinates)
-    ----------------------------------------------------------------------
-    Function created by Sina Kling
-    ----------------------------------------------------------------------
+    Downsample eye-tracking data to match the temporal resolution of functional MRI TRs.
+
+    Args:
+        original_data (np.array): 1D array of eye-tracking data (e.g., X or Y coordinates).
+        eyetracking_rate (int): The sampling rate of the eye-tracking data.
+
+    Returns:
+        np.array: Resampled data reshaped to match TRs.
     """
     from scipy.signal import resample
     target_points_per_tr = 10  # 10 data points per 1.2 seconds
@@ -172,6 +202,17 @@ def downsample_to_tr(original_data, eyetracking_rate):
 
 
 def downsample_to_targetrate(original_data, eyetracking_rate, target_rate):
+    """
+    Downsample eye-tracking data to a specified target rate.
+
+    Args:
+        original_data (np.array): Eye-tracking data array with columns for timestamp, X, Y, and pupil size.
+        eyetracking_rate (int): Sampling rate of the original data.
+        target_rate (float): Desired target sampling rate.
+
+    Returns:
+        np.array: Downsampled eye-tracking data.
+    """
     from scipy.signal import resample
     # Calculate total number of data points in target rate
 
@@ -191,6 +232,18 @@ def downsample_to_targetrate(original_data, eyetracking_rate, target_rate):
 
 
 def moving_average_smoothing(dataframe, eyetracking_rate, window_duration): 
+    """
+    Apply moving average smoothing to eye-tracking data using a specified window size.
+
+    Args:
+        dataframe (pd.DataFrame): Eye-tracking data with 'x' and 'y' columns.
+        eyetracking_rate (int): Sampling rate of the data.
+        window_duration (int): Duration of the moving average window in milliseconds.
+
+    Returns:
+        pd.DataFrame: Smoothed data with rolling averages applied to X and Y coordinates.
+    """
+    import matplotlib.pyplot as plt
     
     # window duration to sec 
     window_duration = window_duration / 1000
@@ -198,16 +251,90 @@ def moving_average_smoothing(dataframe, eyetracking_rate, window_duration):
     
 
     # Calculate SMA
-    dataframe['x_coordinate'] = dataframe['x_coordinate'].rolling(window=window_size).mean()
-    dataframe['y_coordinate'] = dataframe['y_coordinate'].rolling(window=window_size).mean()
+    dataframe['x'] = dataframe['x'].rolling(window=window_size).mean()
+    dataframe['y'] = dataframe['y'].rolling(window=window_size).mean()
 
+    plt_2 = plt.figure(figsize=(15, 6))
+    plt.title("Smoothed timeseries")
+    plt.xlabel('x-coordinate', fontweight='bold')
+    plt.plot(dataframe['x'])
+    plt.show()
 
     return dataframe
 
 def gaussian_smoothing(df, column, sigma):
+    """
+    Apply Gaussian smoothing to a specified column in a dataframe.
+
+    Args:
+        df (pd.DataFrame): Dataframe containing the eye-tracking data.
+        column (str): Column name of the data to smooth.
+        sigma (float): Standard deviation of the Gaussian kernel.
+
+    Returns:
+        np.array: Smoothed data.
+    """
+
     # Apply Gaussian smoothing with convolution
     from scipy.ndimage import gaussian_filter1d
     return gaussian_filter1d(df[column], sigma=sigma)
+
+
+def detrending(eyetracking_1D): 
+    """
+    Remove linear trends from eye-tracking data and median-centering it during fixation periods to create drift corrected data.
+
+    Args:
+        eyetracking_1D (np.array): 1D array of eye-tracking data to detrend.
+
+    Returns:
+        np.array: Detrended eye-tracking data with trends removed and median-centered.
+    """
+
+    from scipy.signal import detrend
+    import numpy as np
+    from scipy.signal import resample
+    import matplotlib.pyplot as plt
+    from statistics import median
+
+    # Filter the eye data based on fixation periods
+    fixation_trials = load_design_matrix_fixations('trial_type_fixation')
+    resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
+    fixation_bool = resampled_fixation_type > 0.5  
+
+    
+    fixation_data = eyetracking_1D[fixation_bool]
+
+    # Linear detrending 
+    detrended_fixation_data = detrend(fixation_data)
+
+    fixation_indices = np.where(fixation_bool)[0]
+    full_indices = np.arange(len(eyetracking_1D))
+
+    # Fit a linear model 
+    trend_coefficients = np.polyfit(fixation_indices, fixation_data, deg=1)
+    linear_trend_full = np.polyval(trend_coefficients, full_indices)
+
+    # Subtract the linear trend from the entire dataset
+    detrended_full_data = eyetracking_1D - linear_trend_full
+
+    # Median centering 
+
+    fixation_median = median(fixation_data)
+
+    detrended_full_data = detrended_full_data - fixation_median
+
+    # Plot the detrended full dataset
+    plt.plot(eyetracking_1D)
+    plt.plot(detrended_full_data)
+    plt.title("Detrended Full Eye Data")
+    plt.xlabel("Time")
+    plt.ylabel("Detrended Eye Position")
+    plt.show()
+
+    return detrended_full_data
+
+    
 
 """
 
@@ -216,6 +343,16 @@ def gaussian_smoothing(df, column, sigma):
 """
 
 def interpol_nans(eyetracking_data):
+    """
+    Interpolate missing (NaN) values in eye-tracking data, filling gaps with the nearest valid data.
+
+    Args:
+        eyetracking_data (np.array): Eye-tracking data containing NaN values.
+
+    Returns:
+        np.array: Interpolated data with NaNs replaced.
+    """
+
     print("- interpolating data")
     nan_indices = np.isnan(eyetracking_data)
 
@@ -237,12 +374,39 @@ def interpol_nans(eyetracking_data):
     return eyetracking_signal_interpolated
 
 def load_event_files(main_dir, subject, ses, task): 
+    """
+    Load event files from eye-tracking experiments.
+
+    Args:
+        main_dir (str): Main directory containing experiment data.
+        subject (str): Subject ID.
+        ses (str): Session identifier.
+        task (str): Task name.
+
+    Returns:
+        list: Sorted list of event file paths.
+    """
     import glob
+
     data_events = sorted(glob.glob(r'{exp_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(exp_dir=main_dir, sub=subject, ses = ses, task = task)))
-    if subject == 'sub-01': 
-        ses = 'ses-01'
-        data_events = sorted(glob.glob(r'{exp_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(exp_dir=main_dir, sub=subject, ses = ses, task = task)))
-        
+    
     assert len(data_events) > 0, "No event files found"
 
     return data_events
+
+
+def load_design_matrix_fixations(fixation_column): 
+    """
+    Load the design matrix and extract fixation trial information.
+
+    Args:
+        fixation_column (str): Column name in the design matrix that contains fixation data.
+
+    Returns:
+        np.array: Array containing fixation trial information.
+    """
+    import pandas as pd
+    design_matrix = pd.read_csv("/Users/sinakling/Desktop/design_matrix.csv")
+    fixation_trials = np.array(design_matrix[fixation_column])
+
+    return fixation_trials

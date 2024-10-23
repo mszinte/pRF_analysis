@@ -40,9 +40,9 @@ from sac_utils import plotly_layout_template
 
 # Define subject and task 
 #---------------------------
-subjects = ['sub-04']
+subjects = ['sub-01']
 #task = sys.argv[2]
-tasl = 'PurLoc'
+task = 'PurLoc'
 
 # Define analysis parameters
 # --------------------------
@@ -53,7 +53,8 @@ with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/Pur
 # Platform settings 
 # -----------------
 
-main_dir = analysis_info['main_dir_mac']
+#main_dir = 
+#analysis_info['main_dir_mac']
 
     
 runs = np.arange(0,analysis_info['num_run'],1)
@@ -76,9 +77,8 @@ if task == 'SacLoc':
         if not os.path.exists(fig_dir_save):
             os.makedirs(fig_dir_save)
         file_dir_save = f'/Users/sinakling/Desktop/RetinoMaps_Data/{subject}'
-        h5_filename = '{file_dir}/{sub}_task-{task}_eyedata.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
+        h5_filename = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
         h5_file = h5py.File(h5_filename,'r')
-        print(h5_file.keys())
         eye_data = np.array(h5_file['eye_data_runs_nan_blink'])
         eye_data_int_blink = np.array(h5_file['eye_data_runs_int_blink'])
         time_start_seq = np.array(h5_file['time_start_seq'])
@@ -122,6 +122,7 @@ if task == 'SacLoc':
         screen_val =  12.5
 
         for run in runs:
+            #TODO adapt for new run structure 
             run_eye_data_logic = eye_data[:,4] == run
             run_saccade_logic = saccades_output[:,0] == run
             if run >= 9:run_txt = '{}'.format(run+1)
@@ -322,15 +323,16 @@ elif task == 'PurLoc':
 
         # Load data
         # ---------
-        file_dir = '{exp_dir}/{sub}/ses-02'.format(exp_dir = main_dir, sub = subject)
+        #file_dir = '{exp_dir}/{sub}/ses-02'.format(exp_dir = main_dir, sub = subject)
+        file_dor = '/Users/sinakling/Desktop'
         fig_dir_save = '/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/eye_tracking/{sub}/figures/{task}'.format(sub = subject, task = task)
         if not os.path.exists(fig_dir_save):
             os.makedirs(fig_dir_save)
-        file_dir_save = '/Users/sinakling/projects/PredictEye/data'
-        h5_filename = '{file_dir}/{sub}_task-{task}_eyedata.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
+        file_dir_save = '/Users/sinakling/Desktop/'
+        h5_filename = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
         h5_file = h5py.File(h5_filename,'r')
-        print(h5_file.keys())
-        eye_data = np.array(h5_file['eye_data_runs_nan_blink'])
+        #print(h5_file.keys())
+        #eye_data = np.array(h5_file['eye_data_runs_nan_blink'])
         #eye_data_int_blink = np.array(h5_file['eye_data_runs_int_blink'])
         time_start_seq = np.array(h5_file['time_start_seq'])
         time_end_seq = np.array(h5_file['time_end_seq'])
@@ -340,6 +342,13 @@ elif task == 'PurLoc':
         amp_sequence = np.array(h5_file['amp_sequence'])
         saccades_output = np.array(h5_file['saccades_output'])
 
+        import pandas as pd
+        eye_data_run_1 = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+        eye_data_run_1 = eye_data_run_1[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+        eye_data_run_2 = pd.read_csv(f"/Users/sinakling/Desktop/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+        eye_data_run_2 = eye_data_run_2[['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']].to_numpy()
+
+        eye_data_all_runs = [eye_data_run_1,eye_data_run_2]
         # Sanity check 
         import matplotlib.pyplot as plt
 
@@ -348,22 +357,17 @@ elif task == 'PurLoc':
 
         # plot eyetraces per run
         import plotly.graph_objects as go
-        for run in runs:
-            run_eye_data_logic = eye_data[:,4] == run
+        for run, eye_data_run in enumerate(eye_data_all_runs):
             
-            dur_run = (eye_data[run_eye_data_logic][-1,0]-eye_data[run_eye_data_logic][0,0])
-            time_prct = (eye_data[run_eye_data_logic][:,0]- eye_data[run_eye_data_logic][0,0])/dur_run
-
+            dur_run = (eye_data_run[-1,0]-eye_data_run[0,0])
+            time_prct = (eye_data_run[:,0]- eye_data_run[0,0])/dur_run
 
             fig = plotly_layout_template(task,run)
 
-            fig.add_trace(go.Scatter(x = time_prct, y= eye_data[run_eye_data_logic,1],showlegend=False,line=dict(color='black', width=2)), row = 1, col = 1)
-            fig.add_trace(go.Scatter(x = time_prct, y= eye_data[run_eye_data_logic,2],showlegend=False,line=dict(color='black', width=2)), row = 2, col = 1)
-            fig.add_trace(go.Scatter(x = eye_data[run_eye_data_logic,1], y= eye_data[run_eye_data_logic,2],showlegend=False,line=dict(color='black', width=2)), row = 1, col = 2)
+            fig.add_trace(go.Scatter(x = time_prct, y= eye_data_run[:,1],showlegend=False,line=dict(color='black', width=2)), row = 1, col = 1)
+            fig.add_trace(go.Scatter(x = time_prct, y= eye_data_run[:,2],showlegend=False,line=dict(color='black', width=2)), row = 2, col = 1)
+            fig.add_trace(go.Scatter(x = eye_data_run[:,1], y= eye_data_run[:,2],showlegend=False,line=dict(color='black', width=2)), row = 1, col = 2)
 
-            #fig.show()
-            
-            #fig_fn = f"{file_dir_save}/figures/{task}/per_run/{subject}_task-{task}_run-0{run+1}_eyetraces.pdf"
             fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_eyetraces.pdf"
             print('Saving {}'.format(fig_fn))
             fig.write_image(fig_fn)
@@ -391,8 +395,7 @@ elif task == 'PurLoc':
 
         # Draw figure
         # -----------
-        for run in runs:
-            run_eye_data_logic = eye_data[:,4] == run
+        for run, eye_data_run in enumerate(eye_data_all_runs):
 
             if run > 10: run_txt = '{}'.format(run+1)
             else: run_txt = '0{}'.format(run+1)
@@ -401,8 +404,8 @@ elif task == 'PurLoc':
             for sequence in eye_mov_seq:
 
                 trials = np.arange(0,trials_seq[sequence],1)
-                seq_eye_data_logic = np.logical_and(eye_data[:,0] >= time_start_seq[sequence,run],\
-                                                    eye_data[:,0] <= time_end_seq[sequence,run])
+                seq_eye_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_seq[sequence,run],\
+                                                    eye_data_run[:,0] <= time_end_seq[sequence,run])
 
                 dur_seq = time_end_seq[sequence,run]-time_start_seq[sequence,run]
 
@@ -467,7 +470,7 @@ elif task == 'PurLoc':
                     trial_eye_data_logic = np.logical_and(eye_data[:,0] >= time_start_trial[trial_plot,sequence,run],
                                                             eye_data[:,0] <= time_end_trial[trial_plot,sequence,run])
 
-                    data_logic = np.logical_and.reduce(np.array((run_eye_data_logic,seq_eye_data_logic,trial_eye_data_logic)))
+                    data_logic = np.logical_and.reduce(np.array((seq_eye_data_logic,trial_eye_data_logic)))
 
                     time_prct = ((eye_data[data_logic][:,0]- time_start_seq[sequence,run])/dur_seq)
                     
