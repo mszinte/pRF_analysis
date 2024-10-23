@@ -280,6 +280,7 @@ def gaussian_smoothing(df, column, sigma):
     return gaussian_filter1d(df[column], sigma=sigma)
 
 
+<<<<<<< HEAD
 def detrending(eyetracking_1D): 
     """
     Remove linear trends from eye-tracking data and median-centering it during fixation periods to create drift corrected data.
@@ -291,10 +292,14 @@ def detrending(eyetracking_1D):
         np.array: Detrended eye-tracking data with trends removed and median-centered.
     """
 
+=======
+def linear_detrending(eyetracking_1D): 
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     from scipy.signal import detrend
     import numpy as np
     from scipy.signal import resample
     import matplotlib.pyplot as plt
+<<<<<<< HEAD
     from statistics import median
 
     # Filter the eye data based on fixation periods
@@ -308,22 +313,46 @@ def detrending(eyetracking_1D):
     # Linear detrending 
     detrended_fixation_data = detrend(fixation_data)
 
+=======
+
+    fixation_trials = load_design_matrix_fixations('trial_type_fixation')
+    resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
+
+    # Convert resampled fixation type to a boolean mask
+    fixation_bool = resampled_fixation_type > 0.5  
+
+    # Filter the eye data based on fixation periods
+    fixation_data = eyetracking_1D[fixation_bool]
+
+    # Detrend the fixation data (remove linear trend)
+    detrended_fixation_data = detrend(fixation_data)
+
+    # Generate indices for fixation and the full time series
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     fixation_indices = np.where(fixation_bool)[0]
     full_indices = np.arange(len(eyetracking_1D))
 
     # Fit a linear model 
     trend_coefficients = np.polyfit(fixation_indices, fixation_data, deg=1)
+<<<<<<< HEAD
+=======
+
+    # Use this model to predict the linear trend across the entire time series
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     linear_trend_full = np.polyval(trend_coefficients, full_indices)
 
     # Subtract the linear trend from the entire dataset
     detrended_full_data = eyetracking_1D - linear_trend_full
 
+<<<<<<< HEAD
     # Median centering 
 
     fixation_median = median(fixation_data)
 
     detrended_full_data = detrended_full_data - fixation_median
 
+=======
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     # Plot the detrended full dataset
     plt.plot(eyetracking_1D)
     plt.plot(detrended_full_data)
@@ -396,6 +425,7 @@ def load_event_files(main_dir, subject, ses, task):
 
 
 def load_design_matrix_fixations(fixation_column): 
+<<<<<<< HEAD
     """
     Load the design matrix and extract fixation trial information.
 
@@ -405,6 +435,9 @@ def load_design_matrix_fixations(fixation_column):
     Returns:
         np.array: Array containing fixation trial information.
     """
+=======
+    "path: default project/"
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     import pandas as pd
     design_matrix = pd.read_csv("/Users/sinakling/Desktop/design_matrix.csv")
     fixation_trials = np.array(design_matrix[fixation_column])

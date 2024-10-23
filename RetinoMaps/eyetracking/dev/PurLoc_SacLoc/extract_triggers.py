@@ -48,12 +48,15 @@ def load_events(main_dir, subject, ses, task):
 def load_inputs():
     return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 
+<<<<<<< HEAD
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return save_dir
 
+=======
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 #subject, task, ses, eye  = load_inputs()
 settings = load_settings('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json')
 
@@ -61,7 +64,11 @@ settings = load_settings('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyet
 main_dir = settings.get('main_dir_mac')
 
 subject = 'sub-01'
+<<<<<<< HEAD
 task = 'SacLoc'
+=======
+task = 'PurLoc'
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 ses = 'ses-01'
 eye = 'eye1'
 
@@ -78,7 +85,11 @@ eyetracking_sampling = settings.get("eyetrack_sampling")
 screen_size = settings.get('screen_size')
 ppd = settings.get('ppd')
 
+<<<<<<< HEAD
 file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+=======
+file_dir_save = '/Users/sinakling/Desktop/'
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 
 # ------------- Trigger extraction -------------------------
 # Extrat data from physio and physioevents as dataframes 
@@ -201,13 +212,20 @@ for run, path_event_run in enumerate(data_events):
     df_event_run['trial_time_start'] = filtered_time_start
     df_event_run['trial_time_end'] = filtered_time_end
 
+<<<<<<< HEAD
     #TODO save duration (difference end start) here as well 
 
+=======
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     # Print to check the result
     print(df_event_run.head())
     # save as tsv 
 
+<<<<<<< HEAD
     df_event_run.to_csv(f"{file_dir_save}/stats/{subject}_task_{task}_run_0{run+1}_triggers.tsv", index=False, sep="\t")
+=======
+    df_event_run.to_csv(f"{file_dir_save}/{subject}_task_{task}_run_0{run}_triggers.csv", index=False)
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
 #%%
 # ------------------ Save all data needed for saccade analysis ----------------------------
 # get amplitude sequence from event files
@@ -227,9 +245,20 @@ amp_sequence = [legend_amp[val] if not math.isnan(val) else float('nan') for val
 
 #%%
 # save as h5 
+<<<<<<< HEAD
 # Loop over each run
 
 h5_file = '{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5'.format(
+=======
+
+#if not os.path.exists(f"{file_dir_save}/stats"): 
+#    os.makedirs(f"{file_dir_save}/stats") 
+
+
+# Loop over each run
+
+h5_file = '{file_dir}/{sub}_task-{task}_eyedata_stats.h5'.format(
+>>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
     file_dir=file_dir_save, sub=subject, task=task)
 
 # Remove existing file if it exists
