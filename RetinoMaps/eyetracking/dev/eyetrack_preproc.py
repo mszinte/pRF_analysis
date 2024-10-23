@@ -141,13 +141,13 @@ def main_preprocessing_pipeline():
         eye_data_run_p = normalize_data(eye_data_run_p)
 
         if settings.get('drift_corr'):
-<<<<<<< HEAD
+
             eye_data_run_x = detrending(eye_data_run_x)
             eye_data_run_y = detrending(eye_data_run_y)
-=======
+
             eye_data_run_x = linear_detrending(eye_data_run_x)
             eye_data_run_y = linear_detrending(eye_data_run_y)
->>>>>>> 832e18d9c505f2eda02517588e5917df87f6b980
+
             
         
         eye_data_run = np.stack((eye_data_run[:,0],
