@@ -36,6 +36,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -88,7 +89,8 @@ if anat == 'anat_only_y':
     nb_procs = 8
 
 if aroma == 'aroma_y':
-    use_aroma = ' --use-aroma'
+    use_aroma = ' --use-aroma --aroma-melodic-dimensionality -200'
+    aroma_end = '_aroma'
 
 if fmapfree == 'fmapfree_y':
     use_fmapfree= ' --use-syn-sdc'
@@ -104,7 +106,7 @@ if fsaverage_val == 'fsaverage_y':
     tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
         main_dir=main_dir, project_dir=project_dir) 
     fsaverage = 'fsaverage'
-    
+
 # define SLURM cmd
 slurm_cmd = """\
 #!/bin/bash
@@ -126,22 +128,21 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 #define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
         use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
-        dof=dof)
+        dof=dof, aroma_end=aroma_end)
 
 # define permission cmd
 chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
 chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
 
 # create sh folder and file
-sh_fn = "{main_dir}/{project_dir}/derivatives/fmriprep/jobs/sub-{sub_num}_fmriprep{anat_only_end}.sh".format(
-        main_dir=main_dir, sub_num=sub_num,
+sh_fn = "{main_dir}/{project_dir}/derivatives/fmriprep/jobs/sub-{sub_num}_fmriprep{anat_only_end}{aroma_end}.sh".format(
+        main_dir=main_dir, sub_num=sub_num, aroma_end=aroma_end,
         project_dir=project_dir, anat_only_end=anat_only_end)
-
 
 os.makedirs("{main_dir}/{project_dir}/derivatives/fmriprep/jobs".format(
                 main_dir=main_dir,project_dir=project_dir), exist_ok=True)
@@ -157,4 +158,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+#os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
