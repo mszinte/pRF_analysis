@@ -2,7 +2,7 @@
 
 ## About
 ---
-*Main codes for pRF analysis on surface base fMRI </br>*
+*Main codes for pRF analysis on surface-based fMRI </br>*
 
 ---
 ## Authors (alphabetic order): 
@@ -32,7 +32,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [x] High-pass, z-score, average and leave-one-out average and correlations [preproc_end_sbatch.py](analysis_code/preproc/functional/preproc_end_sbatch.py)
+- [x] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](analysis_code/preproc/functional/preproc_end_sbatch.py)
 - [x] Compute vertex areas [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
 
 #### Eyetracking preprocessing
