@@ -145,10 +145,6 @@ def main_preprocessing_pipeline():
             eye_data_run_x = detrending(eye_data_run_x)
             eye_data_run_y = detrending(eye_data_run_y)
 
-            eye_data_run_x = linear_detrending(eye_data_run_x)
-            eye_data_run_y = linear_detrending(eye_data_run_y)
-
-            
         
         eye_data_run = np.stack((eye_data_run[:,0],
                                  eye_data_run_x, 

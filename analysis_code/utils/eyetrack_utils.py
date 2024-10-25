@@ -293,7 +293,7 @@ def detrending(eyetracking_1D):
     """
 
 
-def linear_detrending(eyetracking_1D): 
+def detrending(eyetracking_1D): 
 
     from scipy.signal import detrend
     import numpy as np
