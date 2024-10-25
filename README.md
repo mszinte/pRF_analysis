@@ -21,10 +21,6 @@ Analyses are run on individual participant (**sub-0X**) </br>
 - [x] BIDS conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
 - [ ] Extract eyetraces and Preprocessing[eyetrack_preproc.py](https://github.com/mszinte/pRF_analysis/blob/skling/RetinoMaps/eyetracking/dev/eyetrack_preproc.py)
 
-#### Eyetracking postprocessing
-- [ ] Saccade analysis
-- [ ] Quality check
-
 ## MRI Data analysis
 ---
 ### Individual analysis
