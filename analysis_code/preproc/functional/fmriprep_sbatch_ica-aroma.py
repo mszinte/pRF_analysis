@@ -47,8 +47,8 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.be
 -----------------------------------------------------------------------------------------
 """
 # Debug 
-import ipdb
-deb = ipdb.set_trace
+#import ipdb
+#deb = ipdb.set_trace
 
 # imports modules
 import os
