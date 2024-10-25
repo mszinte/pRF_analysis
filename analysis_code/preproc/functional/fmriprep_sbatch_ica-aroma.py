@@ -38,8 +38,8 @@ python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n ar
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
 
 With AROMA:
-python fmriprep_sbatch_aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch_aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 marco.bedini@univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 marco.bedini@univ-amu.fr 327 b327
 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
@@ -53,7 +53,7 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.be
 # imports modules
 import os
 import sys
-import ipdb
+#import ipdb
 opj = os.path.join
 
 # inputs
