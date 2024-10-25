@@ -47,9 +47,26 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](analysis_code/preproc/functional/preproc_end_sbatch.py)
 - [x] Compute vertex areas [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
 
+<<<<<<< HEAD
+#### Eyetracking preprocessing
+- [ ] BIDS conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
+- [ ] Generate experimental design matrix [create_design_matrix.py] ()
+- [ ] Extract eyetraces and Preprocessing[eyetrack_preproc.py](https://github.com/mszinte/pRF_analysis/blob/skling/RetinoMaps/eyetracking/dev/eyetrack_preproc.py)
+- [ ] Extract trigger timestamps [extract_triggers.py] ()
+
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
 
+#### Eyetracking postprocessing
+- [ ] Saccade analysis [extract_saccades.py]
+- [ ] Create experimental individual figures [plotly_plots.py]
+- [ ] Quality check 
+
+=======
+#### Functional postprocessing
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
+
+>>>>>>> main
 ##### Inter-run correlations
 - [x] Compute inter-run correlation [compute_run_corr_sbatch](analysis_code/preproc/functional/compute_run_corr_sbatch)
 - [x] Make inter-run correlations maps with pycortex [pycortex_maps_run_corr.py](analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](analysis_code/preproc/functional/pycortex_maps_run_corr.sh)

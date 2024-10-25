@@ -1,3 +1,5 @@
+import numpy as np 
+
 def vecvel(x,y,sampling_rate):
     """
     ----------------------------------------------------------------------
@@ -539,3 +541,68 @@ def plotly_layout_template(task,run):
 
 
     return fig 
+
+
+def interp1d(array: np.ndarray, new_len: int) -> np.ndarray:
+    la = len(array)
+    return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
+
+def predicted_pursuit(df_run,matfile, center, ppd):
+    import numpy as np
+    # need event file as input, need analysis info as input? 
+
+    pursuit_coord_x = matfile['config']['const'][0,0]['pursuit_matX'][0][0][0]
+    pursuit_coord_y = matfile['config']['const'][0,0]['pursuit_matY'][0][0][0]
+
+    amplitude = list(df_run['eyemov_amplitude'])
+    seq_trial = list(df_run['sequence_trial'])
+
+    purs_expected_x = []
+
+
+    for amp, trial in zip(amplitude, seq_trial):
+        if amp == 5: 
+            x_coord = 960.0
+        else: 
+            x_coord = pursuit_coord_x[amp-1, trial-1]
+        purs_expected_x.append(x_coord)
+
+
+    purs_expected_y = []
+
+    for amp, trial in zip(amplitude, seq_trial):
+        if amp == 5: 
+            y_coord = 540.0
+        else: 
+            y_coord = pursuit_coord_y[amp-1, trial-1]
+        purs_expected_y.append(y_coord)
+        
+
+    # Convert to dva 
+    purs_expected_x = (np.array(purs_expected_x) - (center[0]))/ppd
+    purs_expected_y =  -1.0*((np.array(purs_expected_y) - (center[1]))/ppd)
+
+
+    purs_x_intpl_run_1 = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
+    purs_y_intpl_run_1 = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
+
+    purs_x_intpl_run_2 = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
+    purs_y_intpl_run_2 = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
+
+
+    return purs_x_intpl_run_1,purs_y_intpl_run_1, purs_x_intpl_run_2, purs_y_intpl_run_2
+
+def fraction_under_threshold(pred, eucl_dist):
+    import numpy as np
+    thresholds = np.linspace(0, 9.0, 100)
+    precision = []
+
+    for thr in thresholds: 
+        count = np.sum(eucl_dist < thr)
+        fraction = count / len(pred) 
+        precision.append(fraction)
+    
+    return precision
+
+
+    

@@ -4,6 +4,10 @@ eyetrack_preproc.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 - Preprocess BIDS formatted eyetracking data 
+blinks are removed by excluding samples at which the pupil was lost entirely, excising data 100 ms before and 150 ms after each occurrence. 
+removing slow signal drift by linear detrending and median-centering of the gaze position time series (X and Y) (assumes that the median gaze position corresponds to central fixation)
+smoothing using a 50-ms running average. 
+Any eyetracking run containing fewer than 1/3 valid samples after pre-processing is excluded from further analysis
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: subject 
@@ -17,7 +21,7 @@ Tsv trial trigger timestamps
 -----------------------------------------------------------------------------------------
 To run:
 cd /projects/prf_analysis/RetinoMaps/eyetracking/dev
-python extract_eyetraces.py sub-01 PurLoc ses-01 eye1
+python eyetrack_preproc.py sub-01 PurLoc ses-01 eye1
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -46,7 +50,7 @@ def load_inputs():
     return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 
 def ensure_save_dir(base_dir, subject):
-    save_dir = f"{base_dir}/{subject}/eyetracking"
+    save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return save_dir
@@ -130,30 +134,36 @@ def main_preprocessing_pipeline():
         
         # Apply preprocessing steps based on settings
         eye_data_run = remove_blinks(eye_data_run, settings['blinks_remove'], settings['eyetrack_sampling'])
-        #eye_data_run = drift_correction(eye_data_run, settings['drift_corr'], extract_fixation_periods(eye_data_run, settings))
+        eye_data_run = convert_to_dva(eye_data_run, settings['center'], settings['ppd'])
         eye_data_run_x = interpolate_nans(eye_data_run[:,1])
         eye_data_run_y = interpolate_nans(eye_data_run[:,2])
         eye_data_run_p = interpolate_nans(eye_data_run[:,3])
         eye_data_run_p = normalize_data(eye_data_run_p)
+
+        if settings.get('drift_corr'):
+
+            eye_data_run_x = detrending(eye_data_run_x)
+            eye_data_run_y = detrending(eye_data_run_y)
+
         
         eye_data_run = np.stack((eye_data_run[:,0],
                                  eye_data_run_x, 
                                  eye_data_run_y, 
                                  eye_data_run_p), axis=1)
 
-        
         if settings.get('downsampling'):
             eye_data_run   = downsample_data(eye_data_run, 1000, 100)
-            
+
+        eye_data_run = pd.DataFrame(eye_data_run, columns=['timestamp', 'x', 'y', 'pupil_size'])
+
+        
         if settings.get('smoothing'):
             eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings)
         
         # Save the preprocessed data
-        tsv_file_path = f'{file_dir_save}/timeseries/{subject}_task-{task}_run_{run_idx+1}_eyedata.tsv.gz'
-        save_preprocessed_data(pd.DataFrame(eye_data_run, columns=['timestamp', 'x', 'y', 'pupil_size']), tsv_file_path)
+        tsv_file_path = f'{file_dir_save}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
+        save_preprocessed_data(eye_data_run, tsv_file_path)
 
-        # Save tsv triggers 
-        #TODO append to event files
         
         print(f"Run {run_idx+1} preprocessed and saved at {tsv_file_path}")
 
