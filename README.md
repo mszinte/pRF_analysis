@@ -1,17 +1,32 @@
-# pRF analysis
-
-## About
+# Authors (alphabetic order): 
 ---
-*Main codes for pRF analysis on surface-based fMRI </br>*
+Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
+# Task specific analysis
 ---
-## Authors (alphabetic order): 
----
-Sina KLING, Uriel LASCOMBES, Martin SZINTE
+After pRF analysis each project have is one analysis, project's read me can be find at : 
 
-## Data analysis
+- RetinoMaps [README.md](RetinoMaps/README.md)
+- Amblyo_prf [README.md](amblyo_prf/README.md)
+
+# Main beahvioral, structural-MRI and functional-MRI analysis
 ---
 
+## Behavioral analysis
+---
+### Individual analysis
+Analyses are run on individual participant (**sub-0X**) </br>
+
+#### Eyetracking preprocessing
+- [x] BIDS conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
+- [ ] Extract eyetraces and Preprocessing[eyetrack_preproc.py](https://github.com/mszinte/pRF_analysis/blob/skling/RetinoMaps/eyetracking/dev/eyetrack_preproc.py)
+
+#### Eyetracking postprocessing
+- [ ] Saccade analysis 
+- [ ] Quality check
+
+## MRI Data analysis
+---
 ### BIDS
 - [x] Copy relevant data from PredictEye
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
@@ -35,16 +50,8 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](analysis_code/preproc/functional/preproc_end_sbatch.py)
 - [x] Compute vertex areas [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
 
-#### Eyetracking preprocessing
-- [ ] BIDS conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
-- [ ] Extract eyetraces and Preprocessing[eyetrack_preproc.py](https://github.com/mszinte/pRF_analysis/blob/skling/RetinoMaps/eyetracking/dev/eyetrack_preproc.py)
-
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
-
-#### Eyetracking postprocessing
-- [ ] Saccade analysis 
-- [ ] Quality check
 
 ##### Inter-run correlations
 - [x] Compute inter-run correlation [compute_run_corr_sbatch](analysis_code/preproc/functional/compute_run_corr_sbatch)
@@ -104,10 +111,3 @@ or we ran a ROI based group analysis determined individually on subject surfaces
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py)
 - [x] Merge all figures for **sub-170k** and **group** [merge_fig_css.py](analysis_code/postproc/prf/postfit/merge_fig_css.py)
-
-## Data analysis
----
-After pRF analysis each project have is one analysis, project's read me can be find at : 
-
-- RetinoMaps [README.md](RetinoMaps/README.md)
-- Amblyo_prf [README.md](amblyo_prf/README.md)
