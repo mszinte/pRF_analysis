@@ -1,5 +1,24 @@
-
-#%%
+"""
+-----------------------------------------------------------------------------------------
+generate_individual_figures.py
+-----------------------------------------------------------------------------------------
+Goal of the script:
+- create figures for ses, trial, run of eye position
+-----------------------------------------------------------------------------------------
+Input(s):
+sys.argv[1]: subjects (list of subjects figures should be created for)
+sys.argv[2]: task
+sys.argv[3]: session 
+-----------------------------------------------------------------------------------------
+Output(s):
+Cleaned timeseries data per run 
+Tsv trial trigger timestamps 
+-----------------------------------------------------------------------------------------
+To run:
+cd /projects/prf_analysis/RetinoMaps/eyetracking/dev/PurLocSacLoc
+python generate_individual_figures.py [sub-01] PurLoc ses-01 
+-----------------------------------------------------------------------------------------
+"""
 import numpy as np
 import h5py
 import json
@@ -25,9 +44,20 @@ def ensure_save_dir(base_dir, subject):
         os.makedirs(save_dir)
     return save_dir
 
+def load_inputs():
+    subjects_input = sys.argv[1]
+    # Convert the string of subjects into a list (e.g., '[sub-01, sub-02]' -> ['sub-01', 'sub-02'])
+    subjects = subjects_input.strip('[]').split(',')
+    # Remove any spaces around subject names
+    subjects = [sub.strip() for sub in subjects]
+    
+    task = sys.argv[2]
+    ses = sys.argv[3]
+    return subjects, task, ses
 
-subjects = ['sub-01']
-task = "SacLoc"
+
+
+subjects, task, ses = load_inputs()
 
 
 with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json') as f:
@@ -64,7 +94,7 @@ for subject in subjects:
 
     eye_data_run_1 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
     eye_data_run_1 = eye_data_run_1[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
-    eye_data_run_2 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+    eye_data_run_2 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
     eye_data_run_2 = eye_data_run_2[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
     eye_data_all_runs = [eye_data_run_1,eye_data_run_2]
 

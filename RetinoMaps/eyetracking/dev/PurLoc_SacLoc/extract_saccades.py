@@ -6,8 +6,9 @@ Goal of the script:
 Extract saccade metrics
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: subject number (sub-01)
-sys.argv[2]: task (EyeMov)
+sys.argv[1]: subject number 
+sys.argv[2]: task 
+sys.argv[3]: session
 -----------------------------------------------------------------------------------------
 Output(s):
 h5 files with vals_all
@@ -38,11 +39,10 @@ vals_all[:,23]:	trial with no_saccade detected,
 vals_all[:,24]:	microsaccade detected (<1 dva)
 -----------------------------------------------------------------------------------------
 To run:
-cd /Users/martin/Dropbox/Experiments/pMFexp/stats/
-python behav_analysis/extract_saccades.py sub-01 EyeMov
+cd /projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc
+python extract_saccades.py sub-01 PurLoc ses-01
 -----------------------------------------------------------------------------------------
 """
-#%%
 # Stop warnings
 # -------------
 import warnings
@@ -70,13 +70,10 @@ def ensure_save_dir(base_dir, subject):
         os.makedirs(save_dir)
     return save_dir
 
-# Get inputs
-# ----------
-#subject = sys.argv[1]
-#task = sys.argv[2]
+def load_inputs():
+    return sys.argv[1], sys.argv[2], sys.argv[3]
 
-subject = 'sub-01'
-task = 'SacLoc'
+subject, task, ses = load_inputs()
 
 # Define analysis parameters
 # --------------------------
@@ -84,11 +81,8 @@ with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/Pur
 	json_s = f.read()
 	settings = json.loads(json_s)
 
-# Platform settings
-# -----------------
 
 main_dir = settings['main_dir_mac']
-
 
 runs = np.arange(0,settings['num_run'],1)
 sequences = np.arange(0,settings['num_seq'],1)
@@ -128,7 +122,6 @@ min_dur = settings['min_dur']
 merge_interval = settings['merge_interval']
 tolerance_ratio = settings['tolerance_ratio']
 
-#%%
 # Main loop
 # ---------
 mat = 0
@@ -279,7 +272,6 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 																blink_saccade])))
 
 
-#%%
 #TODO blink saccades to include? 
 # save nan blink from preproc??
 #5 blink saccades
@@ -347,8 +339,6 @@ for tBlink in np.arange(0,blinkNum,1):
 											  	eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),2] =\
 												np.linspace(blink_sac_y_coord[0],blink_sac_y_coord[-1],blink_sac_y_coord.shape[0])
 '''
-
-#%%
 
 # Save all
 # --------
