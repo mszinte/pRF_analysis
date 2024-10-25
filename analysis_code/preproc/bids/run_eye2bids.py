@@ -8,12 +8,12 @@ folder and deletes original files. By default metedata_file.yml is expected in p
 is saved in project_input_directory as well. 
 -------------------------------------------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: project input directory path 
-sys.argv[2]: project name
+project input directory path 
+project name
 
 Option(s):
---make_copy
---delete_original
+--make_copy : copy the files from the BIDS folder to the sourcedata folder
+--delete_original: delete original files from the BIDS folder
 -------------------------------------------------------------------------------------------------------------------------
 Output(s):
 BIDS converted eyetracking file structure: 
@@ -29,6 +29,7 @@ example: run_eye2bids.py /Users/sinakling/disks/meso_shared/  RetinoMaps  --make
 -------------------------------------------------------------------------------------------------------------------------
 """
 
+# General imports
 import os
 import subprocess
 import sys
@@ -36,7 +37,7 @@ from bids import BIDSLayout
 from bids.layout import parse_file_entities
 import argparse
 
-
+# Main function
 def main(input_directory, metdadata_path, output_script_path, make_copy = True, delete_original = True):
     # Remove existing sh file 
     try:
@@ -55,6 +56,7 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                 if file.endswith(".edf"):
                     # Construct the full file path
                     edf_file_path = os.path.join(root, file)
+                    
                     # Create sourcedata folder
                     entity_dict = parse_file_entities(edf_file_path)
 
@@ -79,7 +81,6 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                         os.system(f'cp {edf_file_path} {sourcedata_folder}')
                         print(f"---Succesfully copied {edf_file_path}---")
 
-                     
                     # Construct the command and write it to the .sh file 
                     command = f"eye2bids --input_file {edf_file_path} --metadata_file {metadata_path} --output_dir {root}\n"  
                     script_file.write(command)
@@ -89,12 +90,9 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                     if delete_original: 
                         os.remove(edf_file_path)
 
-
-
     print(f"Batch script generated at: {output_script_path}")
 
-
-
+# Runner
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert eyetracking files to BIDS format.')
     parser.add_argument('input_directory_path ', type=str, help='Project input directory path')
@@ -110,15 +108,9 @@ if __name__ == "__main__":
     input_directory = os.path.join(input_directory_path, input_directory_name)
     make_copy = args.make_copy
     delete_original = args.delete_original
-
     parent_path = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
     metadata_path = os.join(parent_path, 'metadata.yml')
-
     output_script_path = os.path.join(parent_path, 'convert_eyetracking.sh')
 
     # Call the main function
     main(input_directory, metadata_path, output_script_path, make_copy, delete_original)
-
-    
- 
-   
