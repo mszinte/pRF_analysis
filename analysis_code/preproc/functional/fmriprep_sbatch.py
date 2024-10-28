@@ -49,7 +49,6 @@ deb = ipdb.set_trace
 # imports modules
 import os
 import sys
-import ipdb
 opj = os.path.join
 
 # inputs
@@ -136,8 +135,13 @@ singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir 
         dof=dof, aroma_end=aroma_end)
 
 # define permission cmd
-chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
+chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
 chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
+
+chmod_cmd_temp = "\nchmod -Rf 771 {main_dir}/temp".format(main_dir=main_dir)
+chgrp_cmd_temp = "chgrp -Rf {group} {main_dir}/temp".format(main_dir=main_dir, group=group)
+
+
 
 # create sh folder and file
 sh_fn = "{main_dir}/{project_dir}/derivatives/fmriprep/jobs/sub-{sub_num}_fmriprep{anat_only_end}{aroma_end}.sh".format(
@@ -150,9 +154,9 @@ os.makedirs("{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
                 main_dir=main_dir,project_dir=project_dir), exist_ok=True)
 
 of = open(sh_fn, 'w')
-of.write("{slurm_cmd}{singularity_cmd}{chmod_cmd}{chgrp_cmd}".format(
-    slurm_cmd=slurm_cmd, singularity_cmd=singularity_cmd, 
-    chmod_cmd=chmod_cmd, chgrp_cmd=chgrp_cmd))
+of.write("{} \n{} \n{} \n{} \n{} \n{}".format(
+    slurm_cmd, singularity_cmd, chmod_cmd, chgrp_cmd, 
+    chmod_cmd_temp, chgrp_cmd_temp))
 of.close()
 
 # Submit jobs
