@@ -72,6 +72,7 @@ dof = int(sys.argv[11])
 email = sys.argv[12]
 group = sys.argv[13]
 server_project = sys.argv[14]
+filter_data = sys.argv[15]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
@@ -84,7 +85,8 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
-use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', '', '', '', ''
+use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', '', '', '', '', \
+filter_data
 
 
 if anat == 'anat_only_y':
@@ -110,6 +112,9 @@ if fsaverage_val == 'fsaverage_y':
     tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
         main_dir=main_dir, project_dir=project_dir) 
     fsaverage = 'fsaverage'
+    
+if filter_data == 'filt_data_y':
+    filter_bids = ' --bids-filter-file /scratch/mszinte/data/RetinoMaps/filter_func_data.json' ##  add path to file
 
 # define SLURM cmd
 slurm_cmd = """\
@@ -131,13 +136,14 @@ slurm_cmd = """\
            log_dir=log_dir, email=email, tf_export=tf_export,
            cluster_name=cluster_name)
 
-#define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
+# define singularity cmd
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
         use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
-        dof=dof, aroma_end=aroma_end)
+        dof=dof, aroma_end=aroma_end, filter_bids=filter_bids)
+
 
 # define permission cmd
 chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
