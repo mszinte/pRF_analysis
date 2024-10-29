@@ -16,6 +16,8 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## Data analysis
 ---
+- [x] Copy relevant data from PredictEye [copy_data.py](analysis_code/preproc/bids/bids_copy_data.sh) 
+- [x] Change the 'task' to 'task_condition' coulumn name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](analysis_code/preproc/bids/correct_events_files.ipynb)
 ##### Make project WEBGL
 - [x] Make subject WEBGL with pycortex for **sub-170k** [pycortex_webgl_css.py](webgl/pycortex_webgl_css.py)
 - [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
