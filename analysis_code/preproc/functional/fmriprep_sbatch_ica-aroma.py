@@ -114,7 +114,8 @@ if fsaverage_val == 'fsaverage_y':
     fsaverage = 'fsaverage'
     
 if filter_data == 'filt_data_y':
-    filter_bids = ' --bids-filter-file /scratch/mszinte/data/RetinoMaps/filter_func_data.json' ##  add path to file
+    filter_bids = ' --bids-filter-file {main_dir}/{project_dir}/filter_func_data.json'.format(
+        main_dir=main_dir, project_dir=project_dir)
 
 # define SLURM cmd
 slurm_cmd = """\
