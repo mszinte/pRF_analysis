@@ -18,6 +18,7 @@
     "high_pass_threshold": 0.01,
     "formats": ["fsnative", "170k"],
     "extensions": ["func.gii", "dtseries.nii"],
+    "n_runs_prf":5,
     "screen_size_pix": [1080, 1080],
     "screen_size_cm" : [77.3, 43.5],
     "screen_distance_cm": 120,
