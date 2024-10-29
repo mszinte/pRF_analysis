@@ -23,12 +23,17 @@ Analyses are run on individual participant (**sub-0X**) </br>
 
 ## MRI Data analysis
 ---
+### BIDS
+- [x] Deface participants t1w image [deface_sbatch.py](analysis_code/preproc/bids/deface_sbatch.py) 
+    </br>Note: run script for each subject separately.
+- [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
+    </br>Note: for the webpage, use FireFox and wait for at least 30 min, even if nothing seems to happen.
+
+
 ### Individual analysis
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
 
 #### Structural preprocessing
-- [x] Copy relevant data from PredictEye
-- [x] Validate bids format [https://bids-standard.github.io/bids-validator/]
 - [x] fMRIprep with anat-only option [fmriprep_sbatch.py](analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] create sagital view video before manual edit [sagital_view.py](analysis_code/preproc/anatomical/sagital_view.py)
 - [x] manual edit of brain segmentation [pial_edits.sh](analysis_code/preproc/anatomical/pial_edits.sh)
