@@ -19,6 +19,8 @@ sys.argv[10]: dof number (e.g. 12)
 sys.argv[11]: email account
 sys.argv[12]: data group (e.g. 327)
 sys.argv[13]: project name (e.g. b327)
+sys.argv[14]: server_project
+sys.argv[15]: filters the data you wanna process (e.g. resting-state)
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
