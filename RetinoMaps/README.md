@@ -16,13 +16,19 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## Data analysis
 ---
+### Prepocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
 - [x] Change the 'task' to 'task_condition' coulumn name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
-##### Make project WEBGL
+
+### pRF behaviour analysis
+- [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
+- [x] Make pRF behaviour figure [make_prf_beh_fig.py](pRF_beh/make_prf_beh_fig.py)
+
+### Make project WEBGL
 - [x] Make subject WEBGL with pycortex for **sub-170k** [pycortex_webgl_css.py](webgl/pycortex_webgl_css.py)
 - [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
 
-##### GLM analysis
+### GLM analysis
 - [x] Run Glm for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
 - [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py)
 
