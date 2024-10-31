@@ -144,7 +144,7 @@ singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir 
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
-        use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
+        use_skip_bids_val=use_skip_bids_val, fsaverage=fsaverage, hcp_cifti=hcp_cifti, memory_val=memory_val,
         dof=dof, aroma_end=aroma_end, filter_bids=filter_bids)
 
 
