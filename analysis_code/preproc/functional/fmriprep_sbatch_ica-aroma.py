@@ -16,11 +16,12 @@ sys.argv[7]: use Use fieldmap-free distortion correction
 sys.argv[8]: skip BIDS validation (1) or not (0)
 sys.argv[9]: save cifti hcp format data with 170k vertices
 sys.argv[10]: dof number (e.g. 12)
-sys.argv[11]: email account
-sys.argv[12]: data group (e.g. 327)
-sys.argv[13]: project name (e.g. b327)
-sys.argv[14]: server_project
-sys.argv[15]: filters the data you wanna process (e.g. resting-state)
+sys.argv[11]: filters the data you wanna process (e.g. resting-state)
+sys.argv[12]: email account
+sys.argv[13]: data group (e.g. 327)
+sys.argv[14]: project name (e.g. b327)
+sys.argv[15]: server_project
+
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
@@ -41,7 +42,7 @@ python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n ar
 
 With AROMA processing only the resting-state data:
 python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y filt_data_y 12 marco.bedini@univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
@@ -49,8 +50,8 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.be
 -----------------------------------------------------------------------------------------
 """
 # Debug 
-#import ipdb
-#deb = ipdb.set_trace
+import ipdb
+deb = ipdb.set_trace
 
 # imports modules
 import os
@@ -71,10 +72,11 @@ skip_bids_val = sys.argv[8]
 hcp_cifti_val = sys.argv[9]
 fsaverage_val = sys.argv[10]
 dof = int(sys.argv[11])
-email = sys.argv[12]
-group = sys.argv[13]
-server_project = sys.argv[14]
-filter_data = sys.argv[15]
+filter_data = sys.argv[12]
+email = sys.argv[13]
+group = sys.argv[14]
+server_project = sys.argv[15]
+
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
@@ -87,8 +89,7 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
-use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', '', '', '', '', \
-filter_data
+use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, fsaverage = '','','','','', '', '', '', '', '', \
 
 
 if anat == 'anat_only_y':
@@ -109,15 +110,14 @@ if skip_bids_val == 'skip_bids_val_y':
 if hcp_cifti_val == 'cifti_output_170k_y':
     hcp_cifti = ' --cifti-output 170k'
     
+if filter_data == 'filt_data_y':
+    filter_bids = ' --bids-filter-file /home/mbedini/projects/pRF_analysis/analysis_code/preproc/bids/filter_func_data.json'
+    
 if fsaverage_val == 'fsaverage_y':
     tf_export = 'export SINGULARITYENV_TEMPLATEFLOW_HOME=/opt/templateflow'
     tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
         main_dir=main_dir, project_dir=project_dir) 
     fsaverage = 'fsaverage'
-    
-if filter_data == 'filt_data_y':
-    filter_bids = ' --bids-filter-file {main_dir}/{project_dir}/filter_func_data.json'.format(
-        main_dir=main_dir, project_dir=project_dir)
 
 # define SLURM cmd
 slurm_cmd = """\
