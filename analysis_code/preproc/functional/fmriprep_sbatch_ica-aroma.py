@@ -39,9 +39,9 @@ cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
 
-With AROMA:
+With AROMA processing only the resting-state data:
 python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 marco.bedini@univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y filt_data_y 12 marco.bedini@univ-amu.fr 327 b327
 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
