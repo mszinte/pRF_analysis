@@ -74,13 +74,6 @@ stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
 subjects_to_group = analysis_info['subjects']
 group_tasks = analysis_info['task_intertask']
-if subject == 'sub-170k': 
-    formats = ['170k']
-    extensions = ['dtseries.nii']
-else: 
-    formats = analysis_info['formats']
-    extensions = analysis_info['extensions']
-rois = analysis_info['rois']
 
 with open('../figure_settings.json') as f:
     json_s = f.read()

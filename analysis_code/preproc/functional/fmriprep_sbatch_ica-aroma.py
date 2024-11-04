@@ -16,9 +16,12 @@ sys.argv[7]: use Use fieldmap-free distortion correction
 sys.argv[8]: skip BIDS validation (1) or not (0)
 sys.argv[9]: save cifti hcp format data with 170k vertices
 sys.argv[10]: dof number (e.g. 12)
-sys.argv[11]: email account
-sys.argv[12]: data group (e.g. 327)
-sys.argv[13]: project name (e.g. b327)
+sys.argv[11]: filters the data you wanna process (e.g. resting-state)
+sys.argv[12]: email account
+sys.argv[13]: data group (e.g. 327)
+sys.argv[14]: project name (e.g. b327)
+sys.argv[15]: server_project
+
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
@@ -37,9 +40,9 @@ cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
 
-With AROMA:
-python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 marco.bedini@univ-amu.fr 327 b327
+With AROMA processing only the resting-state data:
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
@@ -53,7 +56,7 @@ deb = ipdb.set_trace
 # imports modules
 import os
 import sys
-import ipdb
+#import ipdb
 opj = os.path.join
 
 # inputs
@@ -69,9 +72,11 @@ skip_bids_val = sys.argv[8]
 hcp_cifti_val = sys.argv[9]
 fsaverage_val = sys.argv[10]
 dof = int(sys.argv[11])
-email = sys.argv[12]
-group = sys.argv[13]
-server_project = sys.argv[14]
+filter_data = sys.argv[12]
+email = sys.argv[13]
+group = sys.argv[14]
+server_project = sys.argv[15]
+
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
@@ -84,7 +89,7 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
-use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', '', '', '', ''
+use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, fsaverage = '','','','','', '', '', '', '', '', \
 
 
 if anat == 'anat_only_y':
@@ -104,6 +109,9 @@ if skip_bids_val == 'skip_bids_val_y':
 
 if hcp_cifti_val == 'cifti_output_170k_y':
     hcp_cifti = ' --cifti-output 170k'
+    
+if filter_data == 'filt_data_y':
+    filter_bids = ' --bids-filter-file /home/mbedini/projects/pRF_analysis/analysis_code/preproc/bids/filter_func_data.json'
     
 if fsaverage_val == 'fsaverage_y':
     tf_export = 'export SINGULARITYENV_TEMPLATEFLOW_HOME=/opt/templateflow'
@@ -131,13 +139,14 @@ slurm_cmd = """\
            log_dir=log_dir, email=email, tf_export=tf_export,
            cluster_name=cluster_name)
 
-#define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
+# define singularity cmd
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
         use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
-        dof=dof, aroma_end=aroma_end)
+        dof=dof, aroma_end=aroma_end, filter_bids=filter_bids)
+
 
 # define permission cmd
 chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
