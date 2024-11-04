@@ -77,7 +77,7 @@ subject, task, ses = load_inputs()
 
 # Define analysis parameters
 # --------------------------
-with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json') as f:
+with open(f'../{task}_behavior_settings.json') as f:
 	json_s = f.read()
 	settings = json.loads(json_s)
 
@@ -93,15 +93,12 @@ pursuits_tr = np.arange(0,settings['seq_trs'],2)
 saccades_tr = np.arange(1,settings['seq_trs'],2)
 seq_type = settings['seq_type']
 
-# Load data
-# ---------
-
+#-------------------- Load data --------------------------------------
 file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
 h5_filename = '{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
 h5_file = h5py.File(h5_filename,'r') 
 time_start_seq = np.array(h5_file['time_start_seq'])
 time_end_seq = np.array(h5_file['time_end_seq'])
-#print(time_end_seq)  #important: sequence end times need to be non zero, otherwise the script wont run
 time_start_trial = np.array(h5_file['time_start_trial'])
 time_end_trial = np.array(h5_file['time_end_trial'])
 amp_sequence = np.array(h5_file['amp_sequence'])
@@ -110,20 +107,16 @@ eye_data_run_01_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{s
 eye_data_run_01_nan_blink_interpol = eye_data_run_01_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
 eye_data_run_02_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
 eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
-
-
 eye_data_all_runs = [eye_data_run_01_nan_blink_interpol,eye_data_run_02_nan_blink_interpol]
 
 # Get saccade model
-# -----------------
 sampling_rate = settings['sampling_rate']
 velocity_th = settings['velocity_th']
 min_dur = settings['min_dur']
 merge_interval = settings['merge_interval']
 tolerance_ratio = settings['tolerance_ratio']
 
-# Main loop
-# ---------
+#----------------------- Main loop ------------------------------------
 mat = 0
 for run, eye_data_run in enumerate(eye_data_all_runs):
 	print(f'--extracting saccades from run: {run}--')
