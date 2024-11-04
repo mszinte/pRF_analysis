@@ -7,13 +7,10 @@ Goal of the script:
 blinks are removed by excluding samples at which the pupil was lost entirely, excising data 100 ms before and 150 ms after each occurrence. 
 removing slow signal drift by linear detrending and median-centering of the gaze position time series (X and Y) (assumes that the median gaze position corresponds to central fixation)
 smoothing using a 50-ms running average. 
-Any eyetracking run containing fewer than 1/3 valid samples after pre-processing is excluded from further analysis
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: subject 
 sys.argv[2]: task
-sys.argv[3]: session 
-sys.argv[4]: eye
 -----------------------------------------------------------------------------------------
 Output(s):
 Cleaned timeseries data per run 
@@ -36,7 +33,10 @@ import sys
 from statistics import median
 from scipy.signal import detrend
 # path of utils folder  
-sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils") #TODO make path general
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
+utils_path = os.path.join(script_dir, "../../analysis_code/utils")
+sys.path.insert(0, utils_path)
+
 from eyetrack_utils import *
 
 # --------------------- Load settings and inputs -------------------------------------
@@ -47,7 +47,7 @@ def load_settings(settings_file):
     return settings
 
 def load_inputs():
-    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    return sys.argv[1], sys.arg[2]
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
@@ -67,7 +67,7 @@ def extract_event_and_physio_data(main_dir, subject, task, ses, num_run, eye):
     return df_event_runs, df_data_runs
 
 # --------------------- Preprocessing Methods -----------------------------------------
-
+# Options in behaviour_settings
 def remove_blinks(data, method, sampling_rate):
     if method == 'pupil_off':
         return blinkrm_pupil_off(data, sampling_rate)
@@ -115,8 +115,10 @@ def save_preprocessed_data(data, file_path):
 
 def main_preprocessing_pipeline():
     # Load inputs and settings
-    subject, task, ses, eye = load_inputs()
-    settings = load_settings('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json')  #TODO make path general
+    subject, task = load_inputs()
+    settings = load_settings(f'{task}_behavior_settings.json')  
+    ses = settings['session']
+    eye = settings['eye']
     
     # Prepare save directory
     main_dir = settings.get('main_dir_mac')
@@ -127,40 +129,45 @@ def main_preprocessing_pipeline():
     print(df_event_runs[0].head()) 
     print(df_data_runs[0].head())  
     
-    # Preprocessing loop for each run
+    # Preprocessing for each run
     for run_idx, (df_event, df_data) in enumerate(zip(df_event_runs, df_data_runs)):
-        # from here per run 
-        eye_data_run, time_start_eye, time_end_eye = extract_eye_data_and_triggers(df_event, df_data,settings['first_trial_pattern'], settings['last_trial_pattern']) 
         
+        eye_data_run, time_start_eye, time_end_eye = extract_eye_data_and_triggers(df_event, df_data,settings['first_trial_pattern'], settings['last_trial_pattern'])
+       
         # Apply preprocessing steps based on settings
+        # --------- remove blinks ------------------
         eye_data_run = remove_blinks(eye_data_run, settings['blinks_remove'], settings['eyetrack_sampling'])
+        # ------ convert to dva and center ---------
         eye_data_run = convert_to_dva(eye_data_run, settings['center'], settings['ppd'])
+        # ------------ interpolate -----------------
         eye_data_run_x = interpolate_nans(eye_data_run[:,1])
         eye_data_run_y = interpolate_nans(eye_data_run[:,2])
         eye_data_run_p = interpolate_nans(eye_data_run[:,3])
+        # ------- normalise pupil data -------------
         eye_data_run_p = normalize_data(eye_data_run_p)
 
+        # ------------- detrending ----------------
         if settings.get('drift_corr'):
 
-            eye_data_run_x = detrending(eye_data_run_x)
-            eye_data_run_y = detrending(eye_data_run_y)
+            eye_data_run_x = detrending(eye_data_run_x,task)
+            eye_data_run_y = detrending(eye_data_run_y,task)
 
         
         eye_data_run = np.stack((eye_data_run[:,0],
                                  eye_data_run_x, 
                                  eye_data_run_y, 
                                  eye_data_run_p), axis=1)
-
+        # ------------ downsampling ----------------
         if settings.get('downsampling'):
             eye_data_run   = downsample_data(eye_data_run, 1000, 100)
 
         eye_data_run = pd.DataFrame(eye_data_run, columns=['timestamp', 'x', 'y', 'pupil_size'])
 
-        
+        # ------------ smoothing ------------------
         if settings.get('smoothing'):
             eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings)
         
-        # Save the preprocessed data
+        # Save the preprocessed data as tsv.gz
         tsv_file_path = f'{file_dir_save}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
         save_preprocessed_data(eye_data_run, tsv_file_path)
 

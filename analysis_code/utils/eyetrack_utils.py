@@ -62,7 +62,8 @@ def extract_eye_data_and_triggers(df_event, df_data, onset_pattern, offset_patte
     import pandas as pd
     import matplotlib.pyplot as plt
     
-
+    time_start_eye = 0
+    time_end_eye = 0
     # Loop through the 'messages' column to extract the patterns
 
     for index, row in df_event.iterrows():
@@ -74,10 +75,12 @@ def extract_eye_data_and_triggers(df_event, df_data, onset_pattern, offset_patte
         # Check for sequence 1 started
         if re.search(onset_pattern, message):
             time_start_eye = row['onset']  # Store by run index
+            
     
         # Check for sequence 9 stopped
         if re.search(offset_pattern, message):
             time_end_eye = row['onset']
+           
 
     
     # Filter for only timestamps between first and last trial 
@@ -103,7 +106,7 @@ def extract_eye_data_and_triggers(df_event, df_data, onset_pattern, offset_patte
 
 import numpy as np 
 
-def blinkrm_pupil_off(samples, sampling_rate=1000):
+def blinkrm_pupil_off(samples, sampling_rate=1000, addms2blink=50, smoothing_duration=200):
     """
     Replace blinks in eye-tracking data (where pupil size is zero) with NaN and extend blink duration for smoothing.
 
@@ -117,7 +120,6 @@ def blinkrm_pupil_off(samples, sampling_rate=1000):
     import numpy as np 
     import matplotlib.pyplot as plt
     print(' - blink replacement with NaN')
-    addms2blink = 50  # ms added to end of blink
     blink_duration_extension = int(sampling_rate / 1000 * addms2blink)
     
     # Detect blinks based on pupil size being 0
@@ -134,8 +136,8 @@ def blinkrm_pupil_off(samples, sampling_rate=1000):
         end_idx = min(len(samples), idx + blink_duration_extension + 1)
         blink_bool[start_idx:end_idx] = True
     
-    # Add another 100 ms to the beginning and ending of each blink
-    smth_kernel = np.ones(int(sampling_rate / 1000 * 200)) / (sampling_rate / 1000 * 200)
+    # Add smoothing around each blink (100 ms before and after)
+    smth_kernel = np.ones(int(sampling_rate / 1000 * smoothing_duration)) / (sampling_rate / 1000 * smoothing_duration)
     extended_blink_bool = np.convolve(blink_bool, smth_kernel, mode='same') > 0
     
     # Replace blink points in the samples with NaN
@@ -281,81 +283,58 @@ def gaussian_smoothing(df, column, sigma):
 
 
 
-def detrending(eyetracking_1D): 
+import numpy as np
+from scipy.signal import detrend, resample
+import matplotlib.pyplot as plt
+
+def detrending(eyetracking_1D, task): 
     """
-    Remove linear trends from eye-tracking data and median-centering it during fixation periods to create drift corrected data.
+    Remove linear trends from eye-tracking data and median-center it during fixation periods for drift correction.
 
     Args:
         eyetracking_1D (np.array): 1D array of eye-tracking data to detrend.
+        task (str): Task type, currently 'pRF' or other.
 
     Returns:
         np.array: Detrended eye-tracking data with trends removed and median-centered.
     """
+    if task == 'pRF':
+        fixation_data = eyetracking_1D
+        detrended_full_data = detrend(fixation_data, type='linear')
+    else:
+        # Load and resample fixation data
+        fixation_trials = load_design_matrix_fixations('trial_type_fixation', task)  # Requires design matrix from task (see create_design_matrix.py)
+        resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
+        fixation_bool = resampled_fixation_type > 0.5
 
+        fixation_data = eyetracking_1D[fixation_bool]
 
-def detrending(eyetracking_1D): 
+        # Fit a linear model for the trend during fixation periods
+        fixation_indices = np.where(fixation_bool)[0]
+        trend_coefficients = np.polyfit(fixation_indices, fixation_data, deg=1)
 
-    from scipy.signal import detrend
-    import numpy as np
-    from scipy.signal import resample
-    import matplotlib.pyplot as plt
-    from statistics import median
+        # Apply the linear trend to the entire dataset
+        full_indices = np.arange(len(eyetracking_1D))
+        linear_trend_full = np.polyval(trend_coefficients, full_indices)
 
-    # Filter the eye data based on fixation periods
-    fixation_trials = load_design_matrix_fixations('trial_type_fixation')
-    resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
-    fixation_bool = resampled_fixation_type > 0.5  
+        # Subtract the trend from the full dataset
+        detrended_full_data = eyetracking_1D - linear_trend_full
 
-    
-    fixation_data = eyetracking_1D[fixation_bool]
+    # Median centering using numpy's median function for consistency with numpy arrays
+    fixation_median = np.median(detrended_full_data)
+    detrended_full_data -= fixation_median
 
-    # Linear detrending 
-    detrended_fixation_data = detrend(fixation_data)
-
-    fixation_trials = load_design_matrix_fixations('trial_type_fixation')
-    resampled_fixation_type = resample(fixation_trials, len(eyetracking_1D))
-
-    # Convert resampled fixation type to a boolean mask
-    fixation_bool = resampled_fixation_type > 0.5  
-
-    # Filter the eye data based on fixation periods
-    fixation_data = eyetracking_1D[fixation_bool]
-
-    # Detrend the fixation data (remove linear trend)
-    detrended_fixation_data = detrend(fixation_data)
-
-    # Generate indices for fixation and the full time series
-
-    fixation_indices = np.where(fixation_bool)[0]
-    full_indices = np.arange(len(eyetracking_1D))
-
-    # Fit a linear model 
-    trend_coefficients = np.polyfit(fixation_indices, fixation_data, deg=1)
-
-
-    # Use this model to predict the linear trend across the entire time series
-    linear_trend_full = np.polyval(trend_coefficients, full_indices)
-
-    # Subtract the linear trend from the entire dataset
-    detrended_full_data = eyetracking_1D - linear_trend_full
-
-
-    # Median centering 
-
-    fixation_median = median(fixation_data)
-
-    detrended_full_data = detrended_full_data - fixation_median
-
-
-    # Plot the detrended full dataset
-    plt.plot(eyetracking_1D)
-    plt.plot(detrended_full_data)
+    # Plot the original and detrended data
+    plt.plot(eyetracking_1D, label="Original Data")
+    plt.plot(detrended_full_data, label="Detrended Data")
     plt.title("Detrended Full Eye Data")
     plt.xlabel("Time")
     plt.ylabel("Detrended Eye Position")
+    plt.legend()
     plt.show()
 
     return detrended_full_data
+
 
     
 
@@ -418,7 +397,7 @@ def load_event_files(main_dir, subject, ses, task):
     return data_events
 
 
-def load_design_matrix_fixations(fixation_column): 
+def load_design_matrix_fixations(fixation_column, task): 
     """
     Load the design matrix and extract fixation trial information.
 
@@ -430,7 +409,7 @@ def load_design_matrix_fixations(fixation_column):
     """
 
     import pandas as pd
-    design_matrix = pd.read_csv("/Users/sinakling/Desktop/design_matrix.csv")
+    design_matrix = pd.read_csv(f"/{task}_design_matrix.csv")
     fixation_trials = np.array(design_matrix[fixation_column])
 
     return fixation_trials

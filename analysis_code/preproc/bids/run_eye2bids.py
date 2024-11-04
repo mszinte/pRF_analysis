@@ -1,6 +1,6 @@
 """
 -------------------------------------------------------------------------------------------------------------------------
-eye2bids.py
+run_eye2bids.py
 -------------------------------------------------------------------------------------------------------------------------
 Goal of the script:
 Create BIDS for eyetracking folder structure. Converts edf files accordingly, copies original files to sourcedata 
@@ -25,20 +25,35 @@ sub-02_ses-01_task-pRF_run-03_eyeData.edf -> sub-02_ses-01_task-pRF_run-03_eyeDa
 To run locally: 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 python run_eye2bids.py /path/to/project project_name --make_copy --delete_original  
-example: run_eye2bids.py /Users/sinakling/disks/meso_shared/  RetinoMaps  --make_copy --delete_original
+example: python run_eye2bids.py /Users/sinakling/disks/meso_shared/  RetinoMaps  --make_copy --delete_original
 -------------------------------------------------------------------------------------------------------------------------
 """
+
 
 # General imports
 import os
 import subprocess
 import sys
-from bids import BIDSLayout
-from bids.layout import parse_file_entities
+# Import BIDS if available
+try:
+    from bids import BIDSLayout
+    from bids.layout import parse_file_entities
+except ImportError:
+    print("Error: The 'pybids' package is required. Install it with 'pip install pybids'.")
+    sys.exit(1)
 import argparse
 
-# Main function
-def main(input_directory, metdadata_path, output_script_path, make_copy = True, delete_original = True):
+
+def main(input_directory, metadata_path, output_script_path, make_copy=True, delete_original=True):
+    # Check if input directory exits 
+    if not os.path.exists(input_directory):
+        print(f"Error: Input directory '{input_directory}' does not exist. Please provide a valid path.")
+        sys.exit(1)
+    # Check if the metadata file exists
+    if not os.path.exists(metadata_path):
+        print(f"Error: Metadata file not found at {metadata_path}. Exiting script.")
+        sys.exit(1)  # Exit the script if metadata file is missing
+
     # Remove existing sh file 
     try:
         os.remove(f'{output_script_path}')  
@@ -50,6 +65,7 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
         # Make the file executable
         os.chmod(output_script_path, 0o755)
         
+        print("Looking for edf files...")
         # Find all .edf files
         for root, dirs, files in os.walk(input_directory):
             for file in files:
@@ -61,7 +77,8 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                     entity_dict = parse_file_entities(edf_file_path)
 
                     # Construct the expected output filename
-                    expected_output_file = f"sub-{entity_dict['subject']}_ses-{entity_dict['session']}_task-{entity_dict['task']}_run-{entity_dict['run']}_eyetrack_recording-eye1_physio.tsv.gz"
+                    expected_output_file = f"sub-{entity_dict['subject']}_ses-{entity_dict['session']}_task-{entity_dict['task']}_run-{entity_dict['run']}_eyeData_recording-eye1_physio.tsv.gz"
+                    print(expected_output_file)
                     
                     # Check if the output file already exists in the directory
                     if os.path.exists(os.path.join(root, expected_output_file)):
@@ -88,6 +105,7 @@ def main(input_directory, metdadata_path, output_script_path, make_copy = True, 
                     os.system(command)
 
                     if delete_original: 
+                        print("Removing original files")
                         os.remove(edf_file_path)
 
     print(f"Batch script generated at: {output_script_path}")
@@ -109,7 +127,8 @@ if __name__ == "__main__":
     make_copy = args.make_copy
     delete_original = args.delete_original
     parent_path = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
-    metadata_path = os.path.join(parent_path, 'metadata.yml')
+    name_path = os.path.join(parent_path,  input_directory_name)  
+    metadata_path = os.path.join(name_path, 'metadata.yml')   # Required to have metadata.yml file in path: /../../projects/pRF_analysis/project_name/metadata.yml
     output_script_path = os.path.join(parent_path, 'convert_eyetracking.sh')
 
     # Call the main function

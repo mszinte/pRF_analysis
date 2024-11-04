@@ -8,8 +8,6 @@ Goal of the script:
 Input(s):
 sys.argv[1]: subject 
 sys.argv[2]: task
-sys.argv[3]: session
-sys.argv[4]: eye
 -----------------------------------------------------------------------------------------
 Output(s):
 Hdf5 file per run with all timestamps
@@ -33,7 +31,9 @@ import sys
 import math 
 import h5py
 # path of utils folder  
-sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils") #TODO make path general
+script_dir = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
+utils_path = os.path.join(script_dir, "../../../analysis_code/utils")
+sys.path.insert(0, utils_path)
 from eyetrack_utils import *
 
 # --------------------- Load settings and inputs -------------------------------------
@@ -48,7 +48,7 @@ def load_events(main_dir, subject, ses, task):
     return data_events 
 
 def load_inputs():
-    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    return sys.argv[1], sys.argv[2]
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/stats"
@@ -56,39 +56,35 @@ def ensure_save_dir(base_dir, subject):
         os.makedirs(save_dir)
     return save_dir
 
-
-#subject, task, ses, eye  = load_inputs()
-settings = load_settings('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json')
-
+subject, task = load_inputs()
+settings = load_settings('{task}_behavior_settings.json')
+ses = settings['session']
+eye = settings['eye']
 # Define file list
 main_dir = settings.get('main_dir_mac')
 
-subject, task, ses, eye = load_inputs()
-
 # Load main experiment settings 
-num_run = settings.get('num_run')
-num_seq = settings.get('num_seq')
-seq_trs = settings.get('seq_trs')
-eye_mov_seq = settings.get('eye_mov_seq')
-trials_seq = settings.get("trials_seq")
-rads = settings.get('rads')
+num_run = settings['num_run']
+num_seq = settings['num_seq']
+seq_trs = settings['seq_trs']
+eye_mov_seq = settings['eye_mov_seq']
+trials_seq = settings['trials_seq']
+rads = settings['rads']
 pursuits_tr = np.arange(0,seq_trs,2)
 saccades_tr = np.arange(1,seq_trs,2)
-eyetracking_sampling = settings.get("eyetrack_sampling")
-screen_size = settings.get('screen_size')
-ppd = settings.get('ppd')
-
+eyetracking_sampling = settings.['eyetrack_sampling']
+screen_size = settings['screen_size']
+ppd = settings['ppd']
 
 file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
 
 
 # ------------- Trigger extraction -------------------------
-# Extrat data from physio and physioevents as dataframes 
+# Extract data from physio and physioevents as dataframes 
 df_event_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type = "physioevents")
 df_data_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type = "physio")
 
 # Extract triggers
-# Initialize arrays to store results
 eye_data_runs_list = []
 
 time_start_eye = np.zeros((1, num_run))
@@ -128,7 +124,7 @@ for run_idx, df in enumerate(df_event_runs):
         
         # Check for sequence 1 started
         if re.search(seq_1_start_pattern, message):
-            time_start_eye[0, run_idx] = row['onset']  # Store by run index
+            time_start_eye[0, run_idx] = row['onset']  
             
 
         # Check for sequence start
@@ -176,13 +172,13 @@ for run_idx, df in enumerate(df_event_runs):
         if re.search(seq_9_stop_pattern, message):
             time_end_eye[0, run_idx] = row['onset']
 
-    # Check for sequences and handle any missing elements
-    for seq_num in range(1, num_seq + 1):  # Loop through all sequences
-        num_trials_in_seq = trials_seq[seq_num - 1]  # Get the correct number of trials for this sequence
+    # Handle any missing elements
+    for seq_num in range(1, num_seq + 1): 
+        num_trials_in_seq = trials_seq[seq_num - 1]  
 
         print(f"Checking sequence {seq_num} with {num_trials_in_seq} trials.")
 
-        for trial_num in range(num_trials_in_seq):  # Loop through the correct number of trials for this sequence
+        for trial_num in range(num_trials_in_seq):  
             trial_num_in_data = trial_num + 1  # Convert to 1-based index for matching actual trial numbers
 
             # Check if the element is 0 in the corresponding sequence and trial (onset)
@@ -199,9 +195,7 @@ for run_idx, df in enumerate(df_event_runs):
 
                     # Ensure that the message is a string (skip if not)
                     if not isinstance(message, str):
-                        continue  # Skip non-string values (e.g., NaN)
-
-                    #print(f"Checking message '{message}' at index {index}...")
+                        continue  
 
                     # Check if the message contains the trial onset pattern for the correct sequence
                     trial_onset_match = re.search(trial_onset_search_pattern, message)
@@ -229,7 +223,7 @@ for run_idx, df in enumerate(df_event_runs):
 
                     # Ensure that the message is a string (skip if not)
                     if not isinstance(message, str):
-                        continue  # Skip non-string values (e.g., NaN)
+                        continue  
 
                     print(f"Checking message '{message}' at index {index}...")
 
@@ -245,15 +239,8 @@ for run_idx, df in enumerate(df_event_runs):
                 if not found_offset:
                     print(f"Could not find offset for trial {trial_num_in_data} in sequence {seq_num}.")
 
-if subject == 'sub-12': 
-    time_start_trial[0,2,1] = 11173837
-    time_start_trial[0,2,0] = 10563102
-
-if subject == 'sub-08': 
-    time_start_trial[0,0,1] = 3515741
 
 
-print(time_start_trial)
 
 data_events = load_event_files(main_dir, subject, ses, task)
 
@@ -286,6 +273,7 @@ for run, path_event_run in enumerate(data_events):
     # save as tsv 
 
     df_event_run.to_csv(f"{file_dir_save}/{subject}_task_{task}_run_0{run+1}_triggers.tsv", index=False, sep="\t")
+
 # ------------------ Save all data needed for saccade analysis ----------------------------
 # get amplitude sequence from event files
 
@@ -302,9 +290,6 @@ amp_sequence_ev = list(appended_df['eyemov_amplitude'])
 amp_sequence = [legend_amp[val] if not math.isnan(val) else float('nan') for val in amp_sequence_ev]
 
 # save as h5 
-
-# Loop over each run
-
 h5_file = '{file_dir}/{sub}_task-{task}_eyedata_sac_stats.h5'.format(
 
     file_dir=file_dir_save, sub=subject, task=task)

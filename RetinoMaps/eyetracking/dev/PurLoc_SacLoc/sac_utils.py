@@ -462,7 +462,7 @@ def plotly_layout_template(task,run):
     xmin2,xmax2,x_tick_num2 = 0,1,5
     x_tick2 = np.linspace(xmin2,xmax2,x_tick_num2)
 
-    analysis_info = {'rads': [0,2.5,5,7.5,10,0]}  
+    radius = {'rads': [0,2.5,5,7.5,10,0]}  
     theta = np.linspace(0, 2*np.pi, 100)
 
     # Constants
@@ -478,7 +478,7 @@ def plotly_layout_template(task,run):
     )
 
     # Plot horizontal eye position
-    for rad in analysis_info['rads']:
+    for rad in radius['rads']:
         fig.add_trace(
             go.Scatter(x=x_tick1, y=x_tick1*0+rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
             row=1, col=1
@@ -489,7 +489,7 @@ def plotly_layout_template(task,run):
         )
 
     # Plot vertical eye position
-    for rad in analysis_info['rads']:
+    for rad in radius['rads']:
         fig.add_trace(
             go.Scatter(x=x_tick2, y=x_tick2*0+rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
             row=2, col=1
@@ -503,7 +503,7 @@ def plotly_layout_template(task,run):
                 fillcolor="grey", opacity=0.15, line_width=0)
 
     # Plot screen view
-    for rad in analysis_info['rads']:
+    for rad in radius['rads']:
         fig.add_trace(
             go.Scatter(x=rad*np.cos(theta), y=rad*np.sin(theta), mode='lines', line=dict(color='black', width=axis_width*0.5)),
             row=1, col=2
@@ -592,6 +592,11 @@ def predicted_pursuit(df_run,matfile, center, ppd):
 
     return purs_x_intpl_run_1,purs_y_intpl_run_1, purs_x_intpl_run_2, purs_y_intpl_run_2
 
+def euclidean_distance(eye_data, pred_x, pred_y, run): 
+     eucl_dist = np.sqrt((eye_data[run][:len(pred_x[run]), 1] -  pred_x[run]) ** 2 +
+                            (eye_data[run][:len(pred_y[run]), 2] -  pred_y[run]) ** 2)
+     return eucl_dist
+
 def fraction_under_threshold(pred, eucl_dist):
     import numpy as np
     thresholds = np.linspace(0, 9.0, 100)
@@ -604,5 +609,11 @@ def fraction_under_threshold(pred, eucl_dist):
     
     return precision
 
+def extract_data_for_specific_threshold(eucl_dist, threshold):
+    # Get distances below the specified threshold
+    distances_below_threshold = eucl_dist[eucl_dist < threshold]
+    fraction_below_threshold = len(distances_below_threshold) / len(eucl_dist)
+    
+    return distances_below_threshold, fraction_below_threshold
 
     
