@@ -25,5 +25,6 @@
     "smoothing": "moving_avg",
     "sigma": 20, 
     "first_trial_pattern": "bar\\spass\\s1\\strial\\sonset\\s1",
-    "last_trial_pattern": "bar\\spass\\s9\\strial\\soffset\\s208"
+    "last_trial_pattern": "bar\\spass\\s9\\strial\\soffset\\s208", 
+    "threshold": 2
 }
