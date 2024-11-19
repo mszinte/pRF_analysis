@@ -31,9 +31,7 @@ import sys
 import math 
 import h5py
 # path of utils folder  
-script_dir = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
-utils_path = os.path.join(script_dir, "../../../analysis_code/utils")
-sys.path.insert(0, utils_path)
+sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
 from eyetrack_utils import *
 
 # --------------------- Load settings and inputs -------------------------------------
@@ -57,7 +55,7 @@ def ensure_save_dir(base_dir, subject):
     return save_dir
 
 subject, task = load_inputs()
-settings = load_settings('{task}_behavior_settings.json')
+settings = load_settings(f'/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/{task}_behavior_settings.json')
 ses = settings['session']
 eye = settings['eye']
 # Define file list
@@ -72,7 +70,7 @@ trials_seq = settings['trials_seq']
 rads = settings['rads']
 pursuits_tr = np.arange(0,seq_trs,2)
 saccades_tr = np.arange(1,seq_trs,2)
-eyetracking_sampling = settings.['eyetrack_sampling']
+eyetracking_sampling = settings['eyetrack_sampling']
 screen_size = settings['screen_size']
 ppd = settings['ppd']
 
@@ -239,7 +237,36 @@ for run_idx, df in enumerate(df_event_runs):
                 if not found_offset:
                     print(f"Could not find offset for trial {trial_num_in_data} in sequence {seq_num}.")
 
+if subject == 'sub-05': 
+    time_start_trial[0,5,0] = 10014802
+    time_start_trial[0,1,1] = 10497668
 
+elif subject == 'sub-06': 
+    time_start_trial[0,5,1] = 21996866
+    time_start_trial[0,6,1] = 22035295
+    time_start_trial[0,7,1] = 22054503
+
+elif subject == 'sub-07': 
+    time_start_trial[0,4,1] = 28984151
+    time_start_trial[0,5,1] = 29003365
+
+elif subject == 'sub-08': 
+    time_start_trial[0,4,0] = 2728683
+    time_start_trial[0,3,1] = 3284061
+
+elif subject == 'sub-11': 
+    time_start_trial[0,0,1] = 13948433
+
+elif subject == 'sub-21': 
+    time_start_trial[0,3,0] = 10231379
+
+elif subject == 'sub-22': 
+    time_start_trial[0,4,0] = 3551300
+
+elif subject == 'sub-23': 
+    time_start_trial[0,6,0] = 16087909
+
+print(time_start_trial)
 
 
 data_events = load_event_files(main_dir, subject, ses, task)
@@ -280,14 +307,25 @@ for run, path_event_run in enumerate(data_events):
 dfs = []
 legend_amp = {1: 4, 2: 6, 3: 8, 4: 10, 5: "none"}
     
-for file_path in data_events:
-	df = pd.read_csv(file_path, sep='\t')
-	dfs.append(df)
 
-appended_df = pd.concat(dfs, ignore_index=True)
-amp_sequence_ev = list(appended_df['eyemov_amplitude'])
+df = pd.read_csv(data_events[0], sep='\t')
+
+amp_sequence_ev = list(df['eyemov_amplitude'])
 
 amp_sequence = [legend_amp[val] if not math.isnan(val) else float('nan') for val in amp_sequence_ev]
+
+# Get one amplitue per sequence 
+sequence_lengths = [16, 32] 
+sequence_length_index = 0 
+first_elements = [] 
+i = 0 
+# Iterate through the list 
+while i < len(amp_sequence_ev): 
+    first_elements.append(amp_sequence_ev[i]) 
+    i += sequence_lengths[sequence_length_index] 
+    sequence_length_index = (sequence_length_index + 1) % 2 
+    
+
 
 # save as h5 
 h5_file = '{file_dir}/{sub}_task-{task}_eyedata_sac_stats.h5'.format(
@@ -309,7 +347,7 @@ with h5py.File(h5_file, "a") as h5file:
     h5file.create_dataset(f'time_end_seq', data=time_end_seq, dtype='float64')
     h5file.create_dataset(f'time_start_trial', data=time_start_trial, dtype='float32')
     h5file.create_dataset(f'time_end_trial', data=time_end_trial, dtype='float32')
-    h5file.create_dataset(f'amp_sequence', data=amp_sequence_ev, dtype='float32')
+    h5file.create_dataset(f'amp_sequence', data=first_elements, dtype='float32')
         
 
 

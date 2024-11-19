@@ -18,7 +18,7 @@ Tsv trial trigger timestamps
 -----------------------------------------------------------------------------------------
 To run:
 cd /projects/prf_analysis/RetinoMaps/eyetracking/dev
-python eyetrack_preproc.py sub-01 PurLoc ses-01 eye1
+python eyetrack_preproc.py sub-01 PurLoc 
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -31,11 +31,14 @@ import os
 from sklearn.preprocessing import MinMaxScaler
 import sys
 from statistics import median
+from pathlib import Path
 from scipy.signal import detrend
 # path of utils folder  
-script_dir = os.path.dirname(os.path.abspath(__file__))  # Directory of the current script
-utils_path = os.path.join(script_dir, "../../analysis_code/utils")
-sys.path.insert(0, utils_path)
+# Define path to utils folder
+#script_dir = Path(__file__).resolve().parent  # Directory of the current script
+##utils_path = script_dir.parent.parent.parent / "analysis_code" / "utils"
+#sys.path.insert(0, utils_path)
+sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
 
 from eyetrack_utils import *
 
@@ -47,7 +50,7 @@ def load_settings(settings_file):
     return settings
 
 def load_inputs():
-    return sys.argv[1], sys.arg[2]
+    return sys.argv[1], sys.argv[2]
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
@@ -165,7 +168,7 @@ def main_preprocessing_pipeline():
 
         # ------------ smoothing ------------------
         if settings.get('smoothing'):
-            eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings)
+            eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings['window'])
         
         # Save the preprocessed data as tsv.gz
         tsv_file_path = f'{file_dir_save}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
