@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import numpy as np
 import json
@@ -38,23 +39,23 @@ def create_design_matrix(event_file, json_file):
     return design_matrix
 
 
-with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json') as f:
+with open('/Users/sinakling/Desktop/calib_convers/DeepMReyeCalib_behavior_settings.json') as f:
     settings = json.load(f)
 
 # Define file list
 main_dir = settings.get('main_dir_mac')
 
 subject = 'sub-01'
-task = 'PurLoc'
+task = 'DeepMReyeCalibTraining'
 ses = 'ses-01'
 eye = 'eye1'
 
 num_run = settings.get('num_run')
 
-file_dir_save = '/Users/sinakling/Desktop/'
+file_dir_save = '/Users/sinakling/Desktop/calib_convers'
 
 data_events = load_event_files(main_dir, subject, ses, task)
-event_descr_json = '{main_dir}/task-PurLoc_events.json' 
+event_descr_json = f'/Users/sinakling/Desktop/calib_convers/task-DeepMReyeCalibTraining_events.json' 
 
 
 for run in range(num_run):
@@ -64,6 +65,11 @@ for run in range(num_run):
 
     # Save the design matrix
     #print(design_matrix.head())
-    design_matrix.to_csv(f"{file_dir_save}/task_{task}_design_matrix.csv", index=False)
+    design_matrix.to_csv(f"{file_dir_save}/{task}_design_matrix.csv", index=False)
 
     plot_design_matrix(design_matrix)
+# %%
+
+# %%
+
+# %%
