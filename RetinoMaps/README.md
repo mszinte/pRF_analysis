@@ -45,8 +45,10 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 
 #### Eyetracking postprocessing
-- [ ] Extract trigger timestamps ([eyetracking/dev/PurLoc_SacLoc/extract_triggers.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_triggers.py))
-- [ ] Saccade analysis [eyetracking/dev/PurLoc_SacLoc/extract_saccades.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_saccades.py)
-- [ ] Create experimental individual figures ([eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py))
-- [ ] Quality check PurLoc ([eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py))
-- [ ] Quality check pRF ([eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/prediction_pRF.py))
+- [ ] Extract trigger timestamps [eyetracking/dev/PurLoc_SacLoc/extract_triggers.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_triggers.py)
+- [ ] Extract saccades [eyetracking/dev/PurLoc_SacLoc/extract_saccades.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_saccades.py)
+- [ ] Create experimental individual figures [eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py)
+- [ ] Quality check PurLoc [eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py)
+- [ ] Quality check pRF [eyetracking/dev/PurLoc_SacLoc/prediction_purloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/prediction_pRF.py)
+- [ ] Generate saccade model for Quality check SacLoc [eyetracking/dev/PurLoc_SacLoc/prediction_sacloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/prediction_sacloc.py)
+- [ ] Quality check pRF [eyetracking/dev/PurLoc_SacLoc/prediction_sacloc.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/prediction_sacloc.py)

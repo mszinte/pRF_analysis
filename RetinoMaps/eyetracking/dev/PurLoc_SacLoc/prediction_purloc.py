@@ -43,16 +43,6 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
     file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
     fig_dir_save = f'{file_dir_save}/figures'
     os.makedirs(fig_dir_save, exist_ok=True)
-    h5_filename = f'{file_dir_save}/stats/{subject}_task-{task}_eyedata_sac_stats.h5'
-    
-    with h5py.File(h5_filename, 'r') as h5_file:
-        time_start_trial = np.array(h5_file['time_start_trial'])
-        time_end_trial = np.array(h5_file['time_end_trial'])
-        time_start_seq = np.array(h5_file['time_start_seq'])
-        time_end_seq = np.array(h5_file['time_end_seq'])
-        time_start_eye = np.array(h5_file['time_start_eye'])
-        time_end_eye = np.array(h5_file['time_end_eye'])
-    
     
     if subject == 'sub-01': 
         ses = 'ses-01'
@@ -65,15 +55,16 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
     dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
     
     all_run_durations = [np.cumsum(dfs['duration'] * 1000) for dfs in dfs_runs]
+
     precision_fraction_list = []
+    precision_one_thrs_list = []
     
     for run in range(2):
         matfile = scipy.io.loadmat(data_mat[run])
-        pred_x_intpl_run_1, pred_y_intpl_run_1, pred_x_intpl_run_2, pred_y_intpl_run_2 = predicted_pursuit(
-            dfs_runs[0], matfile, analysis_info['center'], analysis_info['ppd']
+        pred_x_intpl, pred_y_intpl = predicted_pursuit(
+            dfs_runs[run], matfile, analysis_info['center'], analysis_info['ppd']
         )
-        pred_x_all_runs = [pred_x_intpl_run_1, pred_x_intpl_run_2]
-        pred_y_all_runs = [pred_y_intpl_run_1, pred_y_intpl_run_2]
+       
         
         eye_data_run_01 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
         eye_data_run_02 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
@@ -85,30 +76,48 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
         
             fig = plotly_layout_template("PurLoc", 0)
             fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-            fig.add_trace(go.Scatter(y=pred_x_all_runs[run][start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
+            fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
             fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
-            fig.add_trace(go.Scatter(y=pred_y_all_runs[run][start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
+            fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
             fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
-            fig.add_trace(go.Scatter(x=pred_x_all_runs[run][start:end], y=pred_y_all_runs[run][start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
+            fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
 
             fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
             print(f'Saving {fig_fn}')
             fig.write_image(fig_fn)
             
-        eucl_dist = euclidean_distance(eye_data_all_runs,pred_x_all_runs, pred_y_all_runs, run)
+        eucl_dist = euclidean_distance_pur(eye_data_all_runs,pred_x_intpl, pred_y_intpl, run)
         
-        precision_fraction = fraction_under_threshold(pred_x_all_runs[run], eucl_dist)
+        precision_fraction = fraction_under_threshold(pred_x_intpl, eucl_dist)
         precision_fraction_list.append(precision_fraction)
         
         precision_file = f"{file_dir_save}/stats/precision_fraction_{subject}_run_0{run+1}.csv"
         np.savetxt(precision_file, precision_fraction, delimiter=",")
 
+        precision_one_thrs = fraction_under_one_threshold(pred_x_intpl,eucl_dist,3)
+        precision_one_thrs_list.append(precision_one_thrs) 
+
     precision_arrays = [np.array(x) for x in precision_fraction_list]
+    precision_one_thrs_mean = np.mean(precision_one_thrs_list)
     
-    return [np.mean(k) for k in zip(*precision_arrays)]
+    return {
+        "precision_means": [np.mean(k) for k in zip(*precision_arrays)],
+        "precision_one_thrs_mean": precision_one_thrs_mean 
+    }
+
 
 def process_all_subjects(subjects, task, ses):
-    precision_data = {subject: process_subject(subject, task, ses, analysis_info, main_dir) for subject in subjects}
+
+    precision_data = {
+        subject: (
+            result := process_subject(subject, task, ses, analysis_info, main_dir),
+            {
+                "precision_means": result["precision_means"],
+                "precision_one_thrs_mean": result["precision_one_thrs_mean"]
+            }
+        )[1]
+        for subject in subjects
+    }
     colormap_subject_dict = {
     'sub-01': '#AA0DFE',
     'sub-02': '#3283FE',
@@ -134,22 +143,22 @@ def process_all_subjects(subjects, task, ses):
     'sub-24': '#C075A6',
     'sub-25': '#FC1CBF'}
     generate_final_figure(precision_data, colormap_subject_dict, thresholds=np.linspace(0, 9, 100))
+    generate_ranking_figure(precision_data, colormap_subject_dict)
 
 import os
 import plotly.graph_objs as go
 import plotly.express as px
 
-def generate_final_figure(precision_data, colormap,thresholds):
-    # Generate traces for each subject
+def generate_final_figure(precision_data, colormap, thresholds):
     traces = [
         go.Scatter(
             x=thresholds,
-            y=precision,
+            y=data["precision_means"],  
             mode='lines',
             name=f'Subject {subject}',
             line=dict(color=colormap.get(subject, '#000000'))  # Default to black if subject not in colormap
         )
-        for subject, precision in precision_data.items()  # Use subject IDs directly for color lookup
+        for subject, data in precision_data.items()  # Access subject data dictionaries directly
     ]
 
     # Define layout
@@ -158,7 +167,7 @@ def generate_final_figure(precision_data, colormap,thresholds):
             title='Euclidean distance error in dva', range=[0, 6], zeroline=True, linecolor='black', showgrid=False, tickmode='linear', dtick=2 
         ),
         yaxis=dict(
-            title=r'% ammount of data', range=[0, 1], zeroline=True, linecolor='black', showgrid=False
+            title=r'% amount of data', range=[0, 1], zeroline=True, linecolor='black', showgrid=False
         ),
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -173,32 +182,77 @@ def generate_final_figure(precision_data, colormap,thresholds):
     fig.show()
 
     # Save figure as PDF
-    fig_path = f"/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/sub-all"
+    fig_path = "/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/group/eyetracking"
     fig_fn = f"{fig_path}/PurLoc_threshold_precision.pdf"
+    if not os.path.exists(fig_path):
+        os.makedirs(fig_path)
+    print(f'Saving {fig_fn}')
+    #fig.write_image(fig_fn)
+
+
+import pandas as pd
+import plotly.express as px
+import os
+
+def generate_ranking_figure(precision_data, colormap):
+    # Prepare data for the plot by creating a DataFrame
+    plot_data = {
+        "Mean Precision under Threshold": [data["precision_one_thrs_mean"] for data in precision_data.values()],
+        "Category": ["Mean Precision"] * len(precision_data),  # Single category for all data points
+        "Subject": list(precision_data.keys()),  # Include subject identifiers for coloring
+        "Category Position": [1 + 0.01 * i for i in range(len(precision_data))]  # Slightly adjust positions
+    }
+    df = pd.DataFrame(plot_data)
+
+    # Create a strip plot with a single category
+    fig = px.strip(
+        df,
+        x="Category Position",  # Adjusted positions for x-axis
+        y="Mean Precision under Threshold",
+        stripmode="overlay",  # Use overlay mode for points
+        color="Subject",  # Color by subject
+        color_discrete_map=colormap,  # Apply the colormap for each subject
+    )
+
+    # Update marker size to adjust spacing
+    fig.update_traces(marker=dict(size=8))  # Adjust size as needed
+
+    # Update layout for clarity
+    fig.update_layout(
+        xaxis=dict(
+            title='',  # No title for the x-axis
+            range=[0, 1.88],
+            showgrid=False,
+            showticklabels=False  # Hide x-axis tick labels
+        ),
+        yaxis=dict(
+            title='Mean Precision under Threshold',
+            range=[0, 1.05],
+            zeroline=True,
+            linecolor='black',
+            showgrid=True,
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family="Arial", size=12, color="black"),
+    )
+
+    fig.show()
+
+    # Save figure as PDF
+    fig_path = "/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/group/eyetracking"
+    fig_fn = f"{fig_path}/PurLoc_threshold_3_ranking.pdf"
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     print(f'Saving {fig_fn}')
     fig.write_image(fig_fn)
 
-def generate_ranking_figure(eucl_dist,threshold,colormap): 
-    threshold_1 = extract_data_for_specific_threshold(eucl_dist, threshold)
-    fig = go.Figure(data=go.Scatter(
-    y=threshold_1, 
-    mode='markers',
-    marker=dict(color=colormap.get(subject, '#000000'))  # Replace 'subject_id' with the actual key or logic to set color
-    ))
 
-    fig.update_xaxes(title_text="1°")
-    fig.update_yaxes(range=[0, 1])
 
-    fig.update_layout(
-        showlegend=False,
-        height=700,
-        width=400,
-        template="simple_white"
-    )
 
-    fig.show()
+
+
+
 
     
 

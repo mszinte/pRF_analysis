@@ -583,18 +583,31 @@ def predicted_pursuit(df_run,matfile, center, ppd):
     purs_expected_y =  -1.0*((np.array(purs_expected_y) - (center[1]))/ppd)
 
 
-    purs_x_intpl_run_1 = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
-    purs_y_intpl_run_1 = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
+    purs_x_intpl = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
+    purs_y_intpl = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
 
-    purs_x_intpl_run_2 = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
-    purs_y_intpl_run_2 = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
+    return purs_x_intpl,purs_y_intpl
 
+def load_sac_model(file_dir_save, subject, run, eye_data): 
+    time_seconds = (eye_data[:, 0] - eye_data[0, 0]) / 100
+    model_x = np.load(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_x.npy")
+    model_y = np.load(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_y.npy")
 
-    return purs_x_intpl_run_1,purs_y_intpl_run_1, purs_x_intpl_run_2, purs_y_intpl_run_2
+    total_length = len(model_x)
+    # Interpolate the model to match the eye data time points
+    model_x_interpolated = np.interp(time_seconds, np.arange(total_length), model_x)
+    model_y_interpolated = np.interp(time_seconds, np.arange(total_length), model_y)
+
+    return model_x_interpolated, model_y_interpolated
+
+def euclidean_distance_pur(eye_data, pred_x, pred_y, run): 
+     eucl_dist = np.sqrt((eye_data[run][:int(len(pred_x)), 1] -  pred_x) ** 2 +
+                            (eye_data[run][:int(len(pred_y)), 2] -  pred_y) ** 2)
+     return eucl_dist
 
 def euclidean_distance(eye_data, pred_x, pred_y, run): 
-     eucl_dist = np.sqrt((eye_data[run][:len(pred_x[run]), 1] -  pred_x[run]) ** 2 +
-                            (eye_data[run][:len(pred_y[run]), 2] -  pred_y[run]) ** 2)
+     eucl_dist = np.sqrt((eye_data[run][:, 1] -  pred_x) ** 2 +
+                            (eye_data[run][:, 2] -  pred_y) ** 2)
      return eucl_dist
 
 def fraction_under_threshold(pred, eucl_dist):
@@ -608,6 +621,14 @@ def fraction_under_threshold(pred, eucl_dist):
         precision.append(fraction)
     
     return precision
+
+def fraction_under_one_threshold(pred, eucl_dist, threshold):
+    import numpy as np
+
+    count = np.sum(eucl_dist < threshold)
+    fraction = count / len(pred) 
+    
+    return fraction
 
 def extract_data_for_specific_threshold(eucl_dist, threshold):
     # Get distances below the specified threshold
