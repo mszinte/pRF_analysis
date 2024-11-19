@@ -58,6 +58,8 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
 
     precision_fraction_list = []
     precision_one_thrs_list = []
+
+    threshold = analysis_info['threshold']
     
     for run in range(2):
         matfile = scipy.io.loadmat(data_mat[run])
@@ -94,7 +96,7 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
         precision_file = f"{file_dir_save}/stats/precision_fraction_{subject}_run_0{run+1}.csv"
         np.savetxt(precision_file, precision_fraction, delimiter=",")
 
-        precision_one_thrs = fraction_under_one_threshold(pred_x_intpl,eucl_dist,3)
+        precision_one_thrs = fraction_under_one_threshold(pred_x_intpl,eucl_dist,threshold)
         precision_one_thrs_list.append(precision_one_thrs) 
 
     precision_arrays = [np.array(x) for x in precision_fraction_list]
@@ -172,8 +174,10 @@ def generate_final_figure(precision_data, colormap, thresholds):
         plot_bgcolor='white',
         paper_bgcolor='white',
         font=dict(family="Arial", size=12, color="black"),
+        height=700,
+        width=480,  
         shapes=[dict(
-            type="line", x0=3, x1=3, y0=0, y1=1, line=dict(color="black", dash="dash")
+            type="line", x0=2, x1=2, y0=0, y1=1, line=dict(color="black", dash="dash")
         )]
     )
 
@@ -187,7 +191,7 @@ def generate_final_figure(precision_data, colormap, thresholds):
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     print(f'Saving {fig_fn}')
-    #fig.write_image(fig_fn)
+    fig.write_image(fig_fn)
 
 
 import pandas as pd
@@ -195,13 +199,18 @@ import plotly.express as px
 import os
 
 def generate_ranking_figure(precision_data, colormap):
+    # Sort the precision data by "precision_one_thrs_mean" value
+    sorted_precision_data = dict(sorted(precision_data.items(), key=lambda item: item[1]["precision_one_thrs_mean"], reverse=True))
+    
+
     # Prepare data for the plot by creating a DataFrame
     plot_data = {
-        "Mean Precision under Threshold": [data["precision_one_thrs_mean"] for data in precision_data.values()],
-        "Category": ["Mean Precision"] * len(precision_data),  # Single category for all data points
-        "Subject": list(precision_data.keys()),  # Include subject identifiers for coloring
-        "Category Position": [1 + 0.01 * i for i in range(len(precision_data))]  # Slightly adjust positions
+        "Mean Precision under Threshold": [data["precision_one_thrs_mean"] for data in sorted_precision_data.values()],
+        "Category": ["Mean Precision"] * len(sorted_precision_data),  # Single category for all data points
+        "Subject": list(sorted_precision_data.keys()),  # Include sorted subject identifiers for coloring
+        "Category Position": [0.05 + 0.005 * i for i in range(len(sorted_precision_data))]  # Slightly adjust positions
     }
+
     df = pd.DataFrame(plot_data)
 
     # Create a strip plot with a single category
@@ -221,7 +230,7 @@ def generate_ranking_figure(precision_data, colormap):
     fig.update_layout(
         xaxis=dict(
             title='',  # No title for the x-axis
-            range=[0, 1.88],
+            range=[0, 0.3],
             showgrid=False,
             showticklabels=False  # Hide x-axis tick labels
         ),
@@ -241,7 +250,7 @@ def generate_ranking_figure(precision_data, colormap):
 
     # Save figure as PDF
     fig_path = "/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/group/eyetracking"
-    fig_fn = f"{fig_path}/PurLoc_threshold_3_ranking.pdf"
+    fig_fn = f"{fig_path}/PurLoc_threshold_2_ranking.pdf"
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     print(f'Saving {fig_fn}')
