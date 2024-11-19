@@ -117,6 +117,7 @@ else :
     # group processing
     print('{} is processing...'.format(subject))
     for n_subject, subject in enumerate(subjects):
+        #load Data
         prf_beh_tsv_dir = '{}/{}/derivatives/pp_data/{}/pRF_beh/tsv'.format(main_dir, project_dir, subject)
         prf_beh_trials_tsv_fn = '{}/{}_pRF_beh_trials.tsv'.format(prf_beh_tsv_dir, subject)
         prf_beh_median_tsv_fn = '{}/{}_pRF_beh_median.tsv'.format(prf_beh_tsv_dir, subject)

@@ -24,8 +24,8 @@ Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/glm/fit
 python glm_fit.py /scratch/mszinte/data RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+Written by Uriel Lascombes (uriel.lascombes@laposte.net)
+Edited by Martin Szinte (mail@martinszinte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
