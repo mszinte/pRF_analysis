@@ -1,4 +1,6 @@
 {  "main_dir_mac":"/Users/sinakling/disks/meso_shared/RetinoMaps",
+    "session": "ses-02", 
+    "eye": "eye1",
     "num_run": 2,
     "num_seq": 9,
     "seq_trs": 32,

@@ -19,8 +19,9 @@ def extract_data(main_dir, subject, task, ses, runs, eye, file_type):
     import pandas as pd
     df_runs = []
     for run in range(runs):
-        json_file_path = f'{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.json'
-        tsv_file_path = f"{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.tsv.gz"
+        json_file_path = f'{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.json' #could be eyetrack 
+        tsv_file_path = f"{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.tsv.gz" #could be eyetrack instead of eyeData
+        
         
 
         with open(json_file_path, 'r') as file:
@@ -409,7 +410,7 @@ def load_design_matrix_fixations(fixation_column, task):
     """
 
     import pandas as pd
-    design_matrix = pd.read_csv(f"/{task}_design_matrix.csv")
+    design_matrix = pd.read_csv(f"{task}_design_matrix.csv")
     fixation_trials = np.array(design_matrix[fixation_column])
 
     return fixation_trials
