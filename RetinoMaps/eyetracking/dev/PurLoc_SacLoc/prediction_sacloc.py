@@ -64,26 +64,26 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
     precision_fraction_list = []
     precision_one_thrs_list = []
 
+    threshold = analysis_info['threshold']
+
     for run in range(2):
-        matfile = scipy.io.loadmat(data_mat[run])
-    
         pred_x_intpl, pred_y_intpl = load_sac_model(file_dir_save, subject, run, eye_data_all_runs[run])
         
         # Define the start and end indices for each slice
-   #     slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
-   #     for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
+        slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
+        for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
         
-   #         fig = plotly_layout_template("SacLoc", 0)
-   #         fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-   #         fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
-   #         fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
-   #         fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
-   #         fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
-   #         fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
+            fig = plotly_layout_template("SacLoc", 0)
+            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
+            fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
+            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
+            fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
+            fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
+            fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
 
-   #         fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
-   #         print(f'Saving {fig_fn}')
-   #         fig.write_image(fig_fn)
+            fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
+            print(f'Saving {fig_fn}')
+            fig.write_image(fig_fn)
             
         eucl_dist = euclidean_distance(eye_data_all_runs,pred_x_intpl, pred_y_intpl, run)
         
@@ -94,7 +94,7 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
         precision_file = f"{file_dir_save}/stats/precision_fraction_{subject}_run_0{run+1}.csv"
         np.savetxt(precision_file, precision_fraction, delimiter=",")
 
-    precision_one_thrs = fraction_under_one_threshold(pred_x_intpl,eucl_dist,2)   # THRESHOLD SHOULD BE IN SETTINGS 
+    precision_one_thrs = fraction_under_one_threshold(pred_x_intpl,eucl_dist,threshold)   
     precision_one_thrs_list.append(precision_one_thrs) 
     
     precision_arrays = [np.array(x) for x in precision_fraction_list]
