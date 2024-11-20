@@ -34,6 +34,10 @@ example: python run_eye2bids.py /Users/sinakling/disks/meso_shared/  RetinoMaps 
 import os
 import subprocess
 import sys
+import ipdb
+import re
+deb=ipdb.set_trace
+
 # Import BIDS if available
 try:
     from bids import BIDSLayout
@@ -66,24 +70,36 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
         os.chmod(output_script_path, 0o755)
         
         print("Looking for edf files...")
+        
         # Find all .edf files
         for root, dirs, files in os.walk(input_directory):
+
+            # Create the new filename by removing '_eyedata'
             for file in files:
+                if '_eyeData' in file:
+                    new_file_name = file.replace('_eyeData', '')
+                    old_file_path = os.path.join(root, file)
+                    new_file_path = os.path.join(root, new_file_name)
+                    print(f'Renaming {old_file_path} to {new_file_path}')
+                    os.rename(old_file_path, new_file_path)
+            
+            if 'sourcedata' in dirs:
+                dirs.remove('sourcedata')
+            
+            for file in files:
+
+                # Check if any output file matching the pattern already exists in the directory
+                eye_pattern = re.compile(r"sub-.*_ses-.*_task-.*_run-.*_recording-.*_physio\.tsv\.gz")
+                if eye_pattern.match(file):
+                    print(f"---Output file {file} already exists. Skipping {file}---")
+                    continue  # Skip to the next file
+                
                 if file.endswith(".edf"):
                     # Construct the full file path
                     edf_file_path = os.path.join(root, file)
                     
                     # Create sourcedata folder
                     entity_dict = parse_file_entities(edf_file_path)
-
-                    # Construct the expected output filename
-                    expected_output_file = f"sub-{entity_dict['subject']}_ses-{entity_dict['session']}_task-{entity_dict['task']}_run-{entity_dict['run']}_eyeData_recording-eye1_physio.tsv.gz"
-                    print(expected_output_file)
-                    
-                    # Check if the output file already exists in the directory
-                    if os.path.exists(os.path.join(root, expected_output_file)):
-                        print(f"---Output file {expected_output_file} already exists. Skipping {edf_file_path}---")
-                        continue  # Skip to the next file
 
                     # Create Sourcedata directory
                     if make_copy: 
@@ -101,12 +117,18 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
                     # Construct the command and write it to the .sh file 
                     command = f"eye2bids --input_file {edf_file_path} --metadata_file {metadata_path} --output_dir {root}\n"  
                     script_file.write(command)
-                    # Execute conversion command
                     os.system(command)
 
-                    if delete_original: 
-                        print("Removing original files")
+                    # Delete original files and edf2bids .asc files
+                    if delete_original:
+                        print("Removing original files and .asc files")
                         os.remove(edf_file_path)
+                        base_name = os.path.splitext(edf_file_path)[0]
+                        events_file_path = f"{base_name}_events.asc"
+                        samples_file_path = f"{base_name}_samples.asc"
+                        for file_path in [events_file_path, samples_file_path]:
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
 
     print(f"Batch script generated at: {output_script_path}")
 
@@ -129,7 +151,7 @@ if __name__ == "__main__":
     parent_path = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
     name_path = os.path.join(parent_path,  input_directory_name)  
     metadata_path = os.path.join(name_path, 'metadata.yml')   # Required to have metadata.yml file in path: /../../projects/pRF_analysis/project_name/metadata.yml
-    output_script_path = os.path.join(parent_path, 'convert_eyetracking.sh')
+    output_script_path = os.path.join(name_path, 'eyetracking/convert_eyetracking.sh')
 
     # Call the main function
     main(input_directory, metadata_path, output_script_path, make_copy, delete_original)
