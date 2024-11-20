@@ -39,12 +39,10 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
 - [x] Make final satistiques maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
-#### Eyetracking preprocessing 
-- [ ] Generate experimental design matrix [eyetracking/dev/create_design_matrix.ipynb](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/create_design_matrix.py)
+### Eyetracking preprocessing 
 - [ ] Extract eyetraces and Preprocessing [eyetrack_preproc.py](eyetracking/dev/eyetrack_preproc.py)
 
-
-#### Eyetracking postprocessing
+### Eyetracking postprocessing
 - [ ] Extract trigger timestamps [eyetracking/dev/PurLoc_SacLoc/extract_triggers.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_triggers.py)
 - [ ] Extract saccades [eyetracking/dev/PurLoc_SacLoc/extract_saccades.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_saccades.py)
 - [ ] Create experimental individual figures [eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/generate_individual_figures.py)
