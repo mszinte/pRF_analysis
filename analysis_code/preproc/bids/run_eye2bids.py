@@ -98,11 +98,11 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
             
             for file in files:
 
-                # # Check if any output file matching the pattern already exists in the directory
-                # eye_pattern = re.compile(r"sub-.*_ses-.*_task-.*_run-.*_recording-.*_physio\.tsv\.gz")
-                # if eye_pattern.match(file):
-                #     print(f"---Output file {file} already exists. Skipping {file}---")
-                #     continue  # Skip to the next file
+                # Check if any output file matching the pattern already exists in the directory
+                eye_pattern = re.compile(r"sub-.*_ses-.*_task-.*_run-.*_recording-.*_physio\.tsv\.gz")
+                if eye_pattern.match(file):
+                    print(f"---Output file {file} already exists. Skipping {file}---")
+                    continue  # Skip to the next file
                 
                 if file.endswith(".edf"):
                     # Construct the full file path
