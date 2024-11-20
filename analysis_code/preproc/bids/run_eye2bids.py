@@ -74,8 +74,18 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
         # Find all .edf files
         for root, dirs, files in os.walk(input_directory):
 
-            # Create the new filename by removing '_eyedata'
+            if 'sourcedata' in dirs:
+                dirs.remove('sourcedata')
+
+            if 'code' in dirs:
+                dirs.remove('code')
+
+            if 'derivatives' in dirs:
+                dirs.remove('derivatives')
+            
+            # Create the new filename by removing '_eyedata' and old analysis .dat and .msg
             for file in files:
+                    
                 if '_eyeData' in file:
                     new_file_name = file.replace('_eyeData', '')
                     old_file_path = os.path.join(root, file)
@@ -88,11 +98,11 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
             
             for file in files:
 
-                # Check if any output file matching the pattern already exists in the directory
-                eye_pattern = re.compile(r"sub-.*_ses-.*_task-.*_run-.*_recording-.*_physio\.tsv\.gz")
-                if eye_pattern.match(file):
-                    print(f"---Output file {file} already exists. Skipping {file}---")
-                    continue  # Skip to the next file
+                # # Check if any output file matching the pattern already exists in the directory
+                # eye_pattern = re.compile(r"sub-.*_ses-.*_task-.*_run-.*_recording-.*_physio\.tsv\.gz")
+                # if eye_pattern.match(file):
+                #     print(f"---Output file {file} already exists. Skipping {file}---")
+                #     continue  # Skip to the next file
                 
                 if file.endswith(".edf"):
                     # Construct the full file path
