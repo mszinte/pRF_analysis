@@ -10,16 +10,16 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-001)
 sys.argv[4]: server nb of hour to request (e.g 10)
-sys.argv[5]: anat only (1) or not (0)
-sys.argv[6]: use of aroma (1) or not (0)
-sys.argv[7]: use Use fieldmap-free distortion correction
+sys.argv[5]: anatomy only (1) or not (0)
+sys.argv[6]: use of ICA-aroma (1) or not (0)
+sys.argv[7]: use fieldmap-free distortion correction
 sys.argv[8]: skip BIDS validation (1) or not (0)
 sys.argv[9]: save cifti hcp format data with 170k vertices
-sys.argv[10]: dof number (e.g. 12)
-sys.argv[11]: filters the data you wanna process (e.g. resting-state)
-sys.argv[12]: email account
-sys.argv[13]: data group (e.g. 327)
-sys.argv[14]: project name (e.g. b327)
+sys.argv[10]: save data on fsaverage
+sys.argv[11]: dof number (e.g. 12)
+sys.argv[12]: filters the data you wanna process (e.g. resting-state)
+sys.argv[13]: email account
+sys.argv[14]: data group (e.g. 327)
 sys.argv[15]: server_project
 
 -----------------------------------------------------------------------------------------
@@ -89,7 +89,8 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
-use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, fsaverage = '','','','','', '', '', '', '', '', \
+use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, \
+fsaverage = '','','','','', '', '', '', '', '', '', \
 
 
 if anat == 'anat_only_y':
@@ -118,6 +119,7 @@ if fsaverage_val == 'fsaverage_y':
     tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
         main_dir=main_dir, project_dir=project_dir) 
     fsaverage = 'fsaverage'
+    
 
 # define SLURM cmd
 slurm_cmd = """\
@@ -140,7 +142,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces MNI152NLin6Asym:res-2 fsLR:den-91k T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
