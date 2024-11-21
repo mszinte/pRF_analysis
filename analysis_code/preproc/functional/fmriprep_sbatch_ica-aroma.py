@@ -90,7 +90,7 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
 use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, \
-fsaverage = '','','','','', '', '', '', '', '', '', \
+fsaverage = '','','','','','','','','','', \
 
 
 if anat == 'anat_only_y':
