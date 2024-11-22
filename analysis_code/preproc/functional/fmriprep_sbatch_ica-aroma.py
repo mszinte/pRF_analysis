@@ -14,7 +14,7 @@ sys.argv[5]: anatomy only (1) or not (0)
 sys.argv[6]: use of ICA-aroma (1) or not (0)
 sys.argv[7]: use fieldmap-free distortion correction
 sys.argv[8]: skip BIDS validation (1) or not (0)
-sys.argv[9]: save cifti hcp format data with 170k vertices
+sys.argv[9]: save cifti hcp format data with 91k or 170k vertices
 sys.argv[10]: save data on fsaverage
 sys.argv[11]: dof number (e.g. 12)
 sys.argv[12]: filters the data you wanna process (e.g. resting-state)
@@ -32,18 +32,18 @@ To run:
 2. run python command
 python fmriprep_sbatch.py [main directory] [project name] [subject num]
                           [hour proc.] [anat_only_(y/n)] [aroma_(y/n)] [fmapfree_(y/n)] 
-                          [skip_bids_val_(y/n)] [cifti_output_170k_(y/n)] [fsaverage(y/n)]
+                          [skip_bids_val_(y/n)] [cifti_output_91k_(y/n)] [fsaverage(y/n)]
                           [dof] [email account] [group] [server_project]
 -----------------------------------------------------------------------------------------
-Example:
+Examples:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
 
 With AROMA processing only the resting-state data:
 python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
 python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 
+With AROMA processing only the resting-state data and registering the data onto the templates required by xcp_d:
+    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.bedini@univ-amu.fr)
@@ -108,8 +108,8 @@ if fmapfree == 'fmapfree_y':
 if skip_bids_val == 'skip_bids_val_y':
     use_skip_bids_val = ' --skip_bids_validation'
 
-if hcp_cifti_val == 'cifti_output_170k_y':
-    hcp_cifti = ' --cifti-output 170k'
+if hcp_cifti_val == 'cifti_output_91k_y':
+    hcp_cifti = ' --cifti-output 91k'
     
 if filter_data == 'filt_data_y':
     filter_bids = ' --bids-filter-file /home/mbedini/projects/pRF_analysis/analysis_code/preproc/bids/filter_func_data.json'
@@ -142,7 +142,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces MNI152NLin6Asym:res-2 fsLR:den-91k T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces MNI152NLin6Asym:res-2 T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
