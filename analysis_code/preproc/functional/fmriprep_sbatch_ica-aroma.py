@@ -89,8 +89,7 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
-use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, \
-fsaverage = '','','','','','','','','','', \
+use_skip_bids_val, hcp_cifti, tf_export, tf_bind, filter_bids, fsaverage = '','','','','','','','','',''
 
 
 if anat == 'anat_only_y':
@@ -109,7 +108,7 @@ if skip_bids_val == 'skip_bids_val_y':
     use_skip_bids_val = ' --skip_bids_validation'
 
 if hcp_cifti_val == 'cifti_output_91k_y':
-    hcp_cifti = ' --cifti-output 91k'
+    hcp_cifti = '--cifti-output 91k'
     
 if filter_data == 'filt_data_y':
     filter_bids = ' --bids-filter-file /home/mbedini/projects/pRF_analysis/analysis_code/preproc/bids/filter_func_data.json'
@@ -142,7 +141,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces MNI152NLin6Asym:res-2 T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} {hcp_cifti} --output-spaces MNI152NLin6Asym:res-2 T1w fsnative {fsaverage} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
