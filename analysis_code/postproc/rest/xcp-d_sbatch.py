@@ -24,7 +24,7 @@ postprocessed resting-state data in a variety of formats and templates
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-03 20 marco.bedini@univ-amu.fr 327 b327
+python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 20 marco.bedini@univ-amu.fr 327 b327
     
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
@@ -74,15 +74,15 @@ slurm_cmd = """\
 #SBATCH -e {log_dir}/{subject}_xcp-d_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_xcp-d_%N_%j_%a.out
 #SBATCH -J {subject}_xcp-d
-#SBATCH --mail-type=BEGIN,END\n\n{tf_export}
+#SBATCH --mail-type=BEGIN,END\n\n
 """.format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val,
-           log_dir=log_dir, email=email, tf_export=tf_export,
+           log_dir=log_dir, email=email,
            cluster_name=cluster_name)
 
 # define singularity cmd
-"singularity_cmd = singularity run -B {main_dir}:/work_dir \
-    --cleanenv {tf_bind} {simg} \
+singularity_cmd = "singularity run -B {main_dir}:/work_dir \
+    --cleanenv {simg} \
     		--mode none \
    		--participant-label {sub_num} -t rest \
              	--nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
@@ -101,7 +101,7 @@ slurm_cmd = """\
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
 	        --warp-surfaces-native2std".format(
-		tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
+		main_dir=main_dir, project_dir=project_dir,
         	simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, memory_val=memory_val)
 
 
