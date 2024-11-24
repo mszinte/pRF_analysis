@@ -81,7 +81,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-"singularity_cmd = singularity run -B {main_dir}:/work_dir \
+singularity_cmd = "singularity run -B {main_dir}:/work_dir \
     --cleanenv {simg} \
     		--mode none \
    		--participant-label {sub_num} -t rest \
