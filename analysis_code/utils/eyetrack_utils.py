@@ -376,12 +376,13 @@ def interpol_nans(eyetracking_data):
     
     return eyetracking_signal_interpolated
 
-def load_event_files(main_dir, subject, ses, task): 
+def load_event_files(main_dir, project_dir, subject, ses, task): 
     """
     Load event files from eye-tracking experiments.
 
     Args:
-        main_dir (str): Main directory containing experiment data.
+        main_dir (str): Main directory containing all experiment data.
+        project_dir (str): Main project directory
         subject (str): Subject ID.
         ses (str): Session identifier.
         task (str): Task name.
@@ -390,13 +391,13 @@ def load_event_files(main_dir, subject, ses, task):
         list: Sorted list of event file paths.
     """
     import glob
-
-    data_events = sorted(glob.glob(r'{exp_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(exp_dir=main_dir, sub=subject, ses = ses, task = task)))
+    
+    data_events = sorted(glob.glob(r'{main_dir}/{project_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(
+        main_dir=main_dir, project_dir=project_dir, sub=subject, ses = ses, task = task)))
     
     assert len(data_events) > 0, "No event files found"
 
     return data_events
-
 
 def load_design_matrix_fixations(fixation_column, task): 
     """
