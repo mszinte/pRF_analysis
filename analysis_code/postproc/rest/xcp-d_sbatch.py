@@ -81,18 +81,18 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir \
-    {simg} \
-    	--mode none \
-   		--participant-label {sub_num} -t rest \
-             	--nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-             	--mem-gb {memory_val} -vvv \
-             	--input-type fmriprep --smoothing 0 \
-             	--dummy-scans auto --despike y -p 36P \
-             	-w /work_dir/temp/ \
-             	--resource-monitor --write-graph \
-             	--debug all --fs-license-file {main_dir}/{project_dir}/code/freesurfer/license.txt \
-             	--stop-on-first-crash \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
+        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} \
+        participant --participant-label {sub_num} \
+    	--mode none -t rest \
+            --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
+            --mem-gb {memory_val} -vvv --low-mem \
+            --input-type fmriprep --smoothing 0 \
+            --dummy-scans auto --despike y -p 36P \
+            -w /work_dir/temp/ \
+            --resource-monitor --write-graph \
+            --debug all --fs-license-file {main_dir}/{project_dir}/code/freesurfer/license.txt \
+            --stop-on-first-crash \
         	--abcc-qc n --combine-runs y \
         	--fd-thresh 0 --file-format cifti \
         	--lower-bpf 0.01 --upper-bpf 0.08 \
@@ -100,10 +100,8 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
-	        --warp-surfaces-native2std y --min-coverage 0.5 \
-            {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} participant".format(main_dir=main_dir, 
+	        --warp-surfaces-native2std y --min-coverage 0.5".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
-
 
 # define permission cmd
 chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
