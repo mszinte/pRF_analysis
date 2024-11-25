@@ -1,4 +1,5 @@
-{   "num_run": 5,
+{   "session": "ses-01", 
+    "num_run": 5,
     "num_seq": 9,
     "seq_trs": 32,
     "seq_type":[0,1,0,1,0,1,0,1,0],
