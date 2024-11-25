@@ -17,7 +17,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run locally: 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
-python create_design_matrix.py /scratch/mszinte/data RetinoMaps pRF sub-01 327
+python create_design_matrix.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
 

@@ -1,4 +1,4 @@
-def extract_data(main_dir, subject, task, ses, runs, eye, file_type):
+def extract_data(main_dir, project_dir, subject, task, ses, runs, eye, file_type):
     """
     Load and process eye-tracking data and associated metadata from TSV and JSON files.
 
@@ -19,9 +19,8 @@ def extract_data(main_dir, subject, task, ses, runs, eye, file_type):
     import pandas as pd
     df_runs = []
     for run in range(runs):
-        json_file_path = f'{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.json' #could be eyetrack 
-        tsv_file_path = f"{main_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_eyeData_recording-{eye}_{file_type}.tsv.gz" #could be eyetrack instead of eyeData
-        
+        json_file_path = f'{main_dir}/{project_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_recording-{eye}_{file_type}.json' #could be eyetrack 
+        tsv_file_path = f"{main_dir}/{project_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_run-0{run+1}_recording-{eye}_{file_type}.tsv.gz" #could be eyetrack instead of eyeData
         
 
         with open(json_file_path, 'r') as file:

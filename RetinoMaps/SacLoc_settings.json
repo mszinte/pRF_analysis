@@ -24,6 +24,7 @@
     "drift_corr": "linear", 
     "downsampling": null,
     "smoothing": "moving_avg",
+    "window": 50,
     "sigma": 20, 
     "first_trial_pattern": "sequence\\s1\\strial\\s1\\sonset",
     "last_trial_pattern": "sequence\\s9\\strial\\s16\\soffset", 
