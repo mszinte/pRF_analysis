@@ -17,7 +17,6 @@ Output(s):
 To run locally: 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 python create_design_matrix.py /scratch/mszinte/data RetinoMaps pRF sub-01 327
-
 -----------------------------------------------------------------------------------------
 """
 
@@ -47,7 +46,6 @@ base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
 with open(settings_path) as f:
     settings = json.load(f)
-
 
 def create_design_matrix(event_file, json_file):
     # Load the event file into a DataFrame
@@ -87,14 +85,13 @@ os.makedirs(file_dir_save, exist_ok=True)
 data_events = load_event_files(main_dir, subject, ses, task)
 event_descr_json = f'{main_dir}/{project_dir}/task-{task}_events.json' 
 
+deb()
 #### WE ARE HERE #####
 
 for run in range(num_run):
     event_file = data_events[run]
     design_matrix = create_design_matrix(event_file, event_descr_json)
 
-    
-    
     # Save the design matrix
     #print(design_matrix.head())
     design_matrix.to_csv(f"{file_dir_save}/{task}_design_matrix.csv", index=False)
