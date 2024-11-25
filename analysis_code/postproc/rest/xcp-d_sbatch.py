@@ -81,7 +81,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir} \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir \
     {simg} \
     	--mode none \
    		--participant-label {sub_num} -t rest \
@@ -89,9 +89,9 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir} \
              	--mem-gb {memory_val} -vvv \
              	--input-type fmriprep --smoothing 0 \
              	--dummy-scans auto --despike y -p 36P \
-             	-w {main_dir}:/work_dir \
+             	-w /work_dir/temp/ \
              	--resource-monitor --write-graph \
-             	--debug all --fs-license-file /{main_dir}/{project_dir}/code/freesurfer/license.txt \
+             	--debug all --fs-license-file {main_dir}/{project_dir}/code/freesurfer/license.txt \
              	--stop-on-first-crash \
         	--abcc-qc n --combine-runs y \
         	--fd-thresh 0 --file-format cifti \
