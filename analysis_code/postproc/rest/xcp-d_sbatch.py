@@ -17,7 +17,7 @@ sys.argv[7]: server_project
 
 -----------------------------------------------------------------------------------------
 Outputs:
-postprocessed resting-state data in a variety of formats and templates
+postprocessed resting-state fMRI data in a variety of formats and templates
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ server_project = sys.argv[7]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
-singularity_dir = "{main_dir}/{project_dir}/code/singularity/xcp_d-0.10.0.simg".format(
+singularity_img = "{main_dir}/{project_dir}/code/singularity/xcp_d-0.10.0.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
 memory_val = 100
@@ -81,7 +81,9 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run -B {main_dir}:/work_dir \
+singularity_cmd = "singularity run -B $HOME:/home/xcp \
+    --home {main_dir}/{project_dir}/code/singularity/ \
+    {main_dir}:/work_dir \
     --cleanenv {simg} \
     	--mode none \
    		--participant-label {sub_num} -t rest \
@@ -100,9 +102,9 @@ singularity_cmd = "singularity run -B {main_dir}:/work_dir \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
-	        --warp-surfaces-native2std \
+	        --warp-surfaces-native2std y \
             {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} participant".format(main_dir=main_dir, 
-            project_dir=project_dir, simg=singularity_dir, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
+            project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 
 # define permission cmd
