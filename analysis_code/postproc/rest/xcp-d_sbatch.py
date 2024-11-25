@@ -14,10 +14,8 @@ sys.argv[4]: server nb of hour to request (e.g 10)
 sys.argv[5]: email account
 sys.argv[6]: data group (e.g. 327)
 sys.argv[7]: server_project
-
 -----------------------------------------------------------------------------------------
-Outputs:
-postprocessed resting-state fMRI data in a variety of formats and templates
+Outputs: postprocessed resting-state fMRI data in a variety of formats and templates
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
