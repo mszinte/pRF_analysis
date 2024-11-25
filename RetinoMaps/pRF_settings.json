@@ -1,4 +1,5 @@
 {   "session": "ses-01", 
+    "eye": "eye1",
     "num_run": 5,
     "num_seq": 9,
     "seq_trs": 32,
@@ -23,6 +24,7 @@
     "drift_corr": "linear", 
     "downsampling": null,
     "smoothing": "moving_avg",
+    "window": 50,
     "sigma": 20, 
     "first_trial_pattern": "bar\\spass\\s1\\strial\\sonset\\s1",
     "last_trial_pattern": "bar\\spass\\s9\\strial\\soffset\\s208", 
