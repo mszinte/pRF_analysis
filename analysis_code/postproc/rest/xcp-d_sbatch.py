@@ -81,10 +81,8 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run -B $HOME:/home/xcp \
-    --home {main_dir}/{project_dir}/code/singularity/ \
-    {main_dir}:/work_dir \
-    --cleanenv {simg} \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}/{project_dir}/code/singularity \
+    {simg} \
     	--mode none \
    		--participant-label {sub_num} -t rest \
              	--nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
