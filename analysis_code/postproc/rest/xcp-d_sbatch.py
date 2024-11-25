@@ -22,7 +22,7 @@ Outputs: postprocessed resting-state fMRI data in a variety of formats and templ
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 20 marco.bedini@univ-amu.fr 327 b327
+python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 10 marco.bedini@univ-amu.fr 327 b327
 
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
