@@ -116,3 +116,8 @@ for run in range(num_run):
     # Save the design matrix
     design_matrix_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.tsv')
     design_matrix.to_csv(os.path.join(file_dir_save, design_matrix_file), sep='\t', index=False)
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
