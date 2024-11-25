@@ -25,7 +25,7 @@ Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
 python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 20 marco.bedini@univ-amu.fr 327 b327
-    
+
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
 -----------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ slurm_cmd = """\
 # define singularity cmd
 singularity_cmd = "singularity run -B {main_dir}:/work_dir \
     --cleanenv {simg} \
-    		--mode none \
+    	--mode none \
    		--participant-label {sub_num} -t rest \
              	--nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
              	--mem-gb {memory_val} -vvv \
@@ -100,9 +100,9 @@ singularity_cmd = "singularity run -B {main_dir}:/work_dir \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
-	        --warp-surfaces-native2std".format(
-		main_dir=main_dir, project_dir=project_dir,
-        	simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, memory_val=memory_val)
+	        --warp-surfaces-native2std \
+            {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} participant".format(main_dir=main_dir, 
+            project_dir=project_dir, simg=singularity_dir, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 
 # define permission cmd
