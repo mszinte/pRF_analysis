@@ -3,24 +3,32 @@
 eyetrack_preproc.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-- Preprocess BIDS formatted eyetracking data 
-blinks are removed by excluding samples at which the pupil was lost entirely, excising data 100 ms before and 150 ms after each occurrence. 
-removing slow signal drift by linear detrending and median-centering of the gaze position time series (X and Y) (assumes that the median gaze position corresponds to central fixation)
-smoothing using a 50-ms running average. 
+Preprocess BIDS formatted eyetracking data 
+- blinks are removed by excluding samples at which the pupil was lost entirely, 
+excluding data before and after each occurrence. 
+- removing slow signal drift by linear detrending
+- median-centering of the gaze position time series (X and Y) 
+(assumes that the median gaze position corresponds to central fixation)
+- smoothing using a 50-ms running average
+- downsampling
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: subject 
-sys.argv[2]: task
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: task
+sys.argv[5]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Cleaned timeseries data per run 
-Tsv trial trigger timestamps 
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/prf_analysis/RetinoMaps/eyetracking/dev
-python eyetrack_preproc.py sub-01 PurLoc 
+cd projects/pRF_analysis/RetinoMaps/eyetracking/
+python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
+import ipdb
+
 import pandas as pd
 import json
 import numpy as np
@@ -33,13 +41,8 @@ import sys
 from statistics import median
 from pathlib import Path
 from scipy.signal import detrend
-# path of utils folder  
-# Define path to utils folder
-#script_dir = Path(__file__).resolve().parent  # Directory of the current script
-##utils_path = script_dir.parent.parent.parent / "analysis_code" / "utils"
-#sys.path.insert(0, utils_path)
-sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
 
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from eyetrack_utils import *
 
 # --------------------- Load settings and inputs -------------------------------------
@@ -50,7 +53,7 @@ def load_settings(settings_file):
     return settings
 
 def load_inputs():
-    return sys.argv[1], sys.argv[2]
+    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
@@ -64,9 +67,9 @@ def load_events(main_dir, subject, ses, task):
 
 # --------------------- Data Extraction ------------------------------------------------
 
-def extract_event_and_physio_data(main_dir, subject, task, ses, num_run, eye):
-    df_event_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type="physioevents")
-    df_data_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type="physio")
+def extract_event_and_physio_data(main_dir, project_dir, subject, task, ses, num_run, eye):
+    df_event_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type="physioevents")
+    df_data_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type="physio")
     return df_event_runs, df_data_runs
 
 # --------------------- Preprocessing Methods -----------------------------------------
@@ -101,7 +104,9 @@ def downsample_data(data, original_rate, target_rate):
 
 def apply_smoothing(data, method, settings):
     if method == 'moving_avg':
-        return moving_average_smoothing(data, 1000, 50)
+        sampling_rate = settings["eyetrack_sampling"]
+        window = settings["window"]
+        return moving_average_smoothing(data, sampling_rate, window)
     elif method == 'gaussian':
         sigma = settings.get("sigma")
         return gaussian_smoothing(data, 'x_coordinate', sigma)
@@ -117,24 +122,28 @@ def save_preprocessed_data(data, file_path):
 # --------------------- Main Preprocessing Pipeline ------------------------------------
 
 def main_preprocessing_pipeline():
+    
     # Load inputs and settings
-    subject, task = load_inputs()
-    settings = load_settings(f'{task}_behavior_settings.json')  
-    ses = settings['session']
+    main_dir, project_dir, subject, task, group = load_inputs()
+    base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
+    settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+    with open(settings_path) as f:
+        settings = json.load(f)
+    if subject == 'sub-01':
+        if task == 'pRF': ses = 'ses-02'
+        else: ses = 'ses-01'
+    else: ses = settings['session']
     eye = settings['eye']
     
     # Prepare save directory
-    main_dir = settings.get('main_dir_mac')
-    file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+    file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
     
     # Load data
-    df_event_runs, df_data_runs = extract_event_and_physio_data(main_dir, subject, task, ses, settings['num_run'], eye)
-    print(df_event_runs[0].head()) 
-    print(df_data_runs[0].head())  
+    df_event_runs, df_data_runs = extract_event_and_physio_data(main_dir, project_dir, subject, task, ses, settings['num_run'], eye)
     
     # Preprocessing for each run
     for run_idx, (df_event, df_data) in enumerate(zip(df_event_runs, df_data_runs)):
-        
+
         eye_data_run, time_start_eye, time_end_eye = extract_eye_data_and_triggers(df_event, df_data,settings['first_trial_pattern'], settings['last_trial_pattern'])
        
         # Apply preprocessing steps based on settings
@@ -168,14 +177,20 @@ def main_preprocessing_pipeline():
 
         # ------------ smoothing ------------------
         if settings.get('smoothing'):
-            eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings['window'])
+            eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings)
         
         # Save the preprocessed data as tsv.gz
         tsv_file_path = f'{file_dir_save}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
         save_preprocessed_data(eye_data_run, tsv_file_path)
 
-        
         print(f"Run {run_idx+1} preprocessed and saved at {tsv_file_path}")
+
+    # Define permission cmd
+    print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+    os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+    os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
 
 if __name__ == "__main__":
     main_preprocessing_pipeline()
+
+    

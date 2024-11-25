@@ -9,14 +9,15 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
-sys.argv[4]: group of shared data (e.g. 327)
+sys.argv[4]: task
+sys.argv[5]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 
 -----------------------------------------------------------------------------------------
 To run locally: 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
-python create_design_matrix.py /scratch/mszinte/data RetinoMaps pRF sub-01 327
+python create_design_matrix.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
 
@@ -26,6 +27,7 @@ import numpy as np
 import json
 import sys
 import os
+import matplotlib.pyplot as plt
 import ipdb
 deb = ipdb.set_trace
 
@@ -58,7 +60,7 @@ def create_design_matrix(event_file, json_file):
     # Initialize an empty DataFrame for the design matrix
     n_trials = event_data.shape[0]
     design_matrix = pd.DataFrame(index=range(n_trials))
-
+    
     # Loop over each key in the JSON file to create design matrix columns
     for key, value in event_description.items():
         # Check if the key has "Levels" (categorical variable)
@@ -67,12 +69,24 @@ def create_design_matrix(event_file, json_file):
             levels = value['Levels']
             # Create a column for each level
             for level_key, level_desc in levels.items():
-                # Create boolean values: 1 if the event matches the level, else 0
-                design_matrix[f"{key}_{level_desc.replace(' ', '_')}"] = (event_data[key] == int(level_key)).astype(int)
+                # Check for NaN or invalid entries in event_data[key]
+                if event_data[key].isnull().any() or (event_data[key].astype(str) == 'n/a').any():
+                    design_matrix[f"{key}_{level_desc.replace(' ', '_')}"] = np.nan
+                else:
+                    # Convert level_key to int safely
+                    try:
+                        level_key_int = int(level_key)
+                        design_matrix[f"{key}_{level_desc.replace(' ', '_')}"] = (event_data[key] == level_key_int).astype(int)
+                    except ValueError:
+                        # Handle the case where level_key cannot be converted to int
+                        design_matrix[f"{key}_{level_desc.replace(' ', '_')}"] = np.nan
         else:
             # If no levels, just copy the values from the event file as-is
-            design_matrix[key] = event_data[key]
-
+            if event_data[key].isnull().any() or (event_data[key].astype(str) == 'n/a').any():
+                design_matrix[key] = np.nan
+            else:
+                design_matrix[key] = event_data[key]
+        
     # Return the design matrix
     return design_matrix
 
@@ -82,18 +96,28 @@ file_dir_save = f'{main_dir}/{project_dir}/derivatives/exp_design/{subject}'
 os.makedirs(file_dir_save, exist_ok=True)
 
 # Load events files
-data_events = load_event_files(main_dir, subject, ses, task)
+if subject == 'sub-01':
+    if task == 'pRF': ses = 'ses-02'
+    else: ses = 'ses-01'
+else: ses = settings['session']
+data_events = load_event_files(main_dir, project_dir, subject, ses, task)
 event_descr_json = f'{main_dir}/{project_dir}/task-{task}_events.json' 
 
-deb()
-#### WE ARE HERE #####
-
 for run in range(num_run):
+
     event_file = data_events[run]
     design_matrix = create_design_matrix(event_file, event_descr_json)
 
-    # Save the design matrix
-    #print(design_matrix.head())
-    design_matrix.to_csv(f"{file_dir_save}/{task}_design_matrix.csv", index=False)
-
+    # draw the design matrix and save it
+    design_matrix_img_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.png')
     plot_design_matrix(design_matrix)
+    plt.savefig(os.path.join(file_dir_save, design_matrix_img_file), format='png')
+    
+    # Save the design matrix
+    design_matrix_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.tsv')
+    design_matrix.to_csv(os.path.join(file_dir_save, design_matrix_file), sep='\t', index=False)
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
