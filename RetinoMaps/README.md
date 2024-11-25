@@ -40,7 +40,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Make final satistiques maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
 ### Eyetracking preprocessing 
-- [ ] Extract eyetraces and Preprocessing [eyetrack_preproc.py](eyetracking/dev/eyetrack_preproc.py)
+- [ ] Extract eyetraces and Preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
 
 ### Eyetracking postprocessing
 - [ ] Extract trigger timestamps [eyetracking/dev/PurLoc_SacLoc/extract_triggers.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/extract_triggers.py)
