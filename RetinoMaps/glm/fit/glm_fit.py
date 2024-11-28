@@ -101,8 +101,8 @@ for format_, extension in zip(formats, extensions):
         preproc_fns = glob.glob('{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_loo_avg/*task-{}*dct_avg_loo*.{}'.format(
             main_dir, project_dir, subject, format_, task, extension))
         for preproc_fn in preproc_fns :
-            match = re.search(r'_loo-(\d+)_', preproc_fn)
-            loo_num = 'loo-{}'.format(match.group(1))
+            # match = re.search(r'_loo-(\d+)_', preproc_fn)
+            # loo_num = 'loo-{}'.format(match.group(1))
         
             # find the events and confounds files 
             event_dir = '{}/{}/{}/{}/func/'.format(
@@ -146,7 +146,7 @@ for format_, extension in zip(formats, extensions):
             glm_fit_fn = preproc_fn.split('/')[-1].replace('bold', 'glm-fit') 
 
             # Load data
-            preproc_img, preproc_data_brain, preproc_data_rois, roi_idx = data_from_rois(
+            preproc_img, preproc_data_brain, preproc_data_rois, roi_idxs = data_from_rois(
                 fn=preproc_fn,  subject=subject, rois=rois)
 
             # Run the glm
@@ -158,7 +158,7 @@ for format_, extension in zip(formats, extensions):
                                                         source_data=preproc_data_rois)
             
             glm_pred_brain = np.full((preproc_data_brain.shape), np.nan, dtype=float)
-            for vert, roi_idx in enumerate(roi_idx):
+            for vert, roi_idx in enumerate(roi_idxs):
                 glm_pred_brain[:,roi_idx] = glm_pred_rois[:,vert]
         
             # export pred
