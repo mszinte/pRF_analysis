@@ -89,7 +89,8 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Define/create colormap
-colormap_name = 'stats_colors'
+# colormap_name = 'stats_colors'
+colormap_name = 'viridis'
 colormap_dict = {'n/a': (255, 255, 255),
                  'Pursuit':  (227, 119, 194),
                  'Saccade': (140, 86, 75),
@@ -278,15 +279,15 @@ for tasks in group_tasks :
         alpha_all = (rsq_all - alpha_range[0])/(alpha_range[1]-alpha_range[0])
         alpha_all[alpha_all>1]=1
         
-        
+        deb()
         intertask_data_all = intertask_mat[all_idx,...]
         alpha_all[intertask_data_all == 0] = 0
-        param_all = {'data': intertask_data_all, 
+        param_all = {'data': rsq_all, 
                      'cmap': colormap_name, 
                      'alpha': alpha_all, 
                      'vmin': 0, 
-                     'vmax': 7, 
-                     'cbar': 'discrete_personalized', 
+                     'vmax': 1, 
+                     # 'cbar': 'discrete_personalized', 
                      'cmap_steps': len(colormap_dict),
                      'cmap_dict': colormap_dict,
                      'cortex_type': 'VertexRGB', 
@@ -309,12 +310,12 @@ for tasks in group_tasks :
     
         intertask_data_pur = intertask_mat[pur_idx,...]
         alpha_pur[intertask_data_pur == 0] = 0
-        param_pursuit = {'data': intertask_data_pur, 
+        param_pursuit = {'data': rsq_pur, 
                          'cmap': colormap_name, 
                          'alpha': alpha_pur, 
                          'vmin': 0, 
-                         'vmax': 7, 
-                         'cbar': 'discrete_personalized', 
+                         'vmax': 1, 
+                         # 'cbar': 'discrete_personalized', 
                          'cmap_steps': len(colormap_dict),
                          'cmap_dict': colormap_dict,
                          'cortex_type': 'VertexRGB', 
@@ -334,12 +335,12 @@ for tasks in group_tasks :
         
         intertask_data_sac = intertask_mat[sac_idx,...]
         alpha_sac[intertask_data_sac == 0] = 0
-        param_saccade = {'data': intertask_data_sac, 
+        param_saccade = {'data': rsq_sac, 
                          'cmap': colormap_name, 
                          'alpha': alpha_sac, 
                          'vmin': 0, 
-                         'vmax': 7, 
-                         'cbar': 'discrete_personalized', 
+                         'vmax': 1, 
+                         # 'cbar': 'discrete_personalized', 
                          'cmap_steps': len(colormap_dict),
                          'cmap_dict': colormap_dict,
                          'cortex_type': 'VertexRGB', 
@@ -358,12 +359,12 @@ for tasks in group_tasks :
         
         intertask_data_pur_sac = intertask_mat[pur_sac_idx,...]
         alpha_pur_sac[intertask_data_pur_sac == 0] = 0
-        param_pursuit_and_saccade = {'data': intertask_data_pur_sac, 
+        param_pursuit_and_saccade = {'data': rsq_pur_sac, 
                                      'cmap': colormap_name, 
                                      'alpha': alpha_pur_sac, 
                                      'vmin': 0, 
-                                     'vmax': 7, 
-                                     'cbar': 'discrete_personalized', 
+                                     'vmax': 1, 
+                                     # 'cbar': 'discrete_personalized', 
                                      'cmap_steps': len(colormap_dict),
                                      'cmap_dict': colormap_dict,
                                      'cortex_type': 'VertexRGB', 
@@ -383,12 +384,12 @@ for tasks in group_tasks :
     
         intertask_data_prf = intertask_mat[prf_idx,...]
         alpha_prf[intertask_data_prf == 0] = 0
-        param_vision = {'data': intertask_data_prf, 
+        param_vision = {'data': rsq_prf, 
                         'cmap': colormap_name, 
                         'alpha': alpha_prf, 
                         'vmin': 0, 
-                        'vmax': 7, 
-                        'cbar': 'discrete_personalized', 
+                        'vmax': 1, 
+                        # 'cbar': 'discrete_personalized', 
                         'cmap_steps': len(colormap_dict),
                         'cmap_dict': colormap_dict,
                         'cortex_type': 'VertexRGB', 
@@ -406,12 +407,12 @@ for tasks in group_tasks :
         
         intertask_data_prf_pur = intertask_mat[prf_pur_idx,...]
         alpha_prf_pur[intertask_data_prf_pur == 0] = 0
-        param_vision_and_pursuit = {'data': intertask_data_prf_pur, 
+        param_vision_and_pursuit = {'data': rsq_prf_pur, 
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_pur, 
                                     'vmin': 0, 
-                                    'vmax': 7, 
-                                    'cbar': 'discrete_personalized', 
+                                    'vmax': 1, 
+                                    # 'cbar': 'discrete_personalized', 
                                     'cmap_steps': len(colormap_dict), 
                                     'cmap_dict': colormap_dict,
                                     'cortex_type': 'VertexRGB', 
@@ -430,12 +431,12 @@ for tasks in group_tasks :
         
         intertask_data_prf_sac = intertask_mat[prf_sac_idx,...]
         alpha_prf_sac[intertask_data_prf_sac == 0] = 0
-        param_vision_and_saccade = {'data': intertask_data_prf_sac, 
+        param_vision_and_saccade = {'data': rsq_prf_sac, 
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_sac, 
                                     'vmin': 0, 
-                                    'vmax': 7, 
-                                    'cbar': 'discrete_personalized', 
+                                    'vmax': 1, 
+                                    # 'cbar': 'discrete_personalized', 
                                     'cmap_steps': len(colormap_dict), 
                                     'cmap_dict': colormap_dict,
                                     'cortex_type': 'VertexRGB', 
@@ -454,11 +455,12 @@ for tasks in group_tasks :
     
         intertask_data_prf_pur_sac = intertask_mat[prf_pur_sac_idx,...]
         alpha_prf_pur_sac[intertask_data_prf_pur_sac == 0] = 0
-        param_vision_and_pursuit_and_saccade = {'data': intertask_data_prf_pur_sac, 
+        param_vision_and_pursuit_and_saccade = {'data': rsq_prf_pur_sac, 
                                                 'cmap': colormap_name, 
                                                 'alpha': alpha_prf_pur_sac, 
-                                                'vmin': 0, 'vmax': 7, 
-                                                'cbar': 'discrete_personalized', 
+                                                'vmin': 0, 
+                                                'vmax': 1, 
+                                                # 'cbar': 'discrete_personalized', 
                                                 'cmap_steps': len(colormap_dict), 
                                                 'cmap_dict': colormap_dict,
                                                 'cortex_type': 'VertexRGB', 
