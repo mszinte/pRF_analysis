@@ -38,14 +38,14 @@ deb = ipdb.set_trace
 
 # General imports
 import os
-import re
 import sys
 import json
 import glob
+import scipy
 import datetime
 import numpy as np
 import nibabel as nb
-import matplotlib.pyplot as plt
+
 
 # GLMsingle
 from glmsingle.glmsingle import GLM_single
@@ -109,19 +109,14 @@ for format_, extension in zip(formats, extensions):
                 preproc_fsnative_hemi_L.append(subtype)
             elif "hemi-R" in subtype:
                 preproc_fsnative_hemi_R.append(subtype)
-
-                
+    
         preproc_files_list = [preproc_fsnative_hemi_L,
                               preproc_fsnative_hemi_R]
-
         
         for preproc_files in preproc_files_list:
             data_multi_run = []
             design_multi_run = []
-            for preproc_fn in preproc_files :
-                # match = re.search(r'_loo-(\d+)_', preproc_fn)
-                # loo_num = 'loo-{}'.format(match.group(1))
-            
+            for preproc_fn in preproc_files :            
                 # find the events and confounds files 
                 event_dir = '{}/{}/{}/{}/func/'.format(
                     main_dir, project_dir, subject, func_session)
@@ -139,9 +134,6 @@ for format_, extension in zip(formats, extensions):
                 frame_times = np.arange(TRs) * TR
                 design_matrix = make_design(events=events, tr=TR, n_times=TRs)
                 design_matrix_reshaped = design_matrix[:,1].reshape(-1,1)
-                
-            
-                
                 
                 # #  Save the designe matrix 
                 # dm_dir = '{}/{}/derivatives/pp_data/{}/{}/glm/designe_matrix'.format(
@@ -163,13 +155,12 @@ for format_, extension in zip(formats, extensions):
                 glm_fit_fn = preproc_fn.split('/')[-1].replace('bold', 'glm-fit') 
     
                 # Load data
-                preproc_img, preproc_data_brain, preproc_data_rois, roi_idx = data_from_rois(
+                preproc_img, preproc_data_brain, preproc_data_rois, roi_idxs = data_from_rois(
                     fn=preproc_fn,  subject=subject, rois=rois)
                 
                 # Make the data and design multi run list 
                 data_multi_run.append(preproc_data_rois.T)
                 design_multi_run.append(design_matrix_reshaped)
-            
             
             # Initialize the model
             opt = dict()
@@ -179,9 +170,6 @@ for format_, extension in zip(formats, extensions):
             opt['wantfileoutputs'] = [1,1,1,1]
             opt['wantmemoryoutputs'] = [1,1,1,1]
             glmsingle_obj = GLM_single(opt)
-            
-            
-            
             
             # Run the glm
             outputdir = '{}/output'.format(glm_dir)
@@ -198,7 +186,6 @@ for format_, extension in zip(formats, extensions):
                                                   outputdir=outputdir, 
                                                   figuredir=figdir)
             
-            deb()
             # make the model prediction 
             # Import the designSINGLE
             designSINGLE = np.load('{}/DESIGNINFO.npy'.format(outputdir), allow_pickle=True).item()['designSINGLE']
@@ -206,34 +193,47 @@ for format_, extension in zip(formats, extensions):
             # acces to the library of HRF 
             hrflib = getcanonicalhrflibrary(stimdur,TR).transpose()
             
+            # acces to beto for each vertex 
+            betas_all = np.squeeze(results_glmsingle['typed']['betasmd']).T
+            
+            # acces HRF the best HRF for each vertex
+            
+            hrf_index = np.squeeze(results_glmsingle['typed']['HRFindex'])
+            meansignal = np.squeeze(results_glmsingle['typed']['meanvol'])
             
             for n_run in range(len(data_multi_run)):
-                designSINGLE_run = designSINGLE[n_run]
-                betatemp_all = np.zeros_like(betas_all)
-                glmsingle_pred = np.zeros(data_multi_run[n_run].shape)
-                
-                
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            for vert, roi_idx in enumerate(roi_idx):
-                glm_pred_brain[:,roi_idx] = glm_pred_rois[:,vert]
-        
-            # export pred
-            print('Save {}/{}'.format(glm_dir, glm_pred_fn))
-            pred_img = make_surface_image(data=glm_pred_brain, 
-                                          source_img=preproc_img)
-            nb.save(pred_img,'{}/{}'.format(glm_dir, glm_pred_fn)) 
-            
 
+                print(n_run)
+                designSINGLE_run = designSINGLE[n_run]
+                
+                betatemp_all = np.zeros_like(betas_all)
+                prediction_all =  np.zeros((designSINGLE_run.shape[0], meansignal.shape[0]))
+                for n_vertex in range(meansignal.shape[0]):
+                    hrf_vert = hrflib[:, hrf_index[n_vertex]]
+                    hrf_vert = hrf_vert.reshape(1,len(hrf_vert))
+                    # make convolution between the design matrix and the correct HRF
+                    design_convolv = scipy.signal.convolve2d(designSINGLE_run.T, hrf_vert)
+                    
+                    # cut the end to have the good lenght of the product of the convolution 
+                    design_convolv = design_convolv[:,0:np.shape(designSINGLE_run)[0]].T
+            
+            
+                    betatemp_all[:, n_vertex] = betas_all[:, n_vertex]/100 * meansignal[n_vertex]
+                    prediction_all[:, n_vertex] = design_convolv @ betatemp_all[:, n_vertex]
+            
+                    prediction_all[:, n_vertex] = prediction_all[:, n_vertex] - np.mean(prediction_all[:, n_vertex])
+                
+                prediction_all_brain = np.full((preproc_data_brain.shape), np.nan, dtype=float)
+                for vert, roi_idx in enumerate(roi_idxs):
+                    prediction_all_brain[:,roi_idx] = prediction_all[:,vert]
+  
+            
+                # export pred
+                print('Save {}/{}'.format(glm_dir, glm_pred_fn))
+                pred_img = make_surface_image(data=prediction_all_brain, 
+                                              source_img=preproc_img)
+                nb.save(pred_img,'{}/{}'.format(glm_dir, glm_pred_fn)) 
+                
                     
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
@@ -241,7 +241,7 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
         end_time=end_time,
         dur=end_time - start_time))
        
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+# os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))

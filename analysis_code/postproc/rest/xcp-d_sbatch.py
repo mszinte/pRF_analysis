@@ -14,18 +14,16 @@ sys.argv[4]: server nb of hour to request (e.g 10)
 sys.argv[5]: email account
 sys.argv[6]: data group (e.g. 327)
 sys.argv[7]: server_project
-
 -----------------------------------------------------------------------------------------
-Outputs:
-postprocessed resting-state data in a variety of formats and templates
+Outputs: postprocessed resting-state fMRI data in a variety of formats and templates
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 20 marco.bedini@univ-amu.fr 327 b327
-    
+python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 10 marco.bedini@univ-amu.fr 327 b327
+
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
 -----------------------------------------------------------------------------------------
@@ -53,7 +51,7 @@ server_project = sys.argv[7]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
-singularity_dir = "{main_dir}/{project_dir}/code/singularity/xcp_d-0.10.0.simg".format(
+singularity_img = "{main_dir}/{project_dir}/code/singularity/xcp_d-0.10.0.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
 memory_val = 100
@@ -81,18 +79,18 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run -B {main_dir}:/work_dir \
-    --cleanenv {simg} \
-    		--mode none \
-   		--participant-label {sub_num} -t rest \
-             	--nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-             	--mem-gb {memory_val} -vvv \
-             	--input-type fmriprep \
-             	--dummy-scans auto --despike y -p 36P \
-             	-w {main_dir}:/work_dir \
-             	--resource-monitor --write-graph \
-             	--debug all --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt \
-             	--stop-on-first-crash \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
+        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} \
+        participant --participant-label {sub_num} \
+    	--mode none -t rest \
+            --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
+            --mem-gb {memory_val} -vvv --low-mem \
+            --input-type fmriprep --smoothing 0 \
+            --dummy-scans auto --despike y -p 36P \
+            -w /work_dir/temp/ \
+            --resource-monitor --write-graph \
+            --debug all --fs-license-file {main_dir}/{project_dir}/code/freesurfer/license.txt \
+            --stop-on-first-crash \
         	--abcc-qc n --combine-runs y \
         	--fd-thresh 0 --file-format cifti \
         	--lower-bpf 0.01 --upper-bpf 0.08 \
@@ -100,10 +98,8 @@ singularity_cmd = "singularity run -B {main_dir}:/work_dir \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
-	        --warp-surfaces-native2std".format(
-		main_dir=main_dir, project_dir=project_dir,
-        	simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, memory_val=memory_val)
-
+	        --warp-surfaces-native2std y --min-coverage 0.5".format(main_dir=main_dir, 
+            project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 # define permission cmd
 chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)

@@ -1,0 +1,21 @@
+---
+# manual_metadata
+# Please find the BIDS specification here:
+# https://bids-specification--1128.org.readthedocs.build/en/1128/modality-specific-files/eye-tracking.html
+# Please go through the specification
+# and fill the fields below according to the data types given in the specification.
+# !Note that ScreenSize and EyeTrackerDistance units are in meter, not centimeter!
+
+# REQUIRED, fill according to BIDS specification (!the converter will not run successfully if you leave this empty!):
+SampleCoordinateUnits: 'pixel'
+SampleCoordinateSystem: 'gaze-on-screen'
+EnvironmentCoordinates: 'top-left'
+ScreenDistance: 1.20
+ScreenRefreshRate: 120
+ScreenSize: [0.696, 0.391]
+
+# Recommended (leave empty if not available but put information you want to share with your dataset here!):
+SoftwareVersion: 'Eyelink GL Version 1.2 Sensor=AI7'
+EyeTrackerDistance: 1.20
+InstitutionName: 'Institut des Neurosciences de la Timone'
+InstitutionAddress: str
