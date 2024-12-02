@@ -10,10 +10,10 @@ import os
 import sys
 import plotly.graph_objects as go
 import statistics
+sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
 from sac_utils import *
 
 # Set path to utils folder
-sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
 from eyetrack_utils import *
 
 def load_inputs():
@@ -33,23 +33,24 @@ def ensure_save_dir(base_dir, subject):
     os.makedirs(save_dir, exist_ok=True)
     return save_dir
 
-with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_behavior_settings.json') as f:
+with open('/Users/sinakling/projects/pRF_analysis/RetinoMaps/PurLoc_settings.json') as f:
     analysis_info = json.load(f)
 
-main_dir = analysis_info['main_dir_mac']
+main_dir = '/Users/sinakling/disks/meso_shared/'
+project_dir = "RetinoMaps"
 subjects, task, ses = load_inputs()
 
 def process_subject(subject, task, ses, analysis_info, main_dir):
-    file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+    file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
     fig_dir_save = f'{file_dir_save}/figures'
     os.makedirs(fig_dir_save, exist_ok=True)
     
     if subject == 'sub-01': 
         ses = 'ses-01'
-        data_events = load_event_files(main_dir, subject, ses, task)
+        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
         data_mat = sorted(glob.glob(f'/Users/sinakling/projects/PredictEye/locEMexp/data/{subject}/{ses}/add/*.mat'))
     else: 
-        data_events = load_event_files(main_dir, subject, ses, task)
+        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
         data_mat = sorted(glob.glob(f'/Users/sinakling/projects/PredictEye/locEMexp/data/{subject}/{ses}/add/*.mat'))
 
     dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
@@ -73,20 +74,20 @@ def process_subject(subject, task, ses, analysis_info, main_dir):
         eye_data_all_runs = [eye_data_run_01[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(), eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
         
         # Define the start and end indices for each slice
-        slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
-        for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
+       # slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
+       # for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
         
-            fig = plotly_layout_template("PurLoc", 0)
-            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-            fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
-            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
-            fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
-            fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
-            fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
+       #     fig = plotly_layout_template("PurLoc", 0)
+       ##     fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
+        #    fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
+        #    fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
+        #    fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
+        #    fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
+        #    fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
 
-            fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
-            print(f'Saving {fig_fn}')
-            fig.write_image(fig_fn)
+         #   fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
+        #    print(f'Saving {fig_fn}')
+        #    fig.write_image(fig_fn)
             
         eucl_dist = euclidean_distance_pur(eye_data_all_runs,pred_x_intpl, pred_y_intpl, run)
         
@@ -187,7 +188,7 @@ def generate_final_figure(precision_data, colormap, thresholds):
 
     # Save figure as PDF
     fig_path = "/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/group/eyetracking"
-    fig_fn = f"{fig_path}/PurLoc_threshold_precision.pdf"
+    fig_fn = f"{fig_path}/PurLoc_threshold_precision_TEST.pdf"
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     print(f'Saving {fig_fn}')
@@ -250,7 +251,7 @@ def generate_ranking_figure(precision_data, colormap):
 
     # Save figure as PDF
     fig_path = "/Users/sinakling/disks/meso_shared/RetinoMaps/derivatives/pp_data/group/eyetracking"
-    fig_fn = f"{fig_path}/PurLoc_threshold_2_ranking.pdf"
+    fig_fn = f"{fig_path}/PurLoc_threshold_2_ranking_TEST.pdf"
     if not os.path.exists(fig_path):
         os.makedirs(fig_path)
     print(f'Saving {fig_fn}')

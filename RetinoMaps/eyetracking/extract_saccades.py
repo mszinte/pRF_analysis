@@ -6,9 +6,11 @@ Goal of the script:
 Extract saccade metrics
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: subject number 
-sys.argv[2]: task 
-sys.argv[3]: session
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: task
+sys.argv[5]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 h5 files with vals_all
@@ -40,8 +42,8 @@ vals_all[:,24]:	trial with no_saccade detected,
 vals_all[:,25]:	microsaccade detected (<1 dva)
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc
-python extract_saccades.py sub-01 PurLoc ses-01
+cd /projects/pRF_analysis/RetinoMaps/eyetracking
+python extract_saccades.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -63,6 +65,7 @@ deb = ipdb.set_trace
 
 # Specific imports
 # ----------------
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from sac_utils import vecvel, microsacc_merge, saccpar, isincircle
 
 def ensure_save_dir(base_dir, subject):
@@ -72,19 +75,20 @@ def ensure_save_dir(base_dir, subject):
     return save_dir
 
 def load_inputs():
-    return sys.argv[1], sys.argv[2], sys.argv[3]
+    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 
-subject, task, ses = load_inputs()
+main_dir, project_dir, subject, task, group = load_inputs()
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
+settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+with open(settings_path) as f:
+	settings = json.load(f)
+if subject == 'sub-01':
+	if task == 'pRF': ses = 'ses-02'
+	else: ses = 'ses-01'
+else: ses = settings['session']
 
-# Define analysis parameters
-# --------------------------
-with open(f'../{task}_behavior_settings.json') as f:
-	json_s = f.read()
-	settings = json.loads(json_s)
 
-
-main_dir = settings['main_dir_mac']
-
+# Load main experiment settings 
 runs = np.arange(0,settings['num_run'],1)
 sequences = np.arange(0,settings['num_seq'],1)
 trials_seq = settings['trials_seq']
@@ -95,7 +99,7 @@ saccades_tr = np.arange(1,settings['seq_trs'],2)
 seq_type = settings['seq_type']
 
 #-------------------- Load data --------------------------------------
-file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
 h5_filename = '{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5'.format(file_dir = file_dir_save, sub = subject, task = task)
 h5_file = h5py.File(h5_filename,'r') 
 time_start_seq = np.array(h5_file['time_start_seq'])
@@ -120,7 +124,7 @@ tolerance_ratio = settings['tolerance_ratio']
 mat = 0
 for run, eye_data_run in enumerate(eye_data_all_runs):
 	print(f'--extracting saccades from run: {run}--')
-	for sequence in sequences: #9
+	for sequence in sequences: 
 		print('sequence: {}'.format(sequence))
 		trials = np.arange(0,trials_seq[sequence],1)
 		seq_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_seq[sequence,run],\
@@ -133,7 +137,7 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 											  eye_data_run[:,0] <= time_end_trial[trial,sequence,run])
 
 			data_logic = np.logical_and.reduce(np.array((seq_data_logic,trial_data_logic)))
-			print(amp_sequence[sequence])
+	
 			# fixation target position
 			if (amp_sequence[sequence] == 5) :
 				amp_sac = 0
@@ -146,8 +150,6 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 				sac_pos_x, sac_pos_y = np.round(np.cos(polar_ang[trial_with_sac])*amp_sac,decimals=3),\
 								   	   np.round(np.sin(polar_ang[trial_with_sac])*amp_sac,decimals=3)
 			
-			print('fix_pos', fix_pos_x)
-			print('sac_pos', sac_pos_x)
 			# trial start and end
 			# define trial start and trial end
 			t_trial_start = time_start_trial[trial,sequence,run]
@@ -261,6 +263,7 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 																		sac_amp,		sac_dist_ang,	sac_amp_ang,	    fix_cor,		 sac_cor,
 																		saccade_task, 	miss_time,		sac_out_accuracy,	sac_in_accuracy, no_saccade,		
 																		microsaccade,   blink_saccade])))
+							
 						s1 += 1
 			else:
 				if mat == 0:
@@ -280,73 +283,6 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 																microsaccade,   blink_saccade])))
 
 
-#TODO blink saccades to include? 
-# save nan blink from preproc??
-#5 blink saccades
-'''
-# Detect and put nan during blink saccades
-blinkNum = 0
-blink_start = False
-for tTime in np.arange(0,eye_data_runs_nan_blink.shape[0],1):
-	if not blink_start:
-		if np.isnan(eye_data_runs_nan_blink[tTime,1]):
-
-			blinkNum += 1
-			timeBlinkOnset = eye_data_runs_nan_blink[tTime,0]
-			blink_start = True
-			if blinkNum == 1:
-				blink_onset_offset = np.matrix([timeBlinkOnset,np.nan])
-			else:
-				blink_onset_offset = np.vstack((blink_onset_offset,[timeBlinkOnset,np.nan]))
-
-	if blink_start:
-		if not np.isnan(eye_data_runs_nan_blink[tTime,1]):
-			timeBlinkOffset = eye_data_runs_nan_blink[tTime,0]
-			blink_start = 0
-			blink_onset_offset[blinkNum-1,1] = timeBlinkOffset
-
-
-# nan saccade time around detected blinks and replace by interpolations
-buffer_dur = 20
-sac_t_onset_col = 8
-sac_t_offset_col = 9
-blink_saccade_col = 25
-eye_data_runs_int_blink = np.copy(eye_data_runs_nan_blink)
-for tBlink in np.arange(0,blinkNum,1):
-
-
-
-	blink_pre_sac_logic = np.logical_and(vals_all[:,sac_t_offset_col] >= blink_onset_offset[tBlink,0] - buffer_dur/2,\
-										 vals_all[:,sac_t_offset_col] <= blink_onset_offset[tBlink,0] + buffer_dur/2)
-
-	blink_post_sac_logic = np.logical_and(vals_all[:,sac_t_onset_col] >= blink_onset_offset[tBlink,1] - buffer_dur/2,\
-										  vals_all[:,sac_t_onset_col] <= blink_onset_offset[tBlink,1] + buffer_dur/2)
-
-	vals_all[blink_pre_sac_logic,blink_saccade_col] += 1
-	vals_all[blink_post_sac_logic,blink_saccade_col] += 1
-
-
-	if np.logical_and(np.sum(blink_pre_sac_logic),np.sum(blink_post_sac_logic)):
-		blink_pre_sac_vals = vals_all[blink_pre_sac_logic]
-		blink_pre_sac_t_onset = blink_pre_sac_vals[0,sac_t_onset_col]
-		blink_pre_sac_t_offset = blink_pre_sac_vals[0,sac_t_offset_col]
-
-		blink_post_sac_vals = vals_all[blink_post_sac_logic]
-		blink_post_sac_t_onset = blink_post_sac_vals[0,sac_t_onset_col]
-		blink_post_sac_t_offset = blink_post_sac_vals[0,sac_t_offset_col]
-
-		blink_sac_x_coord = eye_data_runs_int_blink[np.logical_and(eye_data_runs_int_blink[:,0] >= blink_pre_sac_t_onset,eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),1]
-		blink_sac_y_coord = eye_data_runs_int_blink[np.logical_and(eye_data_runs_int_blink[:,0] >= blink_pre_sac_t_onset,eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),2]
-
-		# linear interporlation
-		eye_data_runs_int_blink[np.logical_and(	eye_data_runs_int_blink[:,0] >= blink_pre_sac_t_onset,\
-											  	eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),1] =\
-												np.linspace(blink_sac_x_coord[0],blink_sac_x_coord[-1],blink_sac_x_coord.shape[0])
-
-		eye_data_runs_int_blink[np.logical_and(	eye_data_runs_int_blink[:,0] >= blink_pre_sac_t_onset,\
-											  	eye_data_runs_int_blink[:,0] <= blink_post_sac_t_offset),2] =\
-												np.linspace(blink_sac_y_coord[0],blink_sac_y_coord[-1],blink_sac_y_coord.shape[0])
-'''
 
 # Save all
 # --------
@@ -357,7 +293,11 @@ h5_file = "{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5".format(file_
 
 h5file = h5py.File(h5_file, "a")
 
-#h5file.create_dataset('eye_data_runs_int_blink',data = eye_data_runs_int_blink,dtype ='float32')
 h5file.create_dataset('saccades_output',data = vals_all,dtype ='float32')
 
 h5file.close()
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

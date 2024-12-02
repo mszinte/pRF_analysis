@@ -23,10 +23,12 @@
     "blinks_remove": "pupil_off", 
     "drift_corr": "linear", 
     "downsampling": null,
+    "desired_sampling_rate": 100, 
     "smoothing": "moving_avg",
     "window": 50,
     "sigma": 20, 
     "first_trial_pattern": "bar\\spass\\s1\\strial\\sonset\\s1",
     "last_trial_pattern": "bar\\spass\\s9\\strial\\soffset\\s208", 
-    "threshold": 2
+    "threshold": 2, 
+    "fixation_column": "att_task_task_on_fixation_stimulus"
 }

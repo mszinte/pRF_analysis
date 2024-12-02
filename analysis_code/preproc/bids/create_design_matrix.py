@@ -119,5 +119,5 @@ for run in range(num_run):
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+#os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+#os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
