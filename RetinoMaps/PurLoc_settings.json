@@ -23,10 +23,12 @@
     "blinks_remove": "pupil_off", 
     "drift_corr": "linear", 
     "downsampling": null,
+    "desired_sampling_rate": 100, 
     "smoothing": "moving_avg",
     "window": 50,
     "sigma": 20, 
     "first_trial_pattern": "sequence\\s1\\strial\\s1\\sonset",
     "last_trial_pattern": "sequence\\s9\\strial\\s16\\soffset", 
-    "threshold": 2
+    "threshold": 2,
+    "fixation_column": "trial_type_fixation"
 }

@@ -43,7 +43,7 @@ from pathlib import Path
 from scipy.signal import detrend
 
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from eyetrack_utils import *
+from eyetrack_utils import load_event_files, extract_data, blinkrm_pupil_off, interpol_nans, detrending, downsample_to_targetrate, moving_average_smoothing, gaussian_smoothing, extract_eye_data_and_triggers, convert_to_dva
 
 # --------------------- Load settings and inputs -------------------------------------
 
@@ -57,6 +57,12 @@ def load_inputs():
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    return save_dir
+
+def ensure_design_dir(base_dir, subject):
+    save_dir = f"{base_dir}/exp_design"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return save_dir
@@ -137,7 +143,9 @@ def main_preprocessing_pipeline():
     
     # Prepare save directory
     file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
-    
+    # Prepare design matrix directory
+    design_dir_save = ensure_design_dir(f'{main_dir}/{project_dir}/derivatives', subject)
+
     # Load data
     df_event_runs, df_data_runs = extract_event_and_physio_data(main_dir, project_dir, subject, task, ses, settings['num_run'], eye)
     
@@ -160,9 +168,8 @@ def main_preprocessing_pipeline():
 
         # ------------- detrending ----------------
         if settings.get('drift_corr'):
-
-            eye_data_run_x = detrending(eye_data_run_x,task)
-            eye_data_run_y = detrending(eye_data_run_y,task)
+            eye_data_run_x = detrending(eye_data_run_x, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
+            eye_data_run_y = detrending(eye_data_run_y, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
 
         
         eye_data_run = np.stack((eye_data_run[:,0],
@@ -171,7 +178,7 @@ def main_preprocessing_pipeline():
                                  eye_data_run_p), axis=1)
         # ------------ downsampling ----------------
         if settings.get('downsampling'):
-            eye_data_run   = downsample_data(eye_data_run, 1000, 100)
+            eye_data_run   = downsample_data(eye_data_run, settings["eyetrack_sampling"], settings["desired_sampling_rate"])
 
         eye_data_run = pd.DataFrame(eye_data_run, columns=['timestamp', 'x', 'y', 'pupil_size'])
 
@@ -187,8 +194,8 @@ def main_preprocessing_pipeline():
 
     # Define permission cmd
     print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-    os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-    os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+    #os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+    #os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
 
 if __name__ == "__main__":
     main_preprocessing_pipeline()

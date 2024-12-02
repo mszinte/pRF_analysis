@@ -3,22 +3,24 @@
 extract_triggers.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-- extract timestamps of experiment for saccade analysis 
+- extract timestamps of experiment for saccade analysis (PurLoc and SacLoc tasks)
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: subject 
-sys.argv[2]: task
+sys.argv[1]: main directory 
+sys.argv[2]: project directory 
+sys.argv[3]: subject 
+sys.argv[4]: task 
+sys.argv[5]: group 
 -----------------------------------------------------------------------------------------
 Output(s):
 Hdf5 file per run with all timestamps
 tsv file with events and timestamps
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc
-python extract_triggers.py sub-01 PurLoc 
+cd /projects/pRF_analysis/RetinoMaps/eyetracking/
+python extract_triggers.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
-#%%
 import pandas as pd
 import json
 import numpy as np
@@ -31,8 +33,8 @@ import sys
 import math 
 import h5py
 # path of utils folder  
-sys.path.insert(0, "/Users/sinakling/projects/pRF_analysis/analysis_code/utils")
-from eyetrack_utils import *
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
+from eyetrack_utils import load_event_files, extract_data
 
 # --------------------- Load settings and inputs -------------------------------------
 
@@ -46,7 +48,7 @@ def load_events(main_dir, subject, ses, task):
     return data_events 
 
 def load_inputs():
-    return sys.argv[1], sys.argv[2]
+    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 
 def ensure_save_dir(base_dir, subject):
     save_dir = f"{base_dir}/{subject}/eyetracking/stats"
@@ -54,14 +56,20 @@ def ensure_save_dir(base_dir, subject):
         os.makedirs(save_dir)
     return save_dir
 
-subject, task = load_inputs()
-settings = load_settings(f'/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/{task}_behavior_settings.json')
-ses = settings['session']
-eye = settings['eye']
-# Define file list
-main_dir = settings.get('main_dir_mac')
+# Load inputs and settings
+main_dir, project_dir, subject, task, group = load_inputs()
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
+settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+with open(settings_path) as f:
+    settings = json.load(f)
+if subject == 'sub-01':
+    if task == 'pRF': ses = 'ses-02'
+    else: ses = 'ses-01'
+else: ses = settings['session']
+
 
 # Load main experiment settings 
+eye = settings['eye']
 num_run = settings['num_run']
 num_seq = settings['num_seq']
 seq_trs = settings['seq_trs']
@@ -74,13 +82,13 @@ eyetracking_sampling = settings['eyetrack_sampling']
 screen_size = settings['screen_size']
 ppd = settings['ppd']
 
-file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
 
 
 # ------------- Trigger extraction -------------------------
 # Extract data from physio and physioevents as dataframes 
-df_event_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type = "physioevents")
-df_data_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type = "physio")
+df_event_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type = "physioevents")
+df_data_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type = "physio")
 
 # Extract triggers
 eye_data_runs_list = []
@@ -240,7 +248,7 @@ for run_idx, df in enumerate(df_event_runs):
 
 
 
-data_events = load_event_files(main_dir, subject, ses, task)
+data_events = load_event_files(main_dir, project_dir, subject, ses, task)
 
 
 # --------------- Save timestampes with event file data as tsv -----------------
@@ -263,45 +271,30 @@ for run, path_event_run in enumerate(data_events):
     df_event_run['trial_time_start'] = filtered_time_start
     df_event_run['trial_time_end'] = filtered_time_end
 
-    #TODO save duration (difference end start) here as well 
-
-
-    # Print to check the result
-    print(df_event_run.head())
     # save as tsv 
 
     df_event_run.to_csv(f"{file_dir_save}/{subject}_task_{task}_run_0{run+1}_triggers.tsv", index=False, sep="\t")
 
 # ------------------ Save all data needed for saccade analysis ----------------------------
+
 # get amplitude sequence from event files
-
-dfs = []
-legend_amp = {1: 4, 2: 6, 3: 8, 4: 10, 5: "none"}
-    
-
 df = pd.read_csv(data_events[0], sep='\t')
 
-amp_sequence_ev = list(df['eyemov_amplitude'])
-
-amp_sequence = [legend_amp[val] if not math.isnan(val) else float('nan') for val in amp_sequence_ev]
+amp_sequence = list(df['eyemov_amplitude'])
 
 # Get one amplitue per sequence 
 sequence_lengths = [16, 32] 
 sequence_length_index = 0 
 first_elements = [] 
-i = 0 
-# Iterate through the list 
-while i < len(amp_sequence_ev): 
-    first_elements.append(amp_sequence_ev[i]) 
+i = 0  
+while i < len(amp_sequence): 
+    first_elements.append(amp_sequence[i]) 
     i += sequence_lengths[sequence_length_index] 
     sequence_length_index = (sequence_length_index + 1) % 2 
     
 
-
 # save as h5 
-h5_file = '{file_dir}/{sub}_task-{task}_eyedata_sac_stats.h5'.format(
-
-    file_dir=file_dir_save, sub=subject, task=task)
+h5_file = '{file_dir}/{sub}_task-{task}_eyedata_sac_stats.h5'.format(file_dir=file_dir_save, sub=subject, task=task)
 
 # Remove existing file if it exists
 try:
@@ -321,4 +314,7 @@ with h5py.File(h5_file, "a") as h5file:
     h5file.create_dataset(f'amp_sequence', data=first_elements, dtype='float32')
         
 
-
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
