@@ -23,8 +23,8 @@ Output(s):
 Cleaned timeseries data per run 
 -----------------------------------------------------------------------------------------
 To run:
-cd projects/pRF_analysis/RetinoMaps/eyetracking/
-python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
+python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-02 pRF 327
 -----------------------------------------------------------------------------------------
 """
 import ipdb
@@ -43,7 +43,9 @@ from pathlib import Path
 from scipy.signal import detrend
 
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from eyetrack_utils import load_event_files, extract_data, blinkrm_pupil_off, interpol_nans, detrending, downsample_to_targetrate, moving_average_smoothing, gaussian_smoothing, extract_eye_data_and_triggers, convert_to_dva
+from eyetrack_utils import load_event_files, extract_data, blinkrm_pupil_off, \
+    blinkrm_pupil_off_smooth, interpol_nans, detrending, downsample_to_targetrate, \
+    moving_average_smoothing, gaussian_smoothing, extract_eye_data_and_triggers, convert_to_dva \
 
 # --------------------- Load settings and inputs -------------------------------------
 
@@ -83,6 +85,8 @@ def extract_event_and_physio_data(main_dir, project_dir, subject, task, ses, num
 def remove_blinks(data, method, sampling_rate):
     if method == 'pupil_off':
         return blinkrm_pupil_off(data, sampling_rate)
+    elif method == 'pupil_off_smooth':
+        return blinkrm_pupil_off_smooth(data, sampling_rate)
     else:
         print("No blink removal method specified")
         return data
@@ -194,8 +198,8 @@ def main_preprocessing_pipeline():
 
     # Define permission cmd
     print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-    #os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-    #os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+    os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+    os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
 
 if __name__ == "__main__":
     main_preprocessing_pipeline()
