@@ -47,11 +47,12 @@ from sac_utils import plotly_layout_template
 def load_inputs():
     main_dir = sys.argv[1]
     project_dir = sys.argv[2]
-    subject = sys.argv[3]
+    subjects_input = sys.argv[3]
+    subjects = [sub.strip().strip('[]"\'') for sub in subjects_input.split(',')]
     task = sys.argv[4]
     group = sys.argv[5]
 
-    return main_dir, project_dir, subject, task, group 
+    return main_dir, project_dir, subjects, task, group 
 
 def load_events(main_dir, subject, ses, task): 
     data_events = load_event_files(main_dir, subject, ses, task)
@@ -65,7 +66,7 @@ def ensure_save_dir(base_dir, subject):
     return save_dir
 
 # Load inputs and settings
-main_dir, project_dir, subject, task, group = load_inputs()
+main_dir, project_dir, subjects, task, group = load_inputs()
 
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
@@ -89,66 +90,66 @@ screen_size = settings['screen_size']
 ppd = settings['ppd']
 
 
-#for subject in subjects: 
+for subject in subjects: 
     
-file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
-fig_dir_save = f'{file_dir_save}/figures'
-os.makedirs(fig_dir_save, exist_ok=True)
+    file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
+    fig_dir_save = f'{file_dir_save}/figures'
+    os.makedirs(fig_dir_save, exist_ok=True)
 
-if subject == 'sub-01':
-    if task == 'pRF': 
-        ses = 'ses-02'
-        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-else: 
-    if task == 'pRF': 
-        ses = 'ses-01'
-        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+    if subject == 'sub-01':
+        if task == 'pRF': 
+            ses = 'ses-02'
+            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
     else: 
-        ses = 'ses-02'
-        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+        if task == 'pRF': 
+            ses = 'ses-01'
+            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+        else: 
+            ses = 'ses-02'
+            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
 
 
-dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
-all_run_durations = [np.cumsum(dfs['duration'] * 1000) for dfs in dfs_runs]
+    dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
+    all_run_durations = [np.cumsum(dfs['duration'] * 1000) for dfs in dfs_runs]
 
 
-precision_all_runs = []
-precision_one_thrs_list = []
+    precision_all_runs = []
+    precision_one_thrs_list = []
 
-threshold = settings['threshold']
-
-
-for run in range(num_run):
-        
-        prediction = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz", compression='gzip', delimiter='\t')
-        pred_x_intpl =  prediction['pred_x']
-        pred_y_intpl =  prediction['pred_y']
-        
-        
-        # load eye data 
-        eye_data_run_01 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
-        eye_data_run_02 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
-        eye_data_all_runs = [eye_data_run_01[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(), eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
-        
-        # Define the start and end indices for each slice
-        slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
-        for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
-        
-            fig = plotly_layout_template(task, run)
-            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-            fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
-            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
-            fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
-            fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
-            fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
-
-            fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
-            print(f'Saving {fig_fn}')
-            #fig.write_image(fig_fn)
-            fig.show()
+    threshold = settings['threshold']
 
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+    for run in range(num_run):
+            
+            prediction = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz", compression='gzip', delimiter='\t')
+            pred_x_intpl =  prediction['pred_x']
+            pred_y_intpl =  prediction['pred_y']
+            
+            
+            # load eye data 
+            eye_data_run_01 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_run_02 = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_all_runs = [eye_data_run_01[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(), eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
+            
+            # Define the start and end indices for each slice
+            slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
+            for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
+            
+                fig = plotly_layout_template(task, run)
+                fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
+                fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
+                fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
+                fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
+                fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
+                fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
+
+                fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
+                print(f'Saving {fig_fn}')
+                fig.write_image(fig_fn)
+                fig.show()
+
+
+    # Define permission cmd
+    print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+    os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+    os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

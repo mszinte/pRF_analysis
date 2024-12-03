@@ -38,8 +38,8 @@ import plotly.graph_objects as go
 
 # path of utils folder  
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from eyetrack_utils import load_event_files, extract_data
-from sac_utils import predicted_pursuit, plotly_layout_template, euclidean_distance_pur, fraction_under_threshold, fraction_under_one_threshold, load_sac_model, euclidean_distance
+from eyetrack_utils import load_event_files
+from sac_utils import predicted_pursuit, euclidean_distance_pur, fraction_under_threshold, fraction_under_one_threshold, load_sac_model, euclidean_distance
 
 # --------------------- Load settings and inputs -------------------------------------
 
