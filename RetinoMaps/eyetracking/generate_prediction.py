@@ -3,7 +3,7 @@
 generate_prediction.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Generate prediction for eyemovements and calculate euclidean distance 
+Generate prediction for different task and calculate euclidean distance 
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main directory 
@@ -19,15 +19,14 @@ tsv.gz timeseries of Prediction
 -----------------------------------------------------------------------------------------
 To run:
 cd /projects/pRF_analysis/RetinoMaps/eyetracking/
-python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
+python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 pRF 327
+python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 PurLoc 327
+python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 SacLoc 327
 -----------------------------------------------------------------------------------------
 """
-#%%
 import pandas as pd
 import json
 import numpy as np
-import re
-import matplotlib.pyplot as plt
 import glob 
 import os
 import sys
