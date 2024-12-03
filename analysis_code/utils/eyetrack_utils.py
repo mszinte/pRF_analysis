@@ -106,7 +106,7 @@ def extract_eye_data_and_triggers(df_event, df_data, onset_pattern, offset_patte
 
 import numpy as np 
 
-def blinkrm_pupil_off(samples, sampling_rate=1000, addms2blink=50, smoothing_duration=200):
+def blinkrm_pupil_off_smooth(samples, sampling_rate=1000, addms2blink=50, smoothing_duration=200):
     """
     Replace blinks in eye-tracking data (where pupil size is zero) with NaN and extend blink duration for smoothing.
 
@@ -119,7 +119,7 @@ def blinkrm_pupil_off(samples, sampling_rate=1000, addms2blink=50, smoothing_dur
 """
     import numpy as np 
     import matplotlib.pyplot as plt
-    print(' - blink replacement with NaN')
+    print('- blink replacement with NaN and kernel convolution')
     blink_duration_extension = int(sampling_rate / 1000 * addms2blink)
     
     # Detect blinks based on pupil size being 0
@@ -151,6 +151,49 @@ def blinkrm_pupil_off(samples, sampling_rate=1000, addms2blink=50, smoothing_dur
     plt.show()
     
     return cleaned_samples
+
+def blinkrm_pupil_off(samples, sampling_rate=1000, addms2blink=150):
+    """
+    Replace blinks in eye-tracking data (where pupil size is zero) with NaN
+
+    Args:
+        samples (np.array): 4D array of eye-tracking data (time, X, Y, pupil).
+        sampling_rate (int): Sampling rate of the data, default is 1000 Hz.
+
+    Returns:
+        np.array: Cleaned eye-tracking data with blinks replaced by NaN.
+"""
+    import numpy as np 
+    import matplotlib.pyplot as plt
+    print('- blink replacement with NaN')
+    blink_duration_extension = int(sampling_rate / 1000 * addms2blink)
+    
+    # Detect blinks based on pupil size being 0
+    blink_indices = np.where(samples[:, 3] == 0)[0]
+    
+    blink_bool = np.zeros(len(samples), dtype=bool)
+    
+    for idx in blink_indices:
+        blink_bool[idx] = True
+    
+    # Adding extension to the detected blinks
+    for idx in blink_indices:
+        start_idx = max(0, idx - blink_duration_extension)
+        end_idx = min(len(samples), idx + blink_duration_extension + 1)
+        blink_bool[start_idx:end_idx] = True
+        
+    # Replace blink points in the samples with NaN
+    cleaned_samples = samples.copy()
+    cleaned_samples[blink_bool, 1:] = np.nan 
+
+    plt_2 = plt.figure(figsize=(15, 6))
+    plt.title("Blink removed timeseries")
+    plt.xlabel('x-coordinate', fontweight='bold')
+    plt.plot(cleaned_samples[:,1])
+    plt.show()
+    
+    return cleaned_samples
+
 
 def convert_to_dva(eye_data, center, ppd):
     """
