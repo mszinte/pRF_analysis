@@ -17,8 +17,8 @@ Hdf5 file per run with all timestamps
 tsv file with events and timestamps
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/
-python extract_triggers.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
+python extract_triggers.py /scratch/mszinte/data RetinoMaps sub-01 PurLoc 327
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -28,7 +28,6 @@ import re
 import matplotlib.pyplot as plt
 import glob 
 import os
-from sklearn.preprocessing import MinMaxScaler
 import sys
 import math 
 import h5py
@@ -132,7 +131,6 @@ for run_idx, df in enumerate(df_event_runs):
         if re.search(seq_1_start_pattern, message):
             time_start_eye[0, run_idx] = row['onset']  
             
-
         # Check for sequence start
         seq_start_match = re.search(seq_start_pattern, message)
         if seq_start_match:
@@ -172,7 +170,6 @@ for run_idx, df in enumerate(df_event_runs):
             else:
                 # Trial offset found without a matching onset, this means it was out of order
                 print(f"Out-of-order trial offset found for trial {trial_num}, but onset wasn't found.")
-
 
         # Check for sequence 9 stopped
         if re.search(seq_9_stop_pattern, message):
@@ -254,7 +251,7 @@ data_events = load_event_files(main_dir, project_dir, subject, ses, task)
 # --------------- Save timestampes with event file data as tsv -----------------
 # Load the data
 for run, path_event_run in enumerate(data_events):
-    df_event_run = pd.read_csv(path_event_run, sep="\t")
+    df_event_run = pd.read_csv(path_event_run, sep="\t", index_col=0)
 
     # Flatten the time_start_trial array and filter out elements that are not 0
     flattened_time_start = time_start_trial[:,:,run].flatten()
@@ -272,7 +269,6 @@ for run, path_event_run in enumerate(data_events):
     df_event_run['trial_time_end'] = filtered_time_end
 
     # save as tsv 
-
     df_event_run.to_csv(f"{file_dir_save}/{subject}_task_{task}_run_0{run+1}_triggers.tsv", index=False, sep="\t")
 
 # ------------------ Save all data needed for saccade analysis ----------------------------

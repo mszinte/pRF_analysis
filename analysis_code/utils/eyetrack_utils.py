@@ -433,7 +433,7 @@ def load_event_files(main_dir, project_dir, subject, ses, task):
     
     data_events = sorted(glob.glob(r'{main_dir}/{project_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(
         main_dir=main_dir, project_dir=project_dir, sub=subject, ses = ses, task = task)))
-    print(f'{main_dir}/{project_dir}/{subject}/{ses}/func/{subject}_{ses}_task-{task}_*_events*.tsv')
+    
     assert len(data_events) > 0, "No event files found"
 
     return data_events
