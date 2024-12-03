@@ -42,8 +42,8 @@ vals_all[:,24]:	trial with no_saccade detected,
 vals_all[:,25]:	microsaccade detected (<1 dva)
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking
-python extract_saccades.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking
+python extract_saccades.py /scratch/mszinte/data RetinoMaps sub-01 PurLoc 327
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -123,7 +123,7 @@ tolerance_ratio = settings['tolerance_ratio']
 #----------------------- Main loop ------------------------------------
 mat = 0
 for run, eye_data_run in enumerate(eye_data_all_runs):
-	print(f'--extracting saccades from run: {run}--')
+	 print(f'--extracting saccades from run: {run}--')
 	for sequence in sequences: 
 		print('sequence: {}'.format(sequence))
 		trials = np.arange(0,trials_seq[sequence],1)
