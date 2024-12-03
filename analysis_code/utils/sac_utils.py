@@ -361,6 +361,7 @@ def draw_bg_trial(analysis_info,draw_cbar = False):
     for rad in analysis_info['rads']:
         ax1.plot(x_tick1,x_tick1*0+rad, color = [1,1,1], linewidth = axis_width*2)
         ax1.plot(x_tick1,x_tick1*0-rad, color = [1,1,1], linewidth = axis_width*2)
+		
 
     # Vertical eye trace
     ax2 = plt.subplot2grid((2,8),(1,0),rowspan= 1, colspan = 4)
@@ -562,7 +563,7 @@ def predicted_pursuit(df_run,matfile, center, ppd):
 
     for amp, trial in zip(amplitude, seq_trial):
         if amp == 5: 
-            x_coord = 960.0
+            x_coord = center[0]
         else: 
             x_coord = pursuit_coord_x[amp-1, trial-1]
         purs_expected_x.append(x_coord)
@@ -572,7 +573,7 @@ def predicted_pursuit(df_run,matfile, center, ppd):
 
     for amp, trial in zip(amplitude, seq_trial):
         if amp == 5: 
-            y_coord = 540.0
+            y_coord = center[1]
         else: 
             y_coord = pursuit_coord_y[amp-1, trial-1]
         purs_expected_y.append(y_coord)
