@@ -15,13 +15,13 @@ sys.argv[5]: group of shared data (e.g. 327)
 Output(s):
 h5 files with vals_all
 vals_all[:,00]:	run number
-vals_all[:,01]:	sequence number,
-vals_all[:,02]:	trial number,
+vals_all[:,01]:	sequence number
+vals_all[:,02]:	trial number
 vals_all[:,03]:	saccade number detected (nan if no),
 vals_all[:,04]:	saccade onset x coordinate (dva from screen center)
 vals_all[:,05]:	saccade offset x coordinate (dva from screen center))
 vals_all[:,06]:	saccade onset y coordinate (dva from screen center)
-vals_all[:,07]:	saccade offset y coordinate (dva from screen center)),
+vals_all[:,07]:	saccade offset y coordinate (dva from screen center))
 vals_all[:,08]:	saccade onset time trigger
 vals_all[:,09]:	saccade offset time trigger
 vals_all[:,10]:	saccade onset time relative to trial onset (proportion of the trial)
