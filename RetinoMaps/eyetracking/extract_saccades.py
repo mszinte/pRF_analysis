@@ -87,10 +87,9 @@ if subject == 'sub-01':
 	else: ses = 'ses-01'
 else: ses = settings['session']
 
-
 # Load main experiment settings 
-runs = np.arange(0,settings['num_run'],1)
-sequences = np.arange(0,settings['num_seq'],1)
+runs = np.arange(0, settings['num_run'],1)
+sequences = np.arange(0, settings['num_seq'],1)
 trials_seq = settings['trials_seq']
 rads = settings['rads']
 polar_ang = np.deg2rad(np.arange(0,360,settings['ang_steps']))
@@ -113,6 +112,7 @@ eye_data_run_02_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{s
 eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
 eye_data_all_runs = [eye_data_run_01_nan_blink_interpol,eye_data_run_02_nan_blink_interpol]
 
+
 # Get saccade model
 sampling_rate = settings['sampling_rate']
 velocity_th = settings['velocity_th']
@@ -122,22 +122,24 @@ tolerance_ratio = settings['tolerance_ratio']
 
 #----------------------- Main loop ------------------------------------
 mat = 0
-for run, eye_data_run in enumerate(eye_data_all_runs):
-	 print(f'--extracting saccades from run: {run}--')
+for run in runs:
+	print(f'--extracting saccades from run: {run+1}--')
+	eye_data_run = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_0{run+1}_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+	eye_data_run = eye_data_run[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
+
+		
 	for sequence in sequences: 
 		print('sequence: {}'.format(sequence))
 		trials = np.arange(0,trials_seq[sequence],1)
-		seq_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_seq[sequence,run],\
-										eye_data_run[:,0] <= time_end_seq[sequence,run])
-
+		seq_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_seq[sequence,run],eye_data_run[:,0] <= time_end_seq[sequence,run])	
 		trial_with_sac = 0
 		for trial in trials:
-			print('trial: {}'.format(trial))
+			#print('trial: {}'.format(trial))
 			trial_data_logic = np.logical_and(eye_data_run[:,0] >= time_start_trial[trial,sequence,run],\
 											  eye_data_run[:,0] <= time_end_trial[trial,sequence,run])
 
 			data_logic = np.logical_and.reduce(np.array((seq_data_logic,trial_data_logic)))
-	
+			
 			# fixation target position
 			if (amp_sequence[sequence] == 5) :
 				amp_sac = 0
@@ -286,15 +288,9 @@ for run, eye_data_run in enumerate(eye_data_all_runs):
 
 # Save all
 # --------
-
 h5_file = "{file_dir}/stats/{sub}_task-{task}_eyedata_sac_stats.h5".format(file_dir = file_dir_save, sub = subject, task = task)
-
-
-
 h5file = h5py.File(h5_file, "a")
-
 h5file.create_dataset('saccades_output',data = vals_all,dtype ='float32')
-
 h5file.close()
 
 # Define permission cmd
