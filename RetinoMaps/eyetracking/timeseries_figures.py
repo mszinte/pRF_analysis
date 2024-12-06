@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-individual_prediction_figures.py
+timeseries_figures.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Create figures for each subject showing the eyetraces vs the prediction over time 
@@ -21,7 +21,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 cd /projects/pRF_analysis/RetinoMaps/eyetracking/
-python individual_prediction_figures.py /scratch/mszinte/data RetinoMaps "[sub-01,sub-02,sub-03]" pRF 327
+python timeseries_figures.py /scratch/mszinte/data RetinoMaps "[sub-01,sub-02,sub-03]" pRF 327
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -96,18 +96,19 @@ for subject in subjects:
     fig_dir_save = f'{file_dir_save}/figures'
     os.makedirs(fig_dir_save, exist_ok=True)
 
+    # Determine session based on subject and task
     if subject == 'sub-01':
-        if task == 'pRF': 
-            ses = 'ses-02'
-            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-    else: 
-        if task == 'pRF': 
-            ses = 'ses-01'
-            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-        else: 
-            ses = 'ses-02'
-            data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+        ses = 'ses-02' if task == 'pRF' else 'ses-01'
+    else:
+        ses = 'ses-01' if task != 'pRF' else 'ses-02'
 
+    # Load event files
+    try:
+        data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+        dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
+    except Exception as e:
+        print(f"Error loading or processing event files for {subject}, {ses}, {task}: {e}")
+        continue
 
     dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
     all_run_durations = [np.cumsum(dfs['duration'] * 1000) for dfs in dfs_runs]

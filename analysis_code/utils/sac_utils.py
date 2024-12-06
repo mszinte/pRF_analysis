@@ -548,12 +548,12 @@ def interp1d(array: np.ndarray, new_len: int) -> np.ndarray:
     la = len(array)
     return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
 
-def predicted_pursuit(df_run,matfile, center, ppd):
+def predicted_pursuit(df_run,settings):
     import numpy as np
-    # need event file as input, need analysis info as input? 
-
-    pursuit_coord_x = matfile['config']['const'][0,0]['pursuit_matX'][0][0][0]
-    pursuit_coord_y = matfile['config']['const'][0,0]['pursuit_matY'][0][0][0]
+    import os
+    path = "{}/".format(os.getcwd())
+    pursuit_coord_x = np.load(f"{path}/design_coordinates_x.npy")
+    pursuit_coord_y = np.load(f"{path}design_coordinates_y.npy")
 
     amplitude = list(df_run['eyemov_amplitude'])
     seq_trial = list(df_run['sequence_trial'])
@@ -563,7 +563,7 @@ def predicted_pursuit(df_run,matfile, center, ppd):
 
     for amp, trial in zip(amplitude, seq_trial):
         if amp == 5: 
-            x_coord = center[0]
+            x_coord = settings["center"][0]
         else: 
             x_coord = pursuit_coord_x[amp-1, trial-1]
         purs_expected_x.append(x_coord)
@@ -573,21 +573,58 @@ def predicted_pursuit(df_run,matfile, center, ppd):
 
     for amp, trial in zip(amplitude, seq_trial):
         if amp == 5: 
-            y_coord = center[1]
+            y_coord = settings["center"][1]
         else: 
             y_coord = pursuit_coord_y[amp-1, trial-1]
         purs_expected_y.append(y_coord)
         
 
     # Convert to dva 
-    purs_expected_x = (np.array(purs_expected_x) - (center[0]))/ppd
-    purs_expected_y =  -1.0*((np.array(purs_expected_y) - (center[1]))/ppd)
+    purs_expected_x = (np.array(purs_expected_x) - (settings["center"][0]))/settings["ppd"]
+    purs_expected_y =  -1.0*((np.array(purs_expected_y) - (settings["center"][1]))/settings["ppd"])
 
-
-    purs_x_intpl = interp1d(purs_expected_x, new_len=int(248800)) # align with length of 1 run 
-    purs_y_intpl = interp1d(purs_expected_y, new_len=int(248800))  # align with length of 1 run 
+    #TODO this should come from settings
+    purs_x_intpl = interp1d(purs_expected_x, new_len=settings["exp_len"]) # align with length of 1 run 
+    purs_y_intpl = interp1d(purs_expected_y, new_len=settings["exp_len"])  # align with length of 1 run 
 
     return purs_x_intpl,purs_y_intpl
+
+
+def predicted_saccade(df_run,settings):  
+    import os
+    path = "{}/".format(os.getcwd())
+    saccade_coord_x = np.load(f"{path}/design_coordinates_x.npy")
+    saccade_coord_y = np.load(f"{path}design_coordinates_y.npy")
+
+
+    amplitude = list(df_run['eyemov_amplitude'])
+    seq_trial = list(df_run['sequence_trial'])
+
+    sac_expected_x = []
+    sac_expected_y = []
+
+    for amp, trial in zip(amplitude, seq_trial):
+        if amp == 5: 
+            x_coord = settings['center'][0]
+        else: 
+            x_coord = saccade_coord_x[amp-1, trial-1]
+        sac_expected_x.append(x_coord)
+
+
+
+    for amp, trial in zip(amplitude, seq_trial):
+        if amp == 5: 
+            y_coord = settings['center'][1]
+        else: 
+            y_coord = saccade_coord_y[amp-1, trial-1]
+        sac_expected_y.append(y_coord)
+
+    # convert to dva 
+    sac_expected_x = (np.array(sac_expected_x) - (settings['center'][0]))/settings['ppd']
+    sac_expected_y =  -1.0*((np.array(sac_expected_y) - (settings['center'][1]))/settings['ppd'])
+
+    return sac_expected_x, sac_expected_y
+
 
 def load_sac_model(file_dir_save, subject, run, eye_data): 
     time_seconds = (eye_data[:, 0] - eye_data[0, 0]) / 100
@@ -638,4 +675,57 @@ def extract_data_for_specific_threshold(eucl_dist, threshold):
     
     return distances_below_threshold, fraction_below_threshold
 
-    
+
+
+def add_missing_sac_rows(correct_saccades, direction):
+    import pandas as pd
+    # Define the expected pattern
+    if direction == 'out':
+        pattern = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0]
+
+    elif direction == 'in': 
+        pattern = [1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0, 21.0, 23.0, 25.0, 27.0, 29.0, 31.0]
+
+
+    # Filter by sequence 
+    correct_saccades_seq_1 = correct_saccades[correct_saccades['sequence'] == 1]
+    correct_saccades_seq_3 = correct_saccades[correct_saccades['sequence'] == 3]
+    correct_saccades_seq_5 = correct_saccades[correct_saccades['sequence'] == 5]
+    correct_saccades_seq_7 = correct_saccades[correct_saccades['sequence'] == 7]
+    correct_saccade_by_seq = [correct_saccades_seq_1,correct_saccades_seq_3,correct_saccades_seq_5,correct_saccades_seq_7]
+
+    new_datafr = []
+
+    for i, datafr in enumerate(correct_saccade_by_seq):
+
+        # Get trials for this one sequence
+        existing_trials = list(datafr['trial'])
+        print(existing_trials)
+
+        missing_trials = []
+
+        # Check for missing trials 
+        for trial in pattern:
+            if trial not in existing_trials:
+                missing_trials.append(trial)
+                print(f"Found missing trial {trial}")
+
+        # Add missing rows to the filtered DataFrame
+        for trial in missing_trials:
+            new_row = {col: 0 for col in correct_saccades.columns}
+            new_row['trial'] = trial
+            new_row['no_saccade'] = 1
+            new_row['run'] = 0
+            new_row['sequence'] = i + 1
+            datafr = datafr._append(new_row, ignore_index=True)
+
+        # Sort by 'trial' column to maintain order 
+        datafr = datafr.sort_values(by='trial')
+        new_datafr.append(datafr)
+        print(len(datafr))
+        
+
+    correct_saccades_new = pd.concat(new_datafr)
+    #display(correct_saccades_new)
+
+    return correct_saccades_new
