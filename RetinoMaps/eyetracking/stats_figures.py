@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-fraction_threshold_figures.py
+stats_figures.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Create figures for all subjects together showing the percentage of amount of data of the 
@@ -15,14 +15,17 @@ sys.argv[4]: task
 sys.argv[5]: group 
 -----------------------------------------------------------------------------------------
 Output(s):
-{subject}_task-{task}_run-01_1_prediction.pdf
-{subject}_task-{task}_run-01_2_prediction.pdf
-{subject}_task-{task}_run-01_3_prediction.pdf
-{subject}_task-{task}_run-01_4_prediction.pdf
+{subject}_{task}_threshold_precision.pdf
+group_{task}_threshold_precision.pdf
+{subject}_{task}_threshold_ranking.pdf
+group_{task}_threshold_ranking.pdf
+{subject}_{task}_stats_figure.pdf
+group_{task}_stats_figure.pdf
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/
-python individual_prediction_figures.py /scratch/mszinte/data RetinoMaps "[sub-01,sub-02,sub-03]" pRF 327
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
+python stats_figures.py /scratch/mszinte/data RetinoMaps sub-02 pRF 327
+python stats_figures.py /scratch/mszinte/data RetinoMaps group pRF 327
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -38,6 +41,7 @@ import h5py
 import scipy.io 
 import plotly.graph_objects as go 
 import plotly.express as px
+from plotly.subplots import make_subplots
 
 # path of utils folder  
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
@@ -49,34 +53,41 @@ from sac_utils import plotly_layout_template
 def load_inputs():
     main_dir = sys.argv[1]
     project_dir = sys.argv[2]
-    subjects_input = sys.argv[3]
-    subjects = [sub.strip().strip('[]"\'') for sub in subjects_input.split(',')]
+    subject = sys.argv[3]
+    #subjects = [sub.strip().strip('[]"\'') for sub in subjects_input.split(',')]
     task = sys.argv[4]
     group = sys.argv[5]
 
-    return main_dir, project_dir, subjects, task, group 
+    return main_dir, project_dir, subject, task, group 
 
 def load_events(main_dir, subject, ses, task): 
     data_events = load_event_files(main_dir, subject, ses, task)
     return data_events 
 
 
-def ensure_save_dir(base_dir, subject):
-    save_dir = f"{base_dir}/{subject}/eyetracking"
+def ensure_save_dir(base_dir, subject, is_group=False):
+    if is_group:
+        save_dir = f"{base_dir}/group/eyetracking"
+    else:
+        save_dir = f"{base_dir}/{subject}/eyetracking"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return save_dir
 
 # Load inputs and settings
-main_dir, project_dir, subjects, task, group = load_inputs()
+main_dir, project_dir, subject_input, task, group = load_inputs()
+print(subject_input)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
-settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
-with open(settings_path) as f:
+task_settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+with open(task_settings_path) as f:
     settings = json.load(f)
 
+general_settings_path = os.path.join(base_dir, project_dir, 'settings.json')
+with open(general_settings_path) as f:
+    general_settings = json.load(f)
 
-# Load main experiment settings 
+
 eye = settings['eye']
 num_run = settings['num_run']
 num_seq = settings['num_seq']
@@ -105,7 +116,7 @@ def process_subject(main_dir, project_dir, subject, task):
     }
 
     
-def process_all_subjects(main_dir, project_dir, subjects, task, threshold):
+def process_all_subjects(main_dir, project_dir, subjects, subject_input, task, threshold):
 
     precision_data = {
         subject: (
@@ -142,12 +153,15 @@ def process_all_subjects(main_dir, project_dir, subjects, task, threshold):
     'sub-24': '#C075A6',
     'sub-25': '#FC1CBF'}
 
-    generate_final_figure(precision_data, colormap_subject_dict, threshold, thresholds=np.linspace(0, 9, 100))
+    generate_final_figure(precision_data, colormap_subject_dict, threshold, main_dir, project_dir, subject_input, task, thresholds=np.linspace(0, 9, 100))
     generate_ranking_figure(precision_data, colormap_subject_dict)
 
+    # combined figure function
+    generate_combined_figure(precision_data, colormap_subject_dict, threshold, np.linspace(0, 9, 100))
 
 
-def generate_final_figure(precision_data, colormap, threshold, thresholds):
+
+def generate_final_figure(precision_data, colormap, threshold, main_dir, project_dir, subject_input, task, thresholds):
     traces = [
         go.Scatter(
             x=thresholds,
@@ -181,12 +195,12 @@ def generate_final_figure(precision_data, colormap, threshold, thresholds):
     fig = go.Figure(data=traces, layout=layout)
     fig.show()
 
-    # Save figure as PDF
-    fig_path = f"{main_dir}/{project_dir}/derivatives/pp_data/group/eyetracking"
-    fig_fn = f"{fig_path}/{task}_threshold_precision.pdf"
-    if not os.path.exists(fig_path):
-        os.makedirs(fig_path)
-    print(f'Saving {fig_fn}')
+    # Save figure dynamically
+    is_group = subject_input == "group"
+    save_dir = ensure_save_dir(f"{main_dir}/{project_dir}/derivatives/pp_data", subject_input, is_group)
+    fig_fn = f"{save_dir}/{subject_input}_{task}_threshold_precision.pdf" if not is_group else f"{save_dir}/group_{task}_threshold_precision.pdf"
+
+    print(f"Saving {fig_fn}")
     fig.write_image(fig_fn)
 
 
@@ -241,12 +255,115 @@ def generate_ranking_figure(precision_data, colormap):
     fig.show()
 
     # Save figure as PDF
-    fig_path = f"{main_dir}/{project_dir}/derivatives/pp_data/group/eyetracking"
-    fig_fn = f"{fig_path}/{task}_threshold_{threshold}_ranking.pdf"
-    if not os.path.exists(fig_path):
-        os.makedirs(fig_path)
-    print(f'Saving {fig_fn}')
+    is_group = subject_input == "group"
+    save_dir = ensure_save_dir(f"{main_dir}/{project_dir}/derivatives/pp_data", subject_input, is_group)
+    fig_fn = f"{save_dir}/{subject_input}_{task}_threshold_ranking.pdf" if not is_group else f"{save_dir}/group_{task}_threshold_ranking.pdf"
+
+    print(f"Saving {fig_fn}")
     fig.write_image(fig_fn)
 
 
-process_all_subjects(main_dir, project_dir, subjects, task, threshold)
+
+def generate_combined_figure(precision_data, colormap, threshold, thresholds):
+    # Create traces for the general figure
+    general_traces = [
+        go.Scatter(
+            x=thresholds,
+            y=data["precision_mean"],  
+            mode='lines',
+            name=f'Subject {subject}',
+            line=dict(color=colormap.get(subject, '#000000'))  # Default to black if subject not in colormap
+        )
+        for subject, data in precision_data.items()
+    ]
+
+    # Sort the precision data for the ranking figure
+    sorted_precision_data = dict(sorted(precision_data.items(), key=lambda item: item[1]["precision_one_thrs_mean"], reverse=True))
+    ranking_traces = [
+        go.Scatter(
+            x=[0.05 + 0.005 * i],  # Adjusted positions for x-axis
+            y=[data["precision_one_thrs_mean"]],
+            mode='markers',
+            name=f'Subject {subject}',
+            marker=dict(size=8, color=colormap.get(subject, '#000000'))  # Default to black if subject not in colormap
+        )
+        for i, (subject, data) in enumerate(sorted_precision_data.items())
+    ]
+
+    # Create a subplot figure
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("General Precision", "Ranking"),
+        column_widths=[0.5, 0.5], 
+        shared_yaxes=True 
+    )
+
+    # Add general figure traces to the first subplot
+    for trace in general_traces:
+        fig.add_trace(trace, row=1, col=1)
+
+    # Add ranking figure traces to the second subplot
+    for trace in ranking_traces:
+        fig.add_trace(trace, row=1, col=2)
+
+    # Add vertical dashed line to the general figure subplot
+    fig.add_shape(
+        type="line",
+        x0=threshold, x1=threshold, y0=0, y1=1,  # Line spans the y-axis
+        line=dict(color="black", dash="dash"),
+        xref="x1",  # Reference to the x-axis of the first subplot
+        yref="y1"   # Reference to the y-axis of the first subplot
+    )
+
+    # Update layout for both subplots
+    fig.update_layout(
+       height=700,
+        width=960,
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family="Arial", size=12, color="black"),
+        showlegend=False 
+    )
+
+    # Update axes for the first subplot
+    fig.update_xaxes(
+        title='Euclidean distance error in dva', range=[0, 6], row=1, col=1,
+        zeroline=True, linecolor='black', showgrid=False, tickmode='linear', dtick=2
+    )
+    fig.update_yaxes(
+        title='% amount of data', range=[0, 1.05], row=1, col=1,
+        zeroline=True, linecolor='black', showgrid=False
+    )
+
+    # Update axes for the second subplot
+    fig.update_xaxes(
+        title='', range=[0, 0.3], row=1, col=2,
+        showgrid=False, showticklabels=False
+    )
+    fig.update_yaxes(
+        range=[0, 1.05], row=1, col=2,
+        zeroline=True, linecolor='black', showgrid=True
+    )
+
+    fig.show()
+
+    
+    # Save figure dynamically
+    is_group = subject_input == "group"
+    save_dir = ensure_save_dir(f"{main_dir}/{project_dir}/derivatives/pp_data", subject_input, is_group)
+    fig_fn = f"{save_dir}/{subject_input}_{task}_stats_figure.pdf" if not is_group else f"{save_dir}/group_{task}_stats_figure.pdf"
+
+    print(f"Saving {fig_fn}")
+    fig.write_image(fig_fn)
+    
+    
+
+
+# Check if the input is "group" or a specific subject
+if subject_input == "group":
+    subjects = general_settings["subjects"]
+else:
+    subjects = [subject_input]
+
+
+process_all_subjects(main_dir, project_dir, subjects, subject_input, task, threshold)
