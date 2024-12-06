@@ -30,5 +30,6 @@
     "first_trial_pattern": "sequence\\s1\\strial\\s1\\sonset",
     "last_trial_pattern": "sequence\\s9\\strial\\s16\\soffset", 
     "threshold": 2,
-    "fixation_column": "trial_type_fixation"
+    "fixation_column": "trial_type_fixation", 
+    "exp_len": 248800
 }

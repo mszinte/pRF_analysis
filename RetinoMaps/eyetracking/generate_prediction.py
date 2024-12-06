@@ -3,7 +3,7 @@
 generate_prediction.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Generate prediction for different task and calculate euclidean distance 
+Generate prediction for eyemovements and calculate euclidean distance 
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main directory 
@@ -19,14 +19,14 @@ tsv.gz timeseries of Prediction
 -----------------------------------------------------------------------------------------
 To run:
 cd /projects/pRF_analysis/RetinoMaps/eyetracking/
-python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 pRF 327
-python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 PurLoc 327
-python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-02 SacLoc 327
+python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
 import json
 import numpy as np
+import re
+import matplotlib.pyplot as plt
 import glob 
 import os
 import sys
@@ -60,10 +60,8 @@ def ensure_save_dir(base_dir, subject):
         os.makedirs(save_dir)
     return save_dir
 
-# Load inputs and settings
+# Load inputs and setting
 main_dir, project_dir, subject, task, group = load_inputs()
-
-
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
 settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
@@ -115,9 +113,7 @@ for run in range(num_run):
 
     if task == "PurLoc":
         pred_x_intpl, pred_y_intpl = predicted_pursuit(
-            dfs_runs[run], matfile, settings['center'], settings['ppd']
-        )
-        
+            dfs_runs[run], settings)
         
         # Save prediction x and y as tsv.gz
         prediction = np.stack((pred_x_intpl, pred_y_intpl), axis=1)
@@ -202,6 +198,9 @@ precision_one_df.to_csv(output_one_tsv_file, sep="\t", index=False)
 
 print(f"Saved precision summary to {output_tsv_file}")
     
-
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
 
 
