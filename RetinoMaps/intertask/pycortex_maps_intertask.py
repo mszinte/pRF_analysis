@@ -106,12 +106,13 @@ create_colormap(cortex_dir=cortex_dir,
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: 
         suffix = 'SacVE_PurVE'
-        sac_task = 'SacLoc'
-        pur_task = 'PurLoc'
-    else : 
-        suffix = 'Sac_Pur'
         sac_task = 'SacVELoc'
         pur_task = 'PurVELoc'
+    else : 
+        suffix = 'Sac_Pur'
+        sac_task = 'SacLoc'
+        pur_task = 'PurLoc'
+
     for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         # Define directories and fn
         intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask".format(
@@ -279,7 +280,7 @@ for tasks in group_tasks :
         alpha_all = (rsq_all - alpha_range[0])/(alpha_range[1]-alpha_range[0])
         alpha_all[alpha_all>1]=1
         
-        deb()
+
         intertask_data_all = intertask_mat[all_idx,...]
         alpha_all[intertask_data_all == 0] = 0
         param_all = {'data': rsq_all, 
