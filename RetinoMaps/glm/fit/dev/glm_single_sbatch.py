@@ -16,12 +16,12 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/glm/fit/dev
+>> cd ~/projects/pRF_analysis/RetinoMaps/postproc/glm/fit/dev
 2. run python command
 >> python glm_sbatch.py [main directory] [project name] [subject num] [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/postproc/glm/fit/dev
+cd ~/projects/pRF_analysis/RetinoMaps/glm/fit/dev
 python glm_single_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
