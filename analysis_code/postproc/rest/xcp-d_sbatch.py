@@ -11,9 +11,8 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-001)
 sys.argv[4]: server nb of hour to request (e.g 10)
-sys.argv[5]: email account
-sys.argv[6]: data group (e.g. 327)
-sys.argv[7]: server_project
+sys.argv[5]: data group (e.g. 327)
+sys.argv[6]: server_project
 -----------------------------------------------------------------------------------------
 Outputs: postprocessed resting-state fMRI data in a variety of formats and templates
 -----------------------------------------------------------------------------------------
@@ -22,8 +21,7 @@ Outputs: postprocessed resting-state fMRI data in a variety of formats and templ
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 10 marco.bedini@univ-amu.fr 327 b327
-
+python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-22 10 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
 -----------------------------------------------------------------------------------------
@@ -45,9 +43,8 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 sub_num = subject[-2:]
 hour_proc = int(sys.argv[4])
-email = sys.argv[5]
-group = sys.argv[6]
-server_project = sys.argv[7]
+group = sys.argv[5]
+server_project = sys.argv[6]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
@@ -61,9 +58,7 @@ log_dir = "{main_dir}/{project_dir}/derivatives/xcp-d/log_outputs".format(
 # define SLURM cmd
 slurm_cmd = """\
 #!/bin/bash
-#SBATCH --mail-type=ALL
 #SBATCH -p {cluster_name}
-#SBATCH --mail-user={email}
 #SBATCH -A {server_project}
 #SBATCH --nodes=1
 #SBATCH --mem={memory_val}gb
@@ -71,8 +66,7 @@ slurm_cmd = """\
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_xcp-d_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_xcp-d_%N_%j_%a.out
-#SBATCH -J {subject}_xcp-d
-#SBATCH --mail-type=BEGIN,END\n\n
+#SBATCH -J {subject}_xcp-d\n\n
 """.format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val,
            log_dir=log_dir, email=email,
@@ -98,7 +92,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
 	        --output-type interpolated \
-	        --warp-surfaces-native2std y --min-coverage 0.5".format(main_dir=main_dir, 
+	        --min-coverage 0.5".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 # define permission cmd
@@ -124,4 +118,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-# os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
