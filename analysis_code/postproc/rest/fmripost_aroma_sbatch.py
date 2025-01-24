@@ -66,23 +66,21 @@ slurm_cmd = """\
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.out
-#SBATCH -J {subject}_fmripost_aroma\n\n
+#SBATCH -J {subject}_fmripost_aroma
 """.format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val,
-           log_dir=log_dir,
-           cluster_name=cluster_name)
+           log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
 singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
-        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ {main_dir}/{project_dir}/derivatives/fmripost_aroma/{subject} \
-        participant --participant-label {sub_num} -t rest \
-            --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-            --mem {memory_val} -vvv --low-mem \
-            -w /work_dir/temp/ \
-            --melodic-dimensionality -200 \
-            --resource-monitor --write-graph \
-            --debug all --stop-on-first-crash \
-	    -vvv".format(main_dir=main_dir, 
+        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ {main_dir}/{project_dir}/derivatives/fmripost_aroma/{subject} participant \
+        --participant-label {sub_num} -t rest \
+        --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
+        --mem {memory_val} --low-mem \
+        --melodic-dimensionality -200 \
+        --resource-monitor --write-graph \
+        --debug all --stop-on-first-crash \
+	-vvv".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
             
 # define permission cmd
@@ -90,7 +88,7 @@ chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir,
 chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
 
 # create sh folder and file
-sh_fn = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/jobs/sub-{sub_num}_xcp_d.sh".format(
+sh_fn = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/jobs/sub-{sub_num}_fmripost_aroma.sh".format(
         main_dir=main_dir, sub_num=sub_num,
         project_dir=project_dir)
 
