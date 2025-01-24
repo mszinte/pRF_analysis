@@ -10,7 +10,7 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-01)
-sys.argv[4]: server nb of hour to request (e.g 10)
+sys.argv[4]: server nb of hour to request (e.g. 10)
 sys.argv[5]: data group (e.g. 327)
 sys.argv[6]: server_project
 -----------------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ Outputs: postprocessed resting-state fMRI data in a variety of formats and templ
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-12 10 327 b327
+python xcp-d_sbatch.py /scratch/mszinte/data RetinoMaps sub-12 5 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) based on the fmriprep_sbatch.py example
 -----------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --participant-label {sub_num} \
     	--mode linc -t rest \
             --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-            --mem-gb {memory_val} -vvv --low-mem \
+            --mem-gb {memory_val} -vv \
             --input-type fmriprep --file-format cifti --smoothing 0 \
             --dummy-scans auto --despike y \
             -p 36P \
@@ -117,4 +117,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-# os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
