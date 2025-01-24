@@ -66,14 +66,13 @@ slurm_cmd = """\
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_xcp-d_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_xcp-d_%N_%j_%a.out
-#SBATCH -J {subject}_xcp-d
+#SBATCH -J {subject}_xcp-d\n\n
 """.format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val,
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
-        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma {main_dir}/{project_dir}/derivatives/xcp-d/{subject} participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ /work_dir/{project_dir}/derivatives/xcp-d/ participant \
         --participant-label {sub_num} \
     	--mode linc -t rest \
             --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
@@ -83,7 +82,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
             -p 36P \
             -w /work_dir/temp/ \
             --resource-monitor --write-graph \
-            --fs-license-file {main_dir}/{project_dir}/code/freesurfer/license.txt \
+            --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt \
             --debug all --stop-on-first-crash \
         	--abcc-qc n --combine-runs y \
         	--lower-bpf 0.01 --upper-bpf 0.08 \
@@ -100,7 +99,7 @@ chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir,
 chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
 
 # create sh folder and file
-sh_fn = "{main_dir}/{project_dir}/derivatives/xcp-d/jobs/sub-{sub_num}_xcp_d.sh".format(
+sh_fn = "{main_dir}/{project_dir}/derivatives/xcp-d/jobs/sub-{sub_num}_xcp-d.sh".format(
         main_dir=main_dir, sub_num=sub_num,
         project_dir=project_dir)
 
