@@ -9,7 +9,7 @@ Run fmripost_aroma on mesocentre using job mode
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: subject (e.g. sub-001)
+sys.argv[3]: subject (e.g. sub-01)
 sys.argv[4]: server nb of hour to request (e.g 10)
 sys.argv[5]: data group (e.g. 327)
 sys.argv[6]: server_project
@@ -21,7 +21,7 @@ Outputs: resting-state fMRI data denoised from motion artifacts with ICA-AROMA (
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-12 10 327 b327
+python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-05 10 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -66,14 +66,13 @@ slurm_cmd = """\
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.err
 #SBATCH -o {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.out
-#SBATCH -J {subject}_fmripost_aroma
+#SBATCH -J {subject}_fmripost_aroma\n\n
 """.format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val,
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} \
-        {main_dir}/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ {main_dir}/{project_dir}/derivatives/fmripost_aroma/{subject} participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma/{subject} /work_dir/{project_dir}/derivatives/fmripost_aroma/{subject} participant \
         --participant-label {sub_num} -t rest \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem {memory_val} --low-mem \
