@@ -51,7 +51,7 @@ cluster_name = 'skylake'
 singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v0.0.8.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
-memory_val = 100
+memory_val = 100000
 log_dir = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/log_outputs".format(
     main_dir=main_dir, project_dir=project_dir)
 
@@ -61,7 +61,7 @@ slurm_cmd = """\
 #SBATCH -p {cluster_name}
 #SBATCH -A {server_project}
 #SBATCH --nodes=1
-#SBATCH --mem={memory_val}gb
+#SBATCH --mem={memory_val}mb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.err
@@ -72,13 +72,14 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma/{subject} /work_dir/{project_dir}/derivatives/fmripost_aroma/{subject} participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ /work_dir/{project_dir}/derivatives/fmripost_aroma/ participant \
         --participant-label {sub_num} -t rest \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-        --mem {memory_val} --low-mem \
+        --mem {memory_val} \
         --melodic-dimensionality -200 \
+        -w /work_dir/temp/ \
         --resource-monitor --write-graph \
-        --debug all --stop-on-first-crash \
+        --stop-on-first-crash \
 	-vvv".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
             
@@ -105,7 +106,7 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-# os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
 
 
 
