@@ -72,14 +72,14 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmripost_aroma/ /work_dir/{project_dir}/derivatives/xcp-d/ participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma /work_dir/{project_dir}/derivatives/xcp-d participant \
         --participant-label {sub_num} \
     	--mode linc -t rest \
             --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
             --mem-gb {memory_val} -vv \
             --input-type fmriprep --file-format cifti --smoothing 0 \
             --dummy-scans auto --despike y \
-            -p aroma --datasets /work_dir/{project_dir}/derivatives/fmripost_aroma \
+            -p aroma --datasets /work_dir/{project_dir}/derivatives/fmripost_aroma/aroma.yml \
             -w /work_dir/temp/ \
             --resource-monitor --write-graph \
             --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt \
