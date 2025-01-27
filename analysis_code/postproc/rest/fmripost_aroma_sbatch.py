@@ -77,6 +77,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem {memory_val} \
         --melodic-dimensionality -200 \
+        --cifti-outputs --output-spaces MNI152NLin6Asym:res-2 T1w fsnative fsLR:den-91k \
         -w /work_dir/temp/ \
         --resource-monitor --write-graph \
         --stop-on-first-crash \
