@@ -39,15 +39,18 @@ Examples:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 
 With AROMA processing only the resting-state data:
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 
 With AROMA processing only the resting-state data and registering the data onto the templates required by xcp_d:
-    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
------------------------------------------------------------------------------------------
+    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+    
+Processing only the resting-state data and registering the data onto the template required by xcp_d for cifti processing (fsLR91k) but without AROMA:
+    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 12 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+--------------------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.bedini@univ-amu.fr)
------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
 """
 # Debug 
 import ipdb
