@@ -21,7 +21,7 @@ Outputs: carefully denoised and postprocessed resting-state fMRI data in a varie
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python xcp-d_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-12 5 327 b327
+python xcp-d_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
 ------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 ------------------------------------------------------------------------------------------------------------
@@ -74,24 +74,27 @@ slurm_cmd = """\
 # define singularity cmd
 singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmripost_aroma /work_dir/{project_dir}/derivatives/xcp-d participant \
         --participant-label {sub_num} \
-    	--mode linc -t rest \
+    	--mode 'none' -t 'rest' \
+    	--bids-filter-file /work_dir/{project_dir}/derivatives/fmripost_aroma/filter_func_data.json \
             --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-            --mem-gb {memory_val} -vv \
-            --input-type fmriprep --file-format cifti --smoothing 0 \
-            --dummy-scans auto --despike y \
-            -p aroma --datasets /work_dir/{project_dir}/derivatives/fmripost_aroma/aroma.yml \
+            --mem-gb {memory_val} -vvv \
+            --input-type 'fmriprep' --file-format 'cifti' --smoothing 0 \
+            --dummy-scans 'auto' --despike 'y' \
+            --datasets aroma=/work_dir/{project_dir}/derivatives/fmripost_aroma \
+   	    --nuisance-regressors /work_dir/{project_dir}/derivatives/fmripost_aroma/aroma.yml \
             -w /work_dir/temp/ \
             --resource-monitor --write-graph \
             --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt \
-            --debug all --stop-on-first-crash \
-        	--abcc-qc n --combine-runs y \
+            --debug all \
+        	--abcc-qc 'y' --combine-runs 'y' \
         	--lower-bpf 0.01 --upper-bpf 0.08 \
         	--fd-thresh 0.3 \
-	        --linc-qc y --motion-filter-type notch \
+	        --linc-qc 'y' --motion-filter-type 'notch' \
 	        --motion-filter-order 4 -r 50 \
 	        --band-stop-min 12 --band-stop-max 18 \
-	        --output-type censored \
-	        --atlases Glasser HCP --min-coverage 0.5".format(main_dir=main_dir, 
+	        --output-type 'censored' \
+	        --warp-surfaces-native2std 'n' \
+	        --atlases 'Glasser' 'HCP' --min-coverage 0.5".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 # define permission cmd
