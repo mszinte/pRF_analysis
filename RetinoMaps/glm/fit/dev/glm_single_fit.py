@@ -91,6 +91,7 @@ for format_, extension in zip(formats, extensions):
     os.makedirs(glm_dir, exist_ok=True)
     
     for task in tasks:
+
         print(task)
         # Sub-01 exeption 
         if subject == 'sub-01' and task in ('SacLoc', 'PurLoc'): func_session = 'ses-01'
@@ -144,17 +145,15 @@ for format_, extension in zip(formats, extensions):
             os.makedirs(figdir, exist_ok=True)
             
             stimdur= 38.4
-    
-    
+
             results_glmsingle = glmsingle_obj.fit(design=design_matrix_reshaped, 
-                                                  data=preproc_data_rois.T, 
+                                                  data=preproc_data_brain.T, 
                                                   stimdur=stimdur, 
                                                   tr=TR, 
                                                   outputdir=outputdir, 
                                                   figuredir=figdir)
     
     
-                
             # make the model prediction 
             # Import the designSINGLE
             designSINGLE = np.load('{}/DESIGNINFO.npy'.format(outputdir), allow_pickle=True).item()['designSINGLE']
@@ -167,13 +166,13 @@ for format_, extension in zip(formats, extensions):
             betas_all = np.squeeze(results_glmsingle['typeb']['betasmd']).T
             
             # acces HRF the best HRF for each vertex
-    
             hrf_index = np.squeeze(results_glmsingle['typeb']['HRFindex'])
             meansignal = np.squeeze(results_glmsingle['typeb']['meanvol'])
             
 
             betatemp_all = np.zeros_like(betas_all)
             prediction_all =  np.zeros((designSINGLE.shape[0], meansignal.shape[0]))
+
             for n_vertex in range(meansignal.shape[0]):
                 hrf_vert = hrflib[:, hrf_index[n_vertex]] 
     
