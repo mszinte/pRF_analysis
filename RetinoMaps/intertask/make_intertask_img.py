@@ -161,9 +161,9 @@ for tasks in group_tasks:
         final_img = make_surface_image(data=final_map, source_img=img, maps_names=maps_names_inter_task)
         nb.save(final_img, '{}/{}'.format(inter_task_dir, inter_task_fn))
             
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)) 
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)) 
     
     
