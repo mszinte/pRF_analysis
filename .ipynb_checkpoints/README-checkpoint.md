@@ -2,14 +2,14 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
-# Task specific analysis
+# Task-specific analysis
 ---
-After pRF analysis each project have is one analysis, project's read me can be find at : 
+After pRF analysis each project has its own analysis. The project's read me can be found at : 
 
 - RetinoMaps [README.md](RetinoMaps/README.md)
 - Amblyo_prf [README.md](amblyo_prf/README.md)
 
-# Main beahvioral, structural-MRI and functional-MRI analysis
+# Main behavioral, structural MRI and functional MRI analysis
 ---
 
 ## BIDS
@@ -29,10 +29,10 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 #### Structural preprocessing
 - [x] fMRIprep with anat-only option [fmriprep_sbatch.py](analysis_code/preproc/functional/fmriprep_sbatch.py)
-- [x] create sagital view video before manual edit [sagital_view.py](analysis_code/preproc/anatomical/sagital_view.py)
+- [x] create sagittal view video before manual edit [sagital_view.py](analysis_code/preproc/anatomical/sagital_view.py)
 - [x] manual edit of brain segmentation [pial_edits.sh](analysis_code/preproc/anatomical/pial_edits.sh)
 - [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](analysis_code/preproc/anatomical/freesurfer_pial.py)
-- [x] create sagital view video before after edit [sagital_view.py](analysis_code/preproc/anatomical/sagital_view.py)
+- [x] create sagittal view video before after edit [sagital_view.py](analysis_code/preproc/anatomical/sagital_view.py)
 - [x] make cut in the brains for flattening [cortex_cuts.sh](analysis_code/preproc/anatomical/cortex_cuts.sh)
 - [x] flatten the cut brains [flatten_sbatch.py](analysis_code/preproc/anatomical/flatten_sbatch.py)
 
@@ -56,7 +56,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py) or [pycortex_maps_gridfit.sh](analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.sh)
 
 ##### PRF ROIs
-- [x] Copy sub-170 containing MMP rois from [RetinoMaps](https://github.com/mszinte/RetinoMaps) project [compute_gauss_gridfit_derivatives.py](https://github.com/mszinte/RetinoMaps/blob/main/analysis_code/atlas/create_170k_mmp_rois_mask.ipynb) and mask areas in the overaly that are not covered by data's field of view.
+- [x] Create 170k MMP rois [create_hcp_rois.ipynb](analysis_code/atlas/dev/create_hcp_rois.ipynb) or copy sub-170k in pycortex folder from Retinomaps. 
 - [x] Create 170k MMP rois masks [create_mmp_rois_atlas.py](analysis_code/atlas/create_mmp_rois_atlas.py)
 - [x] Draw individual ROI on fsnative data using Inkscape
 - [x] Make ROIS files [make_rois_img.py](analysis_code/postproc/prf/postfit/make_rois_img.py)
@@ -75,7 +75,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 ### Group analysis
 We run either analysis on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged on a template </br>
-or we ran a ROI based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+or we ran an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 #### Structural preprocessing
 - [x] Compute vertex areas for **sub-170k** [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
