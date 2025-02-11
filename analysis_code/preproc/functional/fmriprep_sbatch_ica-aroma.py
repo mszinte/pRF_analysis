@@ -103,6 +103,8 @@ if anat == 'anat_only_y':
 if aroma == 'aroma_y':
     use_aroma = ' --use-aroma --aroma-melodic-dimensionality -200'
     aroma_end = '_aroma'
+elif aroma == 'aroma_n':
+    aroma_end = '_91k'	
 
 if fmapfree == 'fmapfree_y':
     use_fmapfree= ' --use-syn-sdc'
