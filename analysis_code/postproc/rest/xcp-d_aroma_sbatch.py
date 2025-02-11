@@ -77,7 +77,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
     	--mode 'none' -t 'rest' \
     	--bids-filter-file /work_dir/{project_dir}/derivatives/fmripost_aroma/filter_func_data.json \
             --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-            --mem-gb {memory_val} -vvv \
+            --mem-gb {memory_val} -vv \
             --input-type 'fmriprep' --file-format 'cifti' --smoothing 0 \
             --dummy-scans 'auto' --despike 'y' \
             --datasets aroma=/work_dir/{project_dir}/derivatives/fmripost_aroma \

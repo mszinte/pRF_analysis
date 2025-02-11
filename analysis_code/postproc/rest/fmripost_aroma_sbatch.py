@@ -21,7 +21,7 @@ Outputs: resting-state fMRI data denoised from motion artifacts with ICA-AROMA (
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-12 10 327 b327
+python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-11 5 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         -w /work_dir/temp/ \
         --resource-monitor --write-graph \
         --stop-on-first-crash \
-	-vvv".format(main_dir=main_dir, 
+	-vv".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
             
 # define permission cmd
