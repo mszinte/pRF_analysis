@@ -39,15 +39,18 @@ Examples:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 
 With AROMA processing only the resting-state data:
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
-python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-01 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
 
 With AROMA processing only the resting-state data and registering the data onto the templates required by xcp_d:
-    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
------------------------------------------------------------------------------------------
+    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 12 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+    
+Processing only the resting-state data and registering the data onto the template required by xcp_d for cifti processing (fsLR 91k) but without AROMA:
+    python fmriprep_sbatch_ica-aroma.py /scratch/mszinte/data RetinoMaps sub-03 4 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_91k_y fsaverage_y 12 filt_data_y marco.bedini@univ-amu.fr 327 b327
+--------------------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net) & Marco Bedini (marco.bedini@univ-amu.fr)
------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
 """
 # Debug 
 import ipdb
@@ -100,6 +103,8 @@ if anat == 'anat_only_y':
 if aroma == 'aroma_y':
     use_aroma = ' --use-aroma --aroma-melodic-dimensionality -200'
     aroma_end = '_aroma'
+elif aroma == 'aroma_n':
+    aroma_end = '_91k'	
 
 if fmapfree == 'fmapfree_y':
     use_fmapfree= ' --use-syn-sdc'
@@ -141,7 +146,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} {hcp_cifti} --output-spaces MNI152NLin6Asym:res-2 T1w fsnative {fsaverage} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} {hcp_cifti} --output-spaces MNI152NLin6Asym:res-2 T1w fsnative {fsaverage}:den-41k --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}{filter_bids}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,

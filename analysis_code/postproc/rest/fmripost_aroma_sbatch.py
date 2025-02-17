@@ -21,7 +21,7 @@ Outputs: resting-state fMRI data denoised from motion artifacts with ICA-AROMA (
 Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest
 Basic command:
-python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-05 10 327 b327
+python fmripost_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-03 5 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -72,15 +72,16 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_aroma/ /work_dir/{project_dir}/derivatives/fmripost_aroma/ participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/fmripost_aroma participant \
         --participant-label {sub_num} -t rest \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem {memory_val} \
         --melodic-dimensionality -200 \
+        --denoising-method nonaggr \
         -w /work_dir/temp/ \
         --resource-monitor --write-graph \
         --stop-on-first-crash \
-	-vvv".format(main_dir=main_dir, 
+	-vv".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
             
 # define permission cmd
@@ -107,8 +108,3 @@ of.close()
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
 os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
-
-
-
-
-
