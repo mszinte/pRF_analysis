@@ -15,7 +15,6 @@
     "cluster_name": "skylake",
     "TR": 1.2,
     "TRs": 208,
-    "num_steps_kappa_pRF":15,
     "fit_rsq_threshold": 0.01,
     "high_pass_threshold": 0.01,
     "formats": ["fsnative", "170k"],
