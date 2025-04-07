@@ -151,10 +151,8 @@ for format_, extension in zip(formats, extensions):
         print('Saving {}/{}'.format(rois_dir, rois_fn))
         
         # MMP rois
-######
         #  Load csv 
         sub_170k_cortex_dir = '{}/db/sub-170k'.format(cortex_dir)
-
 
         # load npz atlas and make dataframe
         mmp_atlas_fn ='{}/surface-info/mmp_atlas.npz'.format(sub_170k_cortex_dir)
@@ -168,7 +166,6 @@ for format_, extension in zip(formats, extensions):
         mmp_df_rh = pd.DataFrame(mmp_npz['right'], columns = ['roi_id'])
         mmp_df_rh = mmp_df_rh.assign(hemi='R')
         
-        
         #  make brain df
         mmp_df_brain = pd.concat([mmp_df_lh,mmp_df_rh], ignore_index=True )
         mmp_df_brain = mmp_df_brain.assign(roi_name=np.nan)
@@ -178,7 +175,7 @@ for format_, extension in zip(formats, extensions):
                                                mmp_df_brain['roi_id'] + 180, 
                                                mmp_df_brain['roi_id'])
         
-        #  Load csv 
+        #  Load mmp information csv 
         mmp_csv_fn = '{}/HCP-MMP1_UniqueRegionList.csv'.format(sub_170k_cortex_dir)
         mmp_csv = pd.read_csv(mmp_csv_fn)
         mmp_csv['index_col'] = (mmp_csv.index + 1).astype('int32')
