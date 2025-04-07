@@ -86,9 +86,6 @@ if 'group' not in subject:
     # replace staircase number by kappa value
     stair_runs_indiv_concat = stair_runs_indiv_concat.astype(int)
     stair_runs_indiv_concat = kappa_values[stair_runs_indiv_concat - 1]
-
-
-
            
     # Compute cumulative mean of median and staircase
     perf_runs_indiv = np.zeros(stair_runs_indiv_concat.shape[0])

@@ -21,7 +21,7 @@ def from_170k_to_59k(img, data, return_concat_hemis=False, return_59k_mask=False
     result : dict
         A dictionary containing the following keys:
         - 'concatenated_data': numpy array, stacked data for the requested hemisphere(s). 2-dimensional array (time x vertices).
-        - '59k_mask': optional numpy array, mask where True corresponds to cortex vertices and False to medial wall vertices for 59k data.
+        - 'mask_59k': optional numpy array, mask where True corresponds to cortex vertices and False to medial wall vertices for 59k data.
     """
 
     import numpy as np 
@@ -81,7 +81,6 @@ def from_59k_to_170k(data_59k, brain_mask_59k):
     ----------
     
     data_59k : The 59k data you want to transform into 170k.
-    data_170k_orig : The original 170k data from which your 59k data originated.
     brain_mask_59k : 59k brain mask output from from_170k_to_59k.
     
     Returns
