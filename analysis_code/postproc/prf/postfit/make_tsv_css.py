@@ -105,40 +105,40 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                 prf_deriv_dir, subject, prf_task_name, hemi)
             deriv_img, deriv_mat = load_surface(deriv_median_fn)
             
-            # CM
-            pcm_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name, hemi)
-            pcm_img, pcm_mat = load_surface(pcm_median_fn)
+            # # CM
+            # pcm_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-pcm_css_loo-median.func.gii'.format(
+            #     prf_deriv_dir, subject, prf_task_name, hemi)
+            # pcm_img, pcm_mat = load_surface(pcm_median_fn)
 
-            # Stats
-            stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name, hemi)
-            stats_img, stats_mat = load_surface(stats_median_fn)
+            # # Stats
+            # stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
+            #     prf_deriv_dir, subject, prf_task_name, hemi)
+            # stats_img, stats_mat = load_surface(stats_median_fn)
             
-            # Vertex area
-            vertex_area_fn = '{}/{}_{}_vertex_area.func.gii'.format(vert_area_dir, subject, hemi)
-            vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
+            # # Vertex area
+            # vertex_area_fn = '{}/{}_{}_vertex_area.func.gii'.format(vert_area_dir, subject, hemi)
+            # vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
 
-            # Combine all derivatives
-            all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
+            # # Combine all derivatives
+            # all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
 
-            # Get roi mask
-            roi_verts = get_rois(subject=subject, 
-                                 return_concat_hemis=False, 
-                                 return_hemi=hemi, 
-                                 rois=rois,
-                                 mask=True, 
-                                 atlas_name=None, 
-                                 surf_size=None)
+            # # Get roi mask
+            # roi_verts = get_rois(subject=subject, 
+            #                      return_concat_hemis=False, 
+            #                      return_hemi=hemi, 
+            #                      rois=rois,
+            #                      mask=True, 
+            #                      atlas_name=None, 
+            #                      surf_size=None)
 
-            # Create and combine pandas df for each roi and brain hemisphere
-            for roi in roi_verts.keys():
-                data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
-                data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                data_dict['num_vert'] = np.where(roi_verts[roi])[0]
-                df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
+            # # Create and combine pandas df for each roi and brain hemisphere
+            # for roi in roi_verts.keys():
+            #     data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
+            #     data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+            #     data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+            #     data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+            #     data_dict['num_vert'] = np.where(roi_verts[roi])[0]
+            #     df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
                 
     elif format_ == '170k':
     
@@ -160,7 +160,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         # Vertex area
         vertex_area_fn = '{}/{}_vertex_area.dtseries.nii'.format(vert_area_dir, subject)
         vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-
+        
         # Combine all derivatives
         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
 
@@ -172,6 +172,18 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                                             mask=True,
                                             atlas_name='mmp_group',
                                             surf_size='170k')
+        
+        # get MMP rois img
+        roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+        roi_fn = '{}/{}_rois_mmp.dtseries.nii'.format(roi_dir, subject)
+        roi_img, roi_mat = load_surface(roi_fn)
+        
+        # get MMP rois numbers tsv
+        mmp_rois_numbers_tsv_fn = '{}/db/sub-170k/mmp_rois_numbers.tsv'.format(cortex_dir)
+        mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+        
+        # Replace rois nums by names
+        roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
 
         # Create and combine pandas df for each roi and brain hemisphere
         for hemi in ['hemi-L', 'hemi-R']:
@@ -181,6 +193,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             for roi in roi_verts.keys():
                 data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
                 data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
                 data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['num_vert'] = np.where(roi_verts[roi])[0]
