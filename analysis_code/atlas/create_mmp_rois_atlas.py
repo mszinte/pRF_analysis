@@ -3,7 +3,7 @@
 create_mmp_rois_atlas.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Create 170k npz mmp atlas files
+Create 170k npz mmp atlas files and a tsv of rois numbers and names
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: data project directory
@@ -11,7 +11,7 @@ sys.argv[1]: codee project directory
 sys.argv[2]: project name (correspond to directory)
 -----------------------------------------------------------------------------------------
 Output(s):
-.npz masks
+.npz masks and .tsv
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
@@ -23,6 +23,8 @@ python prf_submit_gridfit_jobs.py [main directory] [project name] [subject]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/atlas/
 python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects MotConf
+python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects RetinoMaps
+python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects amblyo_prf
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -43,6 +45,7 @@ import sys
 import json
 import cortex
 import numpy as np
+import pandas as pd
 
 
 # Personals Import 
@@ -57,7 +60,7 @@ code_dir = sys.argv[2]
 project_dir = sys.argv[3]
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
 
 with open(settings_path) as f:
@@ -72,6 +75,18 @@ rois_groups = analysis_info['rois_groups']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
+# Make mmp roi number correspondance TSV
+#  Load csv 
+sub_170k_cortex_dir = '{}/db/sub-170k'.format(cortex_dir)
+mmp_csv_fn = '{}/HCP-MMP1_UniqueRegionList.csv'.format(sub_170k_cortex_dir)
+mmp_csv = pd.read_csv(mmp_csv_fn)
+mmp_csv['index_col'] = (mmp_csv.index + 1).astype('int32')
+mmp_rois_nums_df = mmp_csv.loc[mmp_csv['LR'] == 'L', ['region', 'index_col']].rename(columns={'region': 'roi_name', 'index_col': 'roi_num'})
+mmp_rois_nums_df['roi_name'] = mmp_rois_nums_df['roi_name'].astype(str)
+mmp_tsv_fn = '{}/mmp_rois_numbers.tsv'.format(sub_170k_cortex_dir)
+mmp_rois_nums_df.to_csv(mmp_tsv_fn, sep="\t", na_rep='NaN', index=False)
+
+# Make MMP masks
 _170k_dir_ ='{}/{}/derivatives/pp_data/cortex/db/sub-170k'.format(
     main_dir, project_dir)
 _170k_fn = 'sub-170k_template.dtseries.nii'
