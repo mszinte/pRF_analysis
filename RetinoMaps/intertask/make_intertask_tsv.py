@@ -126,12 +126,12 @@ for tasks in group_tasks :
     
                 # Get roi mask
                 roi_verts = get_rois(subject=subject, 
-                                     return_concat_hemis=False, 
-                                     return_hemi=hemi, 
-                                     rois=rois,
-                                     mask=True, 
-                                     atlas_name=None, 
-                                     surf_size=None)
+                                      return_concat_hemis=False, 
+                                      return_hemi=hemi, 
+                                      rois=rois,
+                                      mask=True, 
+                                      atlas_name=None, 
+                                      surf_size=None)
     
                 # Create and combine pandas df for each roi and brain hemisphere
                 for roi in roi_verts.keys():
@@ -178,6 +178,19 @@ for tasks in group_tasks :
                                                 mask=True,
                                                 atlas_name='mmp_group',
                                                 surf_size='170k')
+            
+            # get MMP rois img
+            roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+            roi_fn = '{}/{}_rois_mmp.dtseries.nii'.format(roi_dir, subject)
+            roi_img, roi_mat = load_surface(roi_fn)
+            
+            # get MMP rois numbers tsv
+            mmp_rois_numbers_tsv_fn = '{}/db/sub-170k/mmp_rois_numbers.tsv'.format(cortex_dir)
+            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+            
+            # Replace rois nums by names
+            roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
+                                                            mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
     
             # Create and combine pandas df for each roi and brain hemisphere
             for hemi in ['hemi-L', 'hemi-R']:
@@ -187,6 +200,7 @@ for tasks in group_tasks :
                 for roi in roi_verts.keys():
                     data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
                     data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                    data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]] 
                     data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                     data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                     data_dict['num_vert'] = np.where(roi_verts[roi])[0]
