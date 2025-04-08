@@ -86,6 +86,7 @@ screen_side = figure_info['screen_side']
 gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
 hot_zone_percent = figure_info['hot_zone_percent']
 categories_to_plot = figure_info['categories_to_plot']
+
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: suffix = 'SacVE_PurVE'
     else : suffix = 'Sac_Pur'
@@ -103,7 +104,6 @@ for tasks in group_tasks :
             tsv_fn = '{}/{}_intertask-all_derivatives_{}.tsv'.format(tsv_dir, subject, suffix)
             data = pd.read_table(tsv_fn, sep="\t")
             raw_data = data.copy()
-
 
             # Threshold data (replace by nan)
             data.loc[data['all'] != 'vision', 
@@ -124,7 +124,6 @@ for tasks in group_tasks :
             categories_order = ['vision', 'vision_and_pursuit_and_saccade', 'pursuit_and_saccade', 'vision_and_saccade', 'vision_and_pursuit', 'saccade', 'pursuit']
             df_categories['all'] = pd.Categorical(df_categories['all'], categories=categories_order, ordered=True)
             df_categories = df_categories.sort_values(['roi', 'all'])
-            
             
             tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
             print('Saving tsv: {}'.format(tsv_categories_fn))
@@ -299,22 +298,6 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_distribution_fn))
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-                # # Spatial distribution hot zone barycentre
-                # # ----------------------------------------
-                # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                # for i, hemi in enumerate(hemis):
-                #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                #     df_barycentre_hemi = make_prf_barycentre_df(
-                #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
-                    
-                #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                #     if i == 0: df_barycentre = df_barycentre_hemi
-                #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
-                
-                # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_category_dir, subject)
-                # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
             
         # Group Analysis    
         else :
@@ -475,22 +458,6 @@ for tasks in group_tasks :
                 df_distribution = pd.concat([others_columns, df_distribution], axis=1)
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-                # # Spatial distribution hot zone barycentre 
-                # # ----------------------------------------
-                # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                # for j, hemi in enumerate(hemis):
-                #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                #     df_barycentre_hemi = make_prf_barycentre_df(
-                #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
-                    
-                #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                #     if j == 0: df_barycentre = df_barycentre_hemi
-                #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
-                    
-                # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_category_dir, subject)
-                # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

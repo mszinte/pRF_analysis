@@ -287,7 +287,7 @@ for tasks in group_tasks :
                      'cmap': colormap_name, 
                      'alpha': alpha_all, 
                      'vmin': 0, 
-                     'vmax': 1, 
+                     'vmax': 0.4, 
                      # 'cbar': 'discrete_personalized', 
                      'cmap_steps': len(colormap_dict),
                      'cmap_dict': colormap_dict,
