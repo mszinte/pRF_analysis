@@ -82,14 +82,6 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-
-# Threshold settings
-ecc_th = analysis_info['ecc_th']
-size_th = analysis_info['size_th']
-rsqr_th = analysis_info['rsqr_th']
-amplitude_th = analysis_info['amplitude_th']
-stats_th = analysis_info['stats_th']
-n_th = analysis_info['n_th'] 
 subjects = analysis_info['subjects']
 
 # Figure settings
