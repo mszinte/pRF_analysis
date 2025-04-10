@@ -66,14 +66,16 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
+subjects_to_group = analysis_info['subjects']
+group_tasks = analysis_info['task_intertask']
+
+# Threshold settings
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
 amplitude_threshold = analysis_info['amplitude_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
-subjects_to_group = analysis_info['subjects']
-group_tasks = analysis_info['task_intertask']
 
 with open('../figure_settings.json') as f:
     json_s = f.read()
