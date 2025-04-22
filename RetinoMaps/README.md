@@ -54,7 +54,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
 ### Resting-state analysis
-- [ ] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+- [ ] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
 - [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/fmripost_aroma_sbatch.py)
 - [ ] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/xcp-d_aroma_sbatch.py)
 - [ ] Compute seed-based (from GLM tasks conjunction) functional connectivity on the dense timeseries with connectome workbench ()
