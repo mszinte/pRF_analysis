@@ -30,7 +30,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
 
 ### GLM analysis
-- [x] Run Glm for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
+- [x] Run GLM for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
 - [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py)
 
 ### Inter task analysis
@@ -54,6 +54,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
 ### Resting-state analysis
+- [ ] Preprocess the resting-state data and output it in the fsLR-91k resolution ()
 - [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/fmripost_aroma_sbatch.py)
-- [ ] Post-process the data using XCP-D ()
-- [ ] Analyze dense time series outputs using connectome workbench ()
+- [ ] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/xcp-d_aroma_sbatch.py)
+- [ ] Compute seed-based (from GLM tasks conjunction) functional connectivity on the dense timeseries with connectome workbench ()
