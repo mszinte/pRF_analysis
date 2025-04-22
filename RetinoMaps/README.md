@@ -17,7 +17,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## Data analysis
 ---
-### Prepocessing
+### Preprocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
 - [x] Change the 'task' to 'task_condition' coulumn name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
 
@@ -38,7 +38,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_rois_fig_tsv.py) 
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
-- [x] Make figure specific TSV with GLM results for active vertex [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
+- [x] Make figure-specific TSV with GLM results for active vertex [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
 - [x] Make figure of GLM results active vertex [make_active_vert_fig.py](intertask/make_active_vert_fig.py)
 - [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
@@ -54,6 +54,6 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
 ### Resting-state analysis
-- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA ()
+- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/fmripost_aroma_sbatch.py)
 - [ ] Post-process the data using XCP-D ()
 - [ ] Analyze dense time series outputs using connectome workbench ()
