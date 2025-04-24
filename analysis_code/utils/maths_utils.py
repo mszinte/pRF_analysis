@@ -48,7 +48,7 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
 
         if weight_reg_nan.size >= 2:
             # Perform curve fitting
-            params, _ = curve_fit(model_function, x_reg_nan, y_reg_nan, sigma=weight_reg_nan)
+            params, _ = curve_fit(model_function, x_reg_nan, y_reg_nan, sigma=weight_reg_nan, maxfev=10000)
             c, d = params
         else:
             c, d = np.nan, np.nan
@@ -137,6 +137,7 @@ def weighted_nan_median(data, weights):
         return np.nan
 
     # Sort the data and corresponding weights
+    masked_data = pd.to_numeric(masked_data, errors='coerce').dropna()
     sorted_indices = np.argsort(masked_data)
     sorted_data = masked_data.iloc[sorted_indices].reset_index(drop=True)
     sorted_weights = masked_weights.iloc[sorted_indices].reset_index(drop=True)
@@ -445,11 +446,15 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
     """
     import pandas as pd
     import numpy as np
+    df_distribution = pd.DataFrame()
     for j, roi in enumerate(rois) :
         # Make df_distribution
         #-------------------
         # Roi data frame
         df_roi = data.loc[data.roi == roi].reset_index()
+        if df_roi.empty:
+            print(f"[WARNING] No data for ROI: {roi}")
+            continue  # skip this ROI
         
         gauss_z_tot = np.zeros((grain,grain)) 
         for vert in range(len(df_roi)):

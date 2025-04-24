@@ -84,6 +84,7 @@ for tasks in group_tasks :
             # Directories
             intertask_tsv_dir ='{}/{}/derivatives/pp_data/{}/{}/intertask/tsv'.format(
             main_dir, project_dir, subject, format_)
+            os.makedirs(intertask_tsv_dir, exist_ok=True)
             
             # Load subject TSV
             data = pd.read_table('{}/{}_intertask-all_derivatives_{}.tsv'.format(intertask_tsv_dir, subject, suffix))
@@ -188,6 +189,7 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 subject_active_percent_rois_categorie_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
         
+        # Group analysis
         else : 
             for i, subject_to_group in enumerate(subjects_to_group):
                 
@@ -246,8 +248,7 @@ for tasks in group_tasks :
                 tsv_active_vertex_roi_mmp_fn = "{}/{}_active_vertex_roi_mmp_{}.tsv".format(intertask_tsv_dir, subject, suffix)
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 group_active_vertex_mmp_roi_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
-            
-   
+               
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
