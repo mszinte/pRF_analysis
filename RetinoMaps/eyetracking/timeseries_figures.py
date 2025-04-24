@@ -20,10 +20,18 @@ Output(s):
 {subject}_task-{task}_run-01_4_prediction.pdf
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
 python timeseries_figures.py /scratch/mszinte/data RetinoMaps "[sub-01,sub-02,sub-03]" pRF 327
 -----------------------------------------------------------------------------------------
 """
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 import pandas as pd
 import json
 import numpy as np
@@ -98,9 +106,9 @@ for subject in subjects:
 
     # Determine session based on subject and task
     if subject == 'sub-01':
-        ses = 'ses-02' if task == 'pRF' else 'ses-01'
+        ses = 'ses-01' if task == 'pRF' else 'ses-02'
     else:
-        ses = 'ses-01' if task != 'pRF' else 'ses-02'
+        ses = 'ses-02' if task != 'pRF' else 'ses-01'
 
     # Load event files
     try:
@@ -138,19 +146,20 @@ for subject in subjects:
             
                 fig = plotly_layout_template(task, run)
                 fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
+                fig.show()
+                deb()
                 fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
                 fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
                 fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
                 fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
                 fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
-
                 fig_fn = f"{fig_dir_save}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
                 print(f'Saving {fig_fn}')
                 fig.write_image(fig_fn)
-                fig.show()
+                # fig.show()
 
 
-    # Define permission cmd
-    print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-    os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-    os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+    # # Define permission cmd
+    # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+    # os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+    # os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
