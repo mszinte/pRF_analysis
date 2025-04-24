@@ -42,6 +42,7 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
+import numpy as np
 import pandas as pd
 
 # Inputs
@@ -66,6 +67,14 @@ rois_groups = analysis_info['rois_groups']
 group_tasks = analysis_info['task_intertask']
 subjects_to_group = analysis_info['subjects']
 
+# Threshold settings
+ecc_threshold = analysis_info['ecc_th']
+size_threshold = analysis_info['size_th']
+rsqr_threshold = analysis_info['rsqr_th']
+amplitude_threshold = analysis_info['amplitude_th']
+stats_threshold = analysis_info['stats_th']
+n_threshold = analysis_info['n_th']
+
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: suffix = 'SacVE_PurVE'
     else : suffix = 'Sac_Pur'
@@ -75,10 +84,18 @@ for tasks in group_tasks :
             # Directories
             intertask_tsv_dir ='{}/{}/derivatives/pp_data/{}/{}/intertask/tsv'.format(
             main_dir, project_dir, subject, format_)
+            os.makedirs(intertask_tsv_dir, exist_ok=True)
             
             # Load subject TSV
             data = pd.read_table('{}/{}_intertask-all_derivatives_{}.tsv'.format(intertask_tsv_dir, subject, suffix))
             
+            data.loc[(data.amplitude < amplitude_threshold) |
+                      (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                      (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                      (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                      (data.prf_loo_r2 < rsqr_threshold)] = np.nan
+            data = data.dropna()
+
             # Active vertex ROI 
             subject_rois_area_categorie_df = pd.DataFrame()
             for roi in rois : 
@@ -91,11 +108,15 @@ for tasks in group_tasks :
                                                                      (data['saccade'] == 'saccade') & 
                                                                      (data['pursuit'] == 'pursuit') & 
                                                                      (data['vision'] == 'vision'), 'vert_area'].shape[0]
-        
-                percent_saccade = ((n_vert_roi_saccade * 100)/n_vert_roi)
-                percent_pursuit = ((n_vert_roi_pursuit * 100)/n_vert_roi)
-                percent_vision = ((n_vert_roi_vision * 100)/n_vert_roi)
-                percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100)/n_vert_roi)
+                # Compute percentage active vertex in rois
+                if n_vert_roi == 0 :
+                    percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0
+                else : 
+                    percent_saccade = ((n_vert_roi_saccade * 100)/n_vert_roi)
+                    percent_pursuit = ((n_vert_roi_pursuit * 100)/n_vert_roi)
+                    percent_vision = ((n_vert_roi_vision * 100)/n_vert_roi)
+                    percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100)/n_vert_roi)
+
         
                 active_vertex_roi_categorie_df = pd.DataFrame({'subject':[subject], 
                                                                'roi': [roi], 
@@ -137,10 +158,14 @@ for tasks in group_tasks :
                                                                              (data['vision'] == 'vision')].shape[0]
                 
                         # Compute percentage active vertex in mmp rois
-                        percent_saccade = ((n_vert_roi_saccade * 100) / n_vert_roi)
-                        percent_pursuit = ((n_vert_roi_pursuit * 100) / n_vert_roi)
-                        percent_vision = ((n_vert_roi_vision * 100) / n_vert_roi)
-                        percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100) / n_vert_roi)
+                        if n_vert_roi == 0 :
+                            percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0
+                        else : 
+                            percent_saccade = ((n_vert_roi_saccade * 100) / n_vert_roi)
+                            percent_pursuit = ((n_vert_roi_pursuit * 100) / n_vert_roi)
+                            percent_vision = ((n_vert_roi_vision * 100) / n_vert_roi)
+                            percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100) / n_vert_roi)
+                    
                 
                         active_percent_roi_categorie_df = pd.DataFrame({'subject':[subject], 
                                                                         'roi': [roi], 
@@ -164,6 +189,7 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 subject_active_percent_rois_categorie_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
         
+        # Group analysis
         else : 
             for i, subject_to_group in enumerate(subjects_to_group):
                 
@@ -222,12 +248,11 @@ for tasks in group_tasks :
                 tsv_active_vertex_roi_mmp_fn = "{}/{}_active_vertex_roi_mmp_{}.tsv".format(intertask_tsv_dir, subject, suffix)
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 group_active_vertex_mmp_roi_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
-            
-   
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
+               
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
             
             
             
