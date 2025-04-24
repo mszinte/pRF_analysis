@@ -8,7 +8,7 @@
 ---
 ## Authors (alphabetic order): 
 ---
-Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
+Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## To Do 
 ---
@@ -17,9 +17,9 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## Data analysis
 ---
-### Prepocessing
+### Preprocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
-- [x] Change the 'task' to 'task_condition' coulumn name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
+- [x] Change the 'task' to 'task_condition' column name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
 
 ### pRF behaviour analysis
 - [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
@@ -30,7 +30,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
 
 ### GLM analysis
-- [x] Run Glm for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
+- [x] Run GLM for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
 - [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py)
 
 ### Inter task analysis
@@ -53,6 +53,7 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
 ### Resting-state analysis
-- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA ()
-- [ ] Post-process the data using XCP-D ()
-- [ ] Analyze dense time series outputs using connectome workbench ()
+- [ ] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/fmripost_aroma_sbatch.py)
+- [ ] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/postproc/rest/xcp-d_aroma_sbatch.py)
+- [ ] Compute seed-based (from GLM tasks conjunction) functional connectivity on the dense timeseries with connectome workbench ()
