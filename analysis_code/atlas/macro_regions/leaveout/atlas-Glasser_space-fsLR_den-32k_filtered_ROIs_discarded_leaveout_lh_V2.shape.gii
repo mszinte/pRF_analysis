@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V2.dlabel.nii:
+wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_dseg.dlabel.nii /tmp/tmp.rUroRUnsj3 macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V2.dlabel.nii -discard-others
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.1
+Qt Compiled Version: 5.15.3
+Qt Runtime Version: 5.15.3
+Commit: unknown
+Commit Date: unknown
+Compiler: c++ (/usr/lib/ccache)
+Compiler Version: 11.2.0
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[wb_command -cifti-separate macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V2.dlabel.nii COLUMN -metric CORTEX_LEFT macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V2.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/atlas]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[INDEXMAX]]></Value>
+      </MD>
+   </MetaData>
+   <Data>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</Data>
+</DataArray>
+</GIFTI>
