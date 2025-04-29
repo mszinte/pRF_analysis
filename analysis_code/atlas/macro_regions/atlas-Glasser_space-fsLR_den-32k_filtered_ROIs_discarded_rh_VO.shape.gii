@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexRight]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_VO.dlabel.nii:
+wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_dseg.dlabel.nii macro_regions/labels/rh_VO_labels.txt macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_VO.dlabel.nii -discard-others
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.1
+Qt Compiled Version: 5.15.3
+Qt Runtime Version: 5.15.3
+Commit: unknown
+Commit Date: unknown
+Compiler: c++ (/usr/lib/ccache)
+Compiler Version: 11.2.0
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[wb_command -cifti-separate macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_VO.dlabel.nii COLUMN -metric CORTEX_RIGHT macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_VO.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/atlas]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[INDEXMAX]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt20tOwzAQANCuuQFdIXERUC7Yo3AkjoK6qLCMEzup48TmPcmbxpkPsJopl0vO25S9wkm8Tvkzkrg3f6sAAAAAAPxHSzuAkn1BjTtLz0v2F2sPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABzpbfp7RpLqLz7XmfO+cG6f+QMAAADwn7Wekxwxp2mds2W+FrlazNf2zpGbFW6NWTKTrBEzdWrHK4l5ZLxasWrEKbHX+6XCd64r37uufGfN/dK7uXvh3mDpebxLmduzpD4v2VuMuLt5nebPlv5eBviZxO49Pc4owp5G6Cvup+eeUr302M9cH73103sfufrX9PTVeM++pfa4/nvN4Tl77XG9LWvvreat9S7VvLeRa+2hzrPXeDtxfUfVlqvvMYM5S13xbKh1Tbk5261hPSW1fH/8niNrCevYq5aja1j7+6hZw5lzx3lr5T4i71nypXI9my+V5z7L3DPPY766V45whlszRxw7FX+r1Mx6j7jXqW7M8DvnZ4iXirMlVo0Yqe/lt3q/5Xtr39lyN7cjCO/M3U3tHB7z+dzzks/nPpvbdyztC3qnr36M3k/PRuujZ73XDwAAAAC1jPa/HaFR+xphRhsbrR8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgOf9AGpHzg0=</Data>
+</DataArray>
+</GIFTI>
