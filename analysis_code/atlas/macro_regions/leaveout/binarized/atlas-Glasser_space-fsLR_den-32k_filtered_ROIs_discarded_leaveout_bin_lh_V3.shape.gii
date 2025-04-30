@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V3.shape.gii:
+wb_command -cifti-separate macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V3.dlabel.nii COLUMN -metric CORTEX_LEFT macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V3.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.1
+Qt Compiled Version: 5.15.3
+Qt Runtime Version: 5.15.3
+Commit: unknown
+Commit Date: unknown
+Compiler: c++ (/usr/lib/ccache)
+Compiler Version: 11.2.0
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[wb_command -metric-reduce macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_V3.shape.gii COUNT_NONZERO macro_regions/leaveout/binarized/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_bin_lh_V3.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/atlas]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[COUNT_NONZERO]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt3GGO2zgMBtDebK+2R1/0xwDd6TixZFEklfcAoUAiix8dJ3GcTn79+vLvP///9/vt7PN7n0eNk5zeHwAAAACQL+K64+o1V14fXbXWinWervFk+9ltZ65Zj17Tj5h7Z967Oa/uH7m90vcdvq/p7dTHL7KvrN5O60k/n9VLhhN6WNlH5/yZuuce7aGKTnlPy1pB94zZOmbL1iFTtmpZAACI1/28q/s1KQAAAIBIWdc+Mq677L7e86TermtZO+pUrpG19so1V137fLqOsX+MHgejx+PdY/idkXnUkH1sP3kufLIT98lJj/VJx2+n5+NVxi6vLZ1fIzu/znd9n+r4HhuROTp3p8xRWSPydsgamXFVzsoZo7PN5tuRazTbrkwjuSpl2pnlXZ4qWSrkyM6QWT+rdkbd3TUNwzCMveOOu/NOVfkx6v7Y7Mpf9fHr3t8u+urV167+TullN33UyL+yh27Zs31C7iq65PzSKScAAMBpfNYBAAAAAAAAAAAAAAAAiPt9oOzRTfb+qjBO3hen9nXSOOkxOqWX7n2sek3Lem18WjfzPW62bvb786rc1TNfqZj3nd1Zr2reEZ3zq8ZVzbuiM17VHJGRUbaYbJ+Q6VOyjMzfleHVthEZ7m7/RPTrxGjtnTJqAsCffnof3H2uGqnCOWeUSufVK53Y1+qesvuK6Cerr8hedva1q48V/VytsbuHO31kZHraR3YWwzAMwzAMwzAMwzhxzHzmHvmsPnpNYmT+7NzZOa/uv7rvp9u/33bHVc9PRR9bIzm69JXVW3RPUcdYdj/RPe3sI6qfjB5W9ZOdfbSPP+dm533aQ9URkT+q9+9rrso+uv1ob6NWrPNqux2ZI0Tljfa01q6cT3XICAAA0NWOz90AAAAAAABRVv/fVgDgc3U7V+h0ntPp3KzTueTs3zPtNHN+vnN/j36G2H1MjOTbecyOfP6qmGvXc/xpntWZquRZkWNFllU5nmTJzLCy9mj9jLqda1aqtaNOlxqR6+/OXW3NyPWy13m6xpPtV2wbvY3x92MFAAAAAAAAu53+/VX294Ff+9T3hwAAzOhwjtjhXLZ6xg75KqqYq2Im+C76OM249pFxzWV3zZ31dtWKrhN5PW702mDEuiNrV1h39Zor11u11oioNTK2ndlu9fy7c+/Mezfn1f1X932/ffQ5+W6fP10vetzZ16uf1ytzPjVzzHfoK6sn/dTt5Wk/M2tV6mF27Qo9zK5f4TiaXT87+5P1M3JH7a+o3Nm5TsjbPWt2pm77s3K+qtlekel9nt2ZqmS5o0KO0zN8Wu3Ta55W647KfUTmj1h79Zp3dV2rwhqz2+/cLmr+innv5rzKdXXfT/2sep7PrrNz3Mncraeuj8VIT9lZPEZn9nJCHz/JzvTJ+bPznJy727HSJe+V7Fwd92n1fVk5X9VsnXLJUydL9nHzSnb9yByjsuquqD3ra9td9QCgmpPf407v6ySn9QMAAAAAAAAAAAAAAAAAcLpqf/Na6e+mK/1eSZXfT6nwWy5VflMmO0Nm/aq1T6lZpV7HOtE1Mtavuu7qNaPXy1xnZI0n73Gz285sN7rNyPw7c08eAAAAAADA6f4DqedSIg==</Data>
+</DataArray>
+</GIFTI>
