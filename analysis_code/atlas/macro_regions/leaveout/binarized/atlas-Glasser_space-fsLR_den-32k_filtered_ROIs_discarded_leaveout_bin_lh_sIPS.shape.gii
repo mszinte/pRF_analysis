@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexLeft]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_sIPS.shape.gii:
+wb_command -cifti-separate macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_sIPS.dlabel.nii COLUMN -metric CORTEX_LEFT macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_sIPS.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.0.1
+Qt Compiled Version: 5.15.3
+Qt Runtime Version: 5.15.3
+Commit: unknown
+Commit Date: unknown
+Compiler: c++ (/usr/lib/ccache)
+Compiler Version: 11.2.0
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[wb_command -metric-reduce macro_regions/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_lh_sIPS.shape.gii COUNT_NONZERO macro_regions/leaveout/binarized/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_leaveout_bin_lh_sIPS.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/atlas]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[COUNT_NONZERO]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt3GFu20gMBtDerFfboy/6I8A2i9geiRySo/cAokAqkR8dO3HkxL9+ffnn99//fv84+/y5zbPqJKfvBwAAAADUy7juGN0z8vpoVK+IPnd73Dn/6rlXrlmvXtPPOPaT494d8+r/Vz7e6fUOr9fMdurnL3Ovqt1O28k+z9qlwgk7RO4xOX+l6blXd+hiUt7TsnYwPWO1idmqTchUrVsWAAB4Z/o1KQAAAIBMVdc+Kq677L7ec2fermtZO+Z0nlHVO7Jn1LXPu33U/lq9H6zeHz+9D7+zchw9VN+37zwWnuzE2+Skz/VJ999Jj8efMk752jL5a+Tkr/NTv09N/B6bkTk796TMWVkz8k7ImpkxKmfnjNnZrubbkWs1265MK7k6ZdqZ5V2eLlk65KjOUDm/anbF3N0zlVJK7a1PfHoc+/ncAAAAAAAAk3mtAwAAAAAAAAAAAAAAAGCPru93WKH6fSAn3Kb2mrPbaTud9Ng6ZZcT9ojKMi3/1R6V2e/06JS7e+arPSryrvbJ8L3/1dsmK99/+7967Hfw6nEOAADQ2dXrM91+LvtJxH5dd4zarduOJ+4VvVP1Xhn7VO2VucvOvXbtkbnP7h2i96jIH7XH1Owyn5d3StYJObtn7JyvS7ZIHTJ0zzQ5y8k5JszP0m1upp2zvuYBcK7I5+S76uT97Faf88k7PXGf6oxP2eMJO9zpmZE1I/vq+au7rYro8+q8HZkzZOXNdnfWrpx3TcgIAAAw1Y6fuwEAAAAAALJE/24rAPBc054rTHqeM+m52aTnklf/nmmnK8/Pd97eqz9D7L5PrOTbeZ9d+fmrY65dj/G7eaIzdckTkSMiS1SOO1kqM0TOXp1fMXfyzE6zdsyZMiOz/+7c3Xpm9qvuc7fHnfMjzs0+R/3/cwUAAAAAAAC7nf76VfXrgV+3qdcPAQC4YsJzxAnPZbtnnJCvo465OmaC77LvpxXXPiquueyeuXPerlnZczKvx61eG8zou9K7Q9/onpH9onqtyOpRce6V86KP//TYT457d8yr///p/75/fPUx+ZT6VHXOrN2qM2bsVZ0veqfqbJH7VOeK2qU6U8Qe1Xnu7FCd407+6gxPzK6UUkoppZRSSimllFJKKaWUUkq9qurfR+jwuynVv+vzSvX8zByrquZGzL7q69xd8wCgm5O/x52+10lO2wcAAAAAAAAAAAAAAAAA4HTd/ua1099Nd3q/ki7vn9LhvVy6vKdMdYbK+V1nnzKzy7yJc7JnVPTv2je6Z3a/yj4rPe58j7t67pXzVs9ZOf6TY08uAAAAAADgdP8CJH/l9A==</Data>
+</DataArray>
+</GIFTI>
