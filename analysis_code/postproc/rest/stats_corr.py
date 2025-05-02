@@ -19,6 +19,10 @@ To run:
 2. run python command
 python stats_corr.py [main directory] [project name] [subject name] 
 -----------------------------------------------------------------------------------------
+Exemple:
+cd ~/projects/pRF_analysis/analysis_code/postproc/rest/
+python stats_corr.py /scratch/mszinte/data RetinoMaps sub-01
+-----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -166,7 +170,7 @@ for roi_num, roi in enumerate(rois):
     print(f'{roi} Target timeseries: {target_data.shape}')
 
 	# to accelerate debugging take first 10 (to delete)
-    seed_data = seed_data[:,:3]
+    # seed_data = seed_data[:,:3]
 	
     for target_col in range(target_data.shape[1]):
         target_column_data = target_data[:, target_col]

@@ -52,7 +52,7 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 memory_val = 30
-hour_proc = 1
+hour_proc = 20
 nb_procs = 8
 
 # Cluster settings
