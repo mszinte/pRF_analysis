@@ -3,11 +3,11 @@
 submit_stats_corr_jobs.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Create and submit jobscript to make a gaussian grid fit for pRF analysis
+Compute resting-state stats on 91k outputs using the math_utils functions (to update)
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
-sys.argv[2]: project name (correspond to directory)
+sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
@@ -22,7 +22,7 @@ To run:
 python submit_stats_corr_jobs.py [main directory] [project name] [subject] 
                                  [group] [server project]
 -----------------------------------------------------------------------------------------
-Exemple:
+Example:
 cd ~/projects/pRF_analysis/analysis_code/postproc/rest/
 python submit_stats_corr_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
