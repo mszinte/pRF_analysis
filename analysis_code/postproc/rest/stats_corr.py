@@ -169,7 +169,7 @@ for roi_num, roi in enumerate(rois):
     print(f'{roi} Seed timeseries: {seed_data.shape}')
     print(f'{roi} Target timeseries: {target_data.shape}')
 
-	# to accelerate debugging take first 10 (to delete)
+    # to accelerate debugging take first 10 (to delete)
     # seed_data = seed_data[:,:3]
 	
     for target_col in range(target_data.shape[1]):
@@ -184,7 +184,7 @@ for roi_num, roi in enumerate(rois):
                                          use_fisher=True
                                         )
         
-        # median of r values for significant correlations as a function of level of correctio (fdr_alpha1, fdr_alpha2)
+        # median of r values for significant correlations as a function of level of correction (fdr_alpha1, fdr_alpha2)
         pvalue_fdr_alpha1[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha1_row,:]<=fdr_alpha[0]])
         pvalue_fdr_alpha2[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha2_row,:]<=fdr_alpha[0]])
 
@@ -201,7 +201,7 @@ pvalue_fdr_alpha1_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_
 save_data(pvalue_fdr_alpha1_with_winners_lh, seed_mask_lh_img, pvalue_fdr_alpha1_with_winners_lh_fn)
 save_data(pvalue_fdr_alpha1_with_winners_rh, seed_mask_rh_img, pvalue_fdr_alpha1_with_winners_rh_fn)
 
-# FDR-ALPHA1 : 0.01
+# FDR-ALPHA2 : 0.01
 pvalue_fdr_alpha2_with_winners_lh = pvalue_fdr_alpha2_with_winners[:,:32492].T
 pvalue_fdr_alpha2_with_winners_rh = pvalue_fdr_alpha2_with_winners[:,-32492:].T
 
