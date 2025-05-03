@@ -1,6 +1,6 @@
 {
     "project_name": "RetinoMaps",
-    "account":"mszinte@login.mesocentre.univ-amu.fr",
+    "account": "mszinte@login.mesocentre.univ-amu.fr",
     "webapp_login": "admin@invibe.nohost.me",
     "webapp_dir": "/var/www/my_webapp",
     "sessions" : ["ses-01", "ses-02","ses-03"], 
@@ -20,7 +20,7 @@
     "high_pass_threshold": 0.01,
     "formats": ["fsnative", "170k"],
     "extensions": ["func.gii", "dtseries.nii"],
-    "n_runs_prf":5,
+    "n_runs_prf": 5,
     "screen_size_pix": [1080, 1080],
     "screen_size_cm" : [77.3, 43.5],
     "screen_distance_cm": 120,
