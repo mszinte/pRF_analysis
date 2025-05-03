@@ -194,7 +194,7 @@ pvalue_fdr_alpha2_with_winners = find_winner(pvalue_fdr_alpha2)
 
 # FDR-ALPHA1 : 0.05
 pvalue_fdr_alpha1_with_winners_lh = pvalue_fdr_alpha1_with_winners[:,:32492].T
-pvalue_fdr_alpha1_with_winners_rh = pvalue_fdr_alpha2_with_winners[:,-32492:].T
+pvalue_fdr_alpha1_with_winners_rh = pvalue_fdr_alpha1_with_winners[:,-32492:].T
 
 pvalue_fdr_alpha1_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha1_L.shape.gii'
 pvalue_fdr_alpha1_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha1_R.shape.gii'
