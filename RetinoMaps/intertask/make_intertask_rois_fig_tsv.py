@@ -112,11 +112,14 @@ for tasks in group_tasks :
 ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
 
             # Threshold data (replace by nan)
+            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
             data.loc[(data.amplitude < amplitude_threshold) |
-                      (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                      (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
-                      (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-                      (data.prf_loo_r2 < rsqr_threshold)] = np.nan
+                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                     (data.prf_loo_r2 < rsqr_threshold) |
+                     (data[stats_col] > stats_threshold)] = np.nan
             data = data.dropna()
             
             # loop over categories
@@ -364,30 +367,35 @@ for tasks in group_tasks :
                 # Parameters median
                 # ------------------
                 df_params_median = df_violins
-                
-                # compute median 
                 colnames = ['prf_loo_r2', 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
-                df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
-                    lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
+                if df_violins.empty:
+                    df_params_median = pd.DataFrame(columns=['roi', 'subject', 'prf_loo_r2_weighted_median'] + 
+                                                    ['{}_weighted_median'.format(col) for col in colnames] + 
+                                                    ['{}_ci_down'.format(col) for col in colnames] + 
+                                                    ['{}_ci_up'.format(col) for col in colnames])
                 
-                for colname in colnames[1:]:
+                else:
+                    df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
+                        lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
+                    
+                    for colname in colnames[1:]:
+                        df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
+                            lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
+                    df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
+            
+                    # compute Ci
+                    df_params_median_ci = pd.DataFrame()
+                    for colname in colnames:
+                        df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 2.5)) 
+                        df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
+            
+                    df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
+                    tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_category_dir, subject)
+                    print('Saving tsv: {}'.format(tsv_params_median_fn))
+                    df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
 
-                    df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
-                        lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
-                df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
-        
-                # compute Ci
-                df_params_median_ci = pd.DataFrame()
-                for colname in colnames:
-                    df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                        lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 2.5)) 
-                    df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                        lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
-        
-                df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
-                print('Saving tsv: {}'.format(tsv_params_median_fn))
-                df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
                 
                 # Ecc.size
                 # --------

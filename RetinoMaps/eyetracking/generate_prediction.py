@@ -18,10 +18,18 @@ tsv.gz timeseries of Euclidean distance
 tsv.gz timeseries of Prediction
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/pRF_analysis/RetinoMaps/eyetracking/
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
 python generate_prediction.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
 -----------------------------------------------------------------------------------------
 """
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 import pandas as pd
 import json
 import numpy as np
@@ -95,10 +103,10 @@ os.makedirs(fig_dir_save, exist_ok=True)
 if subject == 'sub-01': 
     ses = 'ses-01'
     data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-    data_mat = sorted(glob.glob(f'/Users/sinakling/projects/PredictEye/locEMexp/data/{subject}/{ses}/add/*.mat'))
+    data_mat = sorted(glob.glob(f'/home/ulascombes/projects/locEMexp/data/{subject}/{ses}/add/*.mat'))
 else: 
     data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-    data_mat = sorted(glob.glob(f'/Users/sinakling/projects/PredictEye/locEMexp/data/{subject}/{ses}/add/*.mat'))
+    data_mat = sorted(glob.glob(f'/home/ulascombes/projects/locEMexp/data/{subject}/{ses}/add/*.mat'))
 
 dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
 
@@ -155,6 +163,11 @@ for run in range(num_run):
                             eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
         
         pred_x_intpl, pred_y_intpl = load_sac_model(file_dir_save, subject, run, eye_data_all_runs[run])
+        # Save prediction x and y as tsv.gz
+        prediction = np.stack((pred_x_intpl, pred_y_intpl), axis=1)
+        prediction = pd.DataFrame(prediction, columns=['pred_x', 'pred_y'])
+        pred_file_path = f'{file_dir_save}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz'
+        prediction.to_csv(pred_file_path, sep='\t', index=False, compression='gzip')
 
         eucl_dist = euclidean_distance(eye_data_all_runs,pred_x_intpl, pred_y_intpl, run)
 
