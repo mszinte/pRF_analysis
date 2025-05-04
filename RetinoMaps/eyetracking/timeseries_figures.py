@@ -22,6 +22,7 @@ Output(s):
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
 python timeseries_figures.py /scratch/mszinte/data RetinoMaps "[sub-01,sub-02,sub-03]" pRF 327
+python timeseries_figures.py /Users/uriel/disks/meso_shared/ RetinoMaps "[sub-02]" SacLoc 327
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -146,8 +147,6 @@ for subject in subjects:
             
                 fig = plotly_layout_template(task, run)
                 fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-                fig.show()
-                deb()
                 fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
                 fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
                 fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
