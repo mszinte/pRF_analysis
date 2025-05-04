@@ -88,19 +88,30 @@ for tasks in group_tasks :
             
             # Load subject TSV
             data = pd.read_table('{}/{}_intertask-all_derivatives_{}.tsv'.format(intertask_tsv_dir, subject, suffix))
+            raw_data = data.copy()
             
+            # replace nan in pcm by non_computed 
+            data.loc[data['all'] != 'vision', 
+['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
+['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
+
+            
+            # Threshold data (replace by nan)
+            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
             data.loc[(data.amplitude < amplitude_threshold) |
-                      (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                      (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
-                      (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-                      (data.prf_loo_r2 < rsqr_threshold)] = np.nan
+                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                     (data.prf_loo_r2 < rsqr_threshold) |
+                     (data[stats_col] > stats_threshold)] = np.nan
             data = data.dropna()
 
             # Active vertex ROI 
             subject_rois_area_categorie_df = pd.DataFrame()
             for roi in rois : 
                 # Compute categorie proportions 
-                n_vert_roi = data.loc[data['roi'] == roi].shape[0]
+                n_vert_roi = raw_data.loc[raw_data['roi'] == roi].shape[0]
                 n_vert_roi_saccade = data.loc[(data['roi'] == roi) & (data['saccade'] == 'saccade')].shape[0]
                 n_vert_roi_pursuit = data.loc[(data['roi'] == roi) & (data['pursuit'] == 'pursuit')].shape[0]
                 n_vert_roi_vision = data.loc[(data['roi'] == roi) & (data['vision'] == 'vision')].shape[0]
@@ -133,7 +144,7 @@ for tasks in group_tasks :
                                                                                       value_vars=['saccade', 'pursuit', 'vision', 'all'], 
                                                                                       var_name='categorie', 
                                                                                       value_name='percentage_active')
-            
+
             # Export subject DF 
             tsv_active_vertex_roi_fn = "{}/{}_active_vertex_roi_{}.tsv".format(intertask_tsv_dir, subject, suffix)
             print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
@@ -249,10 +260,10 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 group_active_vertex_mmp_roi_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
                
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
             
             
             
