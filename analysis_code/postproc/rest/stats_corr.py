@@ -4,6 +4,7 @@ stats_corr.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Compute the zfisher file of resting state corrected for fdr_alpha level
+Compute the winner index across roi (1:V1 (not 0 !!!); 2: V2; ...; 12: mPCS)
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -45,6 +46,10 @@ import nibabel as nb
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
+use_fisher = False
+seed_debug = False
+roi_debug = True
+avg_method = 'median' # 'mean' or 'median'
 
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface, make_surface_image
@@ -62,7 +67,7 @@ def find_winner(pvalue_fdr_alpha):
         if np.all(np.isnan(column_data)):
             winner_indices.append(-1)  # Append -1 for all-NaN columns
         else:
-            winner_index = np.nanargmax(column_data)
+            winner_index = np.nanargmax(column_data) + 1
             winner_indices.append(winner_index)
 
     # Convert winner_indices to a numpy array
@@ -157,6 +162,8 @@ pvalue_fdr_alpha2 = np.zeros((len(rois), vertex_num_91k)) * np.nan
 
 # Correlation
 for roi_num, roi in enumerate(rois):
+
+    
     # Get the seed data as before
     seed_data = timeseries_data[:, seed_mask_data[roi_num,:].astype(bool)]
     
@@ -166,12 +173,18 @@ for roi_num, roi in enumerate(rois):
     # Apply the mask to the target_data
     target_data[:, leaveout_target_mask_data[roi_num, :].astype(bool)] = timeseries_data[:, leaveout_target_mask_data[roi_num,:].astype(bool)]
     
+
+    # debugging: to accelerate debugging take first 10
+    if seed_debug == True:
+        seed_data = seed_data[:,:3]
+
+    # debugging: to accelerate debugging take first 2 rois
+    if roi_debug and roi_num >= 2:
+        break
+
     print(f'{roi} Seed timeseries: {seed_data.shape}')
     print(f'{roi} Target timeseries: {target_data.shape}')
 
-    # to accelerate debugging take first 10 (to delete)
-    # seed_data = seed_data[:,:3]
-	
     for target_col in range(target_data.shape[1]):
         target_column_data = target_data[:, target_col]
         
@@ -181,23 +194,30 @@ for roi_num, roi in enumerate(rois):
                                          model_prediction=seed_data,
                                          correction='fdr_tsbh', 
                                          alpha=fdr_alpha,
-                                         use_fisher=True
+                                         use_fisher=use_fisher
                                         )
         
         # median of r values for significant correlations as a function of level of correction (fdr_alpha1, fdr_alpha2)
-        pvalue_fdr_alpha1[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha1_row,:]<=fdr_alpha[0]])
-        pvalue_fdr_alpha2[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha2_row,:]<=fdr_alpha[0]])
+        if avg_method == 'median':
+            pvalue_fdr_alpha1[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha1_row,:]<=fdr_alpha[0]])
+            pvalue_fdr_alpha2[roi_num, target_col] = np.median(results[rvalue_row, :][results[pvalue_fdr_alpha2_row,:]<=fdr_alpha[0]])
+        elif avg_method == 'mean':
+            pvalue_fdr_alpha1[roi_num, target_col] = np.mean(results[rvalue_row, :][results[pvalue_fdr_alpha1_row,:]<=fdr_alpha[0]])
+            pvalue_fdr_alpha2[roi_num, target_col] = np.mean(results[rvalue_row, :][results[pvalue_fdr_alpha2_row,:]<=fdr_alpha[0]])
 
 # Make the files with all 12 ROIS seeds, the winner index (13) and the winner r value (14)
 pvalue_fdr_alpha1_with_winners = find_winner(pvalue_fdr_alpha1)
 pvalue_fdr_alpha2_with_winners = find_winner(pvalue_fdr_alpha2)
 
 # FDR-ALPHA1 : 0.05
+if use_fisher: stats_txt = f'{avg_method}_fisher-z'
+else: stats_txt = f'{avg_method}_pearson-r'
+
 pvalue_fdr_alpha1_with_winners_lh = pvalue_fdr_alpha1_with_winners[:,:32492].T
 pvalue_fdr_alpha1_with_winners_rh = pvalue_fdr_alpha1_with_winners[:,-32492:].T
 
-pvalue_fdr_alpha1_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha1_L.shape.gii'
-pvalue_fdr_alpha1_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha1_R.shape.gii'
+pvalue_fdr_alpha1_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-05_L.shape.gii'
+pvalue_fdr_alpha1_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-05_R.shape.gii'
 save_data(pvalue_fdr_alpha1_with_winners_lh, seed_mask_lh_img, pvalue_fdr_alpha1_with_winners_lh_fn)
 save_data(pvalue_fdr_alpha1_with_winners_rh, seed_mask_rh_img, pvalue_fdr_alpha1_with_winners_rh_fn)
 
@@ -205,7 +225,7 @@ save_data(pvalue_fdr_alpha1_with_winners_rh, seed_mask_rh_img, pvalue_fdr_alpha1
 pvalue_fdr_alpha2_with_winners_lh = pvalue_fdr_alpha2_with_winners[:,:32492].T
 pvalue_fdr_alpha2_with_winners_rh = pvalue_fdr_alpha2_with_winners[:,-32492:].T
 
-pvalue_fdr_alpha2_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha2_L.shape.gii'
-pvalue_fdr_alpha2_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_fisher-z_fdr_alpha2_R.shape.gii'
+pvalue_fdr_alpha2_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-01_L.shape.gii'
+pvalue_fdr_alpha2_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-01_R.shape.gii'
 save_data(pvalue_fdr_alpha2_with_winners_lh, seed_mask_lh_img, pvalue_fdr_alpha2_with_winners_lh_fn)
 save_data(pvalue_fdr_alpha2_with_winners_rh, seed_mask_rh_img, pvalue_fdr_alpha2_with_winners_rh_fn)
