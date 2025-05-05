@@ -342,7 +342,10 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
 
     # Define output size
     num_vertices = bold_signal.shape[1]
-    num_base_output = 6                         # Number of outputs per vertex (slope, intercept, rvalue, pvalue, stderr, trs)
+    if use_fisher:
+        num_base_output = 7                         # Number of outputs per vertex (slope, intercept, rvalue, fisher_z pvalue, stderr, trs)
+    else:
+        num_base_output = 6                         # Number of outputs per vertex (slope, intercept, rvalue, pvalue, stderr, trs)
     num_output = num_base_output + len(alpha)   # Add the desired corrected p-values
 
     # Array to store results for each vertex
@@ -358,28 +361,29 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
                                   alternative='two-sided')
         
         # If using Fisher's z-score
-	    if use_fisher:
-	        r_value = result.rvalue
-	        n = model_prediction.shape[0]  # Number of time points
-	        z_score = fisher_z(r_value)
-	        p_value = fisher_z_p_value(z_score, n)
-	        p_values[vert] = p_value
-	        vertex_results[:, vert] = [result.slope, 
-	                                   result.intercept, 
-	                                   z_score,  # Use Fisher's z-score
-	                                   p_value,   # Use Fisher's p-value
-	                                   result.stderr,
-	                                   n] + [np.nan]*len(alpha)
-	    else:
-	        # Use standard Pearson values
-	        trs = model_prediction.shape[0]
-	        vertex_results[:, vert] = [result.slope, 
-	                                   result.intercept, 
-	                                   result.rvalue, 
-	                                   result.pvalue, 
-	                                   result.stderr,
-	                                   trs] + [np.nan]*len(alpha)
-	        p_values[vert] = result.pvalue
+        if use_fisher:
+            r_value = result.rvalue
+            n = model_prediction.shape[0]  # Number of time points
+            z_score = fisher_z(r_value)
+            p_value = fisher_z_p_value(z_score, n)
+            p_values[vert] = p_value
+            vertex_results[:, vert] = [result.slope, 
+                                       result.intercept, 
+                                       result.rvalue, 
+                                       z_score,  # Use Fisher's z-score
+                                       p_value,   # Use Fisher's p-value
+                                       result.stderr,
+                                       n] + [np.nan]*len(alpha)
+        else:
+            # Use standard Pearson values
+            trs = model_prediction.shape[0]
+            vertex_results[:, vert] = [result.slope, 
+                                       result.intercept, 
+                                       result.rvalue, 
+                                       result.pvalue, 
+                                       result.stderr,
+                                       trs] + [np.nan]*len(alpha)
+            p_values[vert] = result.pvalue
 
     # Apply multiple testing correction
     if correction and valid_vertices.size > 0:
