@@ -48,8 +48,8 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 use_fisher = False
 seed_debug = False
-roi_debug = True
-avg_method = 'mean' # 'mean' or 'median'
+roi_debug = False
+avg_method = 'median' # 'mean' or 'median'
 
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface, make_surface_image
@@ -123,7 +123,7 @@ print(f'Timeseries data shape: {timeseries_data.shape}')
 
 # Define vertex numbers
 vertex_num_91k = timeseries_data.shape[1]
-vexter_num_91k_lh, vexter_num_91k_lh = int(vertex_num_91k/2),int(vertex_num_91k/2)
+vexter_num_91k_lh, vexter_num_91k_rh = int(vertex_num_91k/2),int(vertex_num_91k/2)
 
 # Load seed mask file as array (12,64984) from V1 to mPCS
 for roi_num, roi in enumerate(rois):
