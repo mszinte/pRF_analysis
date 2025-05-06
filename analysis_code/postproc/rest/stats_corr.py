@@ -49,11 +49,12 @@ subject = sys.argv[3]
 use_fisher = False
 seed_debug = False
 roi_debug = True
-avg_method = 'median' # 'mean' or 'median'
+avg_method = 'mean' # 'mean' or 'median'
 
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface, make_surface_image
 from maths_utils import linear_regression_surf
+from cifti_utils import from_91k_to_32k
 
 # Functions
 def find_winner(pvalue_fdr_alpha):
@@ -108,7 +109,6 @@ fdr_alpha = settings['fdr_alpha']
 project = settings['project_name']
 pp_data_folder = 'derivatives/pp_data'
 atlas_folder = f'{base_dir}/analysis_code/atlas'
-vertex_num_91k = 64984
 
 # Create output folder
 coor_dir = f'{main_dir}/{project_dir}/{pp_data_folder}/{subject}/91k/{task_name}/corr'
@@ -116,9 +116,14 @@ os.makedirs(coor_dir, exist_ok=True)
 
 # Load resting-state dense timeseries
 timeseries_fn = f'{main_dir}/{project_dir}/{pp_data_folder}/{subject}/91k/{task_name}/timeseries/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
-timeseries_img, timeseries_data = load_surface(timeseries_fn)
-timeseries_data = timeseries_data[:, 0:vertex_num_91k]
+timeseries_img, timeseries_data_raw = load_surface(timeseries_fn)
+res = from_91k_to_32k(timeseries_img, timeseries_data_raw, return_concat_hemis=True, return_32k_mask=False)
+timeseries_data = res['data_concat']
 print(f'Timeseries data shape: {timeseries_data.shape}')
+
+# Define vertex numbers
+vertex_num_91k = timeseries_data.shape[1]
+vexter_num_91k_lh, vexter_num_91k_lh = int(vertex_num_91k/2),int(vertex_num_91k/2)
 
 # Load seed mask file as array (12,64984) from V1 to mPCS
 for roi_num, roi in enumerate(rois):
@@ -213,8 +218,8 @@ pvalue_fdr_alpha2_with_winners = find_winner(pvalue_fdr_alpha2)
 if use_fisher: stats_txt = f'{avg_method}_fisher-z'
 else: stats_txt = f'{avg_method}_pearson-r'
 
-pvalue_fdr_alpha1_with_winners_lh = pvalue_fdr_alpha1_with_winners[:,:32492].T
-pvalue_fdr_alpha1_with_winners_rh = pvalue_fdr_alpha1_with_winners[:,-32492:].T
+pvalue_fdr_alpha1_with_winners_lh = pvalue_fdr_alpha1_with_winners[:,:vexter_num_91k_lh].T
+pvalue_fdr_alpha1_with_winners_rh = pvalue_fdr_alpha1_with_winners[:,-vexter_num_91k_rh:].T
 
 pvalue_fdr_alpha1_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-05_L.shape.gii'
 pvalue_fdr_alpha1_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-05_R.shape.gii'
@@ -222,8 +227,8 @@ save_data(pvalue_fdr_alpha1_with_winners_lh, seed_mask_lh_img, pvalue_fdr_alpha1
 save_data(pvalue_fdr_alpha1_with_winners_rh, seed_mask_rh_img, pvalue_fdr_alpha1_with_winners_rh_fn)
 
 # FDR-ALPHA2 : 0.01
-pvalue_fdr_alpha2_with_winners_lh = pvalue_fdr_alpha2_with_winners[:,:32492].T
-pvalue_fdr_alpha2_with_winners_rh = pvalue_fdr_alpha2_with_winners[:,-32492:].T
+pvalue_fdr_alpha2_with_winners_lh = pvalue_fdr_alpha2_with_winners[:,:vexter_num_91k_lh].T
+pvalue_fdr_alpha2_with_winners_rh = pvalue_fdr_alpha2_with_winners[:,-vexter_num_91k_rh:].T
 
 pvalue_fdr_alpha2_with_winners_lh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-01_L.shape.gii'
 pvalue_fdr_alpha2_with_winners_rh_fn = f'{coor_dir}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-full_corr_{stats_txt}_fdr_alpha-01_R.shape.gii'
