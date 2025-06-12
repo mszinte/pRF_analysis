@@ -248,7 +248,7 @@ for tasks in group_tasks :
         
         # Export html with all figures
         subject_html = make_figures_html(subject=subject, figures=figures_dict, figs_title=figures_titles)
-        html_fn = '{}/{}_figures_html.html'.format(fig_dir, subject)
+        html_fn = '{}/{}_figures_html_{}.html'.format(fig_dir, subject, suffix)
         with open(html_fn, "w") as f:
             f.write(subject_html)
                 
