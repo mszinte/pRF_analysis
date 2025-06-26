@@ -59,7 +59,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
 - [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
 
-## Resting-state analysis
+### Resting-state analysis
 - [x] Compute seed-based (from the tasks conjunction glm results) functional connectivity on the dense timeseries with connectome workbench ()
 - [ ] Compute winner-take-all results
 - [ ] Compute seed-based partial correlation
