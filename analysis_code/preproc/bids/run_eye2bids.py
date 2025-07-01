@@ -74,8 +74,8 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
         # Find all .edf files
         for root, dirs, files in os.walk(input_directory):
 
-            if 'sourcedata' in dirs:
-                dirs.remove('sourcedata')
+            # if 'sourcedata' in dirs:
+            #     dirs.remove('sourcedata')
 
             if 'code' in dirs:
                 dirs.remove('code')
@@ -93,8 +93,8 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
                     print(f'Renaming {old_file_path} to {new_file_path}')
                     os.rename(old_file_path, new_file_path)
             
-            if 'sourcedata' in dirs:
-                dirs.remove('sourcedata')
+            # if 'sourcedata' in dirs:
+            #     dirs.remove('sourcedata')
             
             for file in files:
 

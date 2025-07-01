@@ -371,7 +371,7 @@ def detrending(eyetracking_1D, subject, ses, run, fixation_column, task, design_
     plt.xlabel("Time")
     plt.ylabel("Detrended Eye Position")
     plt.legend()
-    plt.show()
+    # plt.show()
 
     return detrended_full_data
 

@@ -294,7 +294,7 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     plt.show()
 
     # ------------------------- Save ---------------------------------------------------- 
-    np.save(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_x", model_x) 
+    np.save(f"{file_dir_save}/ /{subject}_run-0{run+1}_saccade_model_x", model_x) 
   
 
 #---------------------------- MODEL Y ----------------------------------------------------------
@@ -408,10 +408,10 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
 
 
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
     
 
 

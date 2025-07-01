@@ -24,52 +24,60 @@ Cleaned timeseries data per run
 Tsv trial trigger timestamps 
 -----------------------------------------------------------------------------------------
 To run:
-cd /projects/prf_analysis/RetinoMaps/eyetracking/dev
-python eyetrack_preproc.py sub-01 PurLoc ses-01 eye1
+cd ~/projects/pRF_analysis/analysis_code/preproc/eyetracking/
+python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-01 327
+-----------------------------------------------------------------------------------------
+Written by Sina Kling
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-# General imports
-import pandas as pd
-import json
-import numpy as np
-import re
-import matplotlib.pyplot as plt
-import glob 
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
+# Imports
 import os
-from sklearn.preprocessing import MinMaxScaler
+import json
 import sys
+import numpy as np
+import pandas as pd
 from statistics import median
 from scipy.signal import detrend
+from sklearn.preprocessing import MinMaxScaler
 
-# Utils import
+# Inputs
+main_dir = sys.argv[1]
+project_dir = sys.argv[2]
+subject = sys.argv[3]
+group = sys.argv[4]
+
+# Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from eyetrack_utils import *
 
-# --------------------- Load settings and inputs -------------------------------------
+# Load general settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
 
-def load_settings(settings_file):
-    with open(settings_file) as f:
-        settings = json.load(f)
-    return settings
+with open(settings_path) as f:
+    json_s = f.read()
+    analysis_info = json.loads(json_s)
+tasks = analysis_info['task_intertask'][0]
+prf_task_name = analysis_info['prf_task_name']
 
-def load_inputs():
-    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-
-def ensure_save_dir(base_dir, subject):
-    save_dir = f"{base_dir}/{subject}/eyetracking/timeseries"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    return save_dir
-
-def load_events(main_dir, subject, ses, task): 
-    data_events = load_event_files(main_dir, subject, ses, task)
-    return data_events 
+# Execption for subject 1 with no data for eye tracking
+if subject == 'sub-01':
+    if prf_task_name in tasks:
+        tasks.remove(prf_task_name)
 
 # --------------------- Data Extraction ------------------------------------------------
-
-def extract_event_and_physio_data(main_dir, subject, task, ses, num_run, eye):
-    df_event_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type="physioevents")
-    df_data_runs = extract_data(main_dir, subject, task, ses, num_run, eye, file_type="physio")
+def extract_event_and_physio_data(main_dir, project_dir, subject, task, ses, num_run, eye):
+    df_event_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type="physioevents")
+    df_data_runs = extract_data(main_dir, project_dir, subject, task, ses, num_run, eye, file_type="physio")
     return df_event_runs, df_data_runs
 
 # --------------------- Preprocessing Methods -----------------------------------------
@@ -112,24 +120,27 @@ def apply_smoothing(data, method, settings):
         print(f"Unknown smoothing method: {method}")
         return data
 
-# --------------------- Data Saving ----------------------------------------------------
-
-def save_preprocessed_data(data, file_path):
-    data.to_csv(file_path, sep='\t', index=False, compression='gzip')
-
 # --------------------- Main Preprocessing Pipeline ------------------------------------
 
-def main_preprocessing_pipeline():
-    # Load inputs and settings
-    subject, task, ses, eye = load_inputs()
-    settings = load_settings('/Users/sinakling/projects/pRF_analysis/RetinoMaps/eyetracking/dev/PurLoc_SacLoc/behavior_settings.json')  #TODO make path general
+for task in tasks :
+    print('Processing {} ...'.format(task))
+    # Load task settings
+    base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+    settings_path = os.path.join(base_dir, project_dir, '{}_settings.json'.format(task))
+    with open(settings_path) as f:
+        settings = json.load(f)       
+    if subject == 'sub-01':
+        ses = 'ses-01'
+    else: ses = settings['session']
+    eye = settings['eye']
     
-    # Prepare save directory
-    main_dir = settings.get('main_dir_mac')
-    file_dir_save = ensure_save_dir(f'{main_dir}/derivatives/pp_data', subject)
+    # Defind directories
+    eye_tracking_dir = '{}/{}/derivatives/pp_data/{}/eyetracking'.format(main_dir, project_dir, subject)
+    timeseries_dir = "{}/timeseries"
+    os.makedirs(timeseries_dir, exist_ok=True)
     
     # Load data
-    df_event_runs, df_data_runs = extract_event_and_physio_data(main_dir, subject, task, ses, settings['num_run'], eye)
+    df_event_runs, df_data_runs = extract_event_and_physio_data(main_dir,  project_dir, subject, task, ses, settings['num_run'], eye)
     print(df_event_runs[0].head()) 
     print(df_data_runs[0].head())  
     
@@ -147,6 +158,9 @@ def main_preprocessing_pipeline():
         eye_data_run_p = normalize_data(eye_data_run_p)
 
         if settings.get('drift_corr'):
+            
+            detrending(eyetracking_1D, subject, ses, run, fixation_column, task, design_dir_save)
+            
 
             eye_data_run_x = detrending(eye_data_run_x)
             eye_data_run_y = detrending(eye_data_run_y)
@@ -167,11 +181,12 @@ def main_preprocessing_pipeline():
             eye_data_run = apply_smoothing(eye_data_run, settings['smoothing'], settings)
         
         # Save the preprocessed data
-        tsv_file_path = f'{file_dir_save}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
-        save_preprocessed_data(eye_data_run, tsv_file_path)
+        tsv_file_path = f'{timeseries_dir}/{subject}_task-{task}_run_0{run_idx+1}_eyedata.tsv.gz'
+        eye_data_run.to_csv(tsv_file_path, sep='\t', index=False, compression='gzip')
 
-        
         print(f"Run {run_idx+1} preprocessed and saved at {tsv_file_path}")
 
-if __name__ == "__main__":
-    main_preprocessing_pipeline()
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
