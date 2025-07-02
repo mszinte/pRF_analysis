@@ -6,11 +6,10 @@ Goal of the script:
 - extract timestamps of experiment for saccade analysis (PurLoc and SacLoc tasks)
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: main directory 
-sys.argv[2]: project directory 
-sys.argv[3]: subject 
-sys.argv[4]: task 
-sys.argv[5]: group 
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Hdf5 file per run with all timestamps
@@ -252,8 +251,78 @@ for task in tasks :
                     if not found_offset:
                         print(f"Could not find offset for trial {trial_num_in_data} in sequence {seq_num}.")
     
-    
-    
+    if task == 'SacLoc' :
+        if subject == 'sub-05': 
+            time_start_trial[0,5,0] = 10014802
+            time_start_trial[0,1,1] = 10497668
+        
+        elif subject == 'sub-06': 
+            time_start_trial[0,5,1] = 21996866
+            time_start_trial[0,6,1] = 22035295
+            time_start_trial[0,7,1] = 22054503
+        
+        elif subject == 'sub-07': 
+            time_start_trial[0,4,1] = 28984151
+            time_start_trial[0,5,1] = 29003365
+        
+        elif subject == 'sub-08': 
+            time_start_trial[0,4,0] = 2728683
+            time_start_trial[0,3,1] = 3284061
+        
+        elif subject == 'sub-11': 
+            time_start_trial[0,0,1] = 13948433
+        
+        elif subject == 'sub-21': 
+            time_start_trial[0,3,0] = 10231379
+        
+        elif subject == 'sub-22': 
+            time_start_trial[0,4,0] = 3551300
+        
+        elif subject == 'sub-23': 
+            time_start_trial[0,6,0] = 16087909
+            
+    elif task == 'PurLoc' :
+        if subject == 'sub-12': 
+            time_start_trial[0,2,1] = 11173837
+            time_start_trial[0,2,0] = 10563102
+        
+        elif subject == 'sub-08': 
+            time_start_trial[0,0,1] = 3515741
+        
+        elif subject == 'sub-11': 
+            time_start_trial[0,3,1] = 14319997
+        
+        elif subject == 'sub-06': 
+            time_start_trial[0,4,0] = 21683560
+            time_start_trial[0,5,0] = 21702783
+            time_start_trial[0,3,0] = 21645137
+            time_start_trial[0,2,1] = 22216041
+        
+        elif subject == 'sub-20': 
+            time_start_trial[0,3,1] = 4486488
+            time_start_trial[0,4,1] = 4524917
+            time_start_trial[0,5,1] = 4544141
+            time_start_trial[0,6,1] = 4582562
+        
+        elif subject == 'sub-08': 
+            time_start_trial[0,0,1] = 3515741
+        
+        elif subject == 'sub-09': 
+            time_start_trial[0,5,1] = 22578973
+            time_start_trial[0,6,1] = 22617404
+            time_start_trial[0,7,1] = 22636611 
+        
+        elif subject == 'sub-23': 
+            time_start_trial[0,5,0] = 16352766
+        
+        elif subject == 'sub-24': 
+            time_start_trial[0,1,0] = 28084306
+        
+        elif subject == 'sub-25': 
+            time_start_trial[0,6,0] = 21047326
+        
+        elif subject == 'sub-04': 
+            time_start_trial[0,0,0] = 28753515
     
     data_events = load_event_files(main_dir, project_dir, subject, ses, task)
     

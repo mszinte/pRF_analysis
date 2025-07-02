@@ -7,11 +7,10 @@ Generate prediction for SacLoc task (combining target position with saccade
 on- and offsets)
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: main directory 
-sys.argv[2]: project directory 
-sys.argv[3]: subject 
-sys.argv[4]: task
-sys.argv[5]: group 
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 tsv.gz timeseries of Prediction
