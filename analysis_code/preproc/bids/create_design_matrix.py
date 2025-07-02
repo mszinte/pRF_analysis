@@ -9,30 +9,38 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
-sys.argv[4]: task
-sys.argv[5]: group of shared data (e.g. 327)
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 
 -----------------------------------------------------------------------------------------
-To run locally: 
+To run : 
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
-python create_design_matrix.py /scratch/mszinte/data RetinoMaps sub-01 pRF 327
+python create_design_matrix.py /scratch/mszinte/data RetinoMaps sub-01 327
+-----------------------------------------------------------------------------------------
+Written by Sina Kling
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
 
-# General imports
-import pandas as pd
-import numpy as np
-import json
-import sys
-import os
-import matplotlib.pyplot as plt
+# Debug
 import ipdb
 deb = ipdb.set_trace
 
-# path of utils folder  
+
+# General imports
+import os
+import sys
+import json
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from nilearn.plotting import plot_design_matrix
+
+# path of utils folder  
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from eyetrack_utils import load_event_files
 
@@ -40,14 +48,22 @@ from eyetrack_utils import load_event_files
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-task = sys.argv[4]
-group = sys.argv[5]
+group = sys.argv[4]
 
-# Load settings
+# Load general settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
 with open(settings_path) as f:
-    settings = json.load(f)
+    json_s = f.read()
+    analysis_info = json.loads(json_s)
+tasks = analysis_info['task_intertask'][0]
+prf_task_name = analysis_info['prf_task_name']
+
+# Execption for subject 1 with no data for eye tracking
+if subject == 'sub-01':
+    if prf_task_name in tasks:
+        tasks.remove(prf_task_name)
 
 def create_design_matrix(event_file, json_file):
     # Load the event file into a DataFrame
@@ -90,34 +106,42 @@ def create_design_matrix(event_file, json_file):
     # Return the design matrix
     return design_matrix
 
-# Define file list
-num_run = settings.get('num_run')
-file_dir_save = f'{main_dir}/{project_dir}/derivatives/exp_design/{subject}'
-os.makedirs(file_dir_save, exist_ok=True)
-
-# Load events files
-if subject == 'sub-01':
-    if task == 'pRF': ses = 'ses-02'
-    else: ses = 'ses-01'
-else: ses = settings['session']
-data_events = load_event_files(main_dir, project_dir, subject, ses, task)
-event_descr_json = f'{main_dir}/{project_dir}/task-{task}_events.json' 
-
-for run in range(num_run):
-
-    event_file = data_events[run]
-    design_matrix = create_design_matrix(event_file, event_descr_json)
-
-    # draw the design matrix and save it
-    design_matrix_img_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.png')
-    plot_design_matrix(design_matrix)
-    plt.savefig(os.path.join(file_dir_save, design_matrix_img_file), format='png')
+for task in tasks : 
+    print('Processing {} ...'.format(task))
+    # Load settings
+    base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+    settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
+    with open(settings_path) as f:
+        settings = json.load(f)
     
-    # Save the design matrix
-    design_matrix_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.tsv')
-    design_matrix.to_csv(os.path.join(file_dir_save, design_matrix_file), sep='\t', index=False)
+    # Define file list
+    num_run = settings.get('num_run')
+    file_dir_save = '{}/{}/derivatives/pp_data/{}/eyetracking/exp_design'.format(main_dir, project_dir, subject)
+    os.makedirs(file_dir_save, exist_ok=True)
+    
+    # Load events files
+    if subject == 'sub-01':
+        if task == 'pRF': ses = 'ses-02'
+        else: ses = 'ses-01'
+    else: ses = settings['session']
+    data_events = load_event_files(main_dir, project_dir, subject, ses, task)
+    event_descr_json = f'{main_dir}/{project_dir}/task-{task}_events.json' 
+    
+    for run in range(num_run):
+    
+        event_file = data_events[run]
+        design_matrix = create_design_matrix(event_file, event_descr_json)
+    
+        # draw the design matrix and save it
+        design_matrix_img_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.png')
+        plot_design_matrix(design_matrix)
+        plt.savefig(os.path.join(file_dir_save, design_matrix_img_file), format='png')
+        
+        # Save the design matrix
+        design_matrix_file = os.path.basename(event_file).replace('_events.tsv', '_design_matrix.tsv')
+        design_matrix.to_csv(os.path.join(file_dir_save, design_matrix_file), sep='\t', index=False)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 #os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
 #os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

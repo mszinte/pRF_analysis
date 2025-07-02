@@ -14,10 +14,10 @@ Any eyetracking run containing fewer than 1/3 valid samples after pre-processing
 excluded from further analysis
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: subject 
-sys.argv[2]: task
-sys.argv[3]: session
-sys.argv[4]: eye
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Cleaned timeseries data per run 
@@ -133,10 +133,11 @@ for task in tasks :
         ses = 'ses-01'
     else: ses = settings['session']
     eye = settings['eye']
+    fixation_column = settings['fixation_column']
     
     # Defind directories
     eye_tracking_dir = '{}/{}/derivatives/pp_data/{}/eyetracking'.format(main_dir, project_dir, subject)
-    timeseries_dir = "{}/timeseries"
+    timeseries_dir = "{}/timeseries".format(eye_tracking_dir)
     os.makedirs(timeseries_dir, exist_ok=True)
     
     # Load data
@@ -159,13 +160,24 @@ for task in tasks :
 
         if settings.get('drift_corr'):
             
-            detrending(eyetracking_1D, subject, ses, run, fixation_column, task, design_dir_save)
+            design_dir_save = '{}/{}/derivatives/pp_data/{}/eyetracking/exp_design'.format(main_dir, project_dir, subject)
             
-
-            eye_data_run_x = detrending(eye_data_run_x)
-            eye_data_run_y = detrending(eye_data_run_y)
-
-        
+            eye_data_run_x = detrending(eye_data_run_x, 
+                                        subject, 
+                                        ses, 
+                                        run_idx, 
+                                        fixation_column, 
+                                        task, 
+                                        design_dir_save)
+            
+            eye_data_run_y = detrending(eye_data_run_y, 
+                                        subject, 
+                                        ses, 
+                                        run_idx, 
+                                        fixation_column, 
+                                        task, 
+                                        design_dir_save)
+                                        
         eye_data_run = np.stack((eye_data_run[:,0],
                                  eye_data_run_x, 
                                  eye_data_run_y, 
