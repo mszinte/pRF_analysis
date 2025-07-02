@@ -9,8 +9,7 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
-sys.argv[4]: task
-sys.argv[5]: group of shared data (e.g. 327)
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 h5 files with vals_all
@@ -43,7 +42,7 @@ vals_all[:,25]:	microsaccade detected (<1 dva)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/eyetracking
-python extract_saccades.py /scratch/mszinte/data RetinoMaps sub-01 327  
+python extract_saccades.py /scratch/mszinte/data RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -90,6 +89,7 @@ if prf_task_name in tasks:
 
 
 for task in tasks :
+    print('Processing {} ...'.format(task))
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
     settings_path = os.path.join(base_dir, project_dir, f'{task}_settings.json')
     with open(settings_path) as f:
@@ -314,9 +314,9 @@ for task in tasks :
     h5file.create_dataset('saccades_output',data = vals_all,dtype ='float32')
     h5file.close()
     
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
 
     
