@@ -201,7 +201,7 @@ def generate_final_figure(precision_data, colormap, threshold, main_dir, project
     fig_fn = f"{save_dir}/{subject_input}_{task}_threshold_precision.pdf" if not is_group else f"{save_dir}/group_{task}_threshold_precision.pdf"
 
     print(f"Saving {fig_fn}")
-    fig.write_image(fig_fn)
+    #fig.write_image(fig_fn)
 
 
 def generate_ranking_figure(precision_data, colormap):
@@ -260,7 +260,7 @@ def generate_ranking_figure(precision_data, colormap):
     fig_fn = f"{save_dir}/{subject_input}_{task}_threshold_ranking.pdf" if not is_group else f"{save_dir}/group_{task}_threshold_ranking.pdf"
 
     print(f"Saving {fig_fn}")
-    fig.write_image(fig_fn)
+    #fig.write_image(fig_fn)
 
 
 
@@ -354,7 +354,7 @@ def generate_combined_figure(precision_data, colormap, threshold, thresholds):
     fig_fn = f"{save_dir}/{subject_input}_{task}_stats_figure.pdf" if not is_group else f"{save_dir}/group_{task}_stats_figure.pdf"
 
     print(f"Saving {fig_fn}")
-    fig.write_image(fig_fn)
+    #fig.write_image(fig_fn)
     
     
 
