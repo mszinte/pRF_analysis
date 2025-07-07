@@ -1,0 +1,14 @@
+Pursuit
+1 141 58 100 255
+Saccade
+2 179 148 176 255
+Pursuit_and_Saccade
+3 2 3 87 255
+Vision
+4 165 201 45 255
+Vision_and_Pursuit
+5 87 102 52 255
+Vision_and_Saccade
+6 143 223 225 255
+Vision_and_Pursuit_and_Saccade
+7 150 255 223 255
