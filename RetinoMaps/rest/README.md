@@ -48,9 +48,9 @@ $ ./get_mmp1_clusters_metric_files.sh
 
 $ ./leave_one_out_mmp1_clusters.sh
 
-## 2. Downsampling the task-based results from the 170k to the 91k resolution
+## 2. Downsampling the task-based results from the 170k to the 91k resolution of the fsLR template
 
-Just run this script to perform all the steps required (see the comments in the script itself):
+Just run this script in the resampling folder to perform all the steps required (see the comments in the script itself):
 
 $ ./resample_to_91k.sh
 
