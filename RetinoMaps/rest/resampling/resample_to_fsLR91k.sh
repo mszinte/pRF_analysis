@@ -114,8 +114,8 @@ do
 	### Next we'll rename the label keys to make it nicer
 
 	wb_command -metric-label-import target_91k/sub-"$i"_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.shape.gii \
-	labels/7_vision-pursuit-saccade.txt sub-"$i"_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.label.gii;
+	7_vision-pursuit-saccade.txt sub-"$i"_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.label.gii;
 	wb_command -metric-label-import target_91k/sub-"$i"_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.shape.gii \
-	labels/7_vision-pursuit-saccade.txt sub-"$i"_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.label.gii;
+	7_vision-pursuit-saccade.txt sub-"$i"_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.label.gii;
 
 done
