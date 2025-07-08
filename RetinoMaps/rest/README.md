@@ -50,13 +50,9 @@ $ ./leave_one_out_mmp1_clusters.sh
 
 ## 2. Downsampling the task-based results from the 170k to the 91k resolution of the fsLR template
 
-<<<<<<< HEAD
-Just run this script in the resampling folder to perform all the steps required (see the comments in the script itself):
-=======
 Missing a step to describe how we obtained the left and right shape files for the filtered MMP1 ROIs.
 
 Just run this script to perform all the steps required (see the comments in the script itself):
->>>>>>> main
 
 $ ./resample_to_91k.sh
 
