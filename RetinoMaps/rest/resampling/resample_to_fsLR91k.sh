@@ -1,7 +1,8 @@
 #!/bin/bash
 
-set -e 
-set -x
+# Debugging
+# set -e 
+# set -x
 
 # Get the intertask results path
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
@@ -15,9 +16,9 @@ ATLAS="/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
 	
 	# Output dirs for every subject
 	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
-	OUT_DIR1="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
+	OUT_DIR1="$TASK_RESULTS/sub-${i}/91k/rest/seed/source_170k"
 	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
-	OUT_DIR2="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
+	OUT_DIR2="$TASK_RESULTS/sub-${i}/91k/rest/seed/target_91k"
 
 		### 1. Separate the results by hemisphere
 
@@ -119,7 +120,7 @@ ATLAS="/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
 		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.shape.gii" "" \
 		"$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.label.gii";
 
-		### Next we'll rename the label keys to make it nicer
+		### Next we'll rename the label keys to make it nicer (this part didn't work as expected - probably need to use additional flags)
 
 		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.shape.gii" \
 		7_vision-pursuit-saccade.txt "$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.label.gii";
