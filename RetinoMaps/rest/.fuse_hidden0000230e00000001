@@ -82,7 +82,7 @@ $ ./cifti_compute_median.sh
 
 ## 6. Statistical analysis (contrast maps)
 
-For this part, we are using the Fisher-Z outputs that are masked by the MMP1 clusters (named hollow seed in the folders), thus excluding autocorrelation between nearby vertices. This is still a work in progress; the relevant scripts for now are:
+For this part, we are using the Fisher-Z outputs that are masked by the macro-regions (named hollow seed in the folders), thus excluding autocorrelation between nearby vertices. This is still a work in progress; the relevant scripts for now are:
 
 $ ./cifti_mask_hollow_seed_stats.sh
 
