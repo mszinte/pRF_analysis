@@ -6,7 +6,7 @@
 
 # Get the intertask results path
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS="/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
+ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
 
 # Think about if we want to have a folder for templates
 # TEMPLATE="/projects/pRF_analysis/RetinoMaps/?/fsLR"
