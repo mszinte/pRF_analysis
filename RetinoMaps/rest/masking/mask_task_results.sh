@@ -26,7 +26,6 @@ do
   # Right Hemisphere masks
   for region in rh_mPCS rh_sPCS rh_iPCS rh_sIPS rh_iIPS rh_hMT+ rh_VO rh_LO rh_V3AB rh_V3 rh_V2 rh_V1; do
     wb_command -metric-mask "$OUT_DIR/target_91k/sub-${i}_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.shape.gii" \
-    wb_command -metric-mask "$TASK_RESULTS/sub-${i}_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.shape.gii" \
     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_${region}.shape.gii" \
     "$OUT_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${region}.shape.gii"
   done
