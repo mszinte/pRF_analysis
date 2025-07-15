@@ -47,7 +47,7 @@ if corr_type not in ['full', 'fisher-z']:
 
 # Job parameters
 memory_val = 10        # GB
-proc_time = "0:10:00"  # hours or minutes
+proc_time = "2:00:00"  # hours or minutes
 nb_procs = 16          # number of CPUs
 cluster_name = 'skylake'
 
