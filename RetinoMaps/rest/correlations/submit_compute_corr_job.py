@@ -46,9 +46,9 @@ if corr_type not in ['full', 'fisher-z']:
     sys.exit(1)
 
 # Job parameters
-memory_val = 16        # GB
-hour_proc = 2          # hours
-nb_procs = 32          # number of CPUs
+memory_val = 10        # GB
+proc_time = "2:00:00"  # hours or minutes
+nb_procs = 16          # number of CPUs
 cluster_name = 'skylake'
 
 # Define your actual command based on correlation type
@@ -77,14 +77,14 @@ slurm_cmd = """\
 #SBATCH --nodes=1
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
-#SBATCH --time={hour_proc}:00:00
+#SBATCH --time={proc_time}
 #SBATCH -e {logs_dir}/{subject}_job_%N_%j_%a.err
 #SBATCH -o {logs_dir}/{subject}_job_%N_%j_%a.out
 #SBATCH -J {subject}_{job_suffix}
 """.format(server_project=server_project, 
            cluster_name=cluster_name,
            nb_procs=nb_procs, 
-           hour_proc=hour_proc, 
+           proc_time=proc_time, 
            subject=subject, 
            memory_val=memory_val, 
            logs_dir=logs_dir,
