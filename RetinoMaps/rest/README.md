@@ -70,6 +70,8 @@ $ ./compute_dtseries_corr_bilateral.sh
 
 $ ./compute_dtseries_corr_fisher-z_bilateral.sh
 ```
+Computing the partial correlations using Nilearn (work in progress...)
+
 ## 5. Averaging the connectivity matrices across subjects
 
 First, we need to stack all individual outputs:
@@ -82,7 +84,7 @@ $ ./cifti_compute_median.sh
 ```
 ## 6. Statistical analysis (contrast maps)
 
-For this part, we are using the Fisher-Z outputs that are masked by the MMP1 clusters (named hollow seed in the folders), thus excluding autocorrelation between nearby vertices. This is still a work in progress; the relevant scripts for now are:
+For this part, we are using the Fisher-z outputs that are masked by the MMP1 clusters (named hollow seed in the folders), thus excluding autocorrelation between nearby vertices. This is still a work in progress; the relevant scripts for now are:
 ```bash
 $ ./cifti_mask_hollow_seed_stats.sh
 ```
