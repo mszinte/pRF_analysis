@@ -33,7 +33,7 @@ for ROI in "${ROIS[@]}"; do
     MERGE_CMD=("wb_command" "-cifti-merge" "$OUTPUT_FILE")
 
     for SUB in "${SUBJECTS[@]}"; do
-      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/${SUBFOLDER}/sub-${SUB}_ses-01_task-rest_space-fsLR_den-91k_${DESC}.dscalar.nii"
+      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/${SUBFOLDER}/sub-${SUB}_ses-01_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_masked.dscalar.nii"
       if [[ -f "$INPUT_FILE" ]]; then
         MERGE_CMD+=("-cifti" "$INPUT_FILE")
       else
