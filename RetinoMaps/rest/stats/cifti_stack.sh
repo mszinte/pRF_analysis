@@ -7,6 +7,9 @@
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 OUTPUT_PATH="$TASK_RESULTS/group/91k/rest/"
 
+mkdir "$OUTPUT_PATH/stacked_full_corr"
+mkdir "$OUTPUT_PATH/stacked_fisher-z"
+
 # Define subjects, ROIs, data types
 SUBJECTS=(01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25)
 ROIS=(mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1)
@@ -27,7 +30,7 @@ for ROI in "${ROIS[@]}"; do
     fi
 
     # Final output filename
-    OUTPUT_FILE="$OUTPUT_PATH/group_ses-01_task-rest_space-fsLR_den-91k_${DESC}_stacked.dscalar.nii"
+    OUTPUT_FILE="$OUTPUT_PATH/stacked_$SUBFOLDER/group_ses-01_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_stacked.dscalar.nii"
 
     # Build merge command
     MERGE_CMD=("wb_command" "-cifti-merge" "$OUTPUT_FILE")
