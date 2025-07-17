@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# With this script we go from the stacked files to a median ROI by all target vertices connectivity matrix
+# With this script we go from the stacked files to a median ROI x all target vertices connectivity matrix
 
 # Define base paths
 BASE_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest"
@@ -34,7 +34,7 @@ done
 echo "Processing fisher-z files..."
 cd "$FISHER_SOURCE"
 
-for stacked_file in group_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_fisher-z_*_stacked.dscalar.nii; do
+for stacked_file in group_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_*_stacked.dscalar.nii; do
     if [[ -f "$stacked_file" ]]; then
         # Create name for median file by replacing "stacked" with "median"
         median_file="${stacked_file/stacked/median}"
