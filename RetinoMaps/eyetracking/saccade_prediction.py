@@ -54,8 +54,6 @@ task = 'SacLoc'
 
 # Defind directories 
 eye_tracking_dir = '{}/{}/derivatives/pp_data/{}/eyetracking'.format(main_dir, project_dir, subject)
-fig_dir = '{}/figures'.format(eye_tracking_dir)
-os.makedirs(fig_dir, exist_ok=True)
 
 # Load settings 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
@@ -277,7 +275,9 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     # plt.show()
 
     # ------------------------- Save ---------------------------------------------------- 
-    np.save(f"{eye_tracking_dir}/ /{subject}_run-0{run+1}_saccade_model_x", model_x) 
+    model_dir = '{}/models'.format(eye_tracking_dir)
+    os.makedirs(model_dir, exist_ok=True)
+    np.save(f"{model_dir}/{subject}_run-0{run+1}_saccade_model_x", model_x) 
   
 
 #---------------------------- MODEL Y ----------------------------------------------------------
@@ -387,7 +387,7 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
 
 
     # ------------------------- Save ---------------------------------------------------- 
-    np.save(f"{eye_tracking_dir}/timeseries/{subject}_run-0{run+1}_saccade_model_y", model_y)
+    np.save(f"{eye_tracking_dir}/models/{subject}_run-0{run+1}_saccade_model_y", model_y)
 
 
 
