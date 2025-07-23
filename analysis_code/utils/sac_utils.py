@@ -628,8 +628,8 @@ def predicted_saccade(df_run,settings):
 
 def load_sac_model(file_dir_save, subject, run, eye_data): 
     time_seconds = (eye_data[:, 0] - eye_data[0, 0]) / 100
-    model_x = np.load(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_x.npy")
-    model_y = np.load(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_y.npy")
+    model_x = np.load(f"{file_dir_save}/models/{subject}_run-0{run+1}_saccade_model_x.npy")
+    model_y = np.load(f"{file_dir_save}/models/{subject}_run-0{run+1}_saccade_model_y.npy")
 
     total_length = len(model_x)
     # Interpolate the model to match the eye data time points

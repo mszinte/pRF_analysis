@@ -38,14 +38,16 @@ import ipdb
 deb = ipdb.set_trace
 
 # Imports
-import re
 import os
 import sys
-import glob 
 import json
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go 
+
+# Personal imports
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
+from plot_utils import plotly_template
 
 # Inputs
 main_dir = sys.argv[1]
@@ -53,18 +55,12 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
-# Personal imports
-sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from plot_utils import plotly_template
-
 # Load general settings
 with open('../settings.json') as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 tasks = analysis_info['task_intertask'][0]
 prf_task_name = analysis_info['prf_task_name']
-subjects = analysis_info['subjects']
-
 
 # General figure settings
 template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
@@ -102,7 +98,11 @@ colormap_subject_dict = {'sub-01': '#AA0DFE',
                          'sub-25': '#FC1CBF'}
 
 
-for task in tasks :
+for task in tasks:
+    if task == prf_task_name:
+        subjects = [s for s in analysis_info['subjects'] if s != 'sub-01']
+    else:
+        subjects = analysis_info['subjects']
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
     task_settings_path = os.path.join(base_dir, project_dir, '{}_settings.json'.format(task))
     with open(task_settings_path) as f:
@@ -122,9 +122,7 @@ for task in tasks :
     ppd = settings['ppd']
     
     threshold = settings['threshold']
-    
-
-       
+           
     precision_data = {}
     for subject_to_group in subjects:
         # Defind directories
@@ -174,8 +172,9 @@ for task in tasks :
     
     print(f"Saving {fig_fn}")
     fig.write_image(fig_fn)
+    fig.write_image(fig_fn)
     
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
