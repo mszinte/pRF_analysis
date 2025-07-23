@@ -20,8 +20,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
-python timeseries_figures.py /scratch/mszinte/data RetinoMaps sub-01  327
-python timeseries_figures.py /Users/uriel/disks/meso_shared/ RetinoMaps sub-01 327
+python timeseries_figures.py /scratch/mszinte/data RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -118,29 +117,47 @@ for task in tasks :
 
     for run in range(num_run):
             
-            prediction = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz", compression='gzip', delimiter='\t')
-            pred_x_intpl =  prediction['pred_x']
-            pred_y_intpl =  prediction['pred_y']
-                    
-            # load eye data 
+        prediction = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz", compression='gzip', delimiter='\t')
+        pred_x_intpl =  prediction['pred_x']
+        pred_y_intpl =  prediction['pred_y']
+                
+        # load eye data 
+        if task != prf_task_name :
             eye_data_run_01 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
             eye_data_run_02 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
             eye_data_all_runs = [eye_data_run_01[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(), eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
+        else : 
+            eye_data_run_01 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_run_02 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_run_03 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_03_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_run_04 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_04_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+            eye_data_run_05 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_05_eyedata.tsv.gz", compression='gzip', delimiter='\t')
             
-            # Define the start and end indices for each slice
-            slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
-            for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
+            eye_data_all_runs = [
+                eye_data_run_01[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(),
+                eye_data_run_02[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(),
+                eye_data_run_03[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(),
+                eye_data_run_04[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(),
+                eye_data_run_05[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
+            ]
             
-                fig = plotly_layout_template(task, run)
+        # Define the start and end indices for each slice
+        slice_indices_mov_seq = [(int(all_run_durations[run][i]), int(all_run_durations[run][i+33])) for i in range(15, 161, 48)]
+        for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
+        
+            fig = plotly_layout_template(task, run)
+            try :
                 fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-                fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
-                fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
-                fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
-                fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
-                fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
-                fig_fn = f"{fig_dir}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
-                print(f'Saving {fig_fn}')
-                fig.write_image(fig_fn)
+            except Exception:
+                deb()
+            fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
+            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
+            fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
+            fig.add_trace(go.Scatter(x=eye_data_all_runs[run][start:end][:, 1], y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=1, col=2)
+            fig.add_trace(go.Scatter(x=pred_x_intpl[start:end], y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=2)
+            fig_fn = f"{fig_dir}/{subject}_task-{task}_run-0{run+1}_{count}_prediction.pdf"
+            print(f'Saving {fig_fn}')
+            fig.write_image(fig_fn)
 
 
 
