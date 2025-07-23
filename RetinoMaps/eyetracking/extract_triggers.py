@@ -271,6 +271,10 @@ for task in tasks :
         
         elif subject == 'sub-11': 
             time_start_trial[0,0,1] = 13948433
+            
+        elif subject == 'sub-13': 
+            time_start_trial[0,1,0] = 3367606
+            time_start_trial[0,7,0] = 3540513
         
         elif subject == 'sub-21': 
             time_start_trial[0,3,0] = 10231379

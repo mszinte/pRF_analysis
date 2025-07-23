@@ -70,8 +70,10 @@ for task in tasks :
     settings_path = os.path.join(base_dir, project_dir, '{}_settings.json'.format(task))
     with open(settings_path) as f:
         settings = json.load(f)
-    
-    ses = settings['session']
+    if subject == 'sub-01':
+        if task == 'pRF': ses = 'ses-02'
+        else: ses = 'ses-01'
+    else: ses = settings['session']
     eye = settings['eye']
     num_run = settings['num_run']
     num_seq = settings['num_seq']
@@ -122,6 +124,7 @@ for task in tasks :
         
         elif task == "pRF": 
 
+            
     
             eye_data_run_01 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
             eye_data_run_02 = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
@@ -135,9 +138,14 @@ for task in tasks :
                                  eye_data_run_04[['timestamp', 'x', 'y', 'pupil_size']].to_numpy(),
                                  eye_data_run_05[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()]
             
+
+            # Save prediction x and y as tsv.gz
             pred_x_intpl = np.zeros(len(eye_data_all_runs[run]))
             pred_y_intpl = np.zeros(len(eye_data_all_runs[run]))
-            
+            prediction = np.stack((pred_x_intpl, pred_y_intpl), axis=1)
+            prediction = pd.DataFrame(prediction, columns=['pred_x', 'pred_y'])
+            pred_file_path = f'{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_0{run+1}_prediction.tsv.gz'
+            prediction.to_csv(pred_file_path, sep='\t', index=False, compression='gzip')
             
             eucl_dist =  euclidean_distance(eye_data_all_runs,pred_x_intpl, pred_y_intpl, run)
     
