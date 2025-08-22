@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
+sys.argv[6]: OPTIONAL settings file name (e.g. settings_EM_shift.json)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -25,7 +26,7 @@ python prf_gridfit.py [main directory] [project name] [subject name]
 Exemple:
 python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-02 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@univ-amu.fr)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -65,13 +66,15 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
+if len(sys.argv) > 6: settings_filename = sys.argv[6]
+else: settings_filename = "settings.json"
 n_batches = n_jobs
 verbose = True
 gauss_params_num = 8
 
 # Analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, settings_filename)
 
 with open(settings_path) as f:
     json_s = f.read()
@@ -82,7 +85,7 @@ TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
 gauss_grid_nr = analysis_info['gauss_grid_nr']
-max_ecc_size = analysis_info['max_ecc_size']
+max_ecc_size = analysis_info['max_ecc_csize']
 prf_task_name = analysis_info['prf_task_name']
 
 # Define directories
@@ -97,10 +100,10 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 fit_fn_gauss_gridfit = input_fn.split('/')[-1]
-fit_fn_gauss_gridfit = fit_fn_gauss_gridfit.replace('bold', 'prf-fit_gauss_gridfit')
+fit_fn_gauss_gridfit = fit_fn_gauss_gridfit.replace('bold', '{}-fit_gauss_gridfit'.format(prf_task_name))
 
 pred_fn_gauss_gridfit = input_fn.split('/')[-1]
-pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', 'prf-pred_gauss_gridfit')
+pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', '{}-pred_gauss_gridfit'.format(prf_task_name))
 
 # Get task specific visual design matrix
 vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
