@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
+sys.argv[6]: OPTIONAL settings file name (e.g. settings_EM_shift.json)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -25,22 +26,24 @@ python prf_submit_gridfit_jobs.py [main directory] [project name] [subject]
 Exemple:
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@univ-amu.fr)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
-# stop warnings
+# Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
 
-# general imports
-import os
-import json
-import sys
-import glob
+# Debug 
 import ipdb
 deb = ipdb.set_trace
+
+# General imports
+import os
+import sys
+import glob
+import json
 
 # inputs
 main_dir = sys.argv[1]
@@ -48,15 +51,21 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+if len(sys.argv) > 6: settings_filename = sys.argv[6]
+else: settings_filename = "settings.json"
 memory_val = 30
 hour_proc = 2
 nb_procs = 8
 
 # cluster settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, settings_filename)
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
+prf_task_name = analysis_info['prf_task_name']
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -66,10 +75,15 @@ chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
-dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-pRF_*avg*.dtseries.nii".format(pp_dir,subject)
-dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-pRF_*avg*.func.gii".format(pp_dir,subject)
+if prf_task_name == 'prf_EM_shift':
+    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-prf_*avg*.dtseries.nii".format(pp_dir, subject)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-prf_*avg*.func.gii".format(pp_dir, subject)
+else:
+    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-{}_*avg*.dtseries.nii".format(pp_dir, subject, prf_task_name)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-{}_*avg*.func.gii".format(pp_dir, subject, prf_task_name)
 
 pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
+
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):
@@ -104,11 +118,11 @@ for fit_num, pp_fn in enumerate(pp_fns):
            subject=subject, memory_val=memory_val, log_dir=prf_logs_dir)
 
     # define fit cmd
-    fit_cmd = "python prf_gridfit.py {} {} {} {} {} ".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs )
+    fit_cmd = "python prf_gridfit.py {} {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs, settings_filename)
     
     # create sh
-    sh_fn = "{}/jobs/{}_prf_gridfit-{}.sh".format(prf_dir, subject, fit_num)
+    sh_fn = "{}/jobs/{}_{}_gridfit-{}.sh".format(prf_dir, subject, prf_task_name, fit_num)
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
                                         chmod_cmd, chgrp_cmd))

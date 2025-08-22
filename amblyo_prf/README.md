@@ -18,3 +18,8 @@ Adrien CHOPIN, Dennis LEVI, Uriel LASCOMBES, Jian DING, Yasha SHEYNIN, Michael S
 - [x] Merge all css pycortex and pRF derivatives and pcm main figures for **group-patient**, **group-patient_control**, **group-aniso**, **group-strab**, **group-mixed**  [merge_fig_css.py](analysis_code/intergroup/merge_fig_css.py)
 - [x] Compute inter-group results and stats [compute_inter-group.ipynb](analysis_code/inter-group/compute_inter-group.ipynb)
 - [x] Make inter-group figures [make_inter-group_fig.ipynb](analysis_code/inter-group/make_inter-group_fig.ipynb)
+
+
+### Control eyetracking analysis
+
+- [ ] Create a visual design matrix that shift as a function of an amblyope suject eye movement dataset
