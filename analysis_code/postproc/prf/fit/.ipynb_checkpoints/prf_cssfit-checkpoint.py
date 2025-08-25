@@ -66,6 +66,7 @@ input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
+
 n_batches = n_jobs
 verbose = True
 css_params_num = 9

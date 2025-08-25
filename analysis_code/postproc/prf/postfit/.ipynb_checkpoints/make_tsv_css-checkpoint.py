@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: server group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 TSV file
@@ -18,7 +19,8 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
->> python make_tsv_css.py [main directory] [project name] [subject num] [group]
+>> python make_tsv_css.py [main directory] [project name] 
+                          [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -61,6 +63,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -88,9 +92,11 @@ set_pycortex_config_file(cortex_dir)
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     
     # Define directories and fn
-    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
+    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
+        main_dir, project_dir, subject, format_, output_folder)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
-    vert_area_dir = "{}/{}/derivatives/pp_data/{}/{}/vertex_area".format(main_dir, project_dir, subject, format_)
+    vert_area_dir = "{}/{}/derivatives/pp_data/{}/{}/vertex_area".format(
+        main_dir, project_dir, subject, format_)
     tsv_dir = "{}/tsv".format(prf_dir)
     os.makedirs(tsv_dir, exist_ok=True)
     tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
@@ -124,12 +130,12 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
 
             # Get roi mask
             roi_verts = get_rois(subject=subject, 
-                                 return_concat_hemis=False, 
-                                 return_hemi=hemi, 
-                                 rois=rois,
-                                 mask=True, 
-                                 atlas_name=None, 
-                                 surf_size=None)
+                                  return_concat_hemis=False, 
+                                  return_hemi=hemi, 
+                                  rois=rois,
+                                  mask=True, 
+                                  atlas_name=None, 
+                                  surf_size=None)
 
             # Create and combine pandas df for each roi and brain hemisphere
             for roi in roi_verts.keys():
@@ -160,7 +166,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         # Vertex area
         vertex_area_fn = '{}/{}_vertex_area.dtseries.nii'.format(vert_area_dir, subject)
         vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-
+        
         # Combine all derivatives
         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
 
@@ -172,6 +178,19 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                                             mask=True,
                                             atlas_name='mmp_group',
                                             surf_size='170k')
+        
+        # get MMP rois img
+        roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+        roi_fn = '{}/{}_rois_mmp.dtseries.nii'.format(roi_dir, subject)
+        roi_img, roi_mat = load_surface(roi_fn)
+        
+        # get MMP rois numbers tsv
+        mmp_rois_numbers_tsv_fn = '{}/db/sub-170k/mmp_rois_numbers.tsv'.format(cortex_dir)
+        mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+        
+        # Replace rois nums by names
+        roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
+                                                        mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
 
         # Create and combine pandas df for each roi and brain hemisphere
         for hemi in ['hemi-L', 'hemi-R']:
@@ -181,6 +200,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             for roi in roi_verts.keys():
                 data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
                 data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
                 data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                 data_dict['num_vert'] = np.where(roi_verts[roi])[0]

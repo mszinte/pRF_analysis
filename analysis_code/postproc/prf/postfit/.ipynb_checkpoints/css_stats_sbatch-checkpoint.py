@@ -3,7 +3,7 @@
 css_stats_sbatch.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Run computation of CSS population cortical magnification
+Run computation of CSS pRF stats
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project number (e.g. b327)
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 sh file for running batch command
@@ -19,7 +20,7 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/stats
 2. run python command
->> python css_stats_sbatch.py [main directory] [project] [subject] [group] [server]
+>> python css_stats_sbatch.py [main directory] [project] [subject] [group] [server] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
@@ -52,6 +53,8 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -68,12 +71,10 @@ memory_val = 48
 hour_proc = 1
 
 # Set folders
-log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, 
-                                                            project_dir, 
-                                                            subject)
-job_dir = "{}/{}/derivatives/pp_data/{}/jobs".format(main_dir, 
-                                                     project_dir, 
-                                                     subject)
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/{}".format(
+    main_dir, project_dir, subject, output_folder)
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs/{}".format(
+    main_dir, project_dir, subject, output_folder)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 
@@ -92,8 +93,8 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_stats_cmd = "python compute_css_stats.py {} {} {} {}".format(
-    main_dir, project_dir, subject, group)
+compute_stats_cmd = "python compute_css_stats.py {} {} {} {} {}".format(
+    main_dir, project_dir, subject, group, output_folder)
 
 # Create sh fn
 sh_fn = "{}/{}_css_stats.sh".format(job_dir, subject)
