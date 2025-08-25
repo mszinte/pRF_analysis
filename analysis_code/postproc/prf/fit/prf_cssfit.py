@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -20,9 +21,9 @@ To run:
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
-                     [inout file name] [number of jobs]
+                     [inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -63,6 +64,8 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 n_batches = n_jobs
 verbose = True
 css_params_num = 9
@@ -91,14 +94,14 @@ set_pycortex_config_file(cortex_dir)
 
 # Define directories and files names (fn)
 if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
     rois = analysis_info['mmp_rois']
 
 elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
     rois = analysis_info['rois']
 
@@ -110,7 +113,7 @@ pred_fn_css = pred_fn_css.replace('bold', 'prf-pred_css')
 
 # Get task specific visual design matrix
 vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+    main_dir, project_dir, output_folder, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # Define model parameter grid range
