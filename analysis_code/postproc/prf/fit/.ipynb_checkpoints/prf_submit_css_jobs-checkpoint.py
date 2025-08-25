@@ -119,8 +119,8 @@ for fit_num, pp_fn in enumerate(pp_fns):
            log_dir=prf_logs_dir)
 
     # Define fit cmd
-    fit_cmd = "python prf_cssfit.py {} {} {} {} {} ".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs )
+    fit_cmd = "python prf_cssfit.py {} {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
     
     # Create sh
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)

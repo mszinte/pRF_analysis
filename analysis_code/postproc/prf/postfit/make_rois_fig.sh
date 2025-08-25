@@ -9,6 +9,7 @@
 # input[1]: project code directory
 # input[2]: project name (correspond to directory)
 # input[3]: main data directory (correspond to directory)
+# input[4]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # All ROI based figures 
@@ -17,7 +18,7 @@
 # 1. cd to function
 # >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
 # 2. run shell command
-# >> sh make_rois_fig.sh [code directory] [project name] [main directory]
+# >> sh make_rois_fig.sh [code directory] [project name] [main directory] [analysis folder]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
@@ -31,7 +32,7 @@
 
 # Check if the base path, project name, and data path are provided as arguments
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <base_path> <project_name> <data_path>"
+    echo "Usage: $0 <base_path> <project_name> <data_path> [output_folder]"
     exit 1
 fi
 
@@ -39,6 +40,14 @@ fi
 base_path="$1"
 project_name="$2"
 data_path="$3"
+
+# Define optional argument (4th) with default = "prf"
+if [ -n "$4" ]; then
+    output_folder="$4"
+else
+    output_folder="prf"
+fi
+
 # Define the path to the settings.json file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.json"
 
@@ -52,5 +61,5 @@ subjects=$(python -c "import json; data = json.load(open('$settings_file')); pri
 for subject in $subjects
 do
     echo "Processing make_rois_fig.py for: $subject"
-    python make_rois_fig.py "$data_path" "$project_name" "$subject" 327
+    python make_rois_fig.py "$data_path" "$project_name" "$subject" 327 "$output_folder"
 done
