@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -20,9 +21,9 @@ To run:
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
-                     [inout file name] [number of jobs]
+                     [inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -31,27 +32,27 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
 # General imports
 import os
 import sys
 import json
-import ipdb
 import datetime
-import importlib
 import numpy as np
-deb = ipdb.set_trace
 
 # MRI analysis imports
+import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel, CSS_Iso2DGaussianModel
 from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
-import nibabel as nb
-import cortex
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import load_surface ,make_surface_image
-from pycortex_utils import set_pycortex_config_file, data_from_rois
+from pycortex_utils import data_from_rois, set_pycortex_config_file
 from maths_utils import r2_score_surf
 
 # Get inputs
@@ -63,12 +64,17 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 n_batches = n_jobs
 verbose = True
 css_params_num = 9
 
 # Analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 screen_size_cm = analysis_info['screen_size_cm']
@@ -82,16 +88,20 @@ rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
 
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
+
 # Define directories and files names (fn)
 if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
     rois = analysis_info['mmp_rois']
 
 elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
     rois = analysis_info['rois']
 
@@ -103,7 +113,7 @@ pred_fn_css = pred_fn_css.replace('bold', 'prf-pred_css')
 
 # Get task specific visual design matrix
 vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+    main_dir, project_dir, output_folder, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # Define model parameter grid range

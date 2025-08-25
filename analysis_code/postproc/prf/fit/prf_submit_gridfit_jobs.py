@@ -11,7 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
-sys.argv[6]: OPTIONAL settings file name (e.g. settings_EM_shift.json)
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -21,10 +21,11 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_gridfit_jobs.py [main directory] [project name] [subject] 
-                                  [group] [server project]
+                                  [group] [server project] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327 prf_em_ctrl
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@univ-amu.fr)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -51,15 +52,15 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-if len(sys.argv) > 6: settings_filename = sys.argv[6]
-else: settings_filename = "settings.json"
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 memory_val = 30
 hour_proc = 2
 nb_procs = 8
 
 # cluster settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, settings_filename)
+settings_path = os.path.join(base_dir, project_dir, 'settings.json')
 
 with open(settings_path) as f:
     json_s = f.read()
@@ -87,19 +88,19 @@ pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns)
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/170k/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/fsnative/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
@@ -119,10 +120,10 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # define fit cmd
     fit_cmd = "python prf_gridfit.py {} {} {} {} {} {}".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs, settings_filename)
+        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
     
     # create sh
-    sh_fn = "{}/jobs/{}_{}_gridfit-{}.sh".format(prf_dir, subject, prf_task_name, fit_num)
+    sh_fn = "{}/jobs/{}_prf_gridfit-{}.sh".format(prf_dir, subject, fit_num)
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
                                         chmod_cmd, chgrp_cmd))
