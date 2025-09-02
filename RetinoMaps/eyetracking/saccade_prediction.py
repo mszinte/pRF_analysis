@@ -7,68 +7,53 @@ Generate prediction for SacLoc task (combining target position with saccade
 on- and offsets)
 -----------------------------------------------------------------------------------------
 Input(s):
-sys.argv[1]: main directory 
-sys.argv[2]: project directory 
-sys.argv[3]: subject 
-sys.argv[4]: task
-sys.argv[5]: group 
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: subject name
+sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 tsv.gz timeseries of Prediction
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
-python saccade_prediction.py /scratch/mszinte/data RetinoMaps sub-02 SacLoc 327
+python saccade_prediction.py /scratch/mszinte/data RetinoMaps sub-01 327
+-----------------------------------------------------------------------------------------
+Written by Sina Kling
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
 
-import numpy as np 
-import math 
-import glob 
-import pandas as pd
-import scipy.io
-import json 
-import matplotlib.pyplot as plt
-import h5py
-import sys
+# Debug
+import ipdb
+deb = ipdb.set_trace
+
+# Imports
 import os
+import sys
+import h5py
+import json 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# path of utils folder  
+# Personal imports
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from eyetrack_utils import load_event_files
 from sac_utils import predicted_saccade, add_missing_sac_rows
 
-# --------------------- Load settings and inputs -------------------------------------
+# Inputs
+main_dir = sys.argv[1]
+project_dir = sys.argv[2]
+subject = sys.argv[3]
+group = sys.argv[4]
+task = 'SacLoc'
 
-def load_settings(settings_file):
-    with open(settings_file) as f:
-        settings = json.load(f)
-    return settings
-
-def load_events(main_dir, subject, ses, task): 
-    data_events = load_event_files(main_dir, subject, ses, task)
-    return data_events 
-
-def load_inputs():
-    return sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
-
-def interp1d(array: np.ndarray, new_len: int) -> np.ndarray:
-    la = len(array)
-    return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
-
-def ensure_save_dir(base_dir, subject):
-    save_dir = f"{base_dir}/{subject}/eyetracking"
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    return save_dir
-
-
-# Load inputs and settings
-main_dir, project_dir, subject, task, group = load_inputs()
-
-file_dir_save = ensure_save_dir(f'{main_dir}/{project_dir}/derivatives/pp_data', subject)
-fig_dir_save = f'{file_dir_save}/figures'
-os.makedirs(fig_dir_save, exist_ok=True)
+# Defind directories 
+eye_tracking_dir = '{}/{}/derivatives/pp_data/{}/eyetracking'.format(main_dir, project_dir, subject)
 
 # Load settings 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
@@ -82,7 +67,7 @@ else: ses = settings['session']
 trials_out = settings["trials_out"]
 trials_in = settings["trials_in"]
 
-h5_filename = f'{file_dir_save}/stats/{subject}_task-{task}_eyedata_sac_stats.h5'
+h5_filename = f'{eye_tracking_dir}/stats/{subject}_task-{task}_eyedata_sac_stats.h5'
 h5_file = h5py.File(h5_filename,'r')
 time_start_trial = np.array(h5_file['time_start_trial'])
 time_end_trial = np.array(h5_file['time_end_trial'])
@@ -90,7 +75,6 @@ time_start_seq = np.array(h5_file['time_start_seq'])
 time_end_seq = np.array(h5_file['time_end_seq'])
 time_start_eye = np.array(h5_file['time_start_eye'])
 time_end_eye = np.array(h5_file['time_end_eye'])
-
 
 # Load event files
 data_events = load_event_files(main_dir, project_dir, subject, ses, task)
@@ -101,18 +85,15 @@ for i, run in enumerate(data_events):
     df_run = pd.read_csv(run, sep="\t")
     dfs_runs.append(df_run)
 
-
 # Load eye data 
-
-eye_data_run_01_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_01_nan_blink_interpol = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_01_eyedata.tsv.gz", compression='gzip', delimiter='\t')
 eye_data_run_01_nan_blink_interpol = eye_data_run_01_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
-eye_data_run_02_nan_blink_interpol = pd.read_csv(f"{file_dir_save}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
+eye_data_run_02_nan_blink_interpol = pd.read_csv(f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_02_eyedata.tsv.gz", compression='gzip', delimiter='\t')
 eye_data_run_02_nan_blink_interpol = eye_data_run_02_nan_blink_interpol[['timestamp', 'x', 'y', 'pupil_size']].to_numpy()
 
 eye_data_all_runs = [eye_data_run_01_nan_blink_interpol,eye_data_run_02_nan_blink_interpol]
 
 # Saccade output 
-
 saccade_output = np.array(h5_file['saccades_output'])
 
 columns = [
@@ -291,10 +272,12 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     plt.title(f'Run {run + 1 } Model Using Saccade Onsets and Offsets with Interpolation')
     plt.grid(True)
     plt.legend()
-    plt.show()
+    # plt.show()
 
     # ------------------------- Save ---------------------------------------------------- 
-    np.save(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_x", model_x) 
+    model_dir = '{}/models'.format(eye_tracking_dir)
+    os.makedirs(model_dir, exist_ok=True)
+    np.save(f"{model_dir}/{subject}_run-0{run+1}_saccade_model_x", model_x) 
   
 
 #---------------------------- MODEL Y ----------------------------------------------------------
@@ -400,18 +383,18 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     plt.title(f'Run {run +1} Model Using Saccade Onsets and Offsets with Interpolation')
     plt.grid(True)
     plt.legend()
-    plt.show()
+    # plt.show()
 
 
     # ------------------------- Save ---------------------------------------------------- 
-    np.save(f"{file_dir_save}/timeseries/{subject}_run-0{run+1}_saccade_model_y", model_y)
+    np.save(f"{eye_tracking_dir}/models/{subject}_run-0{run+1}_saccade_model_y", model_y)
 
 
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
     
 
 

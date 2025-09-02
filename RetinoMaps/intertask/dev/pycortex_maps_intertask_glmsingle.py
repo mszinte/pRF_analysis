@@ -67,6 +67,8 @@ prf_task_name = analysis_info['prf_task_name']
 alpha_range = analysis_info["alpha_range"]
 group_tasks = analysis_info['task_intertask']
 
+# group_tasks = [['PurLoc', 'SacLoc', 'pRF']] # To remove !!!!
+
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -105,13 +107,18 @@ create_colormap(cortex_dir=cortex_dir,
 
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: 
+        print(tasks)
         suffix = 'SacVE_PurVE'
-        sac_task = 'SacLoc'
-        pur_task = 'PurLoc'
-    else : 
-        suffix = 'Sac_Pur'
         sac_task = 'SacVELoc'
         pur_task = 'PurVELoc'
+        print(suffix)
+    else : 
+        print(tasks)
+        suffix = 'Sac_Pur'
+        sac_task = 'SacLoc'
+        pur_task = 'PurLoc'
+        print(suffix)
+
     for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         # Define directories and fn
         intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask_glmsingle".format(

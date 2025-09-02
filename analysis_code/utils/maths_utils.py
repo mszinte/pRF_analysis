@@ -48,7 +48,7 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
 
         if weight_reg_nan.size >= 2:
             # Perform curve fitting
-            params, _ = curve_fit(model_function, x_reg_nan, y_reg_nan, sigma=weight_reg_nan)
+            params, _ = curve_fit(model_function, x_reg_nan, y_reg_nan, sigma=weight_reg_nan, maxfev=10000)
             c, d = params
         else:
             c, d = np.nan, np.nan
@@ -137,6 +137,7 @@ def weighted_nan_median(data, weights):
         return np.nan
 
     # Sort the data and corresponding weights
+    masked_data = pd.to_numeric(masked_data, errors='coerce').dropna()
     sorted_indices = np.argsort(masked_data)
     sorted_data = masked_data.iloc[sorted_indices].reset_index(drop=True)
     sorted_weights = masked_weights.iloc[sorted_indices].reset_index(drop=True)
@@ -283,7 +284,7 @@ def r2_score_surf(bold_signal, model_prediction):
     
     return r2_scores
 
-def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha=None):
+def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha=None, use_fisher=False):
     """
     Perform linear regression analysis between model predictions and BOLD signals across vertices.
 
@@ -295,6 +296,7 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
                                 'holm', 'simes-hochberg', 'hommel', 'fdr_bh', 'fdr_by', 'fdr_tsbh', 'fdr_tsbky'.
                                 Default is 'fdr_bh'.
     alpha (float or list of floats, optional): The significance level(s) for the tests. Default is 0.01.
+    use_fisher (bool, optional): If True, use Fisher's z-score and p-value instead of Pearson's r and p-value. Default is False.
 
     Returns:
     vertex_results (numpy.ndarray): Array containing the results of linear regression analysis for each vertex.
@@ -311,7 +313,20 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
     import numpy as np
     from scipy import stats
     from statsmodels.stats.multitest import multipletests
+
+    def fisher_z(r):
+        """Convert Pearson correlation coefficient to Fisher's z-score."""
+        if r <= -1 or r >= 1:
+            raise ValueError("Pearson correlation coefficient must be in the range (-1, 1).")
+        return 0.5 * np.log((1 + r) / (1 - r))
     
+    def fisher_z_p_value(z, n):
+        """Calculate the two-tailed p-value from Fisher's z-score."""
+
+        se = 1 / np.sqrt(n - 3)  # Standard error
+        z_stat = z / se  # Z-statistic
+        return 2 * (1 - stats.norm.cdf(np.abs(z_stat)))  # Two-tailed p-value
+
     if not isinstance(alpha, list):
         alpha = [alpha]
         
@@ -327,7 +342,10 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
 
     # Define output size
     num_vertices = bold_signal.shape[1]
-    num_base_output = 6                         # Number of outputs per vertex (slope, intercept, rvalue, pvalue, trs)
+    if use_fisher:
+        num_base_output = 7                         # Number of outputs per vertex (slope, intercept, rvalue, fisher_z pvalue, stderr, trs)
+    else:
+        num_base_output = 6                         # Number of outputs per vertex (slope, intercept, rvalue, pvalue, stderr, trs)
     num_output = num_base_output + len(alpha)   # Add the desired corrected p-values
 
     # Array to store results for each vertex
@@ -337,22 +355,38 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
     p_values = np.full(num_vertices, np.nan)
 
     for i, vert in enumerate(valid_vertices):
+        # Perform linear regression
         result = stats.linregress(x=model_prediction[:, vert],
                                   y=bold_signal[:, vert],
                                   alternative='two-sided')
-        p_values[vert] = result.pvalue
-        trs = model_prediction.shape[0]
-
-        # Store results in the array
-        vertex_results[:, vert] = [result.slope, 
-                                   result.intercept, 
-                                   result.rvalue, 
-                                   result.pvalue, 
-                                   result.stderr,
-                                   trs] + [np.nan]*len(alpha)
+        
+        # If using Fisher's z-score
+        if use_fisher:
+            r_value = result.rvalue
+            n = model_prediction.shape[0]  # Number of time points
+            z_score = fisher_z(r_value)
+            p_value = fisher_z_p_value(z_score, n)
+            p_values[vert] = p_value
+            vertex_results[:, vert] = [result.slope, 
+                                       result.intercept, 
+                                       result.rvalue, 
+                                       z_score,  # Use Fisher's z-score
+                                       p_value,   # Use Fisher's p-value
+                                       result.stderr,
+                                       n] + [np.nan]*len(alpha)
+        else:
+            # Use standard Pearson values
+            trs = model_prediction.shape[0]
+            vertex_results[:, vert] = [result.slope, 
+                                       result.intercept, 
+                                       result.rvalue, 
+                                       result.pvalue, 
+                                       result.stderr,
+                                       trs] + [np.nan]*len(alpha)
+            p_values[vert] = result.pvalue
 
     # Apply multiple testing correction
-    if correction:
+    if correction and valid_vertices.size > 0:
         for n_alphas, alpha_val in enumerate(alpha):
             p_values_corrected = multipletests(p_values[valid_vertices], 
                                                method=correction,
@@ -445,11 +479,15 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
     """
     import pandas as pd
     import numpy as np
+    df_distribution = pd.DataFrame()
     for j, roi in enumerate(rois) :
         # Make df_distribution
         #-------------------
         # Roi data frame
         df_roi = data.loc[data.roi == roi].reset_index()
+        if df_roi.empty:
+            print(f"[WARNING] No data for ROI: {roi}")
+            continue  # skip this ROI
         
         gauss_z_tot = np.zeros((grain,grain)) 
         for vert in range(len(df_roi)):

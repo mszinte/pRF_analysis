@@ -66,14 +66,16 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
+subjects_to_group = analysis_info['subjects']
+group_tasks = analysis_info['task_intertask']
+
+# Threshold settings
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
 amplitude_threshold = analysis_info['amplitude_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
-subjects_to_group = analysis_info['subjects']
-group_tasks = analysis_info['task_intertask']
 
 with open('../figure_settings.json') as f:
     json_s = f.read()
@@ -86,6 +88,7 @@ screen_side = figure_info['screen_side']
 gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
 hot_zone_percent = figure_info['hot_zone_percent']
 categories_to_plot = figure_info['categories_to_plot']
+
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: suffix = 'SacVE_PurVE'
     else : suffix = 'Sac_Pur'
@@ -102,33 +105,22 @@ for tasks in group_tasks :
             
             tsv_fn = '{}/{}_intertask-all_derivatives_{}.tsv'.format(tsv_dir, subject, suffix)
             data = pd.read_table(tsv_fn, sep="\t")
-            raw_data = data.copy()
 
-
-            # Threshold data (replace by nan)
+            # replace nan in pcm by non_computed 
             data.loc[data['all'] != 'vision', 
 ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
 ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
 
+            # Threshold data (replace by nan)
+            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
             data.loc[(data.amplitude < amplitude_threshold) |
-                      (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                      (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
-                      (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-                      (data.prf_loo_r2 < rsqr_threshold)] = np.nan
+                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                     (data.prf_loo_r2 < rsqr_threshold) |
+                     (data[stats_col] > stats_threshold)] = np.nan
             data = data.dropna()
-
-            # Categories proportions 
-            # ----------------------
-            df_categories = raw_data[raw_data['all'] != 'non_responding']
-            # Sort categories to have categories in the good order for plot 
-            categories_order = ['vision', 'vision_and_pursuit_and_saccade', 'pursuit_and_saccade', 'vision_and_saccade', 'vision_and_pursuit', 'saccade', 'pursuit']
-            df_categories['all'] = pd.Categorical(df_categories['all'], categories=categories_order, ordered=True)
-            df_categories = df_categories.sort_values(['roi', 'all'])
-            
-            
-            tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
-            print('Saving tsv: {}'.format(tsv_categories_fn))
-            df_categories.to_csv(tsv_categories_fn, sep="\t", na_rep='NaN', index=False)
             
             # loop over categories
             for categorie_to_plot in categories_to_plot : 
@@ -188,7 +180,7 @@ for tasks in group_tasks :
                 # --------
                 ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
                 for num_roi, roi in enumerate(rois):
-                    df_roi = data.loc[(data.roi == roi)]
+                    df_roi = data_categorie.loc[(data_categorie.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
                     df_ecc_size_bin = pd.DataFrame()
                     df_ecc_size_bin['roi'] = [roi]*num_ecc_size_bins
@@ -209,7 +201,7 @@ for tasks in group_tasks :
                 
                 # Ecc.pCM
                 # --------
-                data_pcm = data.loc[data.pcm_median != 'non_computed']
+                data_pcm = data_categorie.loc[data_categorie.pcm_median != 'non_computed']
                 ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_pcm.loc[(data.roi == roi)]
@@ -234,12 +226,12 @@ for tasks in group_tasks :
                 # Polar angle
                 # -----------
                 theta_slices = np.linspace(0, 360, num_polar_angle_bins, endpoint=False)
-                data['prf_polar_angle'] = np.mod(np.degrees(np.angle(data.polar_real + 1j * data.polar_imag)), 360) 
+                data_categorie['prf_polar_angle'] = np.mod(np.degrees(np.angle(data_categorie.polar_real + 1j * data_categorie.polar_imag)), 360) 
                 hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                 for i, hemi in enumerate(hemis):
                     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                     for j, roi in enumerate(rois): #
-                        df = data.loc[(data.roi==roi) & (data.hemi.isin(hemi_values))]
+                        df = data_categorie.loc[(data_categorie.roi==roi) & (data_categorie.hemi.isin(hemi_values))]
                         if len(df): 
                             df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=num_polar_angle_bins))
                             loo_r2_sum = df_bins['prf_loo_r2'].sum()
@@ -264,8 +256,8 @@ for tasks in group_tasks :
                 # Contralaterality
                 # ----------------         
                 for j, roi in enumerate(rois):
-                    df_rh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-R')]
-                    df_lh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-L')]
+                    df_rh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-R')]
+                    df_lh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-L')]
                     try: contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0].prf_loo_r2) + \
                                                   sum(df_lh.loc[df_lh.prf_x > 0].prf_loo_r2)) / \
                                                 (sum(df_rh.prf_loo_r2) + sum(df_lh.prf_loo_r2))
@@ -287,53 +279,26 @@ for tasks in group_tasks :
                 hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                 for i, hemi in enumerate(hemis):
                     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                    data_hemi = data.loc[data.hemi.isin(hemi_values)]
+                    data_hemi = data_categorie.loc[data_categorie.hemi.isin(hemi_values)]
                     df_distribution_hemi = make_prf_distribution_df(
                         data_hemi, rois, screen_side, gaussian_mesh_grain)
             
                     df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
                     if i == 0: df_distribution = df_distribution_hemi
                     else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
+
+
         
                 tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
                 print('Saving tsv: {}'.format(tsv_distribution_fn))
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-                # # Spatial distribution hot zone barycentre
-                # # ----------------------------------------
-                # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                # for i, hemi in enumerate(hemis):
-                #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                #     df_barycentre_hemi = make_prf_barycentre_df(
-                #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
-                    
-                #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                #     if i == 0: df_barycentre = df_barycentre_hemi
-                #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
-                
-                # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_category_dir, subject)
-                # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
             
         # Group Analysis    
         else :
             print('group')
             # loop over categories
-            for categorie_to_plot in categories_to_plot : 
-                # # Categories proportions 
-                # # ----------------------
-                # df_categories = raw_data[raw_data['all'] != 'non_responding']
-                # # Sort categories to have categories in the good order for plot 
-                # categories_order = ['vision', 'vision_and_pursuit_and_saccade', 'pursuit_and_saccade', 'vision_and_saccade', 'vision_and_pursuit', 'saccade', 'pursuit']
-                # df_categories['all'] = pd.Categorical(df_categories['all'], categories=categories_order, ordered=True)
-                # df_categories = df_categories.sort_values(['roi', 'all'])
-                
-                
-                # tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
-                # print('Saving tsv: {}'.format(tsv_categories_fn))
-                # df_categories.to_csv(tsv_categories_fn, sep="\t", na_rep='NaN', index=False)
-            
+            for categorie_to_plot in categories_to_plot :             
                 for i, subject_to_group in enumerate(subjects_to_group):
                     tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
                         main_dir, project_dir, subject_to_group, format_, categorie_to_plot)
@@ -377,28 +342,21 @@ for tasks in group_tasks :
                     if i == 0: df_contralaterality = df_contralaterality_indiv.copy()
                     else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_indiv])
                     
-                    # Spatial distribution 
-                    # -------------------
-                    tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject_to_group, categorie_to_plot, suffix)
-                    df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
-                    mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
-                    others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
-        
-                    if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
-                    else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
+                    # # Spatial distribution 
+                    # # -------------------
+                    # tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject_to_group, categorie_to_plot, suffix)
+                    # df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
+                    # mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
+                    # others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
+                    # deb()
+                    # if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
+                    # else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
                    
                 # Median and saving tsv
                 tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
                     main_dir, project_dir, subject, format_, categorie_to_plot)
                 os.makedirs(tsv_category_dir, exist_ok=True)
-                
-                # # ROI surface areas 
-                # # -----------------
-                # df_roi_area = df_roi_area.groupby(['roi'], sort=False).median().reset_index()
-                # tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_category_dir, subject)
-                # print('Saving tsv: {}'.format(tsv_roi_area_fn))
-                # df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
-                
+                                
                 # Violins
                 # -------
                 df_violins = df_violins # no averaging
@@ -406,32 +364,38 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_violins_fn))
                 df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
             
-                # # Parameters median
-                # # ------------------
-                # df_params_median = df_violins
+                # Parameters median
+                # ------------------
+                df_params_median = df_violins
+                colnames = ['prf_loo_r2', 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
+                if df_violins.empty:
+                    df_params_median = pd.DataFrame(columns=['roi', 'subject', 'prf_loo_r2_weighted_median'] + 
+                                                    ['{}_weighted_median'.format(col) for col in colnames] + 
+                                                    ['{}_ci_down'.format(col) for col in colnames] + 
+                                                    ['{}_ci_up'.format(col) for col in colnames])
                 
-                # # compute median 
-                # colnames = ['prf_loo_r2', 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
-                # df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
-                #     lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
-                
-                # for colname in colnames[1:]:
-                #     df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
-                #         lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
-                # df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
-        
-                # # compute Ci
-                # df_params_median_ci = pd.DataFrame()
-                # for colname in colnames:
-                #     df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                #         lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 2.5)) 
-                #     df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                #         lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
-        
-                # df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                # tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
-                # print('Saving tsv: {}'.format(tsv_params_median_fn))
-                # df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+                else:
+                    df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['prf_loo_r2']].apply(
+                        lambda x: weighted_nan_median(x['prf_loo_r2'], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index(name='prf_loo_r2_weighted_median')
+                    
+                    for colname in colnames[1:]:
+                        df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, 'prf_loo_r2']].apply(
+                            lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, 'prf_loo_r2'])).reset_index()[0]
+                    df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
+            
+                    # compute Ci
+                    df_params_median_ci = pd.DataFrame()
+                    for colname in colnames:
+                        df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 2.5)) 
+                        df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
+            
+                    df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
+                    tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_category_dir, subject)
+                    print('Saving tsv: {}'.format(tsv_params_median_fn))
+                    df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+
                 
                 # Ecc.size
                 # --------
@@ -464,35 +428,19 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_contralaterality_fn))
                 df_contralaterality_group.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
                 
-                # Spatial distribution 
-                # -------------------
-                tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
-                print('Saving tsv: {}'.format(tsv_distribution_fn))
-                median_mesh = np.median(mesh_group, axis=0)
-                df_distribution = pd.DataFrame(median_mesh)
+                # # Spatial distribution 
+                # # -------------------
+                # tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
+                # print('Saving tsv: {}'.format(tsv_distribution_fn))
+                # median_mesh = np.median(mesh_group, axis=0)
+                # df_distribution = pd.DataFrame(median_mesh)
         
-                # Concatenating non-numeric columns back to the dataframe
-                df_distribution = pd.concat([others_columns, df_distribution], axis=1)
-                df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
+                # # Concatenating non-numeric columns back to the dataframe
+                # df_distribution = pd.concat([others_columns, df_distribution], axis=1)
+                # df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-                # # Spatial distribution hot zone barycentre 
-                # # ----------------------------------------
-                # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                # for j, hemi in enumerate(hemis):
-                #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                #     df_barycentre_hemi = make_prf_barycentre_df(
-                #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
-                    
-                #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                #     if j == 0: df_barycentre = df_barycentre_hemi
-                #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
-                    
-                # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_category_dir, subject)
-                # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
