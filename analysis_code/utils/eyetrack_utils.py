@@ -371,7 +371,7 @@ def detrending(eyetracking_1D, subject, ses, run, fixation_column, task, design_
     plt.xlabel("Time")
     plt.ylabel("Detrended Eye Position")
     plt.legend()
-    plt.show()
+    # plt.show()
 
     return detrended_full_data
 
@@ -451,7 +451,7 @@ def load_design_matrix_fixations(subject, ses, run, fixation_column, task, desig
 
     import pandas as pd
    
-    design_matrix = pd.read_csv(f"{design_dir_save}/{subject}/{subject}_{ses}_task-{task}_run-0{run+1}_design_matrix.tsv", sep ="\t")
+    design_matrix = pd.read_csv(f"{design_dir_save}/{subject}_{ses}_task-{task}_run-0{run+1}_design_matrix.tsv", sep ="\t")
     fixation_trials = np.array(design_matrix[fixation_column])
 
     return fixation_trials

@@ -106,12 +106,13 @@ create_colormap(cortex_dir=cortex_dir,
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: 
         suffix = 'SacVE_PurVE'
-        sac_task = 'SacLoc'
-        pur_task = 'PurLoc'
-    else : 
-        suffix = 'Sac_Pur'
         sac_task = 'SacVELoc'
         pur_task = 'PurVELoc'
+    else : 
+        suffix = 'Sac_Pur'
+        sac_task = 'SacLoc'
+        pur_task = 'PurLoc'
+
     for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         # Define directories and fn
         intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask".format(
@@ -279,14 +280,14 @@ for tasks in group_tasks :
         alpha_all = (rsq_all - alpha_range[0])/(alpha_range[1]-alpha_range[0])
         alpha_all[alpha_all>1]=1
         
-        deb()
+
         intertask_data_all = intertask_mat[all_idx,...]
         alpha_all[intertask_data_all == 0] = 0
         param_all = {'data': rsq_all, 
                      'cmap': colormap_name, 
                      'alpha': alpha_all, 
                      'vmin': 0, 
-                     'vmax': 1, 
+                     'vmax': 0.4, 
                      # 'cbar': 'discrete_personalized', 
                      'cmap_steps': len(colormap_dict),
                      'cmap_dict': colormap_dict,
@@ -314,7 +315,7 @@ for tasks in group_tasks :
                          'cmap': colormap_name, 
                          'alpha': alpha_pur, 
                          'vmin': 0, 
-                         'vmax': 1, 
+                         'vmax': 0.4, 
                          # 'cbar': 'discrete_personalized', 
                          'cmap_steps': len(colormap_dict),
                          'cmap_dict': colormap_dict,
@@ -339,7 +340,7 @@ for tasks in group_tasks :
                          'cmap': colormap_name, 
                          'alpha': alpha_sac, 
                          'vmin': 0, 
-                         'vmax': 1, 
+                         'vmax': 0.4, 
                          # 'cbar': 'discrete_personalized', 
                          'cmap_steps': len(colormap_dict),
                          'cmap_dict': colormap_dict,
@@ -363,7 +364,7 @@ for tasks in group_tasks :
                                      'cmap': colormap_name, 
                                      'alpha': alpha_pur_sac, 
                                      'vmin': 0, 
-                                     'vmax': 1, 
+                                     'vmax': 0.4, 
                                      # 'cbar': 'discrete_personalized', 
                                      'cmap_steps': len(colormap_dict),
                                      'cmap_dict': colormap_dict,
@@ -388,7 +389,7 @@ for tasks in group_tasks :
                         'cmap': colormap_name, 
                         'alpha': alpha_prf, 
                         'vmin': 0, 
-                        'vmax': 1, 
+                        'vmax': 0.4, 
                         # 'cbar': 'discrete_personalized', 
                         'cmap_steps': len(colormap_dict),
                         'cmap_dict': colormap_dict,
@@ -411,7 +412,7 @@ for tasks in group_tasks :
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_pur, 
                                     'vmin': 0, 
-                                    'vmax': 1, 
+                                    'vmax': 0.4, 
                                     # 'cbar': 'discrete_personalized', 
                                     'cmap_steps': len(colormap_dict), 
                                     'cmap_dict': colormap_dict,
@@ -435,7 +436,7 @@ for tasks in group_tasks :
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_sac, 
                                     'vmin': 0, 
-                                    'vmax': 1, 
+                                    'vmax': 0.4, 
                                     # 'cbar': 'discrete_personalized', 
                                     'cmap_steps': len(colormap_dict), 
                                     'cmap_dict': colormap_dict,
@@ -459,7 +460,7 @@ for tasks in group_tasks :
                                                 'cmap': colormap_name, 
                                                 'alpha': alpha_prf_pur_sac, 
                                                 'vmin': 0, 
-                                                'vmax': 1, 
+                                                'vmax': 0.4, 
                                                 # 'cbar': 'discrete_personalized', 
                                                 'cmap_steps': len(colormap_dict), 
                                                 'cmap_dict': colormap_dict,
@@ -491,7 +492,7 @@ for tasks in group_tasks :
             volumes.update({vol_description:volume})
         
         # save dataset
-        dataset_file = "{}/{}_{}_{}.hdf".format(datasets_dir, subject, maps_name, suffix)
+        dataset_file = "{}/{}_intertask_{}.hdf".format(datasets_dir, subject, suffix)
         dataset = cortex.Dataset(data=volumes)
         dataset.save(dataset_file)
     

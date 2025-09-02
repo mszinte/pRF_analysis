@@ -1,6 +1,6 @@
 {
     "project_name": "RetinoMaps",
-    "account":"mszinte@login.mesocentre.univ-amu.fr",
+    "account": "mszinte@login.mesocentre.univ-amu.fr",
     "webapp_login": "admin@invibe.nohost.me",
     "webapp_dir": "/var/www/my_webapp",
     "sessions" : ["ses-01", "ses-02","ses-03"], 
@@ -15,11 +15,12 @@
     "cluster_name": "skylake",
     "TR": 1.2,
     "TRs": 208,
+    "num_steps_kappa_pRF":15,
     "fit_rsq_threshold": 0.01,
     "high_pass_threshold": 0.01,
     "formats": ["fsnative", "170k"],
     "extensions": ["func.gii", "dtseries.nii"],
-    "n_runs_prf":5,
+    "n_runs_prf": 5,
     "screen_size_pix": [1080, 1080],
     "screen_size_cm" : [77.3, 43.5],
     "screen_distance_cm": 120,
@@ -58,5 +59,6 @@
     "maps_names_vert_area": ["vert_area"],
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "glm_code_names": {"non_responding":0, "pursuit":1, "saccade":2, "pursuit_and_saccade":3, "vision":4, "vision_and_pursuit":5, "vision_and_saccade":6, "vision_and_pursuit_and_saccade" :7},
-    "maps_names_intertask": ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"]
+    "maps_names_intertask": ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"],
+    "correlation_type": ["full_corr", "fisher-z", "partial"]
 }

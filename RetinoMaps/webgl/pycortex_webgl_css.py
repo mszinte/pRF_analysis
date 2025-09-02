@@ -43,12 +43,11 @@ import os
 import sys
 import json
 import cortex
-import numpy as np
-import matplotlib.pyplot as plt
+
 
 # Personal import
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex, create_colormap
+from pycortex_utils import draw_cortex, set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]

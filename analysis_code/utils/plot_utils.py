@@ -1,9 +1,13 @@
-# Figure imports
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
+# General imports
 import numpy as np
-import pandas as pd
+
+# Figure imports
+import plotly.io as pio
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Debug
 import ipdb
 deb = ipdb.set_trace
 
@@ -1077,6 +1081,303 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
         hemispheres.append(hemi)
     return figs, hemispheres
 
+def active_vertex_roi_plot(df_active_vertex_roi, fig_height, fig_width, roi_colors, plot_groups):
+    """
+    Make active vertex plot
+    
+    Parameters
+    ----------
+    df_active_vertex_roi : dataframe
+    fig_width : figure width in pixels
+    fig_height : figure height in pixels
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
+
+     
+    Returns
+    -------
+    fig : active vertex roi figure
+    """
+    template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          plot_width=1.5)
+    fig_template = plotly_template(template_specs)
+    
+    rows, cols = 1, len(plot_groups)
+    fig = make_subplots(rows=rows, cols=cols, print_grid=False)
+
+    for l, line_label in enumerate(plot_groups):
+        for j, roi in enumerate(line_label):
+            df_roi = df_active_vertex_roi.loc[df_active_vertex_roi['roi']==roi]
+            
+            # Individual trace
+            if 'median' not in df_active_vertex_roi.columns:
+                fig.add_trace(go.Bar(x=df_roi['categorie'], 
+                                     y=df_roi['percentage_active'], 
+                                     name=roi,  
+                                     marker=dict(color=roi_colors[roi]), 
+                                     showlegend=True), 
+                              row=1, col=l + 1)
+            # group trace
+            else:
+              fig.add_trace(go.Bar(x=df_roi['categorie'], 
+                   y=df_roi['median'], 
+                   name=roi,  
+                   marker=dict(color=roi_colors[roi]), 
+                   error_y=dict(type='data', 
+                                array=df_roi['ci_high'] - df_roi['median'], 
+                                arrayminus=df_roi['median'] - df_roi['ci_low'], 
+                                visible=True, 
+                                width=0, 
+                                color='black'), 
+                   showlegend=True), 
+            row=1, 
+            col=l + 1)
+                
+    
+    # Set axes
+    fig.update_xaxes(showline=True)
+    fig.update_yaxes(title='Active vertex (%)', 
+                     range=[0,100], 
+                     showline=True)
+    
+    # Update layout of the figure
+    fig.update_layout(template=fig_template, 
+                      barmode='group', 
+                      height=fig_height, 
+                      width=fig_width
+                     )
+        
+    return fig
+
+def active_vertex_roi_mmp_plot(df_active_vertex_roi_mmp, fig_height, fig_width, roi_colors, plot_groups, categorie):
+    """
+    Make active vertex roi mmp plot
+    
+    Parameters
+    ----------
+    df_active_vertex_roi_mmp : dataframe
+    fig_width : figure width in pixels
+    fig_height : figure height in pixels
+    roi_colors : dictionary with keys as roi and value correspondig rgb color
+    categories : Categories to plot, each categorie in categories will be one figure
+
+     
+    Returns
+    -------
+    figures : a dictionnary where keys are the categories and values the corresponding
+    active vertex roi figure
+    """
+    
+    # Fig template
+    template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          plot_width=1.5)
+    fig_template = plotly_template(template_specs)
+    
+    rows, cols = len(plot_groups), 3 
+
+    fig = make_subplots(rows=rows, 
+                        cols=cols,  
+                        horizontal_spacing=0.15, 
+                        vertical_spacing=0.09,
+                        print_grid=False
+                       )
+    
+    for row_idx, line_label in enumerate(plot_groups):  
+        for col_idx, roi in enumerate(line_label):  
+            # Individual trace
+            if 'median' not in df_active_vertex_roi_mmp.columns:
+                df_roi = df_active_vertex_roi_mmp.loc[(df_active_vertex_roi_mmp['roi'] == roi) & 
+                                                      (df_active_vertex_roi_mmp['categorie'] == categorie)].sort_values(by='percentage_active', 
+                                                                                                                        ascending=True)
+            else:
+                df_roi = df_active_vertex_roi_mmp.loc[(df_active_vertex_roi_mmp['roi'] == roi) & 
+                                                      (df_active_vertex_roi_mmp['categorie'] == categorie)].sort_values(by='median', 
+                                                                                                                        ascending=True)
+                                                                                                                                
+
+            rois_mmp = df_roi['roi_mmp'].unique()
+            for n_roi_mmp, roi_mmp in enumerate(rois_mmp):
+                showlegend = (n_roi_mmp == 0)
+                df_roi_mmp = df_roi[df_roi['roi_mmp'] == roi_mmp]
+
+                # Individual trace
+                if 'median' not in df_active_vertex_roi_mmp.columns:
+                    fig.add_trace(
+                        go.Bar(x=df_roi_mmp['percentage_active'], 
+                               y=df_roi_mmp['roi_mmp'], 
+                               orientation='h', 
+                               name=roi, 
+                               marker=dict(color=roi_colors[roi]),  
+                               width=0.9, 
+                               showlegend=showlegend), 
+                        row=row_idx + 1, 
+                        col=col_idx + 1
+                    )
+                    
+                # group trace                   
+                else:
+                    fig.add_trace(go.Bar(x=df_roi_mmp['median'], 
+                                         y=df_roi_mmp['roi_mmp'], 
+                                         orientation='h', 
+                                         name=roi, 
+                                         marker=dict(color=roi_colors[roi]), 
+                                         error_x=dict(type='data', 
+                                                      array=(df_roi_mmp['ci_high'] - df_roi_mmp['median']).values, 
+                                                      arrayminus=(df_roi_mmp['median'] - df_roi_mmp['ci_low']).values, 
+                                                      visible=True,  
+                                                      width=0, 
+                                                      color='black'), 
+                                         width=0.9, 
+                                         showlegend=showlegend), 
+                                  row=row_idx + 1, 
+                                  col=col_idx + 1
+                                 )                        
+            # Set axes
+            fig.update_xaxes(title=dict(text='Active vertex (%)'), 
+                             range=[0, 100], 
+                             tickvals=[25, 50, 75, 100],  
+                             ticktext=[str(val) for val in [25, 50, 75, 100]], 
+                             showline=True, 
+                             row=row_idx + 1, 
+                             col=col_idx + 1
+                            )
+
+            y_title = 'Glasser parcellation' if col_idx == 0 else ''
+            fig.update_yaxes(title=dict(text=y_title), 
+                             showline=True, 
+                             row=row_idx + 1, 
+                             col=col_idx + 1)
+    
+    # Update layout of the figure
+    fig.update_layout(title='{} active vertex'.format(categorie), 
+                      template=fig_template, 
+                      height=fig_height, 
+                      width=fig_width, 
+                      margin_l=100, 
+                      margin_r=100, 
+                      margin_t=100, 
+                      margin_b=100)
+
+        
+    return fig
+
+def make_figures_html(subject, figures, figs_title):
+    """
+    Generate an HTML page displaying categorized Plotly figures.
+
+    Parameters
+    ----------
+    subject : str
+        Title of the subject shown on the HTML page.
+    figures : dict
+        Dictionary where keys are category names and values are lists of Plotly figures.
+    figs_title : list of str
+        List of figure titles, assumed to be ordered accordingly.
+
+    Returns
+    -------
+    subject_html : str
+        Complete HTML string containing the interactive figure display.
+    """
+    from plotly.io import to_html
+
+    figures_html_blocks = []
+    title_index = 0
+
+    for category, fig_list in figures.items():
+        for i, fig in enumerate(fig_list):
+            html = to_html(
+                fig,
+                full_html=False,
+                include_plotlyjs='cdn' if title_index == 0 else False,
+                config={
+                    'scrollZoom': False,
+                    'displayModeBar': True,
+                    'modeBarButtonsToRemove': ['zoomIn2d', 'zoomOut2d'],
+                    'displaylogo': False
+                }
+            )
+            figure_html = f"<h2 style='text-align: center;'>{figs_title[title_index]}</h2><div class='plot'>{html}</div>"
+            figures_html_blocks.append(f"<div class='figure {category}' style='display: none;'>{figure_html}</div>")
+            title_index += 1
+
+    # Dropdown options
+    dropdown_options = "\n".join(
+        f"<option value='{key}'>{key.replace('_', ' ').title()}</option>"
+        for key in figures.keys()
+    )
+
+    subject_html = f"""
+    <html>
+    <head>
+        <title>{subject}</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <style>
+            body {{
+                font-family: sans-serif;
+                margin: 20px;
+            }}
+            .container {{
+                display: flex;
+                flex-direction: column;
+                gap: 30px;
+            }}
+            .plot {{
+                width: 80%;
+                margin: auto;
+            }}
+            #menu {{
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                padding: 10px;
+                background-color: #f0f0f0;
+                border-radius: 5px;
+            }}
+            select {{
+                padding: 5px;
+                font-size: 16px;
+            }}
+            @media (max-width: 768px) {{
+                .plot {{
+                    width: 100%;
+                }}
+            }}
+        </style>
+        <script>
+            function showFigures(option) {{
+                document.querySelectorAll('.figure').forEach(fig => fig.style.display = 'none');
+                document.querySelectorAll('.figure.' + option).forEach(fig => fig.style.display = 'block');
+            }}
+        </script>
+    </head>
+    <body>
+        <h1 style="text-align: center;">{subject}</h1>
+
+        <div id="menu">
+            <select onchange="showFigures(this.value)">
+                {dropdown_options}
+            </select>
+        </div>
+
+        <div class="container">
+            {''.join(figures_html_blocks)}
+        </div>
+    </body>
+    </html>
+    """
+
+    return subject_html
+    
 def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, screen_side):
     """
     Make prf barycentre plot
