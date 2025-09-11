@@ -123,7 +123,24 @@ for roi in "${ROIS[@]}"; do
   set -- $roi
   NAME=$1
   LABEL_ID=$2
-  wb_command -cifti-label-to-roi "$ATLAS_FILE" "$OUTDIR/${NAME}.dscalar.nii" -key "$LABEL_ID"
+
+  # Choose hemisphere from ROI name
+  if [[ "$NAME" == L* ]]; then
+    CORTEX="CORTEX_LEFT"
+  elif [[ "$NAME" == R* ]]; then
+    CORTEX="CORTEX_RIGHT"
+  else
+    echo "⚠️ Could not determine hemisphere for ROI $NAME"
+    continue
+  fi
+
+  # Extract label to dscalar
+  wb_command -cifti-label-to-roi "$ATLAS_FILE" \
+    "$OUTDIR/${NAME}.dscalar.nii" -key "$LABEL_ID"
+
+  # Separate to metric GIFTI
+  wb_command -cifti-separate "$OUTDIR/${NAME}.dscalar.nii" COLUMN \
+    -metric "$CORTEX" "$OUTDIR/${NAME}.shape.gii"
 done
 
 # Permissions
