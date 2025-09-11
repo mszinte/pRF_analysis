@@ -44,7 +44,7 @@ python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_control 327
 python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_excluded 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
-Edited by Martin Szinte (mail@martinszinte.net)
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings

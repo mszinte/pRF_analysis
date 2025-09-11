@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: server group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 CSS analysis figures
@@ -18,7 +19,8 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
-python make_rois_fig.py [main directory] [project name] [subject] [group]
+python make_rois_fig.py [main directory] [project name] 
+                        [subject] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -41,7 +43,7 @@ python make_rois_fig.py /scratch/mszinte/data amblyo_prf group_control 327
 python make_rois_fig.py /scratch/mszinte/data amblyo_prf group_excluded 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
-Edited by Martin Szinte (mail@martinszinte.net)
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -67,6 +69,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -82,14 +86,6 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-
-# Threshold settings
-ecc_th = analysis_info['ecc_th']
-size_th = analysis_info['size_th']
-rsqr_th = analysis_info['rsqr_th']
-amplitude_th = analysis_info['amplitude_th']
-stats_th = analysis_info['stats_th']
-n_th = analysis_info['n_th'] 
 subjects = analysis_info['subjects']
 
 # Figure settings
@@ -125,10 +121,10 @@ fig_width = figure_info['fig_width']
 for format_, extension in zip(formats, extensions):
     
     # Create folders and fns
-    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
-        main_dir, project_dir, subject, format_)
-    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-        main_dir, project_dir, subject, format_)
+    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/figures'.format(
+        main_dir, project_dir, subject, format_, output_folder)
+    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+        main_dir, project_dir, subject, format_, output_folder)
     os.makedirs(fig_dir, exist_ok=True)
 
     # Roi area and stats plot
@@ -212,15 +208,15 @@ for format_, extension in zip(formats, extensions):
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
 
-    # # Spatial distibution barycentre plot
-    # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
-    # df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-    # fig_fn = "{}/{}_barycentre.pdf".format(fig_dir, subject)
-    # fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
-    #                                 fig_width=fig_width, fig_height=400, 
-    #                                 rois=rois, roi_colors=roi_colors, screen_side=screen_side)
-    # print('Saving pdf: {}'.format(fig_fn))
-    # fig.write_image(fig_fn)
+    # Spatial distibution barycentre plot
+    tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
+    df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+    fig_fn = "{}/{}_barycentre.pdf".format(fig_dir, subject)
+    fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
+                                    fig_width=fig_width, fig_height=400, 
+                                    rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+    print('Saving pdf: {}'.format(fig_fn))
+    fig.write_image(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
