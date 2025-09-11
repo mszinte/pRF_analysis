@@ -41,7 +41,7 @@ for subj in "${SUBJECTS[@]}"; do
 
     wb_command -metric-mask \
       "$INPUT" \
-      "$ATLAS/${roi}.dscalar.nii" \
+      "$ATLAS/${roi}.shape.gii" \
       "$OUT_DIR/sub-${subj}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${roi}.shape.gii"
   done
 done
