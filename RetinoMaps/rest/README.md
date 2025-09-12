@@ -56,11 +56,12 @@ Just run this script to perform all the steps required (see the comments in the 
 ```bash
 $ ./resample_to_91k.sh
 ```
-## 3. Masking the conjunction maps using the MMP1 macro-regions (by clusters or parcel)
+## 3. Masking the conjunction maps using the MMP1 macro-regions (by cluster or parcel)
 
 Check the two scripts in the masking folder:
 ```bash
 $ ./mask_task_results_by_cluster.sh
+
 $ ./mask_task_results_by_parcel.sh
 ```
 ## 4. Computing correlations using each masked task result separately for all vertices active in each macro-region and averaging these values within the ROI bilaterally
