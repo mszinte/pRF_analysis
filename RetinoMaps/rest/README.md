@@ -10,7 +10,7 @@ Here we are primarily describing the steps required to:
 - 1. Select the clusters from the Glasser MMP1 atlas on the fsLR 32k mesh
 - 2. Downsample the task-based results from the 170k to the 91k resolution
 - 3. Mask the conjunction maps from the vision pursuit and saccade tasks using the clusters by Glasser
-- 4. Compute correlations using each masked task results separately for all vertices active in each cluster and averaging these values within the ROIs
+- 4. Compute correlations using each masked task results separately for all vertices active in each cluster and average these values within the ROIs
 - 5. Average the connectivity matrices across subjects
 - 6. Prepare the files to make nice visualizations in wb_view and PyCortex:
 	- Winner-take-all flatmaps
@@ -56,11 +56,12 @@ Just run this script to perform all the steps required (see the comments in the 
 ```bash
 $ ./resample_to_91k.sh
 ```
-## 3. Masking the conjunction maps using the MMP1 macro-regions
+## 3. Masking the conjunction maps using the MMP1 macro-regions (by clusters or parcel)
 
-It’s also a single script that takes care of this step:
+Check the two scripts in the masking folder:
 ```bash
-$ ./mask_task_results.sh
+$ ./mask_task_results_by_cluster.sh
+$ ./mask_task_results_by_parcel.sh
 ```
 ## 4. Computing correlations using each masked task result separately for all vertices active in each macro-region and averaging these values within the ROI bilaterally
 
