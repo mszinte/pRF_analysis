@@ -82,6 +82,9 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
 
             if 'derivatives' in dirs:
                 dirs.remove('derivatives')
+
+            if 'behav' in dirs: 
+                dirs.remove('behav')
             
             # Create the new filename by removing '_eyedata' and old analysis .dat and .msg
             for file in files:
@@ -110,6 +113,9 @@ def main(input_directory, metadata_path, output_script_path, make_copy=True, del
                     
                     # Create sourcedata folder
                     entity_dict = parse_file_entities(edf_file_path)
+                    print(entity_dict)
+                    print("Keys available in entity_dict:", list(entity_dict.keys()))
+
 
                     # Create Sourcedata directory
                     if make_copy: 
