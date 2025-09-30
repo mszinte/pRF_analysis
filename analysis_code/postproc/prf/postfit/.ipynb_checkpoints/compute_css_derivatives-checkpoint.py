@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
@@ -18,12 +19,21 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
->> python compute_css_derivatives.py [main directory] [project name] [subject num] [group]
+>> python compute_css_derivatives.py [main directory] [project name] 
+                                     [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
+    
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-01 327
 python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
+
+python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
+
+python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327 prf_em_ctrl
+python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -58,9 +68,14 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # Load settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
@@ -83,12 +98,12 @@ if subject != 'sub-170k':
         print(format_)
         
         # Define directories
-        prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(pp_dir, subject, format_)
+        prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(pp_dir, subject, format_, output_folder)
         os.makedirs(prf_deriv_dir, exist_ok=True)
         
         # Get prf fit filenames
-        fit_fns = glob.glob("{}/{}/{}/prf/fit/*prf-fit_css*.{}".format(
-            pp_dir, subject, format_, extension))
+        fit_fns = glob.glob("{}/{}/{}/{}/fit/*prf-fit_css*.{}".format(
+            pp_dir, subject, format_, output_folder, extension))
         
         # Compute derivatives
         for fit_fn in fit_fns:
@@ -110,8 +125,8 @@ if subject != 'sub-170k':
     # Find all the derivatives files 
     derives_fns = []
     for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/{}/prf/prf_derivatives/*loo-*_prf-deriv_css.{}".format(
-            pp_dir, subject, format_, extension))
+        list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-deriv_css.{}".format(
+            pp_dir, subject, format_, output_folder, extension))
         derives_fns.extend(list_)
     
     # Split filtered files depending of their nature
@@ -151,12 +166,12 @@ if subject != 'sub-170k':
             else: loo_deriv_data_median = np.nanmedian(np.array([loo_deriv_data_median, loo_deriv_data]), axis=0)
         
         if hemi:
-            median_fn = '{}/{}/fsnative/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_deriv_median_fn)
+            median_fn = '{}/{}/fsnative/{}/prf_derivatives/{}'.format(
+                pp_dir, subject, output_folder, loo_deriv_median_fn)
             hemi_data_median[hemi] = loo_deriv_data_median
         else:
-            median_fn = '{}/{}/170k/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_deriv_median_fn)
+            median_fn = '{}/{}/170k/{}/prf_derivatives/{}'.format(
+                pp_dir, subject, output_folder, loo_deriv_median_fn)
             hemi_data_median['170k'] = loo_deriv_data_median
             
         # Export data in surface format 
@@ -173,15 +188,15 @@ elif subject == 'sub-170k':
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, prf_task_name)]
+        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/{}/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(
+                main_dir, project_dir, subject, output_folder, subject, prf_task_name)]
 
     # Computing median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
         
     # Export results
-    sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-            main_dir, project_dir)
+    sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives".format(
+            main_dir, project_dir, output_folder)
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
     sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)

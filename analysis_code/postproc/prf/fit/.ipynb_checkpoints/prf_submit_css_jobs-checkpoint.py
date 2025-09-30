@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -20,13 +21,13 @@ To run:
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_css_jobs.py [main directory] [project name] [subject] 
-                                  [group] [server project]
+                              [group] [server project] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -35,13 +36,15 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
-# General imports
-import os
-import json
-import sys
-import glob
+# Debug 
 import ipdb
 deb = ipdb.set_trace
+
+# General imports
+import os
+import sys
+import glob
+import json
 
 # Inputs
 main_dir = sys.argv[1]
@@ -49,12 +52,17 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 memory_val = 30
 hour_proc = 6
 nb_procs = 32
 
 # Cluster settings
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
@@ -76,19 +84,19 @@ pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns)
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/170k/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/fsnative/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
@@ -111,11 +119,11 @@ for fit_num, pp_fn in enumerate(pp_fns):
            log_dir=prf_logs_dir)
 
     # Define fit cmd
-    fit_cmd = "python prf_cssfit.py {} {} {} {} {} ".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs )
+    fit_cmd = "python prf_cssfit.py {} {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
     
     # Create sh
-    sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir,subject,fit_num)
+    sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, chmod_cmd, chgrp_cmd))

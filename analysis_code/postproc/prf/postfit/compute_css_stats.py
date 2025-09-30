@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 results of linear regression 
@@ -18,7 +19,8 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
->> python compute_css_stats.py [main directory] [project name] [subject num] [group]
+>> python compute_css_stats.py [main directory] [project name] 
+                               [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -30,6 +32,7 @@ python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-170k 327
 
 python compute_css_stats.py /scratch/mszinte/data amblyo_prf sub-01 327
+python compute_css_stats.py /scratch/mszinte/data amblyo_prf sub-01 327 prf_em_ctrl
 python compute_css_stats.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -66,6 +69,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -97,8 +102,8 @@ if subject != 'sub-170k':
         print(format_)
         
         # Find pRF fit files 
-        prf_fit_dir = '{}/{}/{}/prf/fit'.format(
-            pp_dir, subject, format_)
+        prf_fit_dir = '{}/{}/{}/{}/fit'.format(
+            pp_dir, subject, format_, output_folder)
         prf_bold_dir = '{}/{}/{}/func/fmriprep_dct_loo_avg'.format(
             pp_dir, subject, format_)
         prf_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_prf-pred_css.{}'.format(
@@ -121,13 +126,13 @@ if subject != 'sub-170k':
             
             # Compute linear regression 
             results = linear_regression_surf(bold_signal=bold_data, 
-                                              model_prediction=pred_data, 
-                                              correction='fdr_tsbh', 
-                                              alpha=fdr_alpha)
+                                             model_prediction=pred_data, 
+                                             correction='fdr_tsbh', 
+                                             alpha=fdr_alpha)
             
             # Save results
-            prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
-                pp_dir, subject, format_)
+            prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(
+                pp_dir, subject, format_, output_folder)
             stat_prf_loo_fn = prf_pred_loo_fn.split('/')[-1].replace('pred_css', 'stats')
             stat_prf_loo_img = make_surface_image(data=results, 
                                                   source_img=bold_img, 
@@ -141,8 +146,8 @@ if subject != 'sub-170k':
     # Get files
     prf_stats_loo_fns_list = []
     for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/{}/prf/prf_derivatives/*loo-*_prf-stats.{}".format(
-            pp_dir, subject, format_, extension))
+        list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-stats.{}".format(
+            pp_dir, subject, format_, output_folder, extension))
         list_ = [item for item in list_ if "loo-median" not in item]
         prf_stats_loo_fns_list.extend(list_)
                 
@@ -189,12 +194,12 @@ if subject != 'sub-170k':
         loo_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
     
         if hemi:
-            median_fn = '{}/{}/fsnative/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_stats_median_fn)
+            median_fn = '{}/{}/fsnative/{}/prf_derivatives/{}'.format(
+                pp_dir, subject, output_folder, loo_stats_median_fn)
             hemi_data_median[hemi] = loo_stats_data_median
         else:
-            median_fn = '{}/{}/170k/prf/prf_derivatives/{}'.format(
-                pp_dir, subject, loo_stats_median_fn)
+            median_fn = '{}/{}/170k/{}/prf_derivatives/{}'.format(
+                pp_dir, subject, output_folder, loo_stats_median_fn)
             hemi_data_median['170k'] = loo_stats_data_median
     
         # Saving data in surface format
@@ -211,8 +216,8 @@ elif subject == 'sub-170k':
     # find all the subject prf derivatives
     subjects_stats = []
     for subject in subjects: 
-        subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, prf_task_name)]
+        subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/{}/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(
+                main_dir, project_dir, subject, output_folder, subject, prf_task_name)]
 
     # Computing median across subject
     img, data_stat_median = median_subject_template(fns=subjects_stats)
@@ -229,8 +234,8 @@ elif subject == 'sub-170k':
     data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
         
     # Export results
-    sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives/".format(
-            main_dir, project_dir)
+    sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives/".format(
+            main_dir, project_dir, output_folder)
     os.makedirs(sub_170k_stats_dir, exist_ok=True)
     
     sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(sub_170k_stats_dir, prf_task_name)

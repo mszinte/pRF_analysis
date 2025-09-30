@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -19,7 +20,8 @@ To run:
 1. cd to function
 >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
->> python pycortex_maps_css.py [main directory] [project] [subject] [save_svg_in]
+>> python pycortex_maps_css.py [main directory] [project] [subject]
+                               [save_svg_in] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -33,7 +35,7 @@ python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
 python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-01 n
 python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-170k n
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -62,6 +64,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -111,7 +115,7 @@ pcm_scale = [0, 10]
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     
     # Define directories and fn
-    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
+    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(main_dir, project_dir, subject, format_, output_folder)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     flatmaps_dir = '{}/pycortex/flatmaps_css_loo-median'.format(prf_dir)
     datasets_dir = '{}/pycortex/datasets_css_loo-median'.format(prf_dir)

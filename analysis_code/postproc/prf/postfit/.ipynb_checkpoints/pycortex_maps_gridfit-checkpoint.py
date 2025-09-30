@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -20,14 +21,24 @@ To run:
 >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_gridfit.py [main directory] [project name] 
-                                    [subject num] [save_in_svg]
+                                   [subject num] [save_in_svg] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+
 python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-01 n
 python pycortex_maps_gridfit.py ~/disks/meso_S/data MotConf sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n prf_em_ctrl
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n prf_em_ctrl
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -58,6 +69,9 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
+    
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -67,11 +81,14 @@ try:
         raise ValueError
 except ValueError:
     sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = save_svg
-else: save_svg = False
+if subject == 'sub-170k': save_svg = False
+else: save_svg = save_svg
 
 # Define analysis parameters
-with open('../../../settings.json') as f:
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
@@ -82,7 +99,7 @@ maps_names_gauss = analysis_info['maps_names_gauss']
 
 # Maps settings
 for idx, col_name in enumerate(maps_names_gauss):
-    exec("{}_idx = idx".format(col_name))
+    exec("{}_idx = idx".format(col_name)) 
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255
@@ -100,8 +117,8 @@ importlib.reload(cortex)
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     
     # define directories and fn
-    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, 
-                                                           subject, format_)
+    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(main_dir, project_dir, 
+                                                           subject, format_, output_folder)
     fit_dir = "{}/fit".format(prf_dir)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     flatmaps_dir = '{}/pycortex/flatmaps_avg_gauss_gridfit'.format(prf_dir)
@@ -124,6 +141,8 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             prf_deriv_dir, subject, prf_task_name)
         results = load_surface_pycortex(brain_fn=deriv_avg_fn)
         deriv_mat = results['data_concat']
+        if subject == 'sub-170k': save_svg = save_svg
+        else: save_svg = False
     
     print('Creating flatmaps...')
     
