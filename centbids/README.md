@@ -10,29 +10,28 @@
 ---
 Sina KLING, Jan-Patrick STELLMANN, Martin SZINTE
 
+# Main behavioral, structural MRI and functional MRI analysis
+---
+
+## BIDS
+---
+- [x] BIDS created by CRMBM
+- [x] Deface participant by CRMBM
+- [x] Copy files [process.sh](analysis_code/pRF_analysis/centbids/bids/process.sh)
+- [ ] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
+
+## MRI Data analysis
+---
+### Individual analysis
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
+
+#### Structural preprocessing
+- [x] same steps in pRF_analysis
+
+#### Functional preprocessing
+- [x] same steps in pRF_analysis
 
 ## Data analysis
 ---
-### Preprocessing
-- [x] convert MP2RANGE files to T1w [run_freesurfer.sh](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/run_freesurfer.sh)
-- [x] copt Tw1 to BIDS anat folder [copy_t1w.sh](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/copy_t1w.sh)
 
-### Anatomical Preprocessing 
-- [x] fmriprep anatomy only 
-- [x] create sagittal view video before manual edit [saggital_view.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/saggital_view.py)
-- [x] manual edit of brain segmentation [pial_edit.sh] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/pial_edit.sh)
-- [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/freesurfer_pial.py)
-- [x] create sagittal view video after manual edit [saggital_view.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/saggital_view.py)
-- [x] make cut in the brains for flattening [cortex_cut.sh] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/cortex_cut.sh)
-
-### Functional Preprocessing
-- [ ] fmriprep functional 
-
-### Resting-state preprocessing
-- [ ] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
-
-### Resting-state postprocessing
-- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
-- [ ] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
-
-
+#### Functional postprocessing

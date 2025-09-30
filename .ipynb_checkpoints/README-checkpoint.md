@@ -8,6 +8,7 @@ After pRF analysis each project has its own analysis. The project's read me can 
 
 - RetinoMaps [README.md](RetinoMaps/README.md)
 - Amblyo_prf [README.md](amblyo_prf/README.md)
+- centbids [README.md](centbids/README.md)
 
 # Main behavioral, structural MRI and functional MRI analysis
 ---
