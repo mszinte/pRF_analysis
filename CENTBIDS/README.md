@@ -1,4 +1,4 @@
-# CENTBIDS
+# centbids
 ## About
 ---
 *We here study cortical areas involved in both vision and eye movements in 20 healthy controls.</br>*
