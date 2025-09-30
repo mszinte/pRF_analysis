@@ -16,7 +16,16 @@ Sina KLING, Jan-Patrick STELLMANN, Martin SZINTE
 ### Preprocessing
 - [x] convert MP2RANGE files to T1w [run_freesurfer.sh](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/run_freesurfer.sh)
 - [x] copt Tw1 to BIDS anat folder [copy_t1w.sh](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/copy_t1w.sh)
-- [ ] fmriprep anatomy only 
+
+### Anatomical Preprocessing 
+- [x] fmriprep anatomy only 
+- [x] create sagittal view video before manual edit [saggital_view.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/saggital_view.py)
+- [x] manual edit of brain segmentation [pial_edit.sh] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/pial_edit.sh)
+- [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/freesurfer_pial.py)
+- [x] create sagittal view video after manual edit [saggital_view.py] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/saggital_view.py)
+- [x] make cut in the brains for flattening [cortex_cut.sh] (https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/cortex_cut.sh)
+
+### Functional Preprocessing
 - [ ] fmriprep functional 
 
 ### Resting-state preprocessing
