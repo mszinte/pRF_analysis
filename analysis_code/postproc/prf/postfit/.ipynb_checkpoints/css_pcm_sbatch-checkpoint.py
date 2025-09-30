@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project number (e.g. b327)
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 sh file for running batch command
@@ -19,11 +20,15 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/pcm
 2. run python command
->> python css_pcm_sbatch.py [main directory] [project] [subject] [group] [server]
+>> python css_pcm_sbatch.py [main directory] [project] [subject] 
+                            [group] [server] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+
 python css_pcm_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -34,17 +39,14 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
-# General imports
-import json
-import os
-import sys
+# Debug
 import ipdb
 deb = ipdb.set_trace
 
-# Define analysis parameters
-with open('../../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# General imports
+import os
+import sys
+import json
 
 # Inputs
 main_dir = sys.argv[1]
@@ -52,6 +54,16 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
+
+# Define analysis parameters
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
+    json_s = f.read()
+    analysis_info = json.loads(json_s)
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
@@ -60,12 +72,10 @@ memory_val = 48
 hour_proc = 20
 
 # Set folders
-log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, 
-                                                            project_dir, 
-                                                            subject)
-job_dir = "{}/{}/derivatives/pp_data/{}/jobs".format(main_dir, 
-                                                     project_dir, 
-                                                     subject)
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/{}".format(
+    main_dir, project_dir, subject, output_folder)
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs/{}".format(
+    main_dir, project_dir, subject, output_folder)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 
@@ -84,8 +94,8 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {}".format(
-    main_dir, project_dir, subject, group)
+compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {}".format(
+    main_dir, project_dir, subject, group, output_folder)
 
 # Create sh fn
 sh_fn = "{}/{}_css_pcm.sh".format(job_dir, subject)

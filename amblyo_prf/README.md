@@ -10,6 +10,36 @@
 ---
 Adrien CHOPIN, Dennis LEVI, Uriel LASCOMBES, Jian DING, Yasha SHEYNIN, Michael SILVER, & Martin SZINTE
 
+
+## Data analysis
+---
+
+### BIDS
+- [x] convert dicom to niix [dcm2nii_bids_rename.py](amblyo_prf/preproc/bids/dcm2nii_bids_rename.py) 
+    </br>Note: each created .json file will miss a field "TaskName":"prf", to add manually for each functionnal scan, saved explicitly with encoding utf-8.
+- [x] create events files [event_files_bidify.py](amblyo_prf/preproc/bids/event_files_bidify.py) 
+    </br>Note: for missing event files, create a file with a column header line and an n/a line.
+- [x] deface participants t1w image [deface_sbatch.py](amblyo_prf/preproc/bids/deface_sbatch.py) 
+    </br>Note: run script for each subject separately.
+- [x] validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
+    </br>Note: for the webpage, use Chrome and wait for at least 30 min, even if nothing seems to happen.
+
+#### Structural preprocessing
+- [x] same steps in pRF_analysis
+
+#### Functional preprocessing
+- [x] same steps in pRF_analysis
+
+#### Functional postprocessing
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
+
+##### Inter-run correlations
+- [x] Compute inter-run correlation [compute_run_corr_sbatch](analysis_code/preproc/functional/compute_run_corr_sbatch)
+- [x] Make inter-run correlations maps with pycortex [pycortex_maps_run_corr.py](analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
+
+##### PRF Gaussian fit
+
+
 ### Inter-group analysis
 *We ran a ROI based group analysis determined individually on subject surfaces fsnative and </br>*
 *by type (control (RetinoMaps) vs patient) or by amblyopia type (control vs. anisometropic/strabismic/mixed)</br>*
@@ -18,3 +48,18 @@ Adrien CHOPIN, Dennis LEVI, Uriel LASCOMBES, Jian DING, Yasha SHEYNIN, Michael S
 - [x] Merge all css pycortex and pRF derivatives and pcm main figures for **group-patient**, **group-patient_control**, **group-aniso**, **group-strab**, **group-mixed**  [merge_fig_css.py](analysis_code/intergroup/merge_fig_css.py)
 - [x] Compute inter-group results and stats [compute_inter-group.ipynb](analysis_code/inter-group/compute_inter-group.ipynb)
 - [x] Make inter-group figures [make_inter-group_fig.ipynb](analysis_code/inter-group/make_inter-group_fig.ipynb)
+
+### Control eyetracking analysis with healthy controls
+
+- [ ] Create a visual design matrix that shift as a function of an amblyope suject eye movement dataset [vdm_builder_em_ctrl.py](analysis_code/postproc/prf/fit/vdm_builder_em_ctrl.py)
+- [ ] Run pRF gaussian grid fit [prf_submit_gridfit_jobs.py](analysis_code/postproc/prf/fit/prf_submit_gridfit_jobs.py)
+- [ ] Compute pRF gaussian grid fit derivatives [compute_gauss_gridfit_derivatives.py](analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
+- [ ] Make pRF maps with pycortex [pycortex_maps_gridfit.py](analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py) or [pycortex_maps_gridfit.sh](analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.sh)
+- [ ] CSS fit within the ROIs [prf_submit_css_jobs.py](analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [ ] Compute CSS statistics [css_stats_sbatch.py](analysis_code/postproc/prf/postfit/css_stats_sbatch.py)
+- [ ] Compute CSS fit derivatives [compute_css_derivatives.py](analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [ ] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
+- [ ] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](analysis_code/postproc/prf/postfit/pycortex_maps_css.py) or [pycortex_maps_css.sh](analysis_code/postproc/prf/postfit/pycortex_maps_css.sh)
+- [ ] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [ ] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) or [make_rois_fig_tsv.sh](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.sh)
+- [ ] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py) or [make_rois_fig.sh](analysis_code/postproc/prf/postfit/make_rois_fig.sh)

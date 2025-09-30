@@ -10,6 +10,7 @@
 # input[2]: project name (correspond to directory)
 # input[3]: main data directory (correspond to directory)
 # input[4]: Save maps in the overlay (y/n)
+# input[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # All pycortex maps for CSS
@@ -19,7 +20,8 @@
 # 1. cd to function
 # >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit
 # 2. run python command
-# >> sh pycortex_maps_css.sh [code directory] [project name] [main directory] [save_in_overlay]
+# >> sh pycortex_maps_css.sh [code directory] [project name] 
+#                            [main directory] [save_in_overlay] [analysis folder]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit n
@@ -33,7 +35,7 @@
 
 # Check if the base path, project name, and data path are provided as arguments
 if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <base_path> <project_name> <data_path> <save_in_overlay>"
+    echo "Usage: $0 <base_path> <project_name> <data_path> <save_in_overlay> [output_folder]"
     exit 1
 fi
 
@@ -42,6 +44,14 @@ base_path="$1"
 project_name="$2"
 data_path="$3"
 save_in_overlay="$4"
+
+# Define optional argument (5th) with default = "prf"
+if [ -n "$5" ]; then
+    output_folder="$5"
+else
+    output_folder="prf"
+fi
+
 # Define the path to the settings.json file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.json"
 
@@ -55,5 +65,5 @@ subjects=$(python -c "import json; data = json.load(open('$settings_file')); pri
 for subject in $subjects
 do
     echo "Processing pycortex_maps_css.py for: $subject"
-    python pycortex_maps_css.py "$data_path" "$project_name" "$subject" "$save_in_overlay"
+    python pycortex_maps_css.py "$data_path" "$project_name" "$subject" "$save_in_overlay" "$output_folder"
 done

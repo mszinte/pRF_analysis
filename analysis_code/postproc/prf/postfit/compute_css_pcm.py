@@ -13,6 +13,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 New brain volume in derivative nifti file
@@ -21,7 +22,8 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
 2. run python command
->> python compute_pcm.py [main directory] [project name] [subject] [group]
+>> python compute_pcm.py [main directory] [project name] 
+                         [subject] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
@@ -67,6 +69,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -106,7 +110,8 @@ if subject != 'sub-170k':
         print(format_)
         
         # define directories and fn
-        prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
+        prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
+            main_dir, project_dir, subject, format_, output_folder)
         fit_dir = "{}/fit".format(prf_dir)
         prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     
@@ -319,15 +324,15 @@ elif subject == 'sub-170k':
     # find all the subject prf derivatives
     subjects_pcm = []
     for subject in subjects:
-        subjects_pcm += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, prf_task_name)]
+        subjects_pcm += ["{}/{}/derivatives/pp_data/{}/170k/{}/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(
+                main_dir, project_dir, subject, output_folder, subject, prf_task_name)]
 
     # Compute median across subject
     img, data_pcm_median = median_subject_template(fns=subjects_pcm)
         
     # Export results
-    sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-            main_dir, project_dir)
+    sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives".format(
+            main_dir, project_dir, output_folder)
     os.makedirs(sub_170k_pcm_dir, exist_ok=True)
     
     sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(sub_170k_pcm_dir, prf_task_name)

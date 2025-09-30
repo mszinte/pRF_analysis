@@ -1,62 +1,61 @@
 """
 -----------------------------------------------------------------------------------------
-vdm_builder.py
+vdm_modifier.py
 -----------------------------------------------------------------------------------------
 Goal of the script :
-Create a slack of images generating the visual design of a pRF experiment
+Create a slack of images generating the visual design of a pRF experiment and shift it 
+using a set of eyetracking data position
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: group of shared data (e.g. 327)
+sys.argv[3]: server group (e.g. 327)
+sys.argv[4]: eye movement dataset file root (e.g. 'prf_em_ctrl')
 -----------------------------------------------------------------------------------------
 Output(s) :
 Video of the vdm
+np array of the vdm
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/stereo_prf/analysis_code/postproc/prf
+>> cd ~/projects/amblyo_prf/analysis_code/postproc/prf/fit
 2. run python command
-python vdm_builder.py [main directory] [project name] [group]
+python vdm_builder.py  [main directory] [project name] [group] [eye movement file]
 -----------------------------------------------------------------------------------------
-Exemple:
-python vdm_builder.py /scratch/mszinte/data amblyo_prf 327
------------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
+Edited by Adrien Chopin (adrien.chopin@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 
 #General imports
-import cv2
-import json
+import cv2 #import json
 import math
 import numpy as np
 import os
 import sys
-sys.path.append("{}/../../utils".format(os.getcwd()))
+import csv
+from scipy.ndimage import shift
+sys.path.append("{}/../../../utils".format(os.getcwd()))
 from conversion_utils import conversion
 
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
+em_ctrl_fn = sys.argv[4]
 
-# Load settings
-with open('../../settings.json') as f:
+# Settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 
-# Define directories
-rootpath = "{}/{}/derivatives/vdm/".format(main_dir, project_dir)
-fileName = 'vdm'
-filepath = os.path.join(rootpath,fileName+'.npy')
-videopath = os.path.join(rootpath,fileName+'.mp4')
-os.makedirs(rootpath, exist_ok=True)
-
 # Parameters
-screen_converter = conversion(screen_size_pix = analysis_info['screen_size_pix'], 
-                      screen_size_cm = analysis_info['screen_size_cm'],
-                      screen_distance_cm = analysis_info['screen_distance_cm'])
+screen_converter = conversion(screen_size_pix=analysis_info['screen_size_pix'], 
+                              screen_size_cm=analysis_info['screen_size_cm'],
+                              screen_distance_cm=analysis_info['screen_distance_cm'])
 
 TR = analysis_info['TR']
 n = analysis_info['screen_size_pix'][1]
@@ -74,9 +73,22 @@ delays = [5, 6.5]
 bar_list = np.array([1, 2, 0, 3, 4, 0, 5, 6, 0, 7, 8])
 list_angles = np.array([np.nan, 45, 0, 90, 135, 225, 180, 270, 315])
 
+# Eye movement file
+em_filepath = '{}/{}/derivatives/vdm/{}.csv'.format(main_dir, project_dir, em_ctrl_fn)
+with open(em_filepath, 'r') as file: 
+    csv_reader = csv.reader(file)
+    data = list(csv_reader)
+    eye_movements_data = np.array(data)
+    eye_movements_data = eye_movements_data[1:, :]
+    eye_movements = np.array(eye_movements_data, dtype=float).astype(int)
+
+# Define directories
+fileName_em_ctrl = 'vdm_{}_{}_{}'.format(vdm_size_pix[0], vdm_size_pix[1], em_ctrl_fn)
+filepath_em_ctrl = os.path.join(rootpath,fileName_em_ctrl + '.npy')
+videopath_shift = os.path.join(rootpath,fileName_em_ctrl + '.mp4')
+
 # Create a meshgrid of image coordinates x, y, a list of angles by TR
 x, y = np.meshgrid(range(0,n), range(0,n))
-
 angle_list = list_angles[bar_list];
 angle_halfTR = np.empty((1,2*TRs)); angle_halfTR.fill(np.nan)
 head = 0; newhead = 2*delays[0];
@@ -138,28 +150,56 @@ for i in range(0,np.size(angle_halfTR)):
 
 frames = frames[:,:,0::2] # only save the full TR, not the half-TR
 
+# shit the data in frames by the amounts documented in eye_movements (in a new frame)
+def shift_frames_by_eye_movements(frames, eye_movements):
+    shifted_frames = np.zeros_like(frames)
+    for i in range(frames.shape[2]):  # Iterate through each frame
+        x_shift = -eye_movements[i, 0]  # sign does not matter because we are only doing a simulation - if matters, should be at least negative (opposite to eye movements)
+        y_shift = -eye_movements[i, 1]  # sign does not matter because we are only doing a simulation - if matters, should be at least negative (opposite to eye movements)
+        
+        # Shift the frame
+        
+        shifted_frame = shift(frames[:, :, i], (y_shift, x_shift), mode='constant', cval=0)
+        
+        # Add the shifted frame to our new array
+        shifted_frames[:, :, i] = shifted_frame
+    
+    return shifted_frames
+
+# apply the shift
+frames_shift = shift_frames_by_eye_movements(frames, eye_movements)
+
 # Downsampling : resize the frames and inverse y axis
 frames_reshape = np.zeros((vdm_size_pix[0],vdm_size_pix[1],TRs))
 for k in range(frames_reshape.shape[-1]):
     frames_reshape[:,:,k] = cv2.resize(frames[:,:,k], dsize=(vdm_size_pix[0], vdm_size_pix[1]), interpolation=cv2.INTER_NEAREST)
 frames = frames_reshape
+frames_reshape_shift = np.zeros((vdm_size_pix[0],vdm_size_pix[1],TRs))
+for k in range(frames_reshape_shift.shape[-1]):
+    frames_reshape_shift[:,:,k] = cv2.resize(frames_shift[:,:,k], dsize=(vdm_size_pix[0], vdm_size_pix[1]), interpolation=cv2.INTER_NEAREST)
+frames_shift = frames_reshape_shift
 
 frames_rotate = np.zeros((vdm_size_pix[0],vdm_size_pix[1],TRs))
 for num, frame in enumerate(np.split(frames, TRs, axis=2)):
     frames_rotate[:,:,num] = frame[-1::-1,:,0]
 frames = frames_rotate
+frames_rotate_shift = np.zeros((vdm_size_pix[0],vdm_size_pix[1],TRs))
+for num, frame in enumerate(np.split(frames_shift, TRs, axis=2)):
+    frames_rotate_shift[:,:,num] = frame[-1::-1,:,0]
+frames_shift = frames_rotate_shift
 
-# Export video
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter(videopath, fourcc, 1/TR, (vdm_size_pix[0], vdm_size_pix[1]), False)
-[out.write(np.uint8(frame*255)) for frame in np.split(frames, TRs, axis=2)]
-out.release()
-print('Video conversion done, save to:'+videopath)
+# Export videos
+fourcc_shift = cv2.VideoWriter_fourcc(*'mp4v')
+out_shift = cv2.VideoWriter(videopath_shift, fourcc_shift, 1/TR, (vdm_size_pix[0], vdm_size_pix[1]), False)
+[out_shift.write(np.uint8(frame*255)) for frame in np.split(frames_shift, TRs, axis=2)]
+out_shift.release()
+print('Video conversion done (eye-movement-shifted version), saved to:'+videopath_shift)
 
 # Save numpy array
-np.save(filepath,frames)
-print('Data saved to :'+filepath)
+np.save(filepath_shift, frames_shift)
+print('Data (eye-movement-shifted version) saved to :'+filepath_shift)
 
 # Define permission cmd
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

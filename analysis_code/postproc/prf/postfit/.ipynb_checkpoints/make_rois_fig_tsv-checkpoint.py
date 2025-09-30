@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: server group (e.g. 327)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 CSS analysis tsv
@@ -18,7 +19,8 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
 2. run python command
-python make_rois_fig.py [main directory] [project name] [subject] [group]
+python make_rois_fig.py [main directory] [project name] [subject] 
+                        [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -42,7 +44,7 @@ python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_control 327
 python make_rois_fig_tsv.py /scratch/mszinte/data amblyo_prf group_excluded 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
-Edited by Martin Szinte (mail@martinszinte.net)
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -69,6 +71,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -118,8 +122,8 @@ for format_, extension in zip(formats, extensions):
     # Individual subject analysis
     if 'group' not in subject:
         print('Subject {} is processed'.format(subject))
-        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-            main_dir, project_dir, subject, format_)
+        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+            main_dir, project_dir, subject, format_, output_folder)
         os.makedirs(tsv_dir, exist_ok=True)
         
         tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
@@ -314,29 +318,29 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_distribution_fn))
         df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
         
-        # # Spatial distribution hot zone barycentre
-        # # ----------------------------------------
-        # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-        # for i, hemi in enumerate(hemis):
-        #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-        #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-        #     df_barycentre_hemi = make_prf_barycentre_df(
-        #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
+        # Spatial distribution hot zone barycentre
+        # ----------------------------------------
+        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+        for i, hemi in enumerate(hemis):
+            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+            df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+            df_barycentre_hemi = make_prf_barycentre_df(
+                df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
             
-        #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-        #     if i == 0: df_barycentre = df_barycentre_hemi
-        #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+            df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+            if i == 0: df_barycentre = df_barycentre_hemi
+            else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
         
-        # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
-        # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-        # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+        tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
+        print('Saving tsv: {}'.format(tsv_barycentre_fn))
+        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         
     # Group Analysis    
     else :
         print('group')
         for i, subject_to_group in enumerate(subjects_to_group):
-            tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                main_dir, project_dir, subject_to_group, format_)
+            tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+                main_dir, project_dir, subject_to_group, output_folder, format_)
     
             # ROI surface areas 
             # -----------------
@@ -395,8 +399,8 @@ for format_, extension in zip(formats, extensions):
             else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
            
         # Median and saving tsv
-        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-            main_dir, project_dir, subject, format_)
+        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+            main_dir, project_dir, subject, output_folder, format_)
         os.makedirs(tsv_dir, exist_ok=True)
         
         # ROI surface areas 
@@ -479,22 +483,22 @@ for format_, extension in zip(formats, extensions):
         df_distribution = pd.concat([others_columns, df_distribution], axis=1)
         df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
         
-        # # Spatial distribution hot zone barycentre 
-        # # ----------------------------------------
-        # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-        # for j, hemi in enumerate(hemis):
-        #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-        #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-        #     df_barycentre_hemi = make_prf_barycentre_df(
-        #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
+        # Spatial distribution hot zone barycentre 
+        # ----------------------------------------
+        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+        for j, hemi in enumerate(hemis):
+            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+            df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+            df_barycentre_hemi = make_prf_barycentre_df(
+                df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
             
-        #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-        #     if j == 0: df_barycentre = df_barycentre_hemi
-        #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+            df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+            if j == 0: df_barycentre = df_barycentre_hemi
+            else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
             
-        # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
-        # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-        # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+        tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
+        print('Saving tsv: {}'.format(tsv_barycentre_fn))
+        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

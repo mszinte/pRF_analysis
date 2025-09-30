@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -20,12 +21,12 @@ To run:
 >> cd ~/projects/RetinoMaps/analysis_code/postproc/prf/fit
 2. run python command
 python prf_gridfit.py [main directory] [project name] [subject name] 
-[inout file name] [number of jobs]
+[inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-02 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@univ-amu.fr)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -51,7 +52,6 @@ from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel 
 from prfpy.fit import Iso2DGaussianFitter 
 
-
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image , load_surface
@@ -65,13 +65,15 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
 n_batches = n_jobs
 verbose = True
 gauss_params_num = 8
 
 # Analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, 'settings.json')
 
 with open(settings_path) as f:
     json_s = f.read()
@@ -87,13 +89,13 @@ prf_task_name = analysis_info['prf_task_name']
 
 # Define directories
 if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
-        main_dir,project_dir,subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
-        main_dir,project_dir,subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 fit_fn_gauss_gridfit = input_fn.split('/')[-1]
@@ -104,7 +106,7 @@ pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', 'prf-pred_gauss_gr
 
 # Get task specific visual design matrix
 vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+    main_dir, project_dir, output_folder, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # defind model parameter grid range
