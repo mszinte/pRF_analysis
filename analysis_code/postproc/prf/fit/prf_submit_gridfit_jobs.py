@@ -24,6 +24,8 @@ python prf_submit_gridfit_jobs.py [main directory] [project name] [subject]
 -----------------------------------------------------------------------------------------
 Exemple:
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327 prf_em_ctrl
+python prf_submit_gridfit_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

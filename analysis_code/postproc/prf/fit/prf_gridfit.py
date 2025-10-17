@@ -121,7 +121,7 @@ valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
 # determine stimulus
-stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1], 
+stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[0], # because margins made screen width x width 
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)

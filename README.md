@@ -2,6 +2,26 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
+
+# Environment Set Up 
+``` conda env create -f environment.yml ```
+``` conda activate pRF_env             ```              
+
+Then install pycortex: 
+
+``` CFLAGS="-std=c99" pip install git+https://github.com/gallantlab/pycortex.git ```
+
+Then install prfpy:  
+
+``` git clone https://github.com/VU-Cog-Sci/prfpy.git ```
+
+cd to folder 
+
+``` python installer.py ```
+everything should be fine, so to check that all version are correct: 
+``` pip install -r requirements.txt ```
+
+
 # Task-specific analysis
 ---
 After pRF analysis each project has its own analysis. The project's read me can be found at : 

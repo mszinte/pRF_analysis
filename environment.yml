@@ -1,0 +1,40 @@
+name: pRF_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - numpy=1.26.4
+  - matplotlib=3.8.3
+  - scipy
+  - pandas
+  - seaborn
+  - scikit-learn
+  - nibabel
+  - nilearn
+  - numba
+  - h5py
+  - ipython
+  - jupyter
+  - pip
+  - pip:
+      - ipdb==0.13.13
+      - bids-validator==1.14.7.post0
+      - bidsschematools==1.0.10
+      - pybids==0.19.0
+      - mayavi==4.8.3
+      - opencv-python==4.9.0.80
+      - imageio==2.34.0
+      - imageio-ffmpeg==0.5.1
+      - moviepy==2.1.1
+      - tqdm==4.66.4
+      - numexpr==2.9.0
+      - pandas-flavor==0.6.0
+      - pingouin==0.5.4
+      - plotly==5.13.1
+      - kaleido==0.2.1
+      - ujson==5.4.0
+      - vtk==9.5.0
+      - trimesh==4.4.1
+      - pyzmq
+      - debugpy
