@@ -32,6 +32,10 @@ python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-170k n
 
 python pycortex_maps_run_corr.py ~/disks/meso_S/data amblyo_prf sub-01 n
 python pycortex_maps_run_corr.py ~/disks/meso_S/data amblyo_prf sub-170k n
+
+python pycortex_maps_run_corr.py ~/disks/meso_shared centbids sub-2100247523 n
+python pycortex_maps_run_corr.py ~/disks/meso_shared centbids sub-170k n
+
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -86,7 +90,8 @@ with open(settings_path) as f:
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-tasks = analysis_info['task_names']
+#tasks = analysis_info['task_names']
+tasks = [analysis_info['prf_task_name']]
 alpha_range = analysis_info["alpha_range"]
 maps_names_corr = analysis_info['maps_names_corr']
 

@@ -33,6 +33,9 @@ python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub
 
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
+
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-2100247523 327
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

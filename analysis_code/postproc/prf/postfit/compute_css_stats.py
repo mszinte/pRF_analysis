@@ -105,7 +105,7 @@ if subject != 'sub-170k':
         prf_fit_dir = '{}/{}/{}/{}/fit'.format(
             pp_dir, subject, format_, output_folder)
         prf_bold_dir = '{}/{}/{}/func/fmriprep_dct_loo_avg'.format(
-            pp_dir, subject, format_)
+             pp_dir, subject, format_)
         prf_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_prf-pred_css.{}'.format(
             prf_fit_dir, prf_task_name, extension))
         

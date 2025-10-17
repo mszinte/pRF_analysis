@@ -36,8 +36,9 @@ warnings.filterwarnings("ignore")
 import ipdb
 deb = ipdb.set_trace
 
+
 # General imports
-import os
+import os; os.environ["JOBLIB_MULTIPROCESS_START_METHOD"] = "spawn"
 import sys
 import json
 import datetime
@@ -109,7 +110,7 @@ elif input_fn.endswith('.gii'):
 fit_fn_css = input_fn.split('/')[-1]
 fit_fn_css = fit_fn_css.replace('bold', 'prf-fit_css')
 
-pred_fn_css = input_fn.split('/')[-1]
+pred_fn_css = input_fn.split('/')[-1] 
 pred_fn_css = pred_fn_css.replace('bold', 'prf-pred_css')
 
 # Get task specific visual design matrix
@@ -130,7 +131,7 @@ img, data, data_roi, roi_idx = data_from_rois(fn=input_fn,
 print('roi extraction done')
 
 # Determine visual design
-stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1], 
+stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[0],  # because square makes dimensions width x width 
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)

@@ -30,6 +30,8 @@ python compute_run_corr_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
 python compute_run_corr_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 
 python compute_run_corr_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
+
+python compute_run_corr_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

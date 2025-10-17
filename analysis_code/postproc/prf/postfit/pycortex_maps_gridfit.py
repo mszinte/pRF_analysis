@@ -10,7 +10,6 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
-sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -18,10 +17,10 @@ Pycortex flatmaps figures and dataset
 To run:
 0. TO RUN ON INVIBE SERVER (with Inkscape)
 1. cd to function
->> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_gridfit.py [main directory] [project name] 
-                                   [subject num] [save_in_svg] [analysis folder - optional]
+                                    [subject num] [save_in_svg]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -37,8 +36,10 @@ python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n
 
 python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n prf_em_ctrl
 python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n prf_em_ctrl
+
+python pycortex_maps_gridfit.py ~/disks/meso_shared centbids sub-2100247523 n 
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (martin.szinte@gmail.com)
+Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -69,9 +70,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
-if len(sys.argv) > 5: output_folder = sys.argv[5]
-else: output_folder = "prf"
-    
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -114,11 +112,11 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 importlib.reload(cortex)
  
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_ in formats:
     
     # define directories and fn
-    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(main_dir, project_dir, 
-                                                           subject, format_, output_folder)
+    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, 
+                                                           subject, format_)
     fit_dir = "{}/fit".format(prf_dir)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     flatmaps_dir = '{}/pycortex/flatmaps_avg_gauss_gridfit'.format(prf_dir)
@@ -128,6 +126,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     os.makedirs(datasets_dir, exist_ok=True)
     
     if format_ == 'fsnative':
+        pycortex_subject = subject
         deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_gauss_gridfit.func.gii'.format(
             prf_deriv_dir, subject, prf_task_name)
         deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-deriv_gauss_gridfit.func.gii'.format(
@@ -137,6 +136,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         deriv_mat = results['data_concat']
         
     elif format_ == '170k':
+        pycortex_subject = 'sub-170k'
         deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         results = load_surface_pycortex(brain_fn=deriv_avg_fn)
