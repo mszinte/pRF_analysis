@@ -24,6 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python preproc_end_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python preproc_end_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

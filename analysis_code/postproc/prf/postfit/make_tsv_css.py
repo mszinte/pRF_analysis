@@ -33,6 +33,7 @@ python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-170k 327
 
 python make_tsv_css.py /scratch/mszinte/data amblyo_prf sub-01 327
 python make_tsv_css.py /scratch/mszinte/data amblyo_prf sub-170k 327
+python make_tsv_css.py /scratch/mszinte/data centbids sub-21002475231 327 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -66,6 +67,7 @@ group = sys.argv[4]
 if len(sys.argv) > 5: output_folder = sys.argv[5]
 else: output_folder = "prf"
 
+
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
@@ -83,13 +85,14 @@ maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 maps_names_vert_area = analysis_info["maps_names_vert_area"]
 maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm + maps_names_vert_area
+maps_names = maps_names_css + maps_names_css_stats + maps_names_vert_area
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Loop over format
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_ in formats:
     
     # Define directories and fn
     prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
@@ -104,6 +107,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     # Load all data
     df_rois = pd.DataFrame()
     if format_ == 'fsnative':
+        pycortex_subject = subject
         for hemi in ['hemi-L', 'hemi-R']:
             
             # Derivatives
@@ -147,7 +151,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                 df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
                 
     elif format_ == '170k':
-    
+        pycortex_subject = 'sub-170k'
         # Derivatives
         deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
@@ -169,7 +173,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         
         # Combine all derivatives
         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
-
+        
         # Get roi mask
         roi_verts_L, roi_verts_R = get_rois(subject=subject,
                                             return_concat_hemis=False,

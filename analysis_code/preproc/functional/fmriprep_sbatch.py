@@ -19,7 +19,6 @@ sys.argv[10]: dof number (e.g. 12)
 sys.argv[11]: email account
 sys.argv[12]: data group (e.g. 327)
 sys.argv[13]: project name (e.g. b327)
-sys.argv[14]: fmriprep singularity file (e.g. fmriprep-25.1.0.simg)
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
@@ -31,13 +30,17 @@ To run:
 python fmriprep_sbatch.py [main directory] [project name] [subject num]
                           [hour proc.] [anat_only_(y/n)] [aroma_(y/n)] [fmapfree_(y/n)] 
                           [skip_bids_val_(y/n)] [cifti_output_170k_(y/n)] [fsaverage(y/n)]
-                          [dof] [email account] [group] [server_project] [fmriprep_simg]
+                          [dof] [email account] [group] [server_project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
+python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327
+python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 uriel.lascombes@etu.univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327 fmriprep-25.1.0.simg
+python fmriprep_sbatch.py /scratch/mszinte/data centbids sub-2100247523 30 anat_only_y aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 sina.kling@univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -56,7 +59,7 @@ opj = os.path.join
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-sub_num = subject[4:]
+sub_num = subject[-2:]
 hour_proc = int(sys.argv[4])
 anat = sys.argv[5]
 aroma = sys.argv[6]
@@ -68,11 +71,11 @@ dof = int(sys.argv[11])
 email = sys.argv[12]
 group = sys.argv[13]
 server_project = sys.argv[14]
-fmriprep_simg = sys.argv[15]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
-singularity_dir = f"{main_dir}/{project_dir}/code/singularity/{fmriprep_simg}"
+singularity_dir = "{main_dir}/{project_dir}/code/singularity/fmriprep-22.1.1.simg".format(
+    main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
 memory_val = 100
 log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
@@ -91,8 +94,6 @@ if anat == 'anat_only_y':
 if aroma == 'aroma_y':
     use_aroma = ' --use-aroma --aroma-melodic-dimensionality -200'
     aroma_end = '_aroma'
-else:
-    aroma_end = ''
 
 if fmapfree == 'fmapfree_y':
     use_fmapfree= ' --use-syn-sdc'
@@ -130,7 +131,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 #define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2t1w-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_skip_bids_val}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
@@ -143,6 +144,8 @@ chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_
 
 chmod_cmd_temp = "\nchmod -Rf 771 {main_dir}/temp".format(main_dir=main_dir)
 chgrp_cmd_temp = "chgrp -Rf {group} {main_dir}/temp".format(main_dir=main_dir, group=group)
+
+
 
 # create sh folder and file
 sh_fn = "{main_dir}/{project_dir}/derivatives/fmriprep/jobs/sub-{sub_num}_fmriprep{anat_only_end}{aroma_end}.sh".format(
@@ -163,4 +166,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-#os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))

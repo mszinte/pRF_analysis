@@ -26,6 +26,7 @@ python prf_submit_css_jobs.py [main directory] [project name] [subject]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -76,11 +77,14 @@ chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
-dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.func.gii".format(
-    pp_dir,subject, prf_task_name)
-dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.dtseries.nii".format(
+# dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.func.gii".format(
+#     pp_dir,subject, prf_task_name)
+#dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.dtseries.nii".format(
+#    pp_dir, subject, prf_task_name)
+dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct/*_task-{}*.dtseries.nii".format(
     pp_dir, subject, prf_task_name)
-pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns)
+#pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns)
+pp_fns = glob.glob(dct_avg_nii_fns)
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):

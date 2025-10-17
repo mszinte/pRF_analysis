@@ -31,6 +31,8 @@ python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
 
 python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-01 327
 python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-170k 327
+
+python compute_run_corr.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -76,7 +78,8 @@ settings_path = os.path.join(base_dir, project_dir, "settings.json")
 with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
-tasks = analysis_info['task_names']
+#tasks = analysis_info['task_names']
+tasks = [analysis_info['prf_task_name']]
 sessions = analysis_info['sessions']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -90,8 +93,6 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
         
 # sub-170k exception
 if subject != 'sub-170k':
-    print('{}, computing inter-run correlation...'.format(subject))
-    
     # make extension folders
     corr_temp_dir = "{}/{}/derivatives/temp_data/{}_corr".format(main_dir, project_dir, subject)
     os.makedirs(corr_temp_dir, exist_ok=True)
@@ -117,11 +118,15 @@ if subject != 'sub-170k':
                           preproc_fsnative_hemi_R,
                           preproc_170k]
     
+
+
     # Inter-run correlations    
     for preproc_files in preproc_files_list:
         for task in tasks:
             # Defind output files names 
             preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
+
+            print(task, len(preproc_files_task), preproc_files_task)
     
             if not preproc_files_task:
                 print('No files for {}'.format(task))

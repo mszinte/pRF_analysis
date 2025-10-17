@@ -59,7 +59,13 @@ rsync -avuz /scratch/jstellmann/data/CENTBIDS/derivatives/freesurfer/sub-2100247
 rsync -avuz /scratch/mszinte/data/RetinoMaps/derivatives/fmriprep/freesurfer/fsaverage/ /scratch/mszinte/data/centbids/derivatives/fmriprep/freesurfer/fsaverage/
 rsync -avuz /scratch/mszinte/data/RetinoMaps/derivatives/fmriprep/freesurfer/fsaverage6/ /scratch/mszinte/data/centbids/derivatives/fmriprep/freesurfer/fsaverage6/
 
+<<<<<<< HEAD
 
+=======
+#after running pycortex import 
+#copy sub-170k from retinomaps 
+rsync -avuz /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/cortex/db/sub-170k /scratch/mszinte/data/centbids/derivatives/pp_data/cortex/db/sub-170k
+>>>>>>> skling
 
 # chmod/chgrp
 chmod -Rf 771 /scratch/mszinte/data/centbids/

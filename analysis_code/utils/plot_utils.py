@@ -288,17 +288,17 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                       row=1, col=2)
         
         # # pRF n
-        # fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-        #                         y=df.prf_n, 
-        #                         name=roi, 
-        #                         opacity=1,
-        #                         showlegend=False, 
-        #                         legendgroup='n', 
-        #                         points=False, 
-        #                         scalemode='width', 
-        #                         fillcolor=roi_colors[roi],
-        #                         line_color=roi_colors[roi]), 
-        #               row=2, col=1)
+        fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
+                                y=df.prf_n, 
+                                name=roi, 
+                                opacity=1,
+                                showlegend=False, 
+                                legendgroup='n', 
+                                points=False, 
+                                scalemode='width', 
+                                fillcolor=roi_colors[roi],
+                                line_color=roi_colors[roi]), 
+                      row=2, col=1)
 
         # pRF ecc
         fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
@@ -343,11 +343,11 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                          title_text='pRF size (dva)', 
                          row=1, col=2)
         
-        # fig.update_yaxes(showline=True, 
-        #                  range=[0, 2], 
-        #                  nticks=5, 
-        #                  title_text='pRF n', 
-        #                  row=2, col=1)
+        fig.update_yaxes(showline=True, 
+                         range=[0, 2], 
+                         nticks=5, 
+                         title_text='pRF n', 
+                         row=2, col=1)
 
         fig.update_yaxes(showline=True, 
                          range=[0, 30], 
@@ -474,29 +474,29 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                           row=1, col=2)
                 
         # # pRF n
-        # weighted_median = df.prf_n_weighted_median
-        # ci_up = df.prf_n_ci_up
-        # ci_down = df.prf_n_ci_down
+        weighted_median = df.prf_n_weighted_median
+        ci_up = df.prf_n_ci_up
+        ci_down = df.prf_n_ci_down
         
-        # fig.add_trace(go.Scatter(x=[roi],
-        #                          y=tuple(weighted_median),
-        #                          mode='markers', 
-        #                          name=roi,
-        #                          error_y=dict(type='data', 
-        #                                       array=[ci_up-weighted_median], 
-        #                                       arrayminus=[weighted_median-ci_down],
-        #                                       visible=True, 
-        #                                       thickness=3,
-        #                                       width=0, 
-        #                                       color=roi_colors[roi]),
-        #                          marker=dict(symbol="square",
-        #                                      color=roi_colors[roi],
-        #                                      size=12, 
-        #                                      line=dict(color=roi_colors[roi], 
-        #                                                width=3)),
-        #                          legendgroup='n',
-        #                          showlegend=False), 
-        #                   row=2, col=1)
+        fig.add_trace(go.Scatter(x=[roi],
+                                 y=tuple(weighted_median),
+                                 mode='markers', 
+                                 name=roi,
+                                 error_y=dict(type='data', 
+                                              array=[ci_up-weighted_median], 
+                                              arrayminus=[weighted_median-ci_down],
+                                              visible=True, 
+                                              thickness=3,
+                                              width=0, 
+                                              color=roi_colors[roi]),
+                                 marker=dict(symbol="square",
+                                             color=roi_colors[roi],
+                                             size=12, 
+                                             line=dict(color=roi_colors[roi], 
+                                                       width=3)),
+                                 legendgroup='n',
+                                 showlegend=False), 
+                          row=2, col=1)
         
         # pRF ecc
         weighted_median = df.prf_ecc_weighted_median
@@ -562,11 +562,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                          title_text='pRF size (dva)', 
                          row=1, col=2)
         
-        # fig.update_yaxes(showline=True, 
-        #                  range=[0, 2], 
-        #                  nticks=5, 
-        #                  title_text='pRF n', 
-        #                  row=2, col=1)
+        fig.update_yaxes(showline=True, 
+                         range=[0, 2], 
+                         nticks=5, 
+                         title_text='pRF n', 
+                         row=2, col=1)
 
         fig.update_yaxes(showline=True, 
                          range=[0, 20], 
@@ -767,24 +767,44 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
             r2_median = np.array(df.prf_loo_r2_bins_median)
             pcm_upper_bound = np.array(df.prf_pcm_bins_ci_upper_bound)
             pcm_lower_bound = np.array(df.prf_pcm_bins_ci_lower_bound)
+
+            epsilon = 1e-6
+            sigma_safe = np.clip(r2_median, epsilon, None)  # replace zeros with epsilon
+
+           
+
             
             # Linear regression
-            slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
-            
-            slope_upper, intercept_upper = weighted_regression(ecc_median[~np.isnan(pcm_upper_bound)], 
-                                                               pcm_upper_bound[~np.isnan(pcm_upper_bound)], 
-                                                               r2_median[~np.isnan(pcm_upper_bound)], 
-                                                               model='pcm')
-            
-            slope_lower, intercept_lower = weighted_regression(ecc_median[~np.isnan(pcm_lower_bound)], 
-                                                               pcm_lower_bound[~np.isnan(pcm_lower_bound)], 
-                                                               r2_median[~np.isnan(pcm_lower_bound)], 
-                                                               model='pcm')
+
+            slope, intercept = weighted_regression(
+                np.asarray(ecc_median, dtype=float).ravel(),
+                np.asarray(pcm_median, dtype=float).ravel(),
+                np.asarray(r2_median, dtype=float).ravel(),
+                model='pcm'
+            )
+
+            slope_upper, intercept_upper = weighted_regression(
+                np.asarray(ecc_median[~np.isnan(pcm_upper_bound)], dtype=float).ravel(),
+                np.asarray(pcm_upper_bound[~np.isnan(pcm_upper_bound)], dtype=float).ravel(),
+                np.asarray(r2_median[~np.isnan(pcm_upper_bound)], dtype=float).ravel(),
+                model='pcm'
+            )
+
+            slope_lower, intercept_lower = weighted_regression(
+                np.asarray(ecc_median[~np.isnan(pcm_lower_bound)], dtype=float).ravel(),
+                np.asarray(pcm_lower_bound[~np.isnan(pcm_lower_bound)], dtype=float).ravel(),
+                np.asarray(r2_median[~np.isnan(pcm_lower_bound)], dtype=float).ravel(),
+                model='pcm'
+            )
+           
 
             line_x = np.linspace(ecc_median[0], ecc_median[-1], 50)
             line = 1 / (slope * line_x + intercept)
             line_upper = 1 / (slope_upper * line_x + intercept_upper)
             line_lower = 1 / (slope_lower * line_x + intercept_lower)
+
+            
+
 
             fig.add_trace(go.Scatter(x=line_x, 
                                      y=line, 
@@ -885,7 +905,7 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
             df = df_polar_angle.loc[(df_polar_angle.roi==roi) & (df_polar_angle.hemi==hemi)]
             
             # barpolar
-            fig.add_trace(go.Barpolar(r=df.loo_r2_sum, 
+            fig.add_trace(go.Barpolar(r=df.prf_rsq_sum, 
                                       theta=df.theta_slices, 
                                       marker_color=roi_colors[roi], 
                                       width=360/(num_polar_angle_bins),
