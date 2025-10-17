@@ -25,6 +25,7 @@ cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python preproc_end.py /scratch/mszinte/data MotConf sub-01 327
 python preproc_end.py /scratch/mszinte/data RetinoMaps sub-01 327
 python preproc_end.py /scratch/mszinte/data amblyo_prf sub-01 327
+python preproc_end.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -273,7 +274,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             img.darrays[0].meta['GeometricType'] = geometric_type
             img.darrays[1].datatype = 'NIFTI_TYPE_FLOAT32'
             nb.save(img, '{}/{}_{}_{}.surf.gii'.format(
-                dest_dir_anat, subject, save_hemi, save_surf))
+                dest_dir_anat, subject, save_hemi, save_surf), mode="compat")
             
 # Time
 end_time = datetime.datetime.now()

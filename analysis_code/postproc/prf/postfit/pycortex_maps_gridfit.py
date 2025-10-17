@@ -17,7 +17,7 @@ Pycortex flatmaps figures and dataset
 To run:
 0. TO RUN ON INVIBE SERVER (with Inkscape)
 1. cd to function
->> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_gridfit.py [main directory] [project name] 
                                     [subject num] [save_in_svg]
@@ -33,6 +33,11 @@ python pycortex_maps_gridfit.py ~/disks/meso_S/data RetinoMaps sub-170k n
 
 python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n
 python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n
+
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-01 n prf_em_ctrl
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo_prf sub-170k n prf_em_ctrl
+
+python pycortex_maps_gridfit.py ~/disks/meso_shared centbids sub-2100247523 n 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -107,7 +112,7 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 importlib.reload(cortex)
  
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_ in formats:
     
     # define directories and fn
     prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, 
@@ -121,6 +126,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     os.makedirs(datasets_dir, exist_ok=True)
     
     if format_ == 'fsnative':
+        pycortex_subject = subject
         deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_gauss_gridfit.func.gii'.format(
             prf_deriv_dir, subject, prf_task_name)
         deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-deriv_gauss_gridfit.func.gii'.format(
@@ -130,6 +136,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         deriv_mat = results['data_concat']
         
     elif format_ == '170k':
+        pycortex_subject = 'sub-170k'
         deriv_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
         results = load_surface_pycortex(brain_fn=deriv_avg_fn)

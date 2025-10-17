@@ -55,6 +55,7 @@ import cortex
 import datetime
 import numpy as np
 import nibabel as nb
+import glob
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -102,7 +103,7 @@ start_time = datetime.datetime.now()
 # sub-170k exception
 if subject != 'sub-170k':
     # Compute PCM
-    for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+    for format_ in formats:
         print(format_)
         
         # define directories and fn
@@ -112,6 +113,7 @@ if subject != 'sub-170k':
     
         if format_ == 'fsnative':
             # Derivatives
+            pycortex_subject = subject
             atlas_name = None 
             surf_size = None        
             deriv_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
@@ -133,6 +135,7 @@ if subject != 'sub-170k':
             
         elif format_ == '170k':
             # Derivatives
+            pycortex_subject = 'sub-170k'
             atlas_name = 'mmp_group'
             surf_size = '59k'
             deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
@@ -152,6 +155,7 @@ if subject != 'sub-170k':
                 prf_deriv_dir, subject, prf_task_name)
             stats_results = load_surface_pycortex(brain_fn=stats_median_fn)
             stats_mat = stats_results['data_concat']
+        
         
         # Combine mat
         deriv_mat = np.concatenate((deriv_mat, stats_mat))
@@ -203,6 +207,7 @@ if subject != 'sub-170k':
         # Create empty results
         vert_cm = np.zeros((4,vert_num))*np.nan
         
+    
         for roi in rois:
             # Find ROI vertex
             roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]

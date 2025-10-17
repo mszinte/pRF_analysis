@@ -32,6 +32,8 @@ python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
 
 python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-01 n
 python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-170k n
+
+python pycortex_maps_css.py ~/disks/meso_S/data centbids sub-2100247523 n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -52,6 +54,7 @@ import json
 import cortex
 import numpy as np
 import matplotlib.pyplot as plt
+import glob
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -108,7 +111,7 @@ size_scale = [0, 5]
 n_scale = [0, 2]
 pcm_scale = [0, 10]
 
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_ in formats:
     
     # Define directories and fn
     prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
@@ -121,6 +124,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
 
     # Load all data
     if format_ == 'fsnative':
+        pycortex_subject = subject
         # Derivatives
         deriv_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
             prf_deriv_dir, subject, prf_task_name)
@@ -146,6 +150,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         pcm_mat = pcm_results['data_concat']
         
     elif format_ == '170k':
+        pycortex_subject = 'sub-170k'
         # Derivatives
         deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
             prf_deriv_dir, subject, prf_task_name)
@@ -169,7 +174,6 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
 
     # Combine mat
     all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
-    
     # Threshold mat
     all_deriv_mat_th = all_deriv_mat
     amp_down = all_deriv_mat_th[amplitude_idx,...] > 0
@@ -186,8 +190,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                        rsq_down,
                        size_th_down,size_th_up, 
                        ecc_th_down, ecc_th_up,
-                       n_th_down, n_th_up,
-                       stats_th_down
+                       n_th_down, n_th_up#,stats_th_down
                       )) 
     all_deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0 # put this to zero to not plot it
     
@@ -315,7 +318,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
         print(roi_name)
         exec('param_{}.update(roi_param)'.format(maps_name))
         exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-        exec("plt.savefig('{}/{}_task-{}_{}_css.pdf')".format(flatmaps_dir, subject, prf_task_name, maps_name))
+        exec("plt.savefig('{}/{}_task-{}_{}_css_transparency_0.pdf')".format(flatmaps_dir, subject, prf_task_name, maps_name))
         plt.close()
     
         # save flatmap as dataset

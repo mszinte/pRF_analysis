@@ -25,6 +25,7 @@ cd ~/projects/pRF_analysis/analysis_code/atlas/
 python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects MotConf
 python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects RetinoMaps
 python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects amblyo_prf
+python create_mmp_rois_atlas.py /scratch/mszinte/data /home/mszinte/projects centbids
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net)
@@ -59,6 +60,7 @@ main_dir = sys.argv[1]
 code_dir = sys.argv[2]
 project_dir = sys.argv[3]
 
+print(code_dir)
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
@@ -215,6 +217,7 @@ for group_name, rois_keys in groups.items():
 
 # Save atlases
 atlas_dir = '{}/{}/analysis_code/atlas'.format(code_dir, project_dir)
+print(atlas_dir)
 os.makedirs(atlas_dir, exist_ok=True)
 print("Saving atlases in: {}...".format(atlas_dir))
 
@@ -265,3 +268,5 @@ np.savez('{}/{}'.format(atlas_dir,rois_59k_group_fn_L), **rois_dict_59k_group_L)
 # Right hemisphere 59k group 
 rois_59k_group_fn_R = 'mmp_group_atlas_rois_59k_hemi-R.npz'
 np.savez('{}/{}'.format(atlas_dir,rois_59k_group_fn_R), **rois_dict_59k_group_R)
+
+print('done')

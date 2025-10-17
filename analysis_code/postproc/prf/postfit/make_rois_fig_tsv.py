@@ -124,7 +124,8 @@ for format_, extension in zip(formats, extensions):
         
         tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
         data = pd.read_table(tsv_fn, sep="\t")
-        
+
+       
         # Keep a raw data df 
         data_raw = data.copy()
         
@@ -138,13 +139,14 @@ for format_, extension in zip(formats, extensions):
                  (data.prf_loo_r2 < rsqr_threshold) |
                  (data[stats_col] > stats_threshold)] = np.nan
         data = data.dropna()
-    
+        
+        
         # ROI surface areas 
         # -----------------
         data_raw['vert_area'] = data_raw['vert_area'] / 100 # in cm2
         df_roi_area = data_raw.groupby(['roi'], sort=False)['vert_area'].sum().reset_index()
     
-        # Compute the area of FRD 0.05/0.01 vertex in each roi
+        Compute the area of FRD 0.05/0.01 vertex in each roi
         df_roi_area['vert_area_corr_pvalue_5pt'] = np.array(data_raw[data_raw['corr_pvalue_5pt'] < 0.05].groupby(
             ['roi'], sort=False)['vert_area'].sum())
         df_roi_area['ratio_corr_pvalue_5pt'] = df_roi_area['vert_area_corr_pvalue_5pt'] / df_roi_area['vert_area'] 
@@ -172,7 +174,8 @@ for format_, extension in zip(formats, extensions):
             df_params_median_roi = pd.DataFrame()
             df_params_median_roi['roi'] = [roi]
         
-            df_params_median_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
+            #df_params_median_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_rsq_weighted_mediann'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
             df_params_median_roi['prf_loo_r2_ci_down'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 25)
             df_params_median_roi['prf_loo_r2_ci_up'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 75)
             
@@ -198,7 +201,9 @@ for format_, extension in zip(formats, extensions):
         tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_dir, subject)
         print('Saving tsv: {}'.format(tsv_params_median_fn))
         df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
-    
+        
+        
+
         # Ecc.size
         # --------
         ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))

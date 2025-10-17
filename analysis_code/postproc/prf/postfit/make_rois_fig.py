@@ -204,15 +204,15 @@ for format_, extension in zip(formats, extensions):
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
 
-    # # Spatial distibution barycentre plot
-    # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
-    # df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-    # fig_fn = "{}/{}_barycentre.pdf".format(fig_dir, subject)
-    # fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
-    #                                 fig_width=fig_width, fig_height=400, 
-    #                                 rois=rois, roi_colors=roi_colors, screen_side=screen_side)
-    # print('Saving pdf: {}'.format(fig_fn))
-    # fig.write_image(fig_fn)
+    Spatial distibution barycentre plot
+    tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
+    df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+    fig_fn = "{}/{}_barycentre.pdf".format(fig_dir, subject)
+    fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
+                                    fig_width=fig_width, fig_height=400, 
+                                    rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+    print('Saving pdf: {}'.format(fig_fn))
+    fig.write_image(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
