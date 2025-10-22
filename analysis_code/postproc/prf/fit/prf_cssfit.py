@@ -24,7 +24,7 @@ python prf_cssfit.py [main directory] [project name] [subject name]
                      [inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -131,7 +131,7 @@ img, data, data_roi, roi_idx = data_from_rois(fn=input_fn,
 print('roi extraction done')
 
 # Determine visual design
-stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[0],  # because square makes dimensions width x width 
+stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)
