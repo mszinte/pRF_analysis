@@ -43,7 +43,7 @@ python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n
 python fmriprep_sbatch.py /scratch/mszinte/data centbids sub-2100247523 30 anat_only_y aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 sina.kling@univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Debug 
@@ -84,7 +84,6 @@ log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
 # special input
 anat_only, use_aroma, use_fmapfree, anat_only_end, \
 use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', '', '', '', ''
-
 
 if anat == 'anat_only_y':
     anat_only = ' --anat-only'
@@ -144,8 +143,6 @@ chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_
 
 chmod_cmd_temp = "\nchmod -Rf 771 {main_dir}/temp".format(main_dir=main_dir)
 chgrp_cmd_temp = "chgrp -Rf {group} {main_dir}/temp".format(main_dir=main_dir, group=group)
-
-
 
 # create sh folder and file
 sh_fn = "{main_dir}/{project_dir}/derivatives/fmriprep/jobs/sub-{sub_num}_fmriprep{anat_only_end}{aroma_end}.sh".format(

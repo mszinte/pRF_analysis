@@ -27,7 +27,7 @@ Exemple:
 python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-02 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@univ-amu.fr)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -105,8 +105,8 @@ pred_fn_gauss_gridfit = input_fn.split('/')[-1]
 pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', 'prf-pred_gauss_gridfit')
 
 # Get task specific visual design matrix
-vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, output_folder, vdm_width, vdm_height)
+vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
+    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # defind model parameter grid range
@@ -123,11 +123,10 @@ valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
 # determine stimulus
-stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[0], # because margins made screen width x width 
+stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)
-
 
 # determine gaussian model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)

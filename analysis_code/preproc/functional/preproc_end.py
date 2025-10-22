@@ -28,7 +28,7 @@ python preproc_end.py /scratch/mszinte/data amblyo_prf sub-01 327
 python preproc_end.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -198,7 +198,6 @@ for preproc_files in preproc_files_list:
             combi = list(it.combinations(preproc_files_task, len(preproc_files_task)-1))
 
         for loo_num, avg_runs in enumerate(combi):
-            
             # Load data and make the loo_avg object
             preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
             data_loo_avg = np.zeros(preproc_data.shape)
