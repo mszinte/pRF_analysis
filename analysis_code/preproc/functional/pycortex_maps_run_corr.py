@@ -38,7 +38,7 @@ python pycortex_maps_run_corr.py ~/disks/meso_shared centbids sub-170k n
 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -90,8 +90,8 @@ with open(settings_path) as f:
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-#tasks = analysis_info['task_names']
-tasks = [analysis_info['prf_task_name']]
+tasks = analysis_info['task_names']
+# tasks = [analysis_info['prf_task_name']]
 alpha_range = analysis_info["alpha_range"]
 maps_names_corr = analysis_info['maps_names_corr']
 
@@ -110,7 +110,6 @@ for idx, col_name in enumerate(maps_names_corr):
 corr_scale = [-1, 1]
  
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
-
     corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/fmriprep_dct_corr".format(main_dir, project_dir, subject, format_)
     flatmaps_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/flatmaps_inter-run-corr'.format(main_dir, project_dir, subject, format_)
     datasets_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/datasets_inter-run-corr'.format(main_dir, project_dir, subject, format_)

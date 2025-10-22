@@ -35,7 +35,7 @@ python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-170k 327
 python compute_run_corr.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -118,8 +118,6 @@ if subject != 'sub-170k':
                           preproc_fsnative_hemi_R,
                           preproc_170k]
     
-
-
     # Inter-run correlations    
     for preproc_files in preproc_files_list:
         for task in tasks:
@@ -176,7 +174,6 @@ if subject != 'sub-170k':
                 # median
                 if n_run == 0: corr_stats_data_median = np.copy(corr_stats_data)
                 else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]), axis=0)
-    
             
             # Compute two sided corrected p-values
             t_statistic = corr_stats_data_median[slope_idx, :] / corr_stats_data_median[stderr_idx, :]
