@@ -2,6 +2,26 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
+
+# Environment Set Up 
+``` conda env create -f environment.yml ```
+``` conda activate pRF_env             ```              
+
+Then install pycortex: 
+
+``` CFLAGS="-std=c99" pip install git+https://github.com/gallantlab/pycortex.git ```
+
+Then install prfpy:  
+
+``` git clone https://github.com/VU-Cog-Sci/prfpy.git ```
+
+cd to folder 
+
+``` python installer.py ```
+everything should be fine, so to check that all version are correct: 
+``` pip install -r requirements.txt ```
+
+
 # Task-specific analysis
 ---
 After pRF analysis each project has its own analysis. The project's read me can be found at : 
@@ -41,7 +61,6 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] fMRIprep [fmriprep_sbatch.py](analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](analysis_code/preproc/functional/freesurfer_import_pycortex.py)
 - [x] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](analysis_code/preproc/functional/preproc_end_sbatch.py)
-- [x] Compute vertex areas [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
