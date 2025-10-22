@@ -114,8 +114,8 @@ pred_fn_css = input_fn.split('/')[-1]
 pred_fn_css = pred_fn_css.replace('bold', 'prf-pred_css')
 
 # Get task specific visual design matrix
-vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, output_folder, vdm_width, vdm_height)
+vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
+    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # Define model parameter grid range
