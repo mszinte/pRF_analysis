@@ -148,6 +148,8 @@ if subject != 'sub-170k':
     print('Compute median across LOO')
     
     for loo_deriv_fns in loo_deriv_fns_list:
+        if not loo_deriv_fns:
+            continue
         if loo_deriv_fns[0].find('hemi-L') != -1: hemi = 'hemi-L'
         elif loo_deriv_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
         else: hemi = None

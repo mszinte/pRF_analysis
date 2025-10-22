@@ -38,7 +38,7 @@ python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-01 327
 python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -57,7 +57,6 @@ import cortex
 import datetime
 import numpy as np
 import nibabel as nb
-import glob
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -99,7 +98,6 @@ set_pycortex_config_file(cortex_dir)
 # Maps settings 
 for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
     exec("{}_idx = idx".format(col_name))
-
 
 # compute duration 
 start_time = datetime.datetime.now()
