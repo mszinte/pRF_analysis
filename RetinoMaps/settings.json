@@ -56,7 +56,6 @@
     "maps_names_gauss": ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2"],
     "maps_names_css": ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2", "prf_n", "prf_loo_r2"],
     "maps_names_pcm": ["n_neighbor", "pcm_median", "vert_geo_dist_median", "vert_prf_dist_median"],
-    "maps_names_vert_area": ["vert_area"],
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "glm_code_names": {"non_responding":0, "pursuit":1, "saccade":2, "pursuit_and_saccade":3, "vision":4, "vision_and_pursuit":5, "vision_and_saccade":6, "vision_and_pursuit_and_saccade" :7},
     "maps_names_intertask": ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"],
