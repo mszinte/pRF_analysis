@@ -37,7 +37,7 @@ python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
 python compute_css_derivatives.py /scratch/mszinte/data centbids sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-and Uriel Lascombes (uriel.lascombes@laposte.net), edited by Sina Kling (sina.kling@outlook.de)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -122,8 +122,8 @@ if subject != 'sub-170k':
     
             nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
             print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
-
-    # Find all derivative files 
+    
+    # Find all the derivatives files 
     derives_fns = []
     for format_, extension in zip(formats, extensions):
         list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-deriv_css.{}".format(
@@ -183,83 +183,6 @@ if subject != 'sub-170k':
                                            maps_names=maps_names)
         nb.save(loo_deriv_img, median_fn)
         print('Saving median: {}'.format(median_fn))
-
-    # If there's only one file → no median to compute
-    if len(derives_fns) <= 1:
-        print("Single run detected — skipping LOO median computation.")
-    else:
-        # Group files by type 
-        deriv_groups = {
-            'hemi-L': [],
-            'hemi-R': [],
-            '170k': []
-        }
-
-        for fn in derives_fns:
-            if "hemi-L" in fn:
-                deriv_groups['hemi-L'].append(fn)
-            elif "hemi-R" in fn:
-                deriv_groups['hemi-R'].append(fn)
-            else:
-                deriv_groups['170k'].append(fn)
-
-        # Filter groups based on formats 
-        loo_deriv_fns_dict = {}
-        if 'fsnative' in formats:
-            loo_deriv_fns_dict['hemi-L'] = deriv_groups['hemi-L']
-            loo_deriv_fns_dict['hemi-R'] = deriv_groups['hemi-R']
-
-        if '170k' in formats:
-            loo_deriv_fns_dict['170k'] = deriv_groups['170k']
-
-        hemi_data_median = {key: [] for key in loo_deriv_fns_dict.keys()}
-
-        # Compute median across LOO for each group 
-        print('Compute median across LOO')
-
-        for hemi, loo_deriv_fns in loo_deriv_fns_dict.items():
-            if not loo_deriv_fns:  # skip empty
-                continue
-
-            print(f"Processing {hemi}")
-            # Load all data first
-            all_data = []
-            for fn in loo_deriv_fns:
-                print(f'Adding {fn} to computing median')
-                _, data = load_surface(fn=fn)
-                all_data.append(data)
-
-            all_data = np.stack(all_data, axis=0)
-            loo_deriv_data_median = np.nanmedian(all_data, axis=0)
-
-            # Construct output filename
-            first_fn = loo_deriv_fns[0]
-            loo_deriv_median_fn = re.sub(
-                r'avg_loo-\d+_prf-deriv_css',
-                'avg_prf-deriv_css_loo-median',
-                first_fn.split('/')[-1]
-            )
-
-            if hemi in ['hemi-L', 'hemi-R']:
-                median_fn = f"{pp_dir}/{subject}/fsnative/{output_folder}/prf_derivatives/{loo_deriv_median_fn}"
-            elif hemi == '170k':
-                median_fn = f"{pp_dir}/{subject}/170k/{output_folder}/prf_derivatives/{loo_deriv_median_fn}"
-            else:
-                raise ValueError(f"Unexpected hemi type: {hemi}")
-
-            hemi_data_median[hemi] = loo_deriv_data_median
-
-            # Export surface
-            deriv_img, _ = load_surface(fn=first_fn)
-            loo_deriv_img = make_surface_image(
-                data=loo_deriv_data_median,
-                source_img=deriv_img,
-                maps_names=maps_names
-            )
-            nb.save(loo_deriv_img, median_fn)
-            print(f"Saving median: {median_fn}")
-
-    
 
 # Sub-170k computing median       
 elif subject == 'sub-170k':

@@ -128,7 +128,6 @@ for format_, extension in zip(formats, extensions):
         
         tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
         data = pd.read_table(tsv_fn, sep="\t")
-
        
         # Keep a raw data df 
         data_raw = data.copy()
@@ -144,23 +143,22 @@ for format_, extension in zip(formats, extensions):
                  (data[stats_col] > stats_threshold)] = np.nan
         data = data.dropna()
         
-        
-        # ROI surface areas 
-        # -----------------
-        data_raw['vert_area'] = data_raw['vert_area'] / 100 # in cm2
-        df_roi_area = data_raw.groupby(['roi'], sort=False)['vert_area'].sum().reset_index()
+        # # ROI surface areas 
+        # # -----------------
+        # data_raw['vert_area'] = data_raw['vert_area'] / 100 # in cm2
+        # df_roi_area = data_raw.groupby(['roi'], sort=False)['vert_area'].sum().reset_index()
     
-        Compute the area of FRD 0.05/0.01 vertex in each roi
-        df_roi_area['vert_area_corr_pvalue_5pt'] = np.array(data_raw[data_raw['corr_pvalue_5pt'] < 0.05].groupby(
-            ['roi'], sort=False)['vert_area'].sum())
-        df_roi_area['ratio_corr_pvalue_5pt'] = df_roi_area['vert_area_corr_pvalue_5pt'] / df_roi_area['vert_area'] 
-        df_roi_area['vert_area_corr_pvalue_1pt'] = np.array(data_raw[data_raw['corr_pvalue_1pt'] < 0.01].groupby(
-            ['roi'], sort=False)['vert_area'].sum())
-        df_roi_area['ratio_corr_pvalue_1pt'] = df_roi_area['vert_area_corr_pvalue_1pt'] / df_roi_area['vert_area']         
+        # # Compute the area of FRD 0.05/0.01 vertex in each roi
+        # df_roi_area['vert_area_corr_pvalue_5pt'] = np.array(data_raw[data_raw['corr_pvalue_5pt'] < 0.05].groupby(
+        #     ['roi'], sort=False)['vert_area'].sum())
+        # df_roi_area['ratio_corr_pvalue_5pt'] = df_roi_area['vert_area_corr_pvalue_5pt'] / df_roi_area['vert_area'] 
+        # df_roi_area['vert_area_corr_pvalue_1pt'] = np.array(data_raw[data_raw['corr_pvalue_1pt'] < 0.01].groupby(
+        #     ['roi'], sort=False)['vert_area'].sum())
+        # df_roi_area['ratio_corr_pvalue_1pt'] = df_roi_area['vert_area_corr_pvalue_1pt'] / df_roi_area['vert_area']         
         
-        tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject)
-        print('Saving tsv: {}'.format(tsv_roi_area_fn))
-        df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
+        # tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject)
+        # print('Saving tsv: {}'.format(tsv_roi_area_fn))
+        # df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
     
         # Violins
         # -------
@@ -178,8 +176,7 @@ for format_, extension in zip(formats, extensions):
             df_params_median_roi = pd.DataFrame()
             df_params_median_roi['roi'] = [roi]
         
-            #df_params_median_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
-            df_params_median_roi['prf_rsq_weighted_mediann'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
+            df_params_median_roi['prf_loo_r2_weighted_median'] = weighted_nan_median(df_roi.prf_loo_r2, weights=df_roi.prf_loo_r2)
             df_params_median_roi['prf_loo_r2_ci_down'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 25)
             df_params_median_roi['prf_loo_r2_ci_up'] = weighted_nan_percentile(df_roi.prf_loo_r2, df_roi.prf_loo_r2, 75)
             
@@ -206,8 +203,6 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_params_median_fn))
         df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
         
-        
-
         # Ecc.size
         # --------
         ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
@@ -323,22 +318,22 @@ for format_, extension in zip(formats, extensions):
         print('Saving tsv: {}'.format(tsv_distribution_fn))
         df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
         
-        # Spatial distribution hot zone barycentre
-        # ----------------------------------------
-        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-        for i, hemi in enumerate(hemis):
-            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-            df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-            df_barycentre_hemi = make_prf_barycentre_df(
-                df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
+        # # Spatial distribution hot zone barycentre
+        # # ----------------------------------------
+        # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+        # for i, hemi in enumerate(hemis):
+        #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+        #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+        #     df_barycentre_hemi = make_prf_barycentre_df(
+        #         df_distribution_hemi, rois, screen_side, gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
             
-            df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-            if i == 0: df_barycentre = df_barycentre_hemi
-            else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+        #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+        #     if i == 0: df_barycentre = df_barycentre_hemi
+        #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
         
-        tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
-        print('Saving tsv: {}'.format(tsv_barycentre_fn))
-        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+        # tsv_barycentre_fn = "{}/{}_prf_barycentre.tsv".format(tsv_dir, subject)
+        # print('Saving tsv: {}'.format(tsv_barycentre_fn))
+        # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         
     # Group Analysis    
     else :

@@ -36,7 +36,7 @@ python make_tsv_css.py /scratch/mszinte/data amblyo_prf sub-170k 327
 python make_tsv_css.py /scratch/mszinte/data centbids sub-21002475231 327 
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -67,7 +67,6 @@ group = sys.argv[4]
 if len(sys.argv) > 5: output_folder = sys.argv[5]
 else: output_folder = "prf"
 
-
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
@@ -83,9 +82,7 @@ rois = analysis_info['rois']
 maps_names_css = analysis_info['maps_names_css']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
-maps_names_vert_area = analysis_info["maps_names_vert_area"]
-maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm + maps_names_vert_area
-maps_names = maps_names_css + maps_names_css_stats + maps_names_vert_area
+maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -93,13 +90,10 @@ set_pycortex_config_file(cortex_dir)
 
 # Loop over format
 for format_ in formats:
-    
     # Define directories and fn
     prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
         main_dir, project_dir, subject, format_, output_folder)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
-    vert_area_dir = "{}/{}/derivatives/pp_data/{}/{}/vertex_area".format(
-        main_dir, project_dir, subject, format_)
     tsv_dir = "{}/tsv".format(prf_dir)
     os.makedirs(tsv_dir, exist_ok=True)
     tsv_fn = '{}/{}_css-all_derivatives.tsv'.format(tsv_dir, subject)
@@ -125,12 +119,8 @@ for format_ in formats:
                 prf_deriv_dir, subject, prf_task_name, hemi)
             stats_img, stats_mat = load_surface(stats_median_fn)
             
-            # Vertex area
-            vertex_area_fn = '{}/{}_{}_vertex_area.func.gii'.format(vert_area_dir, subject, hemi)
-            vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-
             # Combine all derivatives
-            all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
+            all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
 
             # Get roi mask
             roi_verts = get_rois(subject=subject, 
@@ -167,12 +157,8 @@ for format_ in formats:
             prf_deriv_dir, subject, prf_task_name)
         stats_img, stats_mat = load_surface(stats_median_fn)
         
-        # Vertex area
-        vertex_area_fn = '{}/{}_vertex_area.dtseries.nii'.format(vert_area_dir, subject)
-        vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-        
         # Combine all derivatives
-        all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat, vertex_area_mat))
+        all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
         
         # Get roi mask
         roi_verts_L, roi_verts_R = get_rois(subject=subject,

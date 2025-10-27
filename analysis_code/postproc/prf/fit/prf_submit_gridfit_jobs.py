@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
+sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -20,9 +21,11 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_gridfit_jobs.py [main directory] [project name] [subject] 
-                                  [group] [server project]
+                                  [group] [server project] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327 prf_em_ctrl
@@ -53,6 +56,9 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+if len(sys.argv) > 6: output_folder = sys.argv[6]
+else: output_folder = "prf"
+
 memory_val = 30
 hour_proc = 2
 nb_procs = 8
@@ -75,26 +81,30 @@ chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
-dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-{}_*avg*.dtseries.nii".format(pp_dir, subject, prf_task_name)
-dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-{}_*avg*.func.gii".format(pp_dir, subject, prf_task_name)
+if prf_task_name == 'prf_EM_shift':
+    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-prf_*avg*.dtseries.nii".format(pp_dir, subject)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-prf_*avg*.func.gii".format(pp_dir, subject)
+else:
+    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-{}_*avg*.dtseries.nii".format(pp_dir, subject, prf_task_name)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-{}_*avg*.func.gii".format(pp_dir, subject, prf_task_name)
 
 pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/170k/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
+        prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
+        prf_jobs_dir = "{}/{}/fsnative/{}/jobs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
+        prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
@@ -113,8 +123,8 @@ for fit_num, pp_fn in enumerate(pp_fns):
            subject=subject, memory_val=memory_val, log_dir=prf_logs_dir)
 
     # define fit cmd
-    fit_cmd = "python prf_gridfit.py {} {} {} {} {} ".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs )
+    fit_cmd = "python prf_gridfit.py {} {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
     
     # create sh
     sh_fn = "{}/jobs/{}_prf_gridfit-{}.sh".format(prf_dir, subject, fit_num)
