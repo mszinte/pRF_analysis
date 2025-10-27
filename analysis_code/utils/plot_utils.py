@@ -119,13 +119,13 @@ def plotly_template(template_specs):
     return fig_template
 
 
-def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
+def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colors):
     """
-    Make bar plots of each roi area and the corresponding significative area of pRF  
+    Make bar plots of each roi number of vertex and the corresponding significative activer vertex for pRF  
     
     Parameters
     ----------
-    df_roi_area : dataframe for corresponding plot
+    df_roi_active_vert : dataframe for corresponding plot
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     roi_colors : dictionary with keys as roi and value correspondig rgb color
@@ -156,11 +156,11 @@ def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
                         subplot_titles=['FDR threshold = 0.05', 'FDR threshold = 0.01'],
                        )
     
-    # FDR 0.01 
+    # FDR 0.05 
     # All vertices
-    fig.add_trace(go.Bar(x=df_roi_area.roi, 
-                         y=df_roi_area.vert_area, 
-                         text=(df_roi_area['ratio_corr_pvalue_5pt']*100).astype(int).astype(str) + '%',
+    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
+                         y=df_roi_active_vert['n_vert_tot'], 
+                         text=(df_roi_active_vert['ratio_5pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
                          textangle=-60,
                          showlegend=False, 
@@ -168,27 +168,27 @@ def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
                  row=1, col=1)
  
     # Significant vertices
-    fig.add_trace(go.Bar(x=df_roi_area.roi, 
-                         y=df_roi_area.vert_area_corr_pvalue_5pt, 
+    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
+                         y=df_roi_active_vert['n_vert_corr_pvalue_5pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
                  row=1, col=1)
     
     
-    # FDR 0.01 
+    # FDR 0.01
     # All vertices
-    fig.add_trace(go.Bar(x=df_roi_area.roi, 
-                         y=df_roi_area.vert_area, 
-                         text=(df_roi_area['ratio_corr_pvalue_1pt']*100).astype(int).astype(str) + '%',
+    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
+                         y=df_roi_active_vert['n_vert_tot'], 
+                         text=(df_roi_active_vert['ratio_1pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
                          textangle=-60,
                          showlegend=False, 
-                         marker=dict(color=roi_colors, opacity=0.1)),
+                         marker=dict(color=roi_colors, opacity=0.2)),
                  row=1, col=2)
-    
+ 
     # Significant vertices
-    fig.add_trace(go.Bar(x=df_roi_area.roi, 
-                         y=df_roi_area.vert_area_corr_pvalue_1pt,
+    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
+                         y=df_roi_active_vert['n_vert_corr_pvalue_1pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
                  row=1, col=2)
@@ -198,10 +198,10 @@ def prf_roi_area(df_roi_area, fig_width, fig_height, roi_colors):
                      ticklen=0, 
                      linecolor=('rgba(255,255,255,0)'))      
     
-    fig.update_yaxes(range=[0,100], 
+    fig.update_yaxes(range=[0,16000], 
                      showline=True, 
                      nticks=10, 
-                     title_text='Surface area (cm<sup>2</sup>)',secondary_y=False)
+                     title_text='Number of vertex',secondary_y=False)
     
     fig.update_layout(barmode='overlay',
                       height=fig_height, 

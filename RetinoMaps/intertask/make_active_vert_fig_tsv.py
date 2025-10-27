@@ -128,7 +128,6 @@ for tasks in group_tasks :
                     percent_vision = ((n_vert_roi_vision * 100)/n_vert_roi)
                     percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100)/n_vert_roi)
 
-        
                 active_vertex_roi_categorie_df = pd.DataFrame({'subject':[subject], 
                                                                'roi': [roi], 
                                                                'saccade': [percent_saccade], 
