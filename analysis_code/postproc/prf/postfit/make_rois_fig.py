@@ -127,13 +127,13 @@ for format_, extension in zip(formats, extensions):
         main_dir, project_dir, subject, format_, output_folder)
     os.makedirs(fig_dir, exist_ok=True)
 
-    # # Roi area and stats plot
-    # tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject)
-    # df_roi_area = pd.read_table(tsv_roi_area_fn, sep="\t")
-    # fig = prf_roi_area(df_roi_area=df_roi_area, fig_width=fig_width, fig_height=300, roi_colors=roi_colors)
-    # fig_fn = "{}/{}_prf_roi_area.pdf".format(fig_dir, subject)
-    # print('Saving pdf: {}'.format(fig_fn))
-    # fig.write_image(fig_fn)
+    # Roi active vertex
+    tsv_roi_active_vert_fn = "{}/{}_prf_active_vert.tsv".format(tsv_dir, subject)
+    df_roi_active_vert = pd.read_table(tsv_roi_active_vert_fn, sep="\t")
+    fig = prf_roi_active_vert_plot(df_roi_active_vert=df_roi_active_vert, fig_width=fig_width, fig_height=300, roi_colors=roi_colors)
+    fig_fn = "{}/{}_prf_active_vert.pdf".format(fig_dir, subject)
+    print('Saving pdf: {}'.format(fig_fn))
+    fig.write_image(fig_fn)
     
     # Violins plot
     tsv_violins_fn = "{}/{}_prf_violins.tsv".format(tsv_dir, subject)
