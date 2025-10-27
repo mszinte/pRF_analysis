@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
+sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -20,7 +21,7 @@ To run:
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_gridfit.py [main directory] [project name] 
-                                    [subject num] [save_in_svg]
+                                   [subject num] [save_in_svg] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -70,6 +71,9 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+if len(sys.argv) > 5: output_folder = sys.argv[5]
+else: output_folder = "prf"
+
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -115,8 +119,8 @@ importlib.reload(cortex)
 for format_ in formats:
     
     # define directories and fn
-    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, 
-                                                           subject, format_)
+    prf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
+        main_dir, project_dir, subject, format_, output_folder)
     fit_dir = "{}/fit".format(prf_dir)
     prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     flatmaps_dir = '{}/pycortex/flatmaps_avg_gauss_gridfit'.format(prf_dir)

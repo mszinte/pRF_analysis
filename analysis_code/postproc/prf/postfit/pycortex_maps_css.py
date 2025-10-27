@@ -38,7 +38,7 @@ python pycortex_maps_css.py ~/disks/meso_S/data amblyo_prf sub-170k n
 python pycortex_maps_css.py ~/disks/meso_S/data centbids sub-2100247523 n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -56,7 +56,6 @@ import json
 import cortex
 import numpy as np
 import matplotlib.pyplot as plt
-import glob
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -194,7 +193,8 @@ for format_ in formats:
                        rsq_down,
                        size_th_down,size_th_up, 
                        ecc_th_down, ecc_th_up,
-                       n_th_down, n_th_up#,stats_th_down
+                       n_th_down, n_th_up, 
+                       stats_th_down
                       )) 
     all_deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0 # put this to zero to not plot it
     
@@ -322,7 +322,7 @@ for format_ in formats:
         print(roi_name)
         exec('param_{}.update(roi_param)'.format(maps_name))
         exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-        exec("plt.savefig('{}/{}_task-{}_{}_css_transparency_0.pdf')".format(flatmaps_dir, subject, prf_task_name, maps_name))
+        exec("plt.savefig('{}/{}_task-{}_{}_css.pdf')".format(flatmaps_dir, subject, prf_task_name, maps_name))
         plt.close()
     
         # save flatmap as dataset
