@@ -143,22 +143,50 @@ for format_, extension in zip(formats, extensions):
                  (data[stats_col] > stats_threshold)] = np.nan
         data = data.dropna()
         
-        # # ROI surface areas 
-        # # -----------------
-        # data_raw['vert_area'] = data_raw['vert_area'] / 100 # in cm2
-        # df_roi_area = data_raw.groupby(['roi'], sort=False)['vert_area'].sum().reset_index()
-    
-        # # Compute the area of FRD 0.05/0.01 vertex in each roi
-        # df_roi_area['vert_area_corr_pvalue_5pt'] = np.array(data_raw[data_raw['corr_pvalue_5pt'] < 0.05].groupby(
-        #     ['roi'], sort=False)['vert_area'].sum())
-        # df_roi_area['ratio_corr_pvalue_5pt'] = df_roi_area['vert_area_corr_pvalue_5pt'] / df_roi_area['vert_area'] 
-        # df_roi_area['vert_area_corr_pvalue_1pt'] = np.array(data_raw[data_raw['corr_pvalue_1pt'] < 0.01].groupby(
-        #     ['roi'], sort=False)['vert_area'].sum())
-        # df_roi_area['ratio_corr_pvalue_1pt'] = df_roi_area['vert_area_corr_pvalue_1pt'] / df_roi_area['vert_area']         
+        # ROI active proportion
+        # ---------------------
         
-        # tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject)
-        # print('Saving tsv: {}'.format(tsv_roi_area_fn))
-        # df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
+        # Number of vert per roi
+        n_vert_tot_roi = (data_raw.groupby('roi', sort=False)
+                          .size()
+                          .reset_index(name='n_vert_tot'))
+        
+        # Number of significant vert for 0.05 p vale correction
+        n_vert_corr_5pt = (data_raw[data_raw['corr_pvalue_5pt'] < 0.05]
+                           .groupby('roi', sort=False)
+                           .size()
+                           .reset_index(name='n_vert_corr_pvalue_5pt'))
+        
+        # Number of significant vert for 0.01 p vale correction
+        n_vert_corr_1pt = (data_raw[data_raw['corr_pvalue_1pt'] < 0.01]
+                           .groupby('roi', sort=False)
+                           .size()
+                           .reset_index(name='n_vert_corr_pvalue_1pt'))
+        
+        
+        tmp_df = n_vert_tot_roi.merge(n_vert_corr_5pt, on='roi', how='left') \
+                               .merge(n_vert_corr_1pt, on='roi', how='left')
+        
+        tmp_df = tmp_df.fillna(0)
+        
+        ratio_5pt = tmp_df[['roi']].copy()
+        ratio_1pt = tmp_df[['roi']].copy()
+        
+        ratio_5pt['ratio_5pt'] = tmp_df['n_vert_corr_pvalue_5pt'] / tmp_df['n_vert_tot']
+        ratio_1pt['ratio_1pt'] = tmp_df['n_vert_corr_pvalue_1pt'] / tmp_df['n_vert_tot']
+        
+        df_roi_active_vert = (n_vert_tot_roi
+                              .merge(n_vert_corr_5pt, on='roi', how='left')
+                              .merge(n_vert_corr_1pt, on='roi', how='left')
+                              .merge(ratio_1pt, on='roi', how='left')
+                              .merge(ratio_5pt, on='roi', how='left'))
+        
+        df_roi_active_vert = df_roi_active_vert.fillna(0)
+           
+        # Export tsv
+        tsv_roi_active_vert_fn = "{}/{}_prf_active_vert.tsv".format(tsv_dir, subject)
+        print('Saving tsv: {}'.format(tsv_roi_active_vert_fn))
+        df_roi_active_vert.to_csv(tsv_roi_active_vert_fn, sep="\t", na_rep='NaN', index=False)
     
         # Violins
         # -------
@@ -344,7 +372,7 @@ for format_, extension in zip(formats, extensions):
     
             # ROI surface areas 
             # -----------------
-            tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject_to_group)
+            tsv_roi_area_fn = "{}/{}_prf_active_vert.tsv".format(tsv_dir, subject_to_group)
             df_roi_area_indiv = pd.read_table(tsv_roi_area_fn, sep="\t")
             if i == 0: df_roi_area = df_roi_area_indiv.copy()
             else: df_roi_area = pd.concat([df_roi_area, df_roi_area_indiv])
@@ -406,7 +434,7 @@ for format_, extension in zip(formats, extensions):
         # ROI surface areas 
         # -----------------
         df_roi_area = df_roi_area.groupby(['roi'], sort=False).median().reset_index()
-        tsv_roi_area_fn = "{}/{}_prf_roi_area.tsv".format(tsv_dir, subject)
+        tsv_roi_area_fn = "{}/{}_prf_active_vert.tsv".format(tsv_dir, subject)
         print('Saving tsv: {}'.format(tsv_roi_area_fn))
         df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
         
