@@ -55,7 +55,6 @@ import sys
 import json
 import copy
 import cortex
-import numpy as np
 import matplotlib.pyplot as plt
 
 # Personal imports
@@ -91,7 +90,6 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 tasks = analysis_info['task_names']
-# tasks = [analysis_info['prf_task_name']]
 alpha_range = analysis_info["alpha_range"]
 maps_names_corr = analysis_info['maps_names_corr']
 

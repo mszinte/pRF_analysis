@@ -36,9 +36,8 @@ warnings.filterwarnings("ignore")
 import ipdb
 deb = ipdb.set_trace
 
-
 # General imports
-import os; os.environ["JOBLIB_MULTIPROCESS_START_METHOD"] = "spawn"
+import os
 import sys
 import json
 import datetime

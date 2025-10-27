@@ -162,6 +162,8 @@ if subject != 'sub-170k':
     
     # Computing median
     for loo_stats_fns in loo_stats_fns_list:
+        if not loo_stats_fns:
+            continue
         if loo_stats_fns[0].find('hemi-L') != -1:  hemi = 'hemi-L'
         elif loo_stats_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
         else: hemi = None

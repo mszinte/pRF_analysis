@@ -210,7 +210,6 @@ if subject != 'sub-170k':
         # Create empty results
         vert_cm = np.zeros((4,vert_num))*np.nan
         
-    
         for roi in rois:
             # Find ROI vertex
             roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
