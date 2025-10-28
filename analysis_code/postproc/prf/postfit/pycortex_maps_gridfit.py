@@ -108,8 +108,8 @@ cmap_steps = 255
 
 # plot scales
 rsq_scale = [0, 1]
-ecc_scale = [0, 7.5]
-size_scale = [0, 7.5]
+ecc_scale = [0, 10]
+size_scale = [0, 10]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
