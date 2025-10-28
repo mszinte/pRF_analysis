@@ -18,13 +18,13 @@ fit tester numpy arrays
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/RetinoMaps/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_gridfit.py [main directory] [project name] [subject name] 
 [inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-02 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
+python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-03 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@univ-amu.fr)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
