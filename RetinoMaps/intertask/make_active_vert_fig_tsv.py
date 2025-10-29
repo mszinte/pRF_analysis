@@ -95,7 +95,6 @@ for tasks in group_tasks :
 ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
 ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
 
-            
             # Threshold data (replace by nan)
             if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
             elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
@@ -118,7 +117,7 @@ for tasks in group_tasks :
                 n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data['roi'] == roi) & 
                                                                      (data['saccade'] == 'saccade') & 
                                                                      (data['pursuit'] == 'pursuit') & 
-                                                                     (data['vision'] == 'vision'), 'vert_area'].shape[0]
+                                                                     (data['vision'] == 'vision')].shape[0]
                 # Compute percentage active vertex in rois
                 if n_vert_roi == 0 :
                     percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0
@@ -176,7 +175,6 @@ for tasks in group_tasks :
                             percent_vision = ((n_vert_roi_vision * 100) / n_vert_roi)
                             percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100) / n_vert_roi)
                     
-                
                         active_percent_roi_categorie_df = pd.DataFrame({'subject':[subject], 
                                                                         'roi': [roi], 
                                                                         'roi_mmp': [roi_mmp], 
@@ -259,10 +257,10 @@ for tasks in group_tasks :
                 print('Saving tsv: {}'.format(tsv_active_vertex_roi_mmp_fn))
                 group_active_vertex_mmp_roi_melt_df.to_csv(tsv_active_vertex_roi_mmp_fn, sep="\t", na_rep='NaN', index=False)
                
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))             
             
             
             

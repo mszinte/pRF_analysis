@@ -231,20 +231,20 @@ for tasks in group_tasks :
             figures_dict[categorie_to_plot].append(fig)
             figures_titles.append('Contralaterality')
         
-            # # Spatial distibution plot
-            # tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            # df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
-            # figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
-            #                                     fig_width=fig_width, fig_height=300, 
-            #                                     rois=rois, roi_colors=roi_colors, screen_side=screen_side)
-        
-            # for (fig, hemi) in zip(figs, hemis):
-            #     if hemi == 'hemi-LR':
-            #         fig_fn = "{}/{}_{}_distribution_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
-            #         print('Saving pdf: {}'.format(fig_fn))
-            #         fig.write_image(fig_fn)
-            #         figures_dict[categorie_to_plot].append(fig)
-            #         figures_titles.append('pRF distribution')
+            # Spatial distibution plot
+            tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
+            df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
+            figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
+                                                fig_width=fig_width, fig_height=300, 
+                                                rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+
+            for (fig, hemi) in zip(figs, hemis):
+                if hemi == 'hemi-LR':
+                    fig_fn = "{}/{}_{}_distribution_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
+                    figures_dict[categorie_to_plot].append(fig)
+                    figures_titles.append('pRF distribution')
         
         # Export html with all figures
         subject_html = make_figures_html(subject=subject, figures=figures_dict, figs_title=figures_titles)
@@ -252,7 +252,7 @@ for tasks in group_tasks :
         with open(html_fn, "w") as f:
             f.write(subject_html)
                 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

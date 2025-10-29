@@ -25,8 +25,8 @@ cd ~/projects/pRF_analysis/RetinoMaps/intertask/
 python make_intertask_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_intertask_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+Written by Uriel Lascombes (uriel.lascombes@laposte.net) 
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -67,11 +67,10 @@ rois = analysis_info['rois']
 maps_names_css = analysis_info['maps_names_css']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
-maps_names_vert_area = analysis_info["maps_names_vert_area"]
 maps_names_intertask = analysis_info["maps_names_intertask"]
 glm_code_names = analysis_info['glm_code_names']
 group_tasks = analysis_info['task_intertask']
-maps_names = maps_names_css + maps_names_pcm + maps_names_css_stats + maps_names_vert_area + maps_names_intertask
+maps_names = maps_names_css + maps_names_pcm + maps_names_css_stats + maps_names_intertask
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -112,17 +111,13 @@ for tasks in group_tasks :
                 stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
                     prf_deriv_dir, subject, prf_task_name, hemi)
                 stats_img, stats_mat = load_surface(stats_median_fn)
-                
-                # Vertex area
-                vertex_area_fn = '{}/{}_{}_vertex_area.func.gii'.format(vert_area_dir, subject, hemi)
-                vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-                
+                                
                 # Inter task
                 intertask_fn = '{}/{}_{}_intertask_{}.func.gii'.format(intertask_dir, subject, hemi, suffix)
                 intertask_img, intertask_mat = load_surface(intertask_fn)
     
                 # Combine all derivatives
-                all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, vertex_area_mat, intertask_mat))
+                all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, intertask_mat))
     
                 # Get roi mask
                 roi_verts = get_rois(subject=subject, 
@@ -159,16 +154,12 @@ for tasks in group_tasks :
                 prf_deriv_dir, subject, prf_task_name)
             stats_img, stats_mat = load_surface(stats_median_fn)
             
-            # Vertex area
-            vertex_area_fn = '{}/{}_vertex_area.dtseries.nii'.format(vert_area_dir, subject)
-            vertex_area_img, vertex_area_mat = load_surface(vertex_area_fn)
-    
             # Inter task
             intertask_fn = '{}/{}_intertask_{}.dtseries.nii'.format(intertask_dir, subject, suffix)
             intertask_img, intertask_mat = load_surface(intertask_fn)
     
             # Combine all derivatives
-            all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, vertex_area_mat, intertask_mat))
+            all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, intertask_mat))
     
             # Get roi mask
             roi_verts_L, roi_verts_R = get_rois(subject=subject,
