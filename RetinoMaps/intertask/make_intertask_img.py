@@ -114,6 +114,9 @@ for tasks in group_tasks:
         img, data = load_surface(fn=stats_files[0])
         final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
         
+        if not stats_files:
+            continue
+        
         if stats_files[0].find('hemi-L') != -1: hemi = 'hemi-L'
         elif stats_files[0].find('hemi-R') != -1: hemi = 'hemi-R'
         else: hemi = None
@@ -161,9 +164,9 @@ for tasks in group_tasks:
         final_img = make_surface_image(data=final_map, source_img=img, maps_names=maps_names_inter_task)
         nb.save(final_img, '{}/{}'.format(inter_task_dir, inter_task_fn))
             
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)) 
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)) 
     
     
