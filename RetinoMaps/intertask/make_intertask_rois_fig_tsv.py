@@ -86,7 +86,6 @@ num_polar_angle_bins = figure_info['num_polar_angle_bins']
 max_ecc = figure_info['max_ecc']
 screen_side = figure_info['screen_side']
 gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
-hot_zone_percent = figure_info['hot_zone_percent']
 categories_to_plot = figure_info['categories_to_plot']
 
 for tasks in group_tasks : 
@@ -286,14 +285,11 @@ for tasks in group_tasks :
                     df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
                     if i == 0: df_distribution = df_distribution_hemi
                     else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
-
-
-        
+ 
                 tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
                 print('Saving tsv: {}'.format(tsv_distribution_fn))
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
-                
-            
+                           
         # Group Analysis    
         else :
             print('group')
@@ -348,7 +344,6 @@ for tasks in group_tasks :
                     # df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
                     # mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
                     # others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
-                    # deb()
                     # if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
                     # else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
                    
@@ -391,12 +386,11 @@ for tasks in group_tasks :
                         df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
                             lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['prf_loo_r2_weighted_median'], 97.5)) 
             
-                    df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                    tsv_params_median_fn = "{}/{}_prf_params_median.tsv".format(tsv_category_dir, subject)
-                    print('Saving tsv: {}'.format(tsv_params_median_fn))
-                    df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
-
-                
+                df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
+                tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_category_dir, subject, categorie_to_plot, suffix)
+                print('Saving tsv: {}'.format(tsv_params_median_fn))
+                df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+               
                 # Ecc.size
                 # --------
                 df_ecc_size = df_ecc_size.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
@@ -439,7 +433,6 @@ for tasks in group_tasks :
                 # df_distribution = pd.concat([others_columns, df_distribution], axis=1)
                 # df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-        
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))

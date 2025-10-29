@@ -1022,8 +1022,11 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
     for i, hemi in enumerate(hemis):  
         fig = make_subplots(rows=rows ,cols=cols)
         for j, roi in enumerate(rois) :
+            if df_distribution.empty:
+                print(f"[WARNING] No data for ROI: {roi}")
+                continue  # skip this ROI
             # Make df roi
-            df_roi = df_distribution.loc[(df_distribution.roi == roi) & (df_distribution.hemi == hemi)]
+            df_roi = df_distribution.loc[(df_distribution['roi'] == roi) & (df_distribution['hemi'] == hemi)]
 
             # make the two dimensional mesh for z dimension
             gauss_z_tot = df_roi.drop(columns=['roi', 'x', 'y', 'hemi']).values
