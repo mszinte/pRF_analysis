@@ -15,10 +15,6 @@ do
   # Left Hemisphere masks
   for region in lh_mPCS lh_sPCS lh_iPCS lh_sIPS lh_iIPS lh_hMT+ lh_VO lh_LO lh_V3AB lh_V3 lh_V2 lh_V1; do
     wb_command -metric-mask "$OUT_DIR/target_91k/sub-${i}_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.shape.gii" \
-  
-  # Left Hemisphere masks
-  for region in lh_mPCS lh_sPCS lh_iPCS lh_sIPS lh_iIPS lh_hMT+ lh_VO lh_LO lh_V3AB lh_V3 lh_V2 lh_V1; do
-    wb_command -metric-mask "$OUT_DIR/target_91k/sub-${i}_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.shape.gii" \
     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_${region}.shape.gii" \
     "$OUT_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${region}.shape.gii"
   done
@@ -29,6 +25,7 @@ do
     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_${region}.shape.gii" \
     "$OUT_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${region}.shape.gii"
   done
+  
 done
 
 # Change file permissions

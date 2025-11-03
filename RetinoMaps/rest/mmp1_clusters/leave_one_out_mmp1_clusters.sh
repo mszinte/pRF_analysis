@@ -29,7 +29,7 @@ for hemi in "${HEMISPHERES[@]}"; do
       fi
     done
 
-    OUT_LABEL="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}_${hemi}.dlabel.nii"
+    OUT_LABEL="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${hemi}_${leave_out}.dlabel.nii"
 
     wb_command -cifti-label-import "$ATLAS_FILE" "$COMBINED_LABEL_FILE" "$OUT_LABEL" -discard-others
 
@@ -63,8 +63,8 @@ for leave_out in "${CLUSTERS[@]}"; do
   DLABEL_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dlabel.nii"
   
   wb_command -cifti-separate "$DLABEL_FILE" COLUMN \
-    -metric CORTEX_LEFT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}_${hemi}.shape.gii" \
-    -metric CORTEX_RIGHT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}_${hemi}.shape.gii"
+    -metric CORTEX_LEFT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${leave_out}.shape.gii" \
+    -metric CORTEX_RIGHT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${leave_out}.shape.gii"
 done
 
 echo "✅ All label and metric files created!"
