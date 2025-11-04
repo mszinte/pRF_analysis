@@ -85,6 +85,7 @@ vdm_height = analysis_info['vdm_size_pix'][1]
 TR = analysis_info['TR']
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
+n_th = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
@@ -121,7 +122,7 @@ vdm = np.load(vdm_fn)
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
-exponent_css_grid = np.linspace(0, 4, css_grid_nr)
+exponent_css_grid = np.linspace(n_th[0], n_th[1], css_grid_nr)
 
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
