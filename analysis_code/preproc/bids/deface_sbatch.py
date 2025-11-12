@@ -3,25 +3,28 @@
 deface_sbatch.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Deface T1w images
+Deface anatomical images
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-001)
-sys.argv[4]: server job or not (1 = server, 0 = terminal)
-sys.argv[5]: overwrite images (0 = no, 1 = yes)
+sys.argv[4]: session (e.g. ses-01)
+sys.argv[5]: server group (e.g. 327)
 sys.argv[6]: server job or not (1 = server, 0 = terminal)
+sys.argv[7]: overwrite images (0 = no, 1 = yes)
+sys.argv[8]: server job or not (1 = server, 0 = terminal)
 -----------------------------------------------------------------------------------------
 Output(s):
 Defaced images
 -----------------------------------------------------------------------------------------
 To run: run python commands
 >> cd ~/projects/[project]/analysis_code/preproc/bids/
->> python deface_sbatch.py [main directory] [project name] [subject num] [group] [server_project] [overwrite] [server]
+>> python deface_sbatch.py [main directory] [project name] [subject] [session]
+                            [group] [server_project] [overwrite] [server]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/preproc/bids/
+cd ~/projects/pRF_analaysis/analysis_code/preproc/bids/
 python deface_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 1 1
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -38,10 +41,11 @@ deb = pdb.set_trace
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
-server_project = sys.argv[5]
-ovewrite_in = int(sys.argv[6])
-server_in = int(sys.argv[7])
+session_in = int(sys.argv[4])
+group = sys.argv[5]
+server_project = sys.argv[6]
+ovewrite_in = int(sys.argv[7])
+server_in = int(sys.argv[8])
 hour_proc = 4
 nb_procs = 8
 log_dir = "{}/{}/derivatives/pp_data/logs".format(main_dir, project_dir, subject)
@@ -75,11 +79,11 @@ chgrp_cmd = """chgrp -Rf {group} {main_dir}/{project_dir}\n""".format(main_dir=m
 
 
 # get files
-session = 'ses-01'
-t1w_filename = "{}/{}/{}/{}/anat/{}_{}_T1w.nii.gz".format(main_dir,project_dir,subject,session,subject,session)
-
-t2w_filename = "{}/{}/{}/{}/anat/{}_{}_T2w.nii.gz".format(main_dir,project_dir,subject,session,subject,session)
-
+session = session_in
+t1w_filename = "{}/{}/{}/{}/anat/{}_{}_T1w.nii.gz".format(main_dir, project_dir,
+                                                          subject, session, subject, session)
+t2w_filename = "{}/{}/{}/{}/anat/{}_{}_T2w.nii.gz".format(main_dir, project_dir, 
+                                                          subject, session, subject, session)
 
 # sh folder & file
 sh_folder = "{}/{}/derivatives/pp_data/jobs".format(main_dir, project_dir, subject)

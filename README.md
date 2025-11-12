@@ -21,6 +21,11 @@ cd to folder
 everything should be fine, so to check that all version are correct: 
 ``` pip install -r requirements.txt ```
 
+# To do
+- [ ] improve deface_sbatch to look for all anatomical files
+- [ ] see if deface really deface MP2RAGEME with noise files and others
+- [ ] put the non defaced anatomy in the sourcedata folder
+
 
 # Task-specific analysis
 ---
