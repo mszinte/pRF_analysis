@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define the file containing the label table
 label_file="Glasser_labels.txt"
 
