@@ -3,19 +3,23 @@
 
 """
 Created on Mon Apr 14 22:42:22 2025
-@author: marc_be (and LLMs)
+--------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr) 
+--------------------------------------------------
 """
 
 import nibabel as nib
 import numpy as np
 import os
 
-# Base data path
-hemi_list = ["lh", "rh"]
+# Data paths
 base_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/hollow_seed_viz_fisher-z/surfaces"
 atlas_path = "/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/"
 output_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/wta"
 os.makedirs(output_path, exist_ok=True)
+
+# Brain settings
+hemi_list = ["lh", "rh"]
 region_labels = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS", "hMT+", "VO", "LO", "V3AB", "V3", "V2", "V1"]
 
 # Loop per hemisphere
