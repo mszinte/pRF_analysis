@@ -4,6 +4,10 @@
 ## But this way the data keeps the same shape so we can stack it together and compute more easily
 ### WARNING: this script is not functional yet
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define base paths
 BASE_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest"
 SEED_DIR="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/leaveout"

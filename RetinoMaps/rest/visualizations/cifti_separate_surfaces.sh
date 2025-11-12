@@ -3,12 +3,16 @@
 # Goal: create GIFTI surfaces to import data in Python (nibabel-compatible)
 # Outputs go into the winner-take-all script
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Base paths
 FISHERZ_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/hollow_seed_viz_fisher-z"
 FULLCORR_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/hollow_seed_viz_full_corr"
 
 # Output folder
-OUT_GIFTI="$STACKED_PATH/surfaces"
+OUT_GIFTI="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/wta/surfaces"
 mkdir -p "$OUT_GIFTI"
 
 # === Loop 1: Fisher-z files ===

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Input file
 input_file="Glasser_filtered_labels.txt"
 
@@ -48,4 +52,3 @@ done < "$input_file"
 # Change permissions
 chmod -Rf 771 *
 chgrp -Rf 771 *
-

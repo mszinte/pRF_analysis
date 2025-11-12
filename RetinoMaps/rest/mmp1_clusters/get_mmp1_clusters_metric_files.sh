@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Output dir
 mkdir clusters
 
