@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define base paths
 LABELS_DIR="label_files"
 CLUSTERS_DIR="clusters"

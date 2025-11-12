@@ -3,6 +3,10 @@
 ## H Stack subject-specific correlation matrices into one group file (rows = subjects)
 ## Useful so we can use -cifti-reduce later to compute the median values
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define base paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 OUTPUT_PATH="$TASK_RESULTS/group/91k/rest/"
