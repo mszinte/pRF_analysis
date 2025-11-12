@@ -60,6 +60,9 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
 
 ### Resting-state analysis
-- [x] Compute seed-based (from the tasks conjunction glm results) functional connectivity on the dense timeseries with connectome workbench ()
-- [ ] Compute winner-take-all results
+- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity on the dense timeseries with connectome workbench: Pearson correlation ([compute_dtseries_corr_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/) and Fisher-z transformed Pearson correlation ([compute_dtseries_corr_fisher-z_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/compute_dtseries_corr_fisher-z_bilateral.sh)
 - [ ] Compute seed-based partial correlation
+- [ ] Compute winner-take-all results
+
+### Resting-state results visualization
+
