@@ -4,6 +4,10 @@
 # set -e 
 # set -x
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Get the intertask results path
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"

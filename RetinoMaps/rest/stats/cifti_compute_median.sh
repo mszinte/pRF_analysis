@@ -2,6 +2,10 @@
 
 # With this script we go from the stacked files to a median ROI x all target vertices connectivity matrix
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define base paths
 BASE_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest"
 
