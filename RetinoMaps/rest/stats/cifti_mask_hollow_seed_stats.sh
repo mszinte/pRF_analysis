@@ -2,6 +2,10 @@
 
 ## Important note: we are going to use only Fisher-z maps for stats not Pearson correlations (uncomment the lines if you need them)
 
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
+
 # Define paths
 DATA_PATH_FISHER="/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/data/correlations/group/stacked_fisher-z"
 DATA_PATH_CORR="/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/data/correlations/group/stacked_full_corr"

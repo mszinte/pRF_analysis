@@ -1,7 +1,11 @@
 #!/bin/bash
 
 ## Important note: we are going to use only Pearson full correlations for viz not the Fisher-z ones (we are looking at the latter only to check the differences)
-## Purpose: Mask correlation maps so that seed ROIs are hollowed out bilaterally.
+## Purpose: Mask correlation maps so that seed ROIs are hollowed out bilaterally
+
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+#####################################################
 
 # Define paths
 DATA_PATH_CORR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/median_full_corr"

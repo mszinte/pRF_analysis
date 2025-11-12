@@ -3,7 +3,9 @@
 """
 Created on Mon Sep 29 12:14:17 2025
 
-@author: marc_be
+---------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
+---------------------------------------------------
 
 Compute full and partial correlations between clusters (seeds) and parcels (targets),
 using Nilearn for full correlations and computing partials per-seed while excluding
