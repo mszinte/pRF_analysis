@@ -12,9 +12,9 @@ import os
 
 # Base data path
 hemi_list = ["lh", "rh"]
-base_path = "/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/visualizations/wb_view/wta/data/surfaces"
-atlas_path = "/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/atlas/macro_regions"
-output_path = os.path.join(base_path, "results")
+base_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/hollow_seed_viz_fisher-z/surfaces"
+atlas_path = "/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/"
+output_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/wta"
 os.makedirs(output_path, exist_ok=True)
 region_labels = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS", "hMT+", "VO", "LO", "V3AB", "V3", "V2", "V1"]
 
