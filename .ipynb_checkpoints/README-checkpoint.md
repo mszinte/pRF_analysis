@@ -21,6 +21,11 @@ cd to folder
 everything should be fine, so to check that all version are correct: 
 ``` pip install -r requirements.txt ```
 
+# To do
+- [ ] improve deface_sbatch to look for all anatomical files
+- [ ] see if deface really deface MP2RAGEME with noise files and others
+- [ ] put the non defaced anatomy in the sourcedata folder
+
 
 # Task-specific analysis
 ---
@@ -96,9 +101,6 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ### Group analysis
 We run either analysis on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged on a template </br>
 or we ran an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
-
-#### Structural preprocessing
-- [x] Compute vertex areas for **sub-170k** [compute_vertex_area.py](analysis_code/preproc/anatomical/compute_vertex_area.py)
 
 #### Functional postprocessing
 
