@@ -4,14 +4,15 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
 
 # Environment Set Up 
-``` conda env create -f environment.yml ```
-``` conda activate pRF_env             ```              
+To install dependencies run the following:
+``` pip install -r requirements.txt ```
+Afterwards we recommend working with a conda environment. 
 
-Then install pycortex: 
+Install pycortex: 
 
 ``` CFLAGS="-std=c99" pip install git+https://github.com/gallantlab/pycortex.git ```
 
-Then install prfpy:  
+Install prfpy:  
 
 ``` git clone https://github.com/VU-Cog-Sci/prfpy.git ```
 
