@@ -49,7 +49,6 @@ def get_screen_settings(main_dir, project_dir, subject, task_name):
     screen_size_cm = [round(float(s) * 100, 2) for s in stim_pres['ScreenSize']]
     screen_distance_cm = round(float(stim_pres['ScreenDistance']) * 100, 2)
 
-    print(f"for subject {subject}:")
     print(f"[INFO] Using screen info from {found}")
     print(f"[INFO] Screen size: {screen_size_cm} cm, distance: {screen_distance_cm} cm")
 
