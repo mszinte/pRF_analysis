@@ -78,8 +78,10 @@ settings_path = os.path.join(base_dir, project_dir, "settings.json")
 with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
-screen_size_cm = analysis_info['screen_size_cm']
-screen_distance_cm = analysis_info['screen_distance_cm']
+
+# Load screen settings from subject dependend task-events.json
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, analysis_info['prf_task_name'])
+
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
 TR = analysis_info['TR']
@@ -123,6 +125,15 @@ eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
 exponent_css_grid = np.linspace(0, 4, css_grid_nr)
 
+print("\n===== PRF FIT PARAMETERS =====")
+print(f"Screen Size (cm): {screen_size_cm}")
+print(f"Screen Distance (cm): {screen_distance_cm}")
+print(f"TR: {TR}")
+print(f"Max eccentricity/size values: {max_ecc_size}")
+print(f"CSS exponentgrid: {exponent_css_grid}")
+print("==============================\n")
+
+
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
                                               subject=subject, 
@@ -134,6 +145,13 @@ stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)
+
+print("\n===== PRF MODEL PARAMETERS =====")
+print("Stimulus x min/max (deg):", np.nanmin(stimulus.x_coordinates ), np.nanmax(stimulus.x_coordinates ))
+print("Stimulus y min/max (deg) :", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
+print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
+print("Eccentricity grid range:", np.min(sizes), np.max(sizes))
+print("==============================\n")
 
 # Gauss fit
 # ---------
