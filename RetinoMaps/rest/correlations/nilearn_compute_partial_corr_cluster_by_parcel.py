@@ -19,9 +19,9 @@ import numpy as np
 from nilearn.connectome import ConnectivityMeasure
 
 # Main folders
-main_data = '/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/xcp-d'
-seed_folder = '/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/Retinomaps_ROIs/data/seeds_dtseries/tasks_masked_by_macro_regions/masked_seeds/'
-output_folder = '/media/marc_be/marc_be_vault1/RetinoMaps/derivatives/func_connectivity/stats/group_matrices'
+main_data = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
+seed_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
+output_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91/rest/nilearn_full_and_partial_corr'
 
 # Custom utils
 main_codes = '/home/marc_be/GitHub_projects/'
@@ -42,7 +42,6 @@ clusters = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
 parcels = [p for group in settings['rois_groups'] for p in group]
 
 # Map: cluster -> list of parcel names to exclude from partial-conditioning
-# Default mapping: you gave example for sPCS; adjust other seeds as needed.
 exclude_parcels_per_cluster = {
     "mPCS": ['SCEF', 'p32pr', '24dv'],
     "sPCS": ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'], # adjust if needed
@@ -60,7 +59,7 @@ all_subject_parcel_names = []
 for subject in subjects:
     print(f"\nProcessing {subject}")
     # Load timeseries
-    timeseries_fn = f'{main_data}/{subject}/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
+    timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
     ts_img, ts_data_raw = load_surface(timeseries_fn)
     res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True, return_32k_mask=True)
     ts_data = res['data_concat']  # (timepoints x vertices)
@@ -70,7 +69,7 @@ for subject in subjects:
     cluster_ts_list = []
     cluster_names_used = []
     for roi in clusters:
-        lh, rh = [load_surface(f'{seed_folder}/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii')[1] for hemi in ('lh','rh')]
+        lh, rh = [load_surface(f'{seed_folder}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii')[1] for hemi in ('lh','rh')]
         mask = np.hstack((lh, rh)).ravel()
         if np.any(mask):
             ts = ts_data[:, mask > 0]
@@ -86,7 +85,7 @@ for subject in subjects:
     parcel_names_used = []
     for parcel in parcels:
         # parcel files use L_ and R_ prefix in your structure
-        lh, rh = [load_surface(f'{seed_folder}/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{parcel}_ROI.shape.gii')[1] for hemi in ('L','R')]
+        lh, rh = [load_surface(f'{seed_folder}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{parcel}_ROI.shape.gii')[1] for hemi in ('L','R')]
         mask = np.hstack((lh, rh)).ravel()
         if np.any(mask):
             ts = ts_data[:, mask > 0]
@@ -104,7 +103,7 @@ for subject in subjects:
         full_matrix = np.empty((n_clusters_present, n_parcels_present))
         partial_matrix = np.empty((n_clusters_present, n_parcels_present))
     else:
-        # --- Full correlation via Nilearn (keeps consistency with your earlier pipeline) ---
+        # --- Full correlation via Nilearn (useful as a sanity check wrt Workbench results) ---
         combined_for_full = np.hstack([cluster_ts, parcel_ts])  # time x (n_clusters + n_parcels)
         full_conn = ConnectivityMeasure(kind='correlation')
         corr_all = full_conn.fit_transform([combined_for_full])[0]  # (nvars, nvars)
@@ -156,7 +155,7 @@ for subject in subjects:
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
 
-    # map subject-local cluster names to global cluster indices
+    # Map subject-local cluster names to global cluster indices
     for i_cl, cl in enumerate(cluster_names_used):
         global_r = clusters.index(cl)
         for j_pa, pa in enumerate(parcel_names_used):
