@@ -143,7 +143,7 @@ elif subject == 'sub-170k':
         data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+## Define permission cmd
+#print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+#os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+#os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
