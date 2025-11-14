@@ -108,7 +108,7 @@ if subject != 'sub-170k':
              pp_dir, subject, format_)
         prf_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_prf-pred_css.{}'.format(
             prf_fit_dir, prf_task_name, extension))
-        
+
         for prf_pred_loo_fn in prf_pred_loo_fns_list : 
             # Find the correponding bold signal to the loo prediction
             loo_number = re.search(r'loo-(\d+)', prf_pred_loo_fn).group(1)
@@ -119,7 +119,7 @@ if subject != 'sub-170k':
             elif format_ == '170k':
                 prf_bold_fn = '{}/{}_task-{}_fmriprep_dct_loo-{}_bold.{}'.format(
                     prf_bold_dir, subject, prf_task_name, loo_number, extension)
-            
+
             # load data  
             pred_img, pred_data = load_surface(prf_pred_loo_fn)
             bold_img, bold_data = load_surface(prf_bold_fn)
@@ -133,13 +133,14 @@ if subject != 'sub-170k':
             # Save results
             prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(
                 pp_dir, subject, format_, output_folder)
+            os.makedirs(prf_deriv_dir, exist_ok=True)
             stat_prf_loo_fn = prf_pred_loo_fn.split('/')[-1].replace('pred_css', 'stats')
             stat_prf_loo_img = make_surface_image(data=results, 
                                                   source_img=bold_img, 
                                                   maps_names=maps_names)
             print('Saving: {}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
             nb.save(stat_prf_loo_img, '{}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
-            
+         
     # Compute median across LOO
     print('Compute median across LOO')
     
