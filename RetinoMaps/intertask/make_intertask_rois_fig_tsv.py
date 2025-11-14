@@ -177,7 +177,8 @@ for tasks in group_tasks :
 
                 # Ecc.size
                 # --------
-                ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
+                # ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
+                ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_categorie.loc[(data_categorie.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -201,7 +202,8 @@ for tasks in group_tasks :
                 # Ecc.pCM
                 # --------
                 data_pcm = data_categorie.loc[data_categorie.pcm_median != 'non_computed']
-                ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
+                # ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
+                ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_pcm.loc[(data.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -346,7 +348,7 @@ for tasks in group_tasks :
                     # others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
                     # if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
                     # else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
-                   
+                  
                 # Median and saving tsv
                 tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
                     main_dir, project_dir, subject, format_, categorie_to_plot)
@@ -428,12 +430,12 @@ for tasks in group_tasks :
                 # print('Saving tsv: {}'.format(tsv_distribution_fn))
                 # median_mesh = np.median(mesh_group, axis=0)
                 # df_distribution = pd.DataFrame(median_mesh)
-        
+       
                 # # Concatenating non-numeric columns back to the dataframe
                 # df_distribution = pd.concat([others_columns, df_distribution], axis=1)
                 # df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    

@@ -233,7 +233,9 @@ for format_, extension in zip(formats, extensions):
         
         # Ecc.size
         # --------
-        ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
+        # ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_size_bins)**2 * max_ecc))
+        # ecc_bins = np.concatenate(([0],np.linspace(0.3, 1, num_ecc_size_bins)**2 * max_ecc))
+        ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
         for num_roi, roi in enumerate(rois):
             df_roi = data.loc[(data.roi == roi)]
             df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -257,7 +259,9 @@ for format_, extension in zip(formats, extensions):
         # Ecc.pCM
         # --------
         data_pcm = data
-        ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
+        # ecc_bins = np.concatenate(([0],np.linspace(0.26, 1, num_ecc_pcm_bins)**2 * max_ecc))
+        # ecc_bins = np.concatenate(([0],np.linspace(0.3, 1, num_ecc_size_bins)**2 * max_ecc))
+        ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
         for num_roi, roi in enumerate(rois):
             df_roi = data_pcm.loc[(data.roi == roi)]
             df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -528,7 +532,7 @@ for format_, extension in zip(formats, extensions):
 #        print('Saving tsv: {}'.format(tsv_barycentre_fn))
 #        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
     
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    

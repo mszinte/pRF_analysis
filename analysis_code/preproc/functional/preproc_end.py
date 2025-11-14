@@ -84,7 +84,7 @@ sessions = analysis_info['sessions']
 anat_session = analysis_info['anat_session'][0]
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-maps_names_vert_area = analysis_info["maps_names_vert_area"]
+# maps_names_vert_area = analysis_info["maps_names_vert_area"]
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
