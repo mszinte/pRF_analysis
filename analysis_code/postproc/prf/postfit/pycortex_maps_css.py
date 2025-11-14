@@ -111,7 +111,7 @@ cmap_steps = 255
 rsq_scale = [0, 1]
 ecc_scale = [0, 8]
 size_scale = [0, 5]
-n_scale = [0, 2]
+n_scale = [0, 1]
 pcm_scale = [0, 10]
 
 for format_ in formats:
