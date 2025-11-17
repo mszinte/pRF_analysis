@@ -16,7 +16,7 @@ pydeface
 ipdb==0.13.13
 bids-validator==1.14.7.post0
 bidsschematools==1.0.10
-pybids==0.19.0
+pybids==0.16.5
 mayavi==4.8.3
 opencv-python==4.9.0.80
 imageio==2.34.0
