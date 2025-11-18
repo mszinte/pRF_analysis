@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 """
-Created on Mon Apr 14 22:42:22 2025
 --------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) 
 --------------------------------------------------
@@ -13,7 +12,7 @@ import numpy as np
 import os
 
 # Data paths
-base_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/hollow_seed_viz_fisher-z/surfaces"
+base_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/wta/surfaces"
 atlas_path = "/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/"
 output_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/wta"
 os.makedirs(output_path, exist_ok=True)
@@ -31,18 +30,11 @@ for hemi in hemi_list:
 
     for region in region_labels:
         # Correlation file
-        corr_path = os.path.join(base_path, f"group_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_{hemi}_{region}_median.shape.gii")
-        # Exclusion mask
-        mask_path = os.path.join(atlas_path, f"atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_{hemi}_{region}.shape.gii")
+        corr_path = os.path.join(base_path, f"group_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_{region}_hollow_seed_{hemi}.func.gii")
 
         # Load correlation data
         corr_img = nib.load(corr_path)
         corr_data = corr_img.darrays[0].data.copy()
-
-        # Load mask and exclude those vertices by setting them to -inf
-        mask_img = nib.load(mask_path)
-        mask = mask_img.darrays[0].data.astype(bool)
-        corr_data[mask] = -np.inf  # exclude from WTA
 
         correlation_data.append(corr_data)
 
