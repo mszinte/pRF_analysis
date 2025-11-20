@@ -177,6 +177,7 @@ for format_ in formats:
 
     # Combine mat
     all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
+
     # Threshold mat
     all_deriv_mat_th = all_deriv_mat
     amp_down = all_deriv_mat_th[amplitude_idx,...] > 0
