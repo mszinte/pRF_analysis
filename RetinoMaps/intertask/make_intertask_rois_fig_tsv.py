@@ -120,7 +120,7 @@ for tasks in group_tasks :
                      (data.prf_loo_r2 < rsqr_threshold) |
                      (data[stats_col] > stats_threshold)] = np.nan
             data = data.dropna()
-            
+
             # loop over categories
             for categorie_to_plot in categories_to_plot : 
                 tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
