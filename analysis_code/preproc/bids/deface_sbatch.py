@@ -17,13 +17,13 @@ Output(s):
 Defaced images, originals are copied
 -----------------------------------------------------------------------------------------
 To run: run python commands
->> cd ~/projects/[project]/analysis_code/preproc/bids/
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 >> python deface_sbatch.py [main directory] [project name] [subject num] [group] 
                            [server_in] [server_project]
 --------------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/RetinoMaps/analysis_code/preproc/bids/
-python deface_sbatch.py /scratch/mszinte/data centbids sub-t043 327 1
+cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
+python deface_sbatch.py /scratch/mszinte/data centbids sub-t043 327 1 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 adapted by Sina Kling (sina.kling@outlook.de)
