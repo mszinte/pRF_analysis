@@ -93,6 +93,8 @@ n_th = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
+ecc_th = analysis_info['ecc_th']
+size_th = analysis_info['size_th']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -136,11 +138,11 @@ print(f"Max eccentricity/size values: {max_ecc_size}")
 print(f"CSS exponentgrid: {exponent_css_grid}")
 print("==============================\n")
 
-
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
                                               subject=subject, 
                                               rois=rois)
+
 print('roi extraction done')
 
 # Determine visual design
@@ -158,6 +160,15 @@ print("==============================\n")
 
 # Gauss fit
 # ---------
+gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
+                (-max_ecc_size, max_ecc_size),  # y
+                (size_th[0], size_th[1]),  # prf size
+                (0, 10),  # prf amplitude
+                (-1, 1),# bold baseline
+                (0, 0),  # hrf1
+                (0, 0) # hrf1
+                ]  
+
 
 # Define gauss model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
@@ -174,11 +185,31 @@ gauss_fitter.grid_fit(ecc_grid=eccs,
                       n_batches=n_batches)
 
 # Iterative fit gauss model
-gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, verbose=verbose)
+gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, 
+                           bounds= gauss_bounds,
+                           verbose=verbose)
 gauss_fit = gauss_fitter.iterative_search_params
 
 # CSS fit
 # -------
+# css_bounds =  [(np.nanmin(stimulus.x_coordinates )*1.5, np.nanmax(stimulus.x_coordinates )*1.5),  # x
+#                 (np.nanmin(stimulus.y_coordinates )*1.5, np.nanmax(stimulus.y_coordinates )*1.5),  # y
+#                 (size_th[0], size_th[1]),  # prf size
+#                 (0, 10),  # prf amplitude
+#                 (-1, 1),  # bold baseline 
+#                 (n_th[0], n_th[1]),  #n
+#                 (0, 0),  # hrf1
+#                 (0, 0) # hrf1
+#                 ] 
+css_bounds =  [(-max_ecc_size, max_ecc_size),  # x
+                (-max_ecc_size, max_ecc_size),  # y
+                (size_th[0], size_th[1]),  # prf size
+                (0, 10),  # prf amplitude
+                (-1, 1),  # bold baseline 
+                (n_th[0], n_th[1]),  #n
+                (0, 0),  # hrf1
+                (0, 0) # hrf1
+                ] 
 
 # Define CSS model
 css_model = CSS_Iso2DGaussianModel(stimulus=stimulus)
@@ -197,6 +228,7 @@ css_fitter.grid_fit(exponent_grid=exponent_css_grid,
 # Run iterative fit
 css_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, 
                          verbose=verbose, 
+                         bounds= css_bounds,
                          xtol=1e-4, 
                          ftol=1e-4)
 
@@ -245,3 +277,7 @@ end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(start_time=start_time, 
                                                                                     end_time=end_time, 
                                                                                     dur=end_time - start_time))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))  

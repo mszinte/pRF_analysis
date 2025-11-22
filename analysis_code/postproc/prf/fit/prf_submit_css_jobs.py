@@ -75,10 +75,6 @@ extensions = analysis_info['extensions']
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
-# Define permission cmd
-chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
-chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
-
 # Define fns (filenames)
 dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.func.gii".format(
     pp_dir,subject, prf_task_name)
@@ -130,7 +126,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')
-    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, chmod_cmd, chgrp_cmd))
+    of.write("{} \n{}".format(slurm_cmd, fit_cmd))
     of.close()
 
     # Submit jobs

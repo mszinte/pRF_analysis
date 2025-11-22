@@ -33,7 +33,7 @@
     "eye_mov_height_dva": 30,
     "pix_ratio": 0.125,
     "gauss_grid_nr": 36,
-    "css_grid_nr": 36,
+    "css_grid_nr": 10,
     "max_ecc_size": 20,
     "stim_width": 20.0,
     "stim_height": 20.0,
