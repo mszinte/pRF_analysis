@@ -22,11 +22,6 @@ cd to folder
 everything should be fine, so to check that all version are correct: 
 ``` pip install -r requirements.txt ```
 
-# To do
-- [ ] improve deface_sbatch to look for all anatomical files
-- [ ] see if deface really deface MP2RAGEME with noise files and others
-- [ ] put the non defaced anatomy in the sourcedata folder
-
 
 # Task-specific analysis
 ---
@@ -34,6 +29,7 @@ After pRF analysis each project has its own analysis. The project's read me can 
 
 - RetinoMaps [README.md](RetinoMaps/README.md)
 - Amblyo_prf [README.md](amblyo_prf/README.md)
+- Amblyo7T_prf [README.md](amblyo7T_prf/README.md)
 - centbids [README.md](centbids/README.md)
 
 # Main behavioral, structural MRI and functional MRI analysis
@@ -42,10 +38,8 @@ After pRF analysis each project has its own analysis. The project's read me can 
 ## BIDS
 ---
 - [x] Deface participants t1w image [deface_sbatch.py](analysis_code/preproc/bids/deface_sbatch.py) 
-    </br>Note: run script for each subject separately.
 - [x] BIDS eyetracking conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
-    </br>Note: for the webpage, use FireFox and wait for at least 30 min, even if nothing seems to happen.
 - [x] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
 
 ## MRI Data analysis
