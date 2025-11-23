@@ -163,12 +163,11 @@ print("==============================\n")
 gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
                 (-max_ecc_size, max_ecc_size),  # y
                 (size_th[0], size_th[1]),  # prf size
-                (0, 10),  # prf amplitude
+                (0, 8),  # prf amplitude
                 (-1, 1),# bold baseline
                 (0, 0),  # hrf1
                 (0, 0) # hrf1
                 ]  
-
 
 # Define gauss model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
@@ -192,19 +191,10 @@ gauss_fit = gauss_fitter.iterative_search_params
 
 # CSS fit
 # -------
-# css_bounds =  [(np.nanmin(stimulus.x_coordinates )*1.5, np.nanmax(stimulus.x_coordinates )*1.5),  # x
-#                 (np.nanmin(stimulus.y_coordinates )*1.5, np.nanmax(stimulus.y_coordinates )*1.5),  # y
-#                 (size_th[0], size_th[1]),  # prf size
-#                 (0, 10),  # prf amplitude
-#                 (-1, 1),  # bold baseline 
-#                 (n_th[0], n_th[1]),  #n
-#                 (0, 0),  # hrf1
-#                 (0, 0) # hrf1
-#                 ] 
 css_bounds =  [(-max_ecc_size, max_ecc_size),  # x
                 (-max_ecc_size, max_ecc_size),  # y
                 (size_th[0], size_th[1]),  # prf size
-                (0, 10),  # prf amplitude
+                (0, 8),  # prf amplitude
                 (-1, 1),  # bold baseline 
                 (n_th[0], n_th[1]),  #n
                 (0, 0),  # hrf1

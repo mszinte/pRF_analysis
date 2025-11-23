@@ -119,7 +119,7 @@ if subject != 'sub-170k':
                 deriv_img = make_surface_image(data=deriv_array, 
                                                source_img=fit_img, 
                                                maps_names=maps_names)
-    
+
             nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
             print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
     
