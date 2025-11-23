@@ -19,10 +19,13 @@ def fit2deriv(fit_array, model,is_loo_r2=False):
 
     # Imports
     # -------
+    # Debug 
+    import ipdb
+    deb = ipdb.set_trace
+    
     # General imports
     import numpy as np
-
-
+    
     # Compute derived measures from prfs/pmfs
     # ---------------------------------------
     # get data index
@@ -66,8 +69,8 @@ def fit2deriv(fit_array, model,is_loo_r2=False):
             
 
     # change to nan empty voxels
-    fit_array[fit_array[...,rsq_idx]==0,...] = np.nan
-    
+    # fit_array[fit_array[...,rsq_idx]==0,...] = np.nan
+
     # r-square
     rsq = fit_array[rsq_idx,...]
 

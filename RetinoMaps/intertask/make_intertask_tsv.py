@@ -204,6 +204,7 @@ for tasks in group_tasks :
                 df_rois[column] = df_rois[column].map(code_to_name)
                 
         print('Saving tsv: {}'.format(tsv_fn))
+        df_rois[['hrf_1', 'hrf_2']] = df_rois[['hrf_1', 'hrf_2']].fillna('non_computed')
         df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
 ## Define permission cmd
