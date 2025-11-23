@@ -163,4 +163,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-#os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
