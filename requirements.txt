@@ -11,6 +11,7 @@ h5py
 ipython
 jupyter
 pydeface
+pypdf
 
 # pip dependencies
 ipdb==0.13.13
