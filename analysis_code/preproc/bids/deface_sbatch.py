@@ -123,7 +123,7 @@ with open(sh_file, "w") as f:
 
     # pydeface
     for anat in anat_files:
-        f.write(f"pydeface {anat} --verbose\n")
+        f.write(f"pydeface {anat} --outfile {anat} --force --verbose\n") #provide outfile path to overwrite original
 
     # permissions
     f.write(chmod_cmd)
