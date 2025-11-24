@@ -17,7 +17,7 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ### BIDS
 - [x] Download data from [schluppeck/amblyopia-data-2025.git](gin.g-node.org/schluppeck/amblyopia-data-2025.git)
 - [x] Convert to bids sub-01 [bids_sub-01.sh](preproc/bids/bids_sub-01.sh)
-- [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
+- [ ] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
 - [ ] Create event_files for each task with screen settings
 - [ ] Create participants.tsv out of table1 in https://doi.org/10.1016/j.visres.2025.108677<br/>
 
