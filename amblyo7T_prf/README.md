@@ -21,8 +21,20 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 - [ ] Create event_files for each task with screen settings
 - [ ] Create participants.tsv out of table1 in https://doi.org/10.1016/j.visres.2025.108677<br/>
 
-#### Structural preprocessing
+## MRI Data analysis
+---
 
+### Individual analysis
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
+
+#### Structural preprocessing
+- [ ] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [ ] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [ ] Manual edit of brain segmentation [pial_edits.sh](../analysis_code/preproc/anatomical/pial_edits.sh)
+- [ ] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](../analysis_code/preproc/anatomical/freesurfer_pial.py)
+- [ ] Create sagittal view video before after edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [ ] Make cut in the brains for flattening [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh)
+- [ ] Flatten the cut brains [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py)
 
 #### Functional preprocessing
 
