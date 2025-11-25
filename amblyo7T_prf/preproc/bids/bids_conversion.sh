@@ -21,7 +21,6 @@ dcm2niix -o sourcedata/BM/dcm2niix/ -z y sourcedata/BM/PARREC/
 
 # ${SUBJECT}
 # create subject folder
-# create session folder
 mkdir ${SUBJECT}/
 mkdir ${SUBJECT}/ses-01/
 mkdir ${SUBJECT}/ses-01/anat/
