@@ -163,9 +163,9 @@ print("==============================\n")
 gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
                 (-max_ecc_size, max_ecc_size),  # y
                 (size_th[0], size_th[1]),  # prf size
-                (0, 8),  # prf amplitude
+                (0, 6),  # prf amplitude
                 (-1, 1),# bold baseline
-                (0, 0),  # hrf1
+                (0, 10),  # hrf1
                 (0, 0) # hrf1
                 ]  
 
@@ -194,10 +194,10 @@ gauss_fit = gauss_fitter.iterative_search_params
 css_bounds =  [(-max_ecc_size, max_ecc_size),  # x
                 (-max_ecc_size, max_ecc_size),  # y
                 (size_th[0], size_th[1]),  # prf size
-                (0, 8),  # prf amplitude
+                (0, 6),  # prf amplitude
                 (-1, 1),  # bold baseline 
-                (n_th[0], n_th[1]),  #n
-                (0, 0),  # hrf1
+                (n_th[0], n_th[1]),  # n
+                (0, 10),  # hrf1
                 (0, 0) # hrf1
                 ] 
 
