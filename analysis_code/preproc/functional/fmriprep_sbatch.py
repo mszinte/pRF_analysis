@@ -86,7 +86,7 @@ use_skip_bids_val, hcp_cifti, tf_export, tf_bind, fsaverage = '','','','','', ''
 if anat == 'anat_only_y':
     anat_only = ' --anat-only'
     anat_only_end = '_anat'
-    nb_procs = 8
+    nb_procs = 20
 
 if aroma == 'aroma_y':
     use_aroma = ' --use-aroma --aroma-melodic-dimensionality -200'
