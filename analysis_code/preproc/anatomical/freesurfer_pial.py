@@ -16,14 +16,14 @@ new freesurfer segmentation files
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/RetinoMaps/analysis_code/preproc/anatomical/
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
 2. run python command
 python freesurfer_pial.py [main directory] [project name] [subject] [group] [proj_name]
 -----------------------------------------------------------------------------------------
 Exemple:
 python freesurfer_pial.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """

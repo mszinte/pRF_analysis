@@ -17,14 +17,14 @@
 # To run:
 # 0. TO RUN LOCALLY WITH FREEWIEW INSTALLED (not on server)
 # 1. cd to function
-# >> cd ~/disks/meso_H/projects/RetinoMaps/analysis_code/preproc/anatomical/
+# >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
 # 2. run shell command
 # sh pial_edits.sh [main directory] [project name] [subject name] [mesocentre_ID]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # sh pial_edits.sh /scratch/mszinte/data/ RetinoMaps sub-01 mszinte
 # -----------------------------------------------------------------------------------------
-# Written by Martin Szinte (mail@martinszinte.net)
+# Written by Martin Szinte (martin.szinte@gmail.com)
 # -----------------------------------------------------------------------------------------
 
 # rsync to desktop (faster processing)
@@ -40,11 +40,21 @@ else
     cp ~/temp_data/$3/mri/brainmask.mgz $NEWFILE
 fi
 
+# Check if T2.mgz exists
+T2_FILE=~/temp_data/$3/mri/T2.mgz
+if [ -f "$T2_FILE" ]; then
+    T2_VOLUME="$T2_FILE"
+    echo "\n>> T2 volume found, will be loaded in freeview"
+else
+    T2_VOLUME=""
+    echo "\n>> No T2 volume found, skipping T2 in freeview"
+fi
+
 # Check + edit pial surface
 echo "\n>> Edit the brain mask following https://invibe.nohost.me/bookstack/books/preprocessing/page/manual-edition-of-the-brain-segmentation"
 echo ">> When you are done, save the brainmask and quit freeview"
 freeview -v ~/temp_data/$3/mri/T1.mgz \
-            ~/temp_data/$3/mri/T2.mgz \
+            ${T2_VOLUME:+$T2_VOLUME} \
             ~/temp_data/$3/mri/brainmask.mgz:opacity=0.5 \
             -f ~/temp_data/$3/surf/lh.white:edgecolor=yellow \
             ~/temp_data/$3/surf/lh.pial:edgecolor=red \
