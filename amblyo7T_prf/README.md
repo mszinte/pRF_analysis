@@ -17,9 +17,9 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ### BIDS
 - [x] Download data from [schluppeck/amblyopia-data-2025.git](gin.g-node.org/schluppeck/amblyopia-data-2025.git)
 - [x] Convert to bids sub-01 [bids_sub-01.sh](preproc/bids/bids_sub-01.sh)
-- [ ] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
+- [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
 - [ ] Create event_files for each task with screen settings
-- [ ] Create participants.tsv out of table1 in https://doi.org/10.1016/j.visres.2025.108677<br/>
+- [x] Create participants.tsv out of table1 in https://doi.org/10.1016/j.visres.2025.108677<br/>
 
 ## MRI Data analysis
 ---
@@ -28,8 +28,8 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
 
 #### Structural preprocessing
-- [ ] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
-- [ ] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [x] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [x] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
 - [ ] Manual edit of brain segmentation [pial_edits.sh](../analysis_code/preproc/anatomical/pial_edits.sh)
 - [ ] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](../analysis_code/preproc/anatomical/freesurfer_pial.py)
 - [ ] Create sagittal view video before after edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
