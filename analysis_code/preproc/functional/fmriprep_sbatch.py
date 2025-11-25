@@ -39,7 +39,7 @@ python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n ar
 python fmriprep_sbatch.py /scratch/mszinte/data MotConf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_n 6 uriel.lascombes@etu.univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 30 anat_only_n aroma_y fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y 12 martin.szinte@etu.univ-amu.fr 327 b327 fmriprep-25.1.0.simg
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """

@@ -24,7 +24,7 @@ python sagital_view.py [main directory] [project name] [subject num] [video name
 Exemple:
 python sagital_view.py ~/disks/meso_S/data/ RetinoMaps sub-01 before_edit
 -----------------------------------------------------------------------------------------
-# Written by Martin Szinte (mail@martinszinte.net)
+# Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
