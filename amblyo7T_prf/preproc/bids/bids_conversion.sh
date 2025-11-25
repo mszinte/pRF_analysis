@@ -14,6 +14,8 @@ cd /scratch/mszinte/data/amblyo7T_prf/
 mkdir sourcedata/BM/dcm2niix/
 dcm2niix -o sourcedata/BM/dcm2niix/ -z y sourcedata/BM/PARREC/
 
+# Create T1images
+# RUN ../anatomical/psir_mougin_adapted.ipynb
 
 # create manually readme
 # create manually participants.json and .tsv
@@ -21,20 +23,20 @@ dcm2niix -o sourcedata/BM/dcm2niix/ -z y sourcedata/BM/PARREC/
 
 # ${SUBJECT}
 # create subject folder
+cd /scratch/mszinte/data/amblyo7T_prf/
 mkdir ${SUBJECT}/
 mkdir ${SUBJECT}/ses-01/
 mkdir ${SUBJECT}/ses-01/anat/
 mkdir ${SUBJECT}/ses-01/fmap/
 mkdir ${SUBJECT}/ses-01/func/
 
-
 # Define source and target directories
 cd /scratch/mszinte/data/amblyo7T_prf/
 SOURCE_DIR="sourcedata/BM/dcm2niix"
 SUB_DIR="${SUBJECT}/ses-01"
 
-# Copy anatomical (T1w PSIR second inversion)
-cp ${SOURCE_DIR}/PARREC_WIPPSIR1mm3SENSE_20141016132749_15_t2387.nii.gz ${SUB_DIR}/anat/${SUBJECT}_ses-01_T1w.nii.gz
+# Copy anatomical (PSIRbeta_Mougin out of notebook - see above)
+cp ${SOURCE_DIR}/PARREC_WIPPSIR1mm3SENSE_20141016132749_15_PSIRbeta_Mougin.nii.gz ${SUB_DIR}/anat/${SUBJECT}_ses-01_T1w.nii.gz
 cp ${SOURCE_DIR}/PARREC_WIPPSIR1mm3SENSE_20141016132749_15_t2387.json ${SUB_DIR}/anat/${SUBJECT}_ses-01_T1w.json 
 
 # Copy functional runs
