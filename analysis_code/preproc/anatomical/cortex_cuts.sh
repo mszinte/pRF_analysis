@@ -25,11 +25,11 @@
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte lh
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte rh
 # -----------------------------------------------------------------------------------------
-# Written by Martin Szinte (mail@martinszinte.net)
+# Written by Martin Szinte (martin.szinte@gmail.com)
 # -----------------------------------------------------------------------------------------
 
 # rsync to desktop (faster processing)
-echo "\n>> Copying the files to the desktop"
+echo "\n>> Copying the files to a temporary folder"
 rsync -azuv --rsh='ssh -p 8822' --progress $4@login.mesocentre.univ-amu.fr:$1/$2/derivatives/fmriprep/freesurfer/$3 ~/temp_data/
 
 # Check + edit pial surface
@@ -37,7 +37,8 @@ echo "\n>> Proceed to the cortex cuts : "
 echo "\n>> https://invibe.nohost.me/bookstack/books/preprocessing/page/cutting-inflated-brains-to-obtain-a-flattened-cortical-surface"
 echo "\n>> When you are done, save the patch as '$3/surf/$5.full.patch.3d'\n"
 
-freeview -f ~/temp_data/$3/surf/$5.inflated:annot=aparc.a2009s -layout 1 -viewport 3d
+freeview -f ~/temp_data/$3/surf/$5.inflated:annot=aparc.a2009s.annot -layout 1 -viewport 3d
+
 
 # move the file to the right place
 while true; do
