@@ -16,7 +16,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/preproc/functional/
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 2. run python command
 python preproc_end.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ python preproc_end.py /scratch/mszinte/data RetinoMaps sub-01 327
 python preproc_end.py /scratch/mszinte/data amblyo_prf sub-01 327
 python preproc_end.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
