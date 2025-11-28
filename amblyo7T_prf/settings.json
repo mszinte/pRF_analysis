@@ -5,12 +5,12 @@
     "project_name": "amblyo_prf",
     "sessions" : ["ses-01"],
     "subjects" : ["sub-01", "sub-02"],
-    "anat_session": ["ses-02"], 
-    "func_session": ["ses-02"], 
+    "anat_session": ["ses-01"], 
+    "func_session": ["ses-01"], 
     "task_names": [
         "BarsLeftEye", "BarsRightEye",
         "RingsLeftEye", "RingsRightEye",
-        "WedgesLeftEye", "WedgesLeftEye"]
+        "WedgesLeftEye", "WedgesLeftEye"],
     "cluster_name": "skylake",
     "TR": 2,
     "TRs": 120,

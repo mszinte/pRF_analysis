@@ -46,7 +46,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [ ] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](../analysis_code/preproc/functional/preproc_end_sbatch.py)
+- [ ] High-pass, z-score [preproc_end_sbatch.py](preproc/functional/preproc_end_sbatch.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
