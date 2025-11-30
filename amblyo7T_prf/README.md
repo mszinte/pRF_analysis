@@ -20,13 +20,13 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ---
 
 ### BIDS
-- [x] Download raw data locally (ging not wokding on server) from [schluppeck/amblyopia-data-2025.git](gin.g-node.org/schluppeck/amblyopia-data-2025.git)
+- [x] Download raw data locally (ging not wokding on server) from [schluppeck/amblyopia-data-2025.git](https://gin.g-node.org/schluppeck/amblyopia-data-2025.git)
 - [x] Upload raw data to mesocentre
 ``` rsync -avuz --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/A/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
 - [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participant.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
 - [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py)
-- [ ] Create event_files for each task with screen settings
+- [x] Create manualy event_files for concatenated runs pRFRightEye pRFLeftEye with screen settings
 
 ## MRI Data analysis
 ---
@@ -39,14 +39,14 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
 - [x] Manual edit of brain segmentation [pial_edits.sh](../analysis_code/preproc/anatomical/pial_edits.sh)
 - [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](../analysis_code/preproc/anatomical/freesurfer_pial.py)
-- [x] Create sagittal view video before after edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [x] Create sagittal view video after manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
 - [x] Make cut in the brains for flattening [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh)
 - [x] Flatten the cut brains [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py)
 
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [ ] High-pass, z-score [preproc_end_sbatch.py](preproc/functional/preproc_end_sbatch.py)
+- [x] High-pass, z-score [preproc_end_sbatch.py](../analysis_code/preproc/functional/preproc_end.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
