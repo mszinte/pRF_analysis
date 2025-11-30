@@ -196,13 +196,13 @@ for preproc_files in preproc_files_list:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-prf_{}_{}_dct_bold.func.gii".format(
+            concat_fn = "{}/{}_task-pRF{}_{}_dct_bold.func.gii".format(
                 output_dir, subject, eye_label, hemi)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-prf_{}_dct_bold.dtseries.nii".format(
+            concat_fn = "{}/{}_task-pRF{}_dct_bold.dtseries.nii".format(
                 output_dir, subject, eye_label)
         
         print(f"    Saved: {concat_fn}")
