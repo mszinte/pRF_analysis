@@ -16,12 +16,12 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
+>> cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
 2. run python command
 python preproc_end.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
+cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
 python preproc_end.py /scratch/mszinte/data amblyo7T_prf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -196,13 +196,13 @@ for preproc_files in preproc_files_list:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-prf_{}_{}_dct_bold.func.gii".format(
+            concat_fn = "{}/{}_task-pRF{}_{}_dct_concat_bold.func.gii".format(q
                 output_dir, subject, eye_label, hemi)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-prf_{}_dct_bold.dtseries.nii".format(
+            concat_fn = "{}/{}_task-pRF{}_dct_concat_bold.dtseries.nii".format(
                 output_dir, subject, eye_label)
         
         print(f"    Saved: {concat_fn}")

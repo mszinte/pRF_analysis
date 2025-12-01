@@ -26,7 +26,7 @@ preprocessed files
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/preproc/functional
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 2. run python command
 python fmriprep_sbatch.py [main directory] [project name] [subject num]
                           [hour proc.] [anat_only_(y/n)] [aroma_(y/n)] [fmapfree_(y/n)] 
@@ -163,4 +163,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+# os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
