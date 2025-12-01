@@ -23,7 +23,7 @@ To run:
 python bids_conversion.py [main directory] [project name] [subject BIDS] [subject code] [group]
 -----------------------------------------------------------------------------------------
 Example:
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-02 bm 327
+python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-01 bm 327
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-02 cg 327
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-03 hb 327
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-04 ii 327
