@@ -2,26 +2,12 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Martin SZINTE
 
-
 # Environment Set Up 
-To install dependencies run the following:
-``` pip install -r requirements.txt ```
-Afterwards we recommend working with a conda environment. 
-
-Install pycortex: 
-
-``` CFLAGS="-std=c99" pip install git+https://github.com/gallantlab/pycortex.git ```
-
-Install prfpy:  
-
-``` git clone https://github.com/VU-Cog-Sci/prfpy.git ```
-
-cd to folder 
-
-``` python installer.py ```
-everything should be fine, so to check that all version are correct: 
-``` pip install -r requirements.txt ```
-
+---
+To install dependencies run the following:```pip install -r requirements.txt```</br>
+Afterwards we recommend working with a conda environment. </br>
+Install pycortex: https://github.com/gallantlab/pycortex</br>
+Install prfpy: https://github.com/VU-Cog-Sci/prfpy</br>
 
 # Task-specific analysis
 ---
@@ -40,7 +26,6 @@ After pRF analysis each project has its own analysis. The project's read me can 
 - [x] Deface participants t1w image [deface_sbatch.py](analysis_code/preproc/bids/deface_sbatch.py) 
 - [x] BIDS eyetracking conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
-
 
 ## MRI Data analysis
 ---
