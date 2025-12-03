@@ -16,13 +16,12 @@ sys.argv[7]: use Use fieldmap-free distortion correction
 sys.argv[8]: skip BIDS validation (1) or not (0)
 sys.argv[9]: save cifti hcp format data with 170k vertices
 sys.argv[10]: save fsaverage
-sys.argv[11]: fmap jacobian 
-sys.argv[12]: fs resume (for import of freesurfer already made)
-sys.argv[13]: dof number (e.g. 12)
-sys.argv[14]: email account
-sys.argv[15]: data group (e.g. 327)
-sys.argv[16]: project name (e.g. b327)
-sys.argv[17]: fmriprep singularity file (e.g. fmriprep-25.1.0.simg)
+sys.argv[11]: fs resume (for import of freesurfer already made)
+sys.argv[12]: dof number (e.g. 12)
+sys.argv[13]: email account
+sys.argv[14]: data group (e.g. 327)
+sys.argv[15]: project name (e.g. b327)
+sys.argv[16]: fmriprep singularity file (e.g. fmriprep-25.1.0.simg)
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
@@ -34,12 +33,12 @@ To run:
 python fmriprep_sbatch.py [main directory] [project name] [subject num]
                           [hour proc.] [anat_only_(y/n)] [aroma_(y/n)] [fmapfree_(y/n)] 
                           [skip_bids_val_(y/n)] [cifti_output_170k_(y/n)] [fsaverage(y/n)]
-                          [fmap_jacobian_(y/n)] [fs_no_resume_(y/n)]
-                          [dof] [email account] [group] [server_project] [fmriprep_simg]
+                          [fs_no_resume_(y/n)] [dof] [email account] [group] 
+                          [server_project] [fmriprep_simg]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fmap_jacobian_y fs_no_resume_n 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.1.0.simg
+python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.2.3.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -66,13 +65,12 @@ fmapfree = sys.argv[7]
 skip_bids_val = sys.argv[8]
 hcp_cifti_val = sys.argv[9]
 fsaverage_val = sys.argv[10]
-fmap_jacobian_val = sys.argv[11]
-fs_no_resume_val = sys.argv[12]
-dof = int(sys.argv[13])
-email = sys.argv[14]
-group = sys.argv[15]
-server_project = sys.argv[16]
-fmriprep_simg = sys.argv[17]
+fs_no_resume_val = sys.argv[11]
+dof = int(sys.argv[12])
+email = sys.argv[13]
+group = sys.argv[14]
+server_project = sys.argv[15]
+fmriprep_simg = sys.argv[16]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
@@ -113,11 +111,6 @@ if fsaverage_val == 'fsaverage_y':
         main_dir=main_dir, project_dir=project_dir) 
     fsaverage = 'fsaverage'
 
-if fmap_jacobian_val == 'fmap_jacobian_y':
-    use_fmap_jacobian = ' --force fmap-jacobian'
-elif fmap_jacobian_val == 'fmap_jacobian_n':
-    use_fmap_jacobian = ' --ignore fmap-jacobian'
-
 if fs_no_resume_val == 'fs_no_resume_y':
     use_fs_no_resume = " --fs-no-resume"
 
@@ -142,10 +135,10 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 #define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fmap_jacobian}{use_fs_no_resume}{use_skip_bids_val}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, use_fs_no_resume=use_fs_no_resume,
-        anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree, use_fmap_jacobian=use_fmap_jacobian, 
+        anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
         use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
         dof=dof, aroma_end=aroma_end)
 
@@ -175,4 +168,4 @@ of.close()
 # Submit jobs
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
-#os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
