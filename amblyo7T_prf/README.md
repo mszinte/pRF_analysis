@@ -24,8 +24,7 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 - [x] Download raw data locally
 ```cd ~/temp_data/amblyopia-data-2025;gin download --content```
 - [x] Upload raw data to mesocentre
-``` rsync -avuz --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
-
+```rsync -avuz --exclude='.git' --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
 - [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participant.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
 - [x] Create manualy event_files for concatenated runs pRFRightEye pRFLeftEye with screen settings
