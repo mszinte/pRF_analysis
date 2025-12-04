@@ -41,7 +41,6 @@ After pRF analysis each project has its own analysis. The project's read me can 
 - [x] BIDS eyetracking conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
-
 ## MRI Data analysis
 ---
 

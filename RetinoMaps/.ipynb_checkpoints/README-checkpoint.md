@@ -8,7 +8,7 @@
 ---
 ## Authors (alphabetic order): 
 ---
-Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
+Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## To Do 
 ---
@@ -17,9 +17,9 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 ## Data analysis
 ---
-### Prepocessing
+### Preprocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
-- [x] Change the 'task' to 'task_condition' coulumn name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
+- [x] Change the 'task' to 'task_condition' column name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
 
 ### pRF behaviour analysis
 - [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
@@ -30,19 +30,19 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
 
 ### GLM analysis
-- [x] Run Glm for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
+- [x] Run GLM for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
 - [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py)
 
 ### Inter task analysis
 - [x] Make intertasks image [make_intertask_img.py](intertask/make_intertask_img.py)
 - [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py) 
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
 - [x] Make figure specific TSV with GLM results for active vertex [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
-- [x] Make figure of GLM results active vertex [make_active_vert_fig.py](intertask/make_active_vert_fig.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
 - [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
 ### Eyetracking preprocessing 
+- [x] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
 - [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
 
 ### Eyetracking postprocessing
@@ -53,7 +53,17 @@ Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create timeseries figures [timeseries_figures.py](eyetracking/timeseries_figures.py)
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
+### Resting-state preprocessing
+- [x] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+
+### Resting-state postprocessing
+- [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
+- [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
+
 ### Resting-state analysis
-- [ ] Extract motion components with ICA-AROMA using fMRIPost-AROMA ()
-- [ ] Post-process the data using XCP-D ()
-- [ ] Analyze dense time series outputs using connectome workbench ()
+- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity on the dense timeseries with connectome workbench: Pearson correlation ([compute_dtseries_corr_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/) and Fisher-z transformed Pearson correlation ([compute_dtseries_corr_fisher-z_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/compute_dtseries_corr_fisher-z_bilateral.sh)
+- [ ] Compute seed-based partial correlation
+- [ ] Compute winner-take-all results
+
+### Resting-state results visualization
+
