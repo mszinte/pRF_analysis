@@ -38,10 +38,10 @@ python fmriprep_sbatch.py [main directory] [project name] [subject num]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.2.3.simg
+python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.2.0.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+Edited by Uriel Lascombes (uriel.lascombes@laposte.net)s
 -----------------------------------------------------------------------------------------
 """
 # Debug 
