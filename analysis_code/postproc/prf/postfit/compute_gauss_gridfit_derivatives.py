@@ -81,6 +81,7 @@ with open(settings_path) as f:
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
+
 prf_task_name = analysis_info['prf_task_name']
 maps_names_gauss = analysis_info['maps_names_gauss']
 
@@ -96,7 +97,7 @@ if subject != 'sub-170k':
         
         # Get prf fit filenames
         fit_fns= glob.glob("{}/{}/{}/{}/fit/*prf-fit_gauss_gridfit*".format(pp_dir, subject, format_, output_folder))
-        
+
         # Compute derivatives 
         for fit_fn in fit_fns:
             
@@ -143,7 +144,7 @@ elif subject == 'sub-170k':
         data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
-## Define permission cmd
-#print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-#os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-#os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
