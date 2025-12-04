@@ -66,32 +66,23 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-
-# Threshold settings
-ecc_th = analysis_info['ecc_th']
-size_th = analysis_info['size_th']
-rsqr_th = analysis_info['rsqr_th']
-amplitude_th = analysis_info['amplitude_th']
-stats_th = analysis_info['stats_th']
-n_th = analysis_info['n_th'] 
 subjects = analysis_info['subjects']
 group_tasks = analysis_info['task_intertask']
+categories = ['saccade', 'pursuit', 'vision', 'all']
 
 # Figure settings
-colormap_dict = {'V1': (243, 231, 155),
-                 'V2': (250, 196, 132),
-                 'V3': (248, 160, 126),
-                 'V3AB': (235, 127, 134),
-                 'LO': (150, 0, 90), 
-                 'VO': (0, 0, 200),
-                 'hMT+': (0, 25, 255),
-                 'iIPS': (0, 152, 255),
-                 'sIPS': (44, 255, 150),
-                 'iPCS': (151, 255, 0),
-                 'sPCS': (255, 234, 0),
-                 'mPCS': (255, 111, 0)
-                }
-roi_colors = ['rgb({},{},{})'.format(*rgb) for rgb in colormap_dict.values()]
+roi_colors = {'V1': 'rgb(243, 231, 155)', 
+              'V2': 'rgb(250, 196, 132)', 
+              'V3': 'rgb(248, 160, 126)', 
+              'V3AB': 'rgb(235, 127, 134)', 
+              'LO': 'rgb(150, 0, 90)',  
+              'VO': 'rgb(0, 0, 200)', 
+              'hMT+': 'rgb(0, 25, 255)', 
+              'iIPS': 'rgb(0, 152, 255)', 
+              'sIPS': 'rgb(44, 255, 150)', 
+              'iPCS': 'rgb(151, 255, 0)', 
+              'sPCS': 'rgb(255, 234, 0)', 
+              'mPCS': 'rgb(255, 111, 0)'}
 
 categorie_color_map = {'pursuit': '#E377C2', 
                        'saccade': '#8C564B', 
@@ -114,13 +105,15 @@ hot_zone_percent = figure_info['hot_zone_percent']
 plot_groups = figure_info['plot_groups']
 fig_width = figure_info['fig_width']
 categories_to_plot = figure_info['categories_to_plot']
-
+categories_active_vertex_plot = figure_info['categories_active_vertex_plot']
 
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: suffix = 'SacVE_PurVE'
     else : suffix = 'Sac_Pur'
     # Format loop
     for format_, extension in zip(formats, extensions):
+        figures_dict = {}
+        figures_titles = []
         # Create folders and fns
         fig_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/figures'.format(
             main_dir, project_dir, subject, format_)
@@ -128,33 +121,43 @@ for tasks in group_tasks :
         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv'.format(
             main_dir, project_dir, subject, format_)
         
-        # Categories proportion plots
-        tsv_categories_fn = "{}/{}_prf_categories_proportions_{}.tsv".format(tsv_dir, subject, suffix)
-        df_categories = pd.read_table(tsv_categories_fn, sep="\t")
-        fig_fn = "{}/{}_categories_proportions_{}.pdf".format(fig_dir, subject, suffix)
-        fig = categories_proportions_roi_plot(df_categories=df_categories, 
-                                              fig_width=fig_width, fig_height=300, 
-                                              rois=rois, roi_colors=roi_colors, 
-                                              categorie_color_map=categorie_color_map)
+        # Active vertex roi plot
+        active_vertex_roi_tsv_fn = '{}/{}_active_vertex_roi_{}.tsv'.format(tsv_dir, subject, suffix)
+        df_active_vertex_roi = pd.read_table(active_vertex_roi_tsv_fn)
+        fig = active_vertex_roi_plot(
+            df_active_vertex_roi=df_active_vertex_roi, fig_height=400, 
+            fig_width=fig_width, roi_colors=roi_colors, plot_groups=plot_groups)       
+        fig_fn = "{}/{}_active_vertex_roi_{}.pdf".format(fig_dir, subject, suffix)
         print('Saving pdf: {}'.format(fig_fn))
         fig.write_image(fig_fn)
-    
+        figures_dict['all_categories'] = []
+        figures_dict['all_categories'].append(fig)
+        figures_titles.append('Active vertex roi plot')
+        
+        # Active vertex roi mmp plot
+        if format_ == '170k':
+            for categorie_active_vertex in categories_active_vertex_plot: 
+                figures_dict[categorie_active_vertex] = []
+                active_vertex_roi_mmp_tsv_fn = '{}/{}_active_vertex_roi_mmp_{}.tsv'.format(tsv_dir, subject, suffix)
+                df_active_vertex_roi_mmp = pd.read_table(active_vertex_roi_mmp_tsv_fn)
+                fig = active_vertex_roi_mmp_plot(
+                    df_active_vertex_roi_mmp=df_active_vertex_roi_mmp, fig_height=1080, 
+                    fig_width=1080, roi_colors=roi_colors, plot_groups=plot_groups, categorie=categorie_active_vertex)
+                fig_fn = "{}/{}_active_vertex_{}_roi_mmp_{}.pdf".format(fig_dir, subject, categorie_active_vertex, suffix)
+                print('Saving pdf: {}'.format(fig_fn))
+                fig.write_image(fig_fn)
+                figures_dict[categorie_active_vertex].append(fig)
+                figures_titles.append('Active vertex roi mmp plot')
+        
         # loop over categories
         for categorie_to_plot in categories_to_plot : 
             fig_dir_categorie = '{}/{}/derivatives/pp_data/{}/{}/intertask/figures/{}'.format(
                 main_dir, project_dir, subject, format_, categorie_to_plot)
             os.makedirs(fig_dir_categorie, exist_ok=True)
-            
             tsv_dir_categorie = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
                 main_dir, project_dir, subject, format_, categorie_to_plot)
             
-            # # Roi area and stats plot
-            # tsv_roi_area_fn = "{}/{}_{}_prf_roi_area_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            # df_roi_area = pd.read_table(tsv_roi_area_fn, sep="\t")
-            # fig = prf_roi_area(df_roi_area=df_roi_area, fig_width=fig_width, fig_height=300, roi_colors=roi_colors)
-            # fig_fn = "{}/{}_{}_prf_roi_area_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
-            # print('Saving pdf: {}'.format(fig_fn))
-            # fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot] = []
             
             # Violins plot
             tsv_violins_fn = "{}/{}_{}_prf_violins_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
@@ -164,6 +167,8 @@ for tasks in group_tasks :
             fig_fn = "{}/{}_{}_prf_violins_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot].append(fig)
+            figures_titles.append('Vilolins plot')
         
             # Parameters median plot
             tsv_params_median_fn = "{}/{}_{}_prf_params_median_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
@@ -173,6 +178,8 @@ for tasks in group_tasks :
             fig_fn = "{}/{}_{}_prf_params_median_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot].append(fig)
+            figures_titles.append('Parameters median')
             
             # Ecc.size plots
             tsv_ecc_size_fn = "{}/{}_{}_prf_ecc_size_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
@@ -183,6 +190,8 @@ for tasks in group_tasks :
             fig_fn = "{}/{}_{}_prf_ecc_size_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot].append(fig)
+            figures_titles.append('Eccentricity size relation')
         
             # Ecc.pCM plot
             tsv_ecc_pcm_fn = "{}/{}_{}_prf_ecc_pcm_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
@@ -193,10 +202,10 @@ for tasks in group_tasks :
                                     plot_groups=plot_groups, max_ecc=max_ecc)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot].append(fig)
+            figures_titles.append('Eccentricity pCM relation')
             
             # Polar angle distributions
-            tsv_contralaterality_fn = "{}/{}_{}_prf_contralaterality_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
             tsv_polar_angle_fn = "{}/{}_{}_prf_polar_angle_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
             df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
             figs, hemis = prf_polar_angle_plot(df_polar_angle=df_polar_angle, fig_width=fig_width, 
@@ -207,38 +216,42 @@ for tasks in group_tasks :
                     fig_fn = "{}/{}_{}_prf_polar_angle_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
                     print('Saving pdf: {}'.format(fig_fn))
                     fig.write_image(fig_fn)
-        
+                    figures_dict[categorie_to_plot].append(fig)
+                    figures_titles.append('Polar angle distribution')
+                    
             # Contralaterality plots
-            tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
+            tsv_contralaterality_fn = "{}/{}_{}_prf_contralaterality_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
+            df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
             fig_fn = "{}/{}_{}_contralaterality_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
             fig = prf_contralaterality_plot(df_contralaterality=df_contralaterality, 
                                             fig_width=fig_width, fig_height=300, 
                                             rois=rois, roi_colors=roi_colors)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            figures_dict[categorie_to_plot].append(fig)
+            figures_titles.append('Contralaterality')
         
-            # Spatial distibution plot
-            figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
-                                                fig_width=fig_width, fig_height=300, 
-                                                rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+            # # Spatial distibution plot
+            # tsv_distribution_fn = "{}/{}_{}_prf_distribution_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
+            # df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
+            # figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
+            #                                     fig_width=fig_width, fig_height=300, 
+            #                                     rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+
+            # for (fig, hemi) in zip(figs, hemis):
+            #     if hemi == 'hemi-LR':
+            #         fig_fn = "{}/{}_{}_distribution_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
+            #         print('Saving pdf: {}'.format(fig_fn))
+            #         fig.write_image(fig_fn)
+            #         figures_dict[categorie_to_plot].append(fig)
+            #         figures_titles.append('pRF distribution')
         
-            for (fig, hemi) in zip(figs, hemis):
-                if hemi == 'hemi-LR':
-                    fig_fn = "{}/{}_{}_distribution_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
-                    print('Saving pdf: {}'.format(fig_fn))
-                    fig.write_image(fig_fn)
-        
-            # # Spatial distibution barycentre plot
-            # tsv_barycentre_fn = "{}/{}_{}_prf_barycentre_{}.tsv".format(tsv_dir_categorie, subject, categorie_to_plot, suffix)
-            # df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-            # fig_fn = "{}/{}_{}_barycentre_{}.pdf".format(fig_dir_categorie, subject, categorie_to_plot, suffix)
-            # fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
-            #                                 fig_width=fig_width, fig_height=400, 
-            #                                 rois=rois, roi_colors=roi_colors, screen_side=screen_side)
-            # print('Saving pdf: {}'.format(fig_fn))
-            # fig.write_image(fig_fn)
-        
+        # Export html with all figures
+        subject_html = make_figures_html(subject=subject, figures=figures_dict, figs_title=figures_titles)
+        html_fn = '{}/{}_figures_html_{}.html'.format(fig_dir, subject, suffix)
+        with open(html_fn, "w") as f:
+            f.write(subject_html)
+                
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 # os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
