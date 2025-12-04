@@ -16,16 +16,13 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
+>> cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
 2. run python command
 python preproc_end.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
-python preproc_end.py /scratch/mszinte/data MotConf sub-01 327
-python preproc_end.py /scratch/mszinte/data RetinoMaps sub-01 327
-python preproc_end.py /scratch/mszinte/data amblyo_prf sub-01 327
-python preproc_end.py /scratch/mszinte/data centbids sub-2100247523 327
+cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
+python preproc_end.py /scratch/mszinte/data amblyo7T_prf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -51,9 +48,11 @@ import nibabel as nb
 import itertools as it
 from nilearn import signal
 from nilearn.glm.first_level.design_matrix import _cosine_drift
+import ipdb
+deb = ipdb.set_trace
 
 # Personal imports
-sys.path.append("{}/../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface , make_surface_image
 from pycortex_utils import set_pycortex_config_file
 
@@ -74,6 +73,7 @@ set_pycortex_config_file(cortex_dir)
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
 
+
 with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
@@ -84,22 +84,17 @@ sessions = analysis_info['sessions']
 anat_session = analysis_info['anat_session'][0]
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-# maps_names_vert_area = analysis_info["maps_names_vert_area"]
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
     os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct".format(
         main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/corr/fmriprep_dct_corr".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_avg".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_loo_avg".format(
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_concat".format(
         main_dir, project_dir, subject, format_), exist_ok=True)
     
 # High pass filtering
 for format_, extension in zip(formats, extensions):
-    print('high pass filtering : {}'.format(format_))
+    print('High pass filtering + z-score : {}'.format(format_))
     for session in sessions:
         # Find outputs from fMRIprep
         fmriprep_func_fns = glob.glob("{}/{}/derivatives/fmriprep/fmriprep/{}/{}/func/*{}*.{}".format(
@@ -138,6 +133,7 @@ for format_, extension in zip(formats, extensions):
 
             nb.save(filtered_img, filtered_fn)
 
+
 # Find all the filtered files 
 preproc_fns = []
 for format_, extension in zip(formats, extensions):
@@ -159,76 +155,60 @@ preproc_files_list = [preproc_fsnative_hemi_L,
                       preproc_fsnative_hemi_R,
                       preproc_170k]
 
-# Averaging
+# Concatenate files by eye condition
+print("Concatenating runs by eye condition")
 for preproc_files in preproc_files_list:
-    for task in tasks:
-        # Defind output files names 
-        preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
-
-        if not preproc_files_task:
-            print('No files for {}'.format(task))
-            continue
-
-        if preproc_files_task[0].find('hemi-L') != -1: hemi = 'hemi-L'
-        elif preproc_files_task[0].find('hemi-R') != -1: hemi = 'hemi-R'
-        else: hemi = None
-
-        # Averaging computation
-        preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
-        data_avg = np.zeros(preproc_data.shape)
-        for preproc_file in preproc_files_task:
-            preproc_img, preproc_data = load_surface(fn=preproc_file)
-            data_avg += preproc_data/len(preproc_files_task)
     
-        # Export averaged data
+    if preproc_files[0].find('hemi-L') != -1: 
+        hemi = 'hemi-L'
+    elif preproc_files[0].find('hemi-R') != -1: 
+        hemi = 'hemi-R'
+    else: 
+        hemi = None
+    
+    # Separate by eye condition
+    left_eye_files = sorted([f for f in preproc_files if 'LeftEye' in f])
+    right_eye_files = sorted([f for f in preproc_files if 'RightEye' in f])
+    
+    for eye_files, eye_label in [(left_eye_files, 'LeftEye'), (right_eye_files, 'RightEye')]:
+        
+        if not eye_files:
+            continue
+            
+        print(f"  Concatenating {len(eye_files)} files for {eye_label}")
+        
+        # Load all files and concatenate along time axis
+        all_data = []
+        concat_img = None
+        
+        for fn in eye_files:
+            print(f"    Loading: {fn}")
+            img, data = load_surface(fn=fn)
+            all_data.append(data)
+            if concat_img is None:
+                concat_img = img
+        
+        # Concatenate along time (axis 0)
+        concat_data = np.concatenate(all_data, axis=0)
+        
+        # Create output directory and filename based on hemi
         if hemi:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_avg/{}_task-{}_{}_fmriprep_dct_avg_bold.func.gii".format(
-                main_dir, project_dir, subject, subject, task, hemi)
+            output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_concat".format(
+                main_dir, project_dir, subject)
+            os.makedirs(output_dir, exist_ok=True)
+            concat_fn = "{}/{}_task-pRF{}_{}_dct_concat_bold.func.gii".format(q
+                output_dir, subject, eye_label, hemi)
         else:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_avg/{}_task-{}_fmriprep_dct_avg_bold.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, task)
-
-        print('avg save: {}'.format(avg_fn))
-        avg_img = make_surface_image(data=data_avg, source_img=preproc_img)
-        nb.save(avg_img, avg_fn)
-
-        # Leave-one-out averaging
-        if len(preproc_files_task):
-            combi = []
-            combi = list(it.combinations(preproc_files_task, len(preproc_files_task)-1))
-
-        for loo_num, avg_runs in enumerate(combi):
-            # Load data and make the loo_avg object
-            preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
-            data_loo_avg = np.zeros(preproc_data.shape)
+            output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_concat".format(
+                main_dir, project_dir, subject)
+            os.makedirs(output_dir, exist_ok=True)
+            concat_fn = "{}/{}_task-pRF{}_dct_concat_bold.dtseries.nii".format(
+                output_dir, subject, eye_label)
         
-            # Compute leave-one-out averaging
-            for avg_run in avg_runs:
-                print('loo_avg-{} add: {}'.format(loo_num+1, avg_run))
-                preproc_img, preproc_data = load_surface(fn=avg_run)
-                data_loo_avg += preproc_data/len(avg_runs)
-                
-            # Export leave one out file 
-            if hemi:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_loo_avg/{}_task-{}_{}_fmriprep_dct_avg_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, subject, task, hemi, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_loo_avg/{}_task-{}_{}_fmriprep_dct_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, subject, task, hemi, loo_num+1)
-            else:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_loo_avg/{}_task-{}_fmriprep_dct_avg_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, subject, task, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_loo_avg/{}_task-{}_fmriprep_dct_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, subject, task, loo_num+1)
-            print('loo_avg save: {}'.format(loo_avg_fn))
-            loo_avg_img = make_surface_image(data = data_loo_avg, source_img=preproc_img)
-            nb.save(loo_avg_img, loo_avg_fn)
-        
-            for loo in preproc_files_task:
-                if loo not in avg_runs:
-                    print('loo_avg left: {}'.format(loo))
-                    print("loo save: {}".format(loo_fn))
-                    shutil.copyfile(loo, loo_fn)
-                    
+        print(f"    Saved: {concat_fn}")
+        concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
+        nb.save(concat_img_final, concat_fn)
+
 # Anatomy
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     # define folders

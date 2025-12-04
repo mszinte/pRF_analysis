@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Subject ID variable
-SUBJECT="sub-01"
+SUBJECT="sub-03"
 
 # Copy manually from local to sourcedata
 

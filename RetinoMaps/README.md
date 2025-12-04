@@ -20,6 +20,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 ### Preprocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
 - [x] Change the 'task' to 'task_condition' column name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
+- [x] Generate experimental design matrix [create_design_matrix.py](preproc/create_design_matrix.py)
 
 ### pRF behaviour analysis
 - [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)

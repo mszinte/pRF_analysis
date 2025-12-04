@@ -83,9 +83,17 @@ print(f"Found {len(anat_files)} anatomical file(s).")
 
 #  -------------------- COPY TO SOURCEDATA --------------------
 for f in anat_files:
-    rel_path = os.path.relpath(f, bids_root)
-    dst_path = os.path.join(sourcedata_dir, rel_path)
-    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+    rel_path = os.path.relpath(f, bids_root)  
+
+    # Split dir and filename
+    rel_dir = os.path.dirname(rel_path)       
+    fname = os.path.basename(rel_path)        
+
+    # Insert "non_defaced" inside the anat directory
+    dst_dir = os.path.join(sourcedata_dir, rel_dir, "non_defaced")
+    dst_path = os.path.join(dst_dir, fname)
+
+    os.makedirs(dst_dir, exist_ok=True)
 
     if os.path.exists(dst_path):
         print(f"File already exists in sourcedata, skipping: {dst_path}")
@@ -97,8 +105,12 @@ for f in anat_files:
 sh_file = os.path.join(sh_folder, f"{subject}_deface.sh")
 
 # define FSL comand
-fsl_cmd = """\
-export FSLDIR='{main_dir}/{project_dir}/code/fsl' export PATH=$PATH:$FSLDIR/bin source $FSLDIR/etc/fslconf/fsl.sh\n""".format(main_dir=main_dir, project_dir=project_dir)
+fsl_cmd = """export FSLDIR="{main_dir}/{project_dir}/code/fsl"
+source $FSLDIR/etc/fslconf/fsl.sh
+export PATH=$PATH:$FSLDIR/bin
+
+""".format(main_dir=main_dir, project_dir=project_dir)
+
 
 # define change mode change group comand
 chmod_cmd = """chmod -Rf 771 {main_dir}/{project_dir}\n""".format(main_dir=main_dir, project_dir=project_dir) 
