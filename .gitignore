@@ -1,5 +1,5 @@
 __pycache__/
 *.pyc
-.ipynb_checkpoints
+.ipynb_checkpoints/
 .nfs*
 pRF_analysis.code-workspace
