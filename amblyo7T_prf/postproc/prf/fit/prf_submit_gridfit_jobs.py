@@ -58,7 +58,7 @@ if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
 
 memory_val = 30
-hour_proc = 2
+hour_proc = 6
 nb_procs = 8
 
 # cluster settings
