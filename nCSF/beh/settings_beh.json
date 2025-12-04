@@ -1,0 +1,13 @@
+{
+    "project_name": "nCSF",
+    "n_runs": 10,
+    "sf_minFreqPsy": 0.5,
+    "sf_maxFreqPsy": 20,
+    "sf_filtNumPsy": 6,
+    "sf_filtOverlapPsy": 0.6,
+    "minContPsy": 0.0025,
+    "maxContPsy": 0.8,
+    "contNumPsy": 12
+
+    
+}
