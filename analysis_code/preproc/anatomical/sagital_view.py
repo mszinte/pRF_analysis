@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: video name ('before_edit', 'after_edit')
+sys.argv[5]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 Sagital view video and images of the brain segmentation
@@ -19,10 +20,11 @@ To run:
 1. cd to function
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
 2. run python command
-python sagital_view.py [main directory] [project name] [subject num] [video name]
+python sagital_view.py [main directory] [project name] [subject num] [video name] [session (optional)]
 -----------------------------------------------------------------------------------------
 Exemple:
 python sagital_view.py ~/disks/meso_S/data/ RetinoMaps sub-01 before_edit
+python sagital_view.py ~/disks/meso_S/data/ RetinoMaps sub-01 before_edit ses-01
 -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,9 +43,15 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 vid_name = sys.argv[4]
+session = sys.argv[5] if len(sys.argv) > 5 else None
 
 # define directory
-fs_dir = "{}/{}/derivatives/fmriprep/freesurfer/{}".format(main_dir, project_dir, subject)
+if session:
+    subject_name = f"{subject}_{session}"
+else:
+    subject_name = subject
+
+fs_dir = "{}/{}/derivatives/fmriprep/freesurfer/{}".format(main_dir, project_dir, subject_name)
 vid_dir = "{}/vid/{}".format(fs_dir, vid_name)
 os.makedirs(vid_dir, exist_ok=True)
 image_dir = "{}/img".format(vid_dir)
