@@ -40,7 +40,6 @@ After pRF analysis each project has its own analysis. The project's read me can 
 - [x] Deface participants t1w image [deface_sbatch.py](analysis_code/preproc/bids/deface_sbatch.py) 
 - [x] BIDS eyetracking conversion [run_eye2bids.py](analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
-- [x] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
 
 ## MRI Data analysis
 ---

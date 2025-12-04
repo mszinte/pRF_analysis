@@ -42,6 +42,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
 ### Eyetracking preprocessing 
+- [x] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
 - [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
 
 ### Eyetracking postprocessing
