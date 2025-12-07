@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
+sys.argv[5]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 None
@@ -18,11 +19,12 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 2. run python command
-python freesurfer_import_pycortex.py [main directory] [project name] [subject] [group]
+python freesurfer_import_pycortex.py [main directory] [project name] [subject] [group] [session (optional)]
 -----------------------------------------------------------------------------------------
 Executions:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python freesurfer_import_pycortex.py /scratch/mszinte/data MotConf sub-01 327
+python freesurfer_import_pycortex.py /scratch/mszinte/data amblyo7T_prf sub-01 327 ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -50,6 +52,13 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+session = sys.argv[5] if len(sys.argv) > 5 else None
+
+# Handle session parameter
+if session:
+    subject_name = f"{subject}_{session}"
+else:
+    subject_name = subject
 
 # define directories
 jobs_dir = "{}/{}/derivatives/pp_data/jobs".format(main_dir, project_dir)
@@ -105,17 +114,20 @@ export FS_LICENSE={}\n\
 source $FREESURFER_HOME/SetUpFreeSurfer.sh""".format(main_dir, project_dir, fs_dir, fs_license)
 
 #define pycortex cmd
-py_cortex_cmd = "python pycortex_import.py {} {} {} {}".format(main_dir,project_dir,subject,group)
+if session:
+    py_cortex_cmd = "python pycortex_import.py {} {} {} {} {}".format(main_dir, project_dir, subject, group, session)
+else:
+    py_cortex_cmd = "python pycortex_import.py {} {} {} {}".format(main_dir, project_dir, subject, group)
 
 # create sh folder and file
-sh_dir = "{}/{}_freesurfer_import_pycortex.sh".format(jobs_dir, subject)
+sh_dir = "{}/{}_freesurfer_import_pycortex.sh".format(jobs_dir, subject_name)
 
 # # Define permission cmd
 chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
 chgrp_cmd = "chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
 
 of = open(sh_dir, 'w')
-of.write("{}\n{}\n{}\n{}\n{}\n{}".format(chmod_cmd,chgrp_cmd,freesurfer_cmd,py_cortex_cmd,chmod_cmd,chgrp_cmd))
+of.write("{}\n{}\n{}\n{}".format(freesurfer_cmd,py_cortex_cmd,chmod_cmd,chgrp_cmd))
 of.close()
 
 # Run freesurfer and pycortex
