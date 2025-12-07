@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: group of shared data (e.g. 327)
+sys.argv[5]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 # Preprocessed and averaged timeseries files
@@ -18,11 +19,12 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
 2. run python command
-python preproc_end.py [main directory] [project name] [subject] [group]
+python preproc_end.py [main directory] [project name] [subject] [group] [session (optional)]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/functional/
 python preproc_end.py /scratch/mszinte/data amblyo7T_prf sub-01 327
+python preproc_end.py /scratch/mszinte/data amblyo7T_prf sub-01 327 ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -64,6 +66,13 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
+session = sys.argv[5] if len(sys.argv) > 5 else None
+
+# Handle session parameter for pycortex subject name
+if session:
+    pycortex_subject_name = f"{subject}_{session}"
+else:
+    pycortex_subject_name = subject
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -93,6 +102,9 @@ for format_, extension in zip(formats, extensions):
         main_dir, project_dir, subject, format_), exist_ok=True)
     
 # High pass filtering
+# Dictionary to collect masks per format and hemisphere
+masks_dict = {'fsnative_hemi-L': [], 'fsnative_hemi-R': [], '170k': []}
+
 for format_, extension in zip(formats, extensions):
     print('High pass filtering + z-score : {}'.format(format_))
     for session in sessions:
@@ -111,6 +123,21 @@ for format_, extension in zip(formats, extensions):
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
+            
+            # Identify valid vertices (exclude non-covered areas)
+            vertex_means = np.mean(surf_data, axis=0)
+            valid_mask = vertex_means > 10000  # Threshold between negatives and valid range
+            
+            print('Valid vertices: {}/{} ({:.1f}%)'.format(
+                np.sum(valid_mask), len(valid_mask), 100*np.sum(valid_mask)/len(valid_mask)))
+            
+            # Store mask for later intersection
+            if 'hemi-L' in func_fn:
+                masks_dict['fsnative_hemi-L'].append(valid_mask)
+            elif 'hemi-R' in func_fn:
+                masks_dict['fsnative_hemi-R'].append(valid_mask)
+            elif '170k' in func_fn:
+                masks_dict['170k'].append(valid_mask)
            
             # High pass filtering 
             nb_tr = surf_data.shape[0]
@@ -121,8 +148,11 @@ for format_, extension in zip(formats, extensions):
                                       standardize=False, 
                                       confounds=high_pass_set)
            
-            # Compute the Z-score 
-            surf_data = (surf_data - np.mean(surf_data, axis=0)) / np.std(surf_data, axis=0)
+            # Compute the Z-score only on valid vertices
+            surf_data[:, valid_mask] = (surf_data[:, valid_mask] - np.mean(surf_data[:, valid_mask], axis=0)) / np.std(surf_data[:, valid_mask], axis=0)
+            
+            # Set invalid vertices to NaN
+            surf_data[:, ~valid_mask] = np.nan
             
             # Make an image with the preproceced data
             filtered_img = make_surface_image(data=surf_data, source_img=surf_img)
@@ -132,6 +162,49 @@ for format_, extension in zip(formats, extensions):
                 main_dir, project_dir, subject, format_, filtered_data_fn_end)
 
             nb.save(filtered_img, filtered_fn)
+
+# Create and save consistent masks
+print("\nCreating consistent masks across runs")
+
+saved_masks = {}
+for key, mask_list in masks_dict.items():
+    if not mask_list:
+        continue
+    
+    # Create intersection mask
+    consistent_mask = np.logical_and.reduce(mask_list)
+    print(f'{key}: {np.sum(consistent_mask)}/{len(consistent_mask)} ({100*np.sum(consistent_mask)/len(consistent_mask):.1f}%)')
+    
+    # Create mask data (1 for valid, 0 for invalid)
+    mask_data = consistent_mask.astype(np.float32)
+    
+    # Save mask as GIFTI or CIFTI
+    if 'fsnative' in key:
+        hemi = key.split('_')[1]
+        mask_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/mask".format(main_dir, project_dir, subject)
+        os.makedirs(mask_dir, exist_ok=True)
+        # Load a reference file to get the structure
+        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct/*{}*.func.gii".format(
+            main_dir, project_dir, subject, hemi))
+        if ref_files:
+            ref_img = nb.load(ref_files[0])
+            mask_img = make_surface_image(data=mask_data[np.newaxis, :], source_img=ref_img)
+            mask_fn = "{}/{}_{}_{}_mask.func.gii".format(mask_dir, subject, hemi, 'space-fsnative')
+            nb.save(mask_img, mask_fn)
+            saved_masks[key] = mask_fn
+            print(f'  Saved: {mask_fn}')
+    elif '170k' in key:
+        mask_dir = "{}/{}/derivatives/pp_data/{}/170k/func/mask".format(main_dir, project_dir, subject)
+        os.makedirs(mask_dir, exist_ok=True)
+        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct/*170k*.dtseries.nii".format(
+            main_dir, project_dir, subject))
+        if ref_files:
+            ref_img = nb.load(ref_files[0])
+            mask_img = make_surface_image(data=mask_data[np.newaxis, :], source_img=ref_img)
+            mask_fn = "{}/{}_space-fsLR_den-170k_mask.dtseries.nii".format(mask_dir, subject)
+            nb.save(mask_img, mask_fn)
+            saved_masks[key] = mask_fn
+            print(f'  Saved: {mask_fn}')
 
 
 # Find all the filtered files 
@@ -156,15 +229,29 @@ preproc_files_list = [preproc_fsnative_hemi_L,
                       preproc_170k]
 
 # Concatenate files by eye condition
-print("Concatenating runs by eye condition")
+print("\nConcatenating runs by eye condition")
 for preproc_files in preproc_files_list:
+    
+    if not preproc_files:
+        continue
     
     if preproc_files[0].find('hemi-L') != -1: 
         hemi = 'hemi-L'
+        mask_key = 'fsnative_hemi-L'
     elif preproc_files[0].find('hemi-R') != -1: 
         hemi = 'hemi-R'
+        mask_key = 'fsnative_hemi-R'
     else: 
         hemi = None
+        mask_key = '170k'
+    
+    # Load the consistent mask
+    if mask_key in saved_masks:
+        mask_img, mask_data = load_surface(fn=saved_masks[mask_key])
+        consistent_mask = mask_data[0, :] > 0.5  # Convert back to boolean
+    else:
+        print(f"Warning: No mask found for {mask_key}")
+        continue
     
     # Separate by eye condition
     left_eye_files = sorted([f for f in preproc_files if 'LeftEye' in f])
@@ -175,7 +262,7 @@ for preproc_files in preproc_files_list:
         if not eye_files:
             continue
             
-        print(f"  Concatenating {len(eye_files)} files for {eye_label}")
+        print(f"  Concatenating {len(eye_files)} files for {eye_label} ({mask_key})")
         
         # Load all files and concatenate along time axis
         all_data = []
@@ -184,6 +271,8 @@ for preproc_files in preproc_files_list:
         for fn in eye_files:
             print(f"    Loading: {fn}")
             img, data = load_surface(fn=fn)
+            # Apply consistent mask
+            data[:, ~consistent_mask] = np.nan
             all_data.append(data)
             if concat_img is None:
                 concat_img = img
@@ -196,7 +285,7 @@ for preproc_files in preproc_files_list:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_{}_dct_concat_bold.func.gii".format(q
+            concat_fn = "{}/{}_task-pRF{}_{}_dct_concat_bold.func.gii".format(
                 output_dir, subject, eye_label, hemi)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_concat".format(
@@ -210,7 +299,7 @@ for preproc_files in preproc_files_list:
         nb.save(concat_img_final, concat_fn)
 
 # Anatomy
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k']):
     # define folders
     pycortex_flat_dir = '{}/{}/derivatives/pp_data/cortex/db/{}/surfaces'.format(
         main_dir, project_dir, pycortex_subject)
@@ -264,5 +353,5 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
