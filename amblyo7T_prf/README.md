@@ -43,7 +43,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [x] High-pass, z-score and concatenation of runs [preproc_end.py](preproc/functional/preproc_end.py)
+- [x] High-pass, z-score, mask (patial recording) and concatenation of runs [preproc_end.py](preproc/functional/preproc_end.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
@@ -56,15 +56,15 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](postproc/prf/postfit/pycortex_maps_gridfit.py)
 
 ##### PRF ROIs
-- [ ] Draw individual ROI on fsnative data using Inkscape
-- [ ] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
-- [ ] Create flatmaps of ROIs [pycortex_maps_rois.py](analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
+- [x] Draw individual ROI on fsnative data using Inkscape
+- [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 ##### PRF CSS fit
-- [ ] CSS fit within the ROIs [prf_submit_css_jobs.py](analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
-- [ ] Compute CSS statistics [css_stats_sbatch.py](analysis_code/postproc/prf/postfit/css_stats_sbatch.py)
-- [ ] Compute CSS fit derivatives [compute_css_derivatives.py](analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
-- [ ] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
+- [ ] CSS fit within the ROIs [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [ ] Compute CSS statistics [css_stats_sbatch.py](../analysis_code/postproc/prf/postfit/css_stats_sbatch.py)
+- [ ] Compute CSS fit derivatives [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [ ] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](../analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
 - [ ] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
 - [ ] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](analysis_code/postproc/prf/postfit/make_tsv_css.py)
 - [ ] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) 

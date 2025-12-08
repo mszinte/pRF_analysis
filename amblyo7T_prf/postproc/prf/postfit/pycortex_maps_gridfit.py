@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
 sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+sys.argv[6]: OPTIONAL session name (e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -21,11 +22,12 @@ To run:
 >> cd ~/disks/meso_H/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_gridfit.py [main directory] [project name] 
-                                   [subject num] [save_in_svg] [analysis folder - optional]
+                                   [subject num] [save_in_svg] [analysis folder - optional] [session - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo7T_prf sub-01 n
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo7T_prf sub-01 n pRFRightEye
+python pycortex_maps_gridfit.py ~/disks/meso_S/data amblyo7T_prf sub-01 n pRFRightEye ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -59,8 +61,21 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
-if len(sys.argv) > 5: output_folder = sys.argv[5]
-else: output_folder = "prf"
+if len(sys.argv) > 5: 
+    output_folder = sys.argv[5]
+else: 
+    output_folder = "prf"
+
+if len(sys.argv) > 6:
+    session = sys.argv[6]
+else:
+    session = None
+
+# Handle session parameter for pycortex subject name
+if session:
+    pycortex_subject_name = f"{subject}_{session}"
+else:
+    pycortex_subject_name = subject
 
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
@@ -121,7 +136,7 @@ for format_ in formats:
     os.makedirs(datasets_dir, exist_ok=True)
     
     if format_ == 'fsnative':
-        pycortex_subject = subject
+        pycortex_subject = pycortex_subject_name
         
         deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_dct_concat_prf-deriv_gauss_gridfit.func.gii'.format(
             prf_deriv_dir, subject, output_folder)

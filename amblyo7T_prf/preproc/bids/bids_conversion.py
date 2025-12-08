@@ -25,10 +25,7 @@ python bids_conversion.py [main directory] [project name] [subject BIDS] [subjec
 -----------------------------------------------------------------------------------------
 Example:
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-01 bm 327 A
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-02 cg 327 A
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-03 hb 327 C
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-04 ii 327 C
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-05 kg 327 A
+python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-13 ac 327 C
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
