@@ -10,6 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
+sys.argv[5]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -17,9 +18,9 @@ Pycortex flatmaps figures and dataset
 To run:
 0. TO RUN ON INVIBE SERVER (with Inkscape)
 1. cd to function
->> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python pycortex_maps_rois.py [main directory] [project name] [subject num] [save_in_svg]
+>> python pycortex_maps_rois.py [main directory] [project name] [subject num] [save_in_svg] [session (optional)]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -32,9 +33,11 @@ python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-170k n
 
 python pycortex_maps_rois.py ~/disks/meso_S/data amblyo_prf sub-01 n
 python pycortex_maps_rois.py ~/disks/meso_S/data amblyo_prf sub-170k n
+
+python pycortex_maps_rois.py ~/disks/meso_S/data amblyo7T_prf sub-01 n ses-01
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
-Edited by Martin Szinte (mail@martinszinte.net)
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -61,6 +64,14 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
+session = sys.argv[5] if len(sys.argv) > 5 else None
+
+# Handle session parameter for pycortex subject name
+if session:
+    pycortex_subject_name = f"{subject}_{session}"
+else:
+    pycortex_subject_name = subject
+
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
         save_svg = True
@@ -112,7 +123,7 @@ create_colormap(cortex_dir=cortex_dir,
                )
 
 # Create flatmaps
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k']):
     # Define directories and fn
     rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject,format_)
     flatmaps_dir = '{}/pycortex/flatmaps_rois'.format(rois_dir)

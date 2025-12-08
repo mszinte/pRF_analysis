@@ -10,6 +10,8 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
+sys.argv[5]: server project (e.g. b327)
+sys.argv[6]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 preprocessed files
@@ -18,10 +20,11 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
 2. run python command
-python flatten_sbatch.py [main directory] [project name] [subject] [group]
+python flatten_sbatch.py [main directory] [project name] [subject] [group] [server project] [session (optional)]
 -----------------------------------------------------------------------------------------
 Example:
 python flatten_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python flatten_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -38,6 +41,14 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+session = sys.argv[6] if len(sys.argv) > 6 else None
+
+# Handle session parameter
+if session:
+    subject_name = f"{subject}_{session}"
+else:
+    subject_name = subject
+
 sub_num = subject[-2:]
 hemis = ['lh', 'rh']
 
@@ -65,12 +76,12 @@ for hemi in hemis:
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_{hemi}_flatten_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_{hemi}_flatten_%N_%j_%a.out
-#SBATCH -J {subject}_{hemi}_flatten
+#SBATCH -e {log_dir}/{subject_name}_{hemi}_flatten_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject_name}_{hemi}_flatten_%N_%j_%a.out
+#SBATCH -J {subject_name}_{hemi}_flatten
 export SUBJECTS_DIR='{fs_dir}'
-cd '{fs_dir}/{subject}/surf/'\n\n""".format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
-                                            subject=subject, memory_val=memory_val, log_dir=log_dir, 
+cd '{fs_dir}/{subject_name}/surf/'\n\n""".format(server_project=server_project, nb_procs=nb_procs, hour_proc=hour_proc, 
+                                            subject_name=subject_name, memory_val=memory_val, log_dir=log_dir, 
                                             fs_dir=fs_dir, hemi=hemi)
 
     # define permission cmd
@@ -86,7 +97,7 @@ cd '{fs_dir}/{subject}/surf/'\n\n""".format(server_project=server_project, nb_pr
     mris_flatten {}.full.patch.3d {}.full.flat.patch.3d""".format(main_dir, project_dir, fs_dir, fs_licence, hemi, hemi)
 
     # create sh fn
-    sh_fn = "{}/{}_{}_flatten.sh".format(job_dir, subject, hemi)
+    sh_fn = "{}/{}_{}_flatten.sh".format(job_dir, subject_name, hemi)
 
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, flatten_cmd, chmod_cmd, chgrp_cmd))
