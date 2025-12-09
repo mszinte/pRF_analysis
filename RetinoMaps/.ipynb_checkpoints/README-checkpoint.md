@@ -1,39 +1,124 @@
-# RetinoMaps
-## About
+# About
 ---
 *We here study cortical areas involved in both vision and eye movements in 20 healthy controls.</br>*
 *All the analyses are done in surface with both **fsnative** and **HCP 170k or 91k** format.</br>*
 *This repository contains all codes allowing us to analyse our dataset [OpenNeuro:DSXXXXX](https://openneuro.org/datasets/dsXXXX).</br>*
 
----
-## Authors (alphabetic order): 
+# Authors (alphabetic order): 
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
-## To Do 
+# Data stucture and BIDS
 ---
-- [ ] take care of glm analysis
-- [ ] add quality check file
-
-## Data analysis
----
-### Preprocessing
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
 - [x] Change the 'task' to 'task_condition' column name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
+- [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
+- [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
+- [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
-### pRF behaviour analysis
-- [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
-- [x] Make pRF behaviour figure [make_prf_beh_fig.py](pRF_beh/make_prf_beh_fig.py)
+# Structural preprocessing 
+---
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+- [x] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [x] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [x] Manual edit of brain segmentation [pial_edits.sh](../analysis_code/preproc/anatomical/pial_edits.sh)
+- [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](../analysis_code/preproc/anatomical/freesurfer_pial.py)
+- [x] Create sagittal view video after manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
+- [x] Make cut in the brains for flattening [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh)
+- [x] Flatten the cut brains [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py)
 
-### Make project WEBGL
-- [x] Make subject WEBGL with pycortex [pycortex_webgl_css.py](webgl/pycortex_webgl_css.py)
-- [x] Edit [index.html](analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
+# Functional preprocessing 
+---
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
-### GLM analysis
-- [x] Run GLM for the differents tasks [glm_sbatch.py](glm/fit/glm_sbatch.py)
-- [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py)
+- [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
+- [x] High-pass, z-score, average and leave-one-out average [preproc_end_sbatch.py](../analysis_code/preproc/functional/preproc_end_sbatch.py)
 
-### Inter task analysis
+# Inter-run correlations 
+---
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+
+- [x] Compute inter-run correlation [compute_run_corr_sbatch](../analysis_code/preproc/functional/compute_run_corr_sbatch)
+- [x] Make inter-run correlations maps with pycortex [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](../analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
+
+### *Groupe and template*
+Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+
+- [x] Compute inter-run correlation for **sub-170k** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
+- [x] Make inter-run correlations maps with pycortex for **sub-170k** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
+
+# pRF 
+---
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+
+#### PRF Gaussian fit
+- [x] Create the visual matrix design [vdm_builder.py](../analysis_code/postproc/prf/fit/vdm_builder.py)
+- [x] Run pRF gaussian grid fit [prf_submit_gridfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gridfit_jobs.py)
+- [x] Compute pRF gaussian grid fit derivatives [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
+- [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py) or [pycortex_maps_gridfit.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.sh)
+
+#### PRF ROIs
+- [x] Create 170k MMP rois [create_hcp_rois.ipynb](../analysis_code/atlas/dev/create_hcp_rois.ipynb) or copy sub-170k in pycortex folder from Retinomaps. 
+- [x] Create 170k MMP rois masks [create_mmp_rois_atlas.py](../analysis_code/atlas/create_mmp_rois_atlas.py)
+- [x] Draw individual ROI on fsnative data using Inkscape
+- [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py) or [pycortex_maps_rois.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.sh)
+
+#### PRF CSS fit
+- [x] CSS fit within the ROIs [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [x] Compute CSS statistics [css_stats_sbatch.py](../analysis_code/postproc/prf/postfit/css_stats_sbatch.py)
+- [x] Compute CSS fit derivatives [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [x] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](../analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
+- [x] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py) or [pycortex_maps_css.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_css.sh)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) or [make_rois_fig_tsv.sh](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.sh)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py) or [make_rois_fig.sh](../analysis_code/postproc/prf/postfit/make_rois_fig.sh)
+- [x] Merge all figures [merge_fig_css.py](../analysis_code/postproc/prf/postfit/merge_fig_css.py)
+
+### *Groupe and template*
+Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+
+#### PRF Gaussian fit
+- [x] Compute pRF gaussian grid fit derivatives for **sub-170k** [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
+- [x] Make pRF maps with pycortex for **sub-170k**  [pycortex_maps_gridfit.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py)
+
+#### PRF ROIs
+- [x] Make ROIS files for **sub-170k** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [x] Create flatmaps of ROIs for **sub-170k** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
+
+#### PRF CSS fit
+- [x] Compute CSS statistics for **sub-170k** [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
+- [x] Compute CSS fit derivatives for **sub-170k** [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [x] Compute CSS population cortical magnification (CM) for **sub-170k** [compute_css_pcm.py](../analysis_code/postproc/prf/postfit/compute_css_pcm.py)
+- [x] Make CSS pRF fit derivatives and CM maps with pycortex for **sub-170k** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **sub-170k** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
+- [x] Merge all figures for **sub-170k** and **group** [merge_fig_css.py](../analysis_code/postproc/prf/postfit/merge_fig_css.py)
+
+# GLM 
+--- 
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+
+- [x] Run GLM for the differents tasks [glm_fit.py](glm/fit/glm_fit.py) or [glm_sbatch.py](glm/fit/glm_sbatch.py)
+- [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
+
+### *Groupe and template*
+Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+
+- [x] Compute GLM statistics for **sub-170k** [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
+
+# Inter task analysis 
+---
+### *Individual subject*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+
 - [x] Make intertasks image [make_intertask_img.py](intertask/make_intertask_img.py)
 - [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py) 
@@ -41,11 +126,49 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
 - [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
-### Eyetracking preprocessing 
-- [x] Generate experimental design matrix [create_design_matrix.py](analysis_code/preproc/bids/create_design_matrix.py)
+### *Groupe and template*
+Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+
+- [x] Make intertasks image for **sub-170k** [make_intertask_img.py](intertask/make_intertask_img.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results for **sub-170k** [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results for **sub-170k** and **group** [make_intertask_rois_fig_tsv.py](intertask/make_intertask_rois_fig_tsv.py) or [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py)
+- [x] Make figure specific TSV with GLM results for active vertex for **sub-170k** and **group** [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results for **sub-170k** and **group** [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
+- [x] Make intertask statistical maps maps with pycortex  for **sub-170k** [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
+
+# Resting-state preprocessing
+---
+- [x] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+
+# Resting-state postprocessing
+---
+- [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
+- [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
+
+# Resting-state analysis
+---
+- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity on the dense timeseries with connectome workbench: Pearson correlation ([compute_dtseries_corr_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/) and Fisher-z transformed Pearson correlation ([compute_dtseries_corr_fisher-z_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/compute_dtseries_corr_fisher-z_bilateral.sh)
+- [ ] Compute seed-based partial correlation
+- [ ] Compute winner-take-all results
+
+# Resting-state results visualization
+---
+TO DO
+
+# WEBGL
+---
+https://invibe.nohost.me/predicteye/
+
+- [x] Make subject WEBGL with pycortex [pycortex_webgl_css.py](webgl/pycortex_webgl_css.py)
+- [x] Edit [index.html](../analysis_code/postproc/prf/webgl/index.html) and publish WEBGL on webapp [publish_webgl.py](webgl/publish_webgl.py)
+
+# Eyetracking preprocessing 
+---
+- [x] Generate experimental design matrix [create_design_matrix.py](../analysis_code/preproc/bids/create_design_matrix.py)
 - [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
 
-### Eyetracking postprocessing
+# Eyetracking postprocessing
+---
 - [ ] Extract trigger timestamps [extract_triggers.py](eyetracking/extract_triggers.py)
 - [ ] Extract saccades [extract_saccades.py](eyetracking/extract_saccades.py)
 - [ ] Create saccade model prediction timeseries [saccade_prediction.py](eyetracking/saccade_prediction.py)
@@ -53,17 +176,10 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 - [ ] Create timeseries figures [timeseries_figures.py](eyetracking/timeseries_figures.py)
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
 
-### Resting-state preprocessing
-- [x] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+# pRF behaviour
+---
+- [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
+- [x] Make pRF behaviour figure [make_prf_beh_fig.py](pRF_beh/make_prf_beh_fig.py)
 
-### Resting-state postprocessing
-- [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
-- [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
 
-### Resting-state analysis
-- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity on the dense timeseries with connectome workbench: Pearson correlation ([compute_dtseries_corr_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/) and Fisher-z transformed Pearson correlation ([compute_dtseries_corr_fisher-z_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/compute_dtseries_corr_fisher-z_bilateral.sh)
-- [ ] Compute seed-based partial correlation
-- [ ] Compute winner-take-all results
-
-### Resting-state results visualization
 
