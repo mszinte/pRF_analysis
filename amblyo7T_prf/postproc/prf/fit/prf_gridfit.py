@@ -146,7 +146,7 @@ print("\n===== PRF MODEL PARAMETERS =====")
 print("Stimulus x min/max (deg):", np.nanmin(stimulus.x_coordinates ), np.nanmax(stimulus.x_coordinates ))
 print("Stimulus y min/max (deg) :", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
 print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
-print("Eccentricity grid range:", np.min(sizes), np.max(sizes))
+print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
 
