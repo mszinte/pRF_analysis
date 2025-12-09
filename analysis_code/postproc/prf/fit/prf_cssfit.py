@@ -13,7 +13,7 @@ sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
-sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to use ROI vertices 
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
