@@ -13,6 +13,7 @@ sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -22,7 +23,7 @@ To run:
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
-                     [input file name] [number of jobs] [analysis folder - optional] [session - optional]
+                     [input file name] [number of jobs] [analysis folder - optional] [session - optional] [filter_rois - optional]
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -71,6 +72,8 @@ if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
 if len(sys.argv) > 7: session = sys.argv[7]
 else: session = None
+if len(sys.argv) > 8: filter_rois = bool(int(sys.argv[8]))
+else: filter_rois = True
 
 # Handle session parameter for pycortex subject name
 if session:
@@ -150,7 +153,8 @@ print("==============================\n")
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
                                               subject=pycortex_subject, 
-                                              rois=rois)
+                                              rois=rois,
+                                              filter_rois=filter_rois)
 
 print('roi extraction done')
 
