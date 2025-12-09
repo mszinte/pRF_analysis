@@ -12,6 +12,7 @@ sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -21,7 +22,7 @@ To run:
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
-                     [inout file name] [number of jobs] [analysis folder - optional]
+                     [input file name] [number of jobs] [analysis folder - optional] [session - optional]
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -68,6 +69,14 @@ input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
+if len(sys.argv) > 7: session = sys.argv[7]
+else: session = None
+
+# Handle session parameter for pycortex subject name
+if session:
+    pycortex_subject = f"{subject}_{session}"
+else:
+    pycortex_subject = subject
 
 n_batches = n_jobs
 verbose = True
@@ -135,12 +144,12 @@ print(f"Screen Size (cm): {screen_size_cm}")
 print(f"Screen Distance (cm): {screen_distance_cm}")
 print(f"TR: {TR}")
 print(f"Max eccentricity/size values: {max_ecc_size}")
-print(f"CSS exponentgrid: {exponent_css_grid}")
+print(f"CSS exponent grid: {exponent_css_grid}")
 print("==============================\n")
 
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
-                                              subject=subject, 
+                                              subject=pycortex_subject, 
                                               rois=rois)
 
 print('roi extraction done')
@@ -153,9 +162,9 @@ stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
 
 print("\n===== PRF MODEL PARAMETERS =====")
 print("Stimulus x min/max (deg):", np.nanmin(stimulus.x_coordinates ), np.nanmax(stimulus.x_coordinates ))
-print("Stimulus y min/max (deg) :", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
+print("Stimulus y min/max (deg):", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
 print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
-print("Eccentricity grid range:", np.min(sizes), np.max(sizes))
+print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
 # Gauss fit
@@ -166,8 +175,40 @@ gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
                 (0, 6),  # prf amplitude
                 (-1, 1),# bold baseline
                 (0, 10),  # hrf1
-                (0, 0) # hrf1
+                (0, 0) # hrf2
                 ]  
+
+# CSS fit
+# -------
+css_bounds = [(-max_ecc_size, max_ecc_size),  # x
+              (-max_ecc_size, max_ecc_size),  # y
+              (size_th[0], size_th[1]),  # prf size
+              (0, 6),  # prf amplitude
+              (-1, 1),  # bold baseline 
+              (n_th[0], n_th[1]),  # n
+              (0, 10),  # hrf1
+              (0, 0) # hrf2
+              ] 
+
+print("\n===== PRF FIT BOUNDS =====")
+print("Gauss bounds:")
+print("  x range:", gauss_bounds[0])
+print("  y range:", gauss_bounds[1])
+print("  prf size range:", gauss_bounds[2])
+print("  prf amplitude range:", gauss_bounds[3])
+print("  bold baseline range:", gauss_bounds[4])
+print("  hrf1 range:", gauss_bounds[5])
+print("  hrf2 range:", gauss_bounds[6])
+print("\nCSS bounds:")
+print("  x range:", css_bounds[0])
+print("  y range:", css_bounds[1])
+print("  prf size range:", css_bounds[2])
+print("  prf amplitude range:", css_bounds[3])
+print("  bold baseline range:", css_bounds[4])
+print("  n exponent range:", css_bounds[5])
+print("  hrf1 range:", css_bounds[6])
+print("  hrf2 range:", css_bounds[7])
+print("==========================\n")
 
 # Define gauss model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
@@ -185,21 +226,9 @@ gauss_fitter.grid_fit(ecc_grid=eccs,
 
 # Iterative fit gauss model
 gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, 
-                           bounds= gauss_bounds,
+                           bounds=gauss_bounds,
                            verbose=verbose)
 gauss_fit = gauss_fitter.iterative_search_params
-
-# CSS fit
-# -------
-css_bounds =  [(-max_ecc_size, max_ecc_size),  # x
-                (-max_ecc_size, max_ecc_size),  # y
-                (size_th[0], size_th[1]),  # prf size
-                (0, 6),  # prf amplitude
-                (-1, 1),  # bold baseline 
-                (n_th[0], n_th[1]),  # n
-                (0, 10),  # hrf1
-                (0, 0) # hrf1
-                ] 
 
 # Define CSS model
 css_model = CSS_Iso2DGaussianModel(stimulus=stimulus)
@@ -218,7 +247,7 @@ css_fitter.grid_fit(exponent_grid=exponent_css_grid,
 # Run iterative fit
 css_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, 
                          verbose=verbose, 
-                         bounds= css_bounds,
+                         bounds=css_bounds,
                          xtol=1e-4, 
                          ftol=1e-4)
 
@@ -267,7 +296,3 @@ end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(start_time=start_time, 
                                                                                     end_time=end_time, 
                                                                                     dur=end_time - start_time))
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))  

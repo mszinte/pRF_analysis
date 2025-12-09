@@ -18,16 +18,16 @@ fit tester numpy arrays
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/RetinoMaps/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_gridfit.py [main directory] [project name] [subject name] 
 [inout file name] [number of jobs] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-02 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
+python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-03 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@univ-amu.fr)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -55,6 +55,7 @@ from prfpy.fit import Iso2DGaussianFitter
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image , load_surface
+from screen_utils import get_screen_settings
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -63,6 +64,7 @@ start_time = datetime.datetime.now()
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
+sub_num = subject[4:]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 if len(sys.argv) > 6: output_folder = sys.argv[6]
@@ -78,8 +80,10 @@ settings_path = os.path.join(base_dir, project_dir, 'settings.json')
 with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
-screen_size_cm = analysis_info['screen_size_cm']
-screen_distance_cm = analysis_info['screen_distance_cm']
+
+# Load screen settings from subject dependend task-events.json
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, analysis_info['prf_task_name'])
+
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
@@ -105,14 +109,22 @@ pred_fn_gauss_gridfit = input_fn.split('/')[-1]
 pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', 'prf-pred_gauss_gridfit')
 
 # Get task specific visual design matrix
-vdm_fn = "{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy".format(
-    main_dir, project_dir, output_folder, vdm_width, vdm_height)
+vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
+    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
 vdm = np.load(vdm_fn)
 
 # defind model parameter grid range
 sizes = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
 eccs = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
 polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
+
+print("\n===== PRF FIT PARAMETERS =====")
+print(f"Screen Size (cm): {screen_size_cm}")
+print(f"Screen Distance (cm): {screen_distance_cm}")
+print(f"TR: {TR}")
+print(f"Max eccentricity/size values: {max_ecc_size}")
+print("==============================\n")
+
 
 # load data
 img, raw_data = load_surface(fn=input_fn)
@@ -123,11 +135,17 @@ valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
 # determine stimulus
-stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1], 
+stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,
                          design_matrix=vdm, 
                          TR=TR)
 
+print("\n===== PRF MODEL PARAMETERS =====")
+print("Stimulus x min/max (deg):", np.nanmin(stimulus.x_coordinates ), np.nanmax(stimulus.x_coordinates ))
+print("Stimulus y min/max (deg) :", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
+print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
+print("Size grid range:", np.min(sizes), np.max(sizes))
+print("==============================\n")
 
 # determine gaussian model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)

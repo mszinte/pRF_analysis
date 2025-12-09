@@ -18,17 +18,19 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_css_jobs.py [main directory] [project name] [subject] 
                               [group] [server project] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -67,13 +69,11 @@ with open(settings_path) as f:
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
 prf_task_name = analysis_info['prf_task_name']
+formats = analysis_info['formats']
+extensions = analysis_info['extensions']
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
-
-# Define permission cmd
-chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
-chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
 dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.func.gii".format(
@@ -126,7 +126,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')
-    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, chmod_cmd, chgrp_cmd))
+    of.write("{} \n{}".format(slurm_cmd, fit_cmd))
     of.close()
 
     # Submit jobs
