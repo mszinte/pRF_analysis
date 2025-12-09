@@ -104,10 +104,10 @@ if subject != 'sub-170k':
             if format_ == 'fsnative': 
                 hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
                 prf_bold_fn = '{}/{}_task-{}_hemi-{}_dct_concat_bold.{}'.format(
-                    prf_bold_dir, subject, prf_task_name, hemi, extension)
+                    prf_bold_dir, subject, output_folder, hemi, extension)
             elif format_ == '170k':
                 prf_bold_fn = '{}/{}_task-{}_dct_concat_bold.{}'.format(
-                    prf_bold_dir, subject, prf_task_name, extension)
+                    prf_bold_dir, subject, output_folder, extension)
 
             # load data  
             pred_img, pred_data = load_surface(prf_pred_fn)
