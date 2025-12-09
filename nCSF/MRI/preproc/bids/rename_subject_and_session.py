@@ -40,7 +40,10 @@ deb = ipdb.set_trace
 import os
 import sys
 import json
-import subprocess
+
+# Personal import
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from bids_utils import fast_copy
 
 # Inputs
 main_dir = sys.argv[1]
@@ -58,16 +61,6 @@ session_names = analysis_info['session_names']
 # Define directories
 sourcedata_dir = "{}/{}/sourcedata".format(main_dir, project_dir)
 bids_dir = "{}/{}".format(main_dir, project_dir)
-
-# Function: fast copy using rsync -azuv
-def fast_copy(src, dst):
-    """
-    Copy a folder tree quickly using rsync with archive, compression, update, verbose.
-    """
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-    cmd = ["rsync", "-azuv", src + "/", dst + "/"]
-    subprocess.run(cmd, check=True)
 
 # Copy data from sourcedata_dir to bids_dir
 created_folders = []
@@ -125,7 +118,7 @@ for folder in created_folders:
 
 print("\nFinished: all folders and files copied and renamed (subject + session).")
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
