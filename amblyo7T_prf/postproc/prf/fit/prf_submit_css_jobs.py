@@ -13,6 +13,7 @@ sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -22,12 +23,13 @@ To run:
 >> cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/fit/
 2. run python command
 python prf_submit_css_jobs.py [main directory] [project name] [subject] 
-[group] [server project] [analysis folder - optional]
+[group] [server project] [analysis folder - optional] [session - optional] [filter_rois - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/fit/
 python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFRightEye ses-01
 python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFLeftEye ses-01
+python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFRightEye ses-01 0
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -58,9 +60,12 @@ if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
 if len(sys.argv) > 7: session = sys.argv[7]
 else: session = None
+if len(sys.argv) > 8: filter_rois = int(sys.argv[8])
+else: filter_rois = 1
 
 memory_val = 30
-hour_proc = 6
+if filter_rois: hour_proc = 1
+else: hour_proc = 4
 nb_procs = 32
 
 # Cluster settings
@@ -120,11 +125,11 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # Define fit cmd
     if session:
-        fit_cmd = "python prf_cssfit.py {} {} {} {} {} {} {}".format(
-            main_dir, project_dir, subject, pp_fn, nb_procs, output_folder, session)
+        fit_cmd = "python prf_cssfit.py {} {} {} {} {} {} {} {}".format(
+            main_dir, project_dir, subject, pp_fn, nb_procs, output_folder, session, filter_rois)
     else:
-        fit_cmd = "python prf_cssfit.py {} {} {} {} {} {}".format(
-            main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
+        fit_cmd = "python prf_cssfit.py {} {} {} {} {} {} {}".format(
+            main_dir, project_dir, subject, pp_fn, nb_procs, output_folder, filter_rois)
     
     # Create sh
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)

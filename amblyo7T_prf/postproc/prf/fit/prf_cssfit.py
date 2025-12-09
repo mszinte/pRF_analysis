@@ -13,6 +13,7 @@ sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -22,11 +23,12 @@ To run:
 >> cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/fit/
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
-[inout file name] [number of jobs] [analysis folder - optional]
+[inout file name] [number of jobs] [analysis folder - optional] [session - optional] [filter_rois - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/fit/
 python prf_cssfit.py /scratch/mszinte/data amblyo7T_prf sub-01  /scratch/mszinte/data/amblyo7T_prf/derivatives/pp_data/sub-01/fsnative/func/fmriprep_dct_concat/sub-01_task-pRFRightEye_hemi-R_dct_concat_bold.func.gii 32 pRFRightEye ses-01
+python prf_cssfit.py /scratch/mszinte/data amblyo7T_prf sub-01  /scratch/mszinte/data/amblyo7T_prf/derivatives/pp_data/sub-01/fsnative/func/fmriprep_dct_concat/sub-01_task-pRFRightEye_hemi-R_dct_concat_bold.func.gii 32 pRFRightEye ses-01 0
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -74,6 +76,8 @@ if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
 if len(sys.argv) > 7: session = sys.argv[7]
 else: session = None
+if len(sys.argv) > 8: filter_rois = bool(int(sys.argv[8]))
+else: filter_rois = True
 
 # Handle session parameter for pycortex subject name
 if session:
@@ -155,7 +159,8 @@ print("==============================\n")
 # Load data
 img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
                                               subject=pycortex_subject,  # Changed from subject
-                                              rois=rois)
+                                              rois=rois,
+                                              filter_rois=filter_rois)
 
 print('roi extraction done')
 
