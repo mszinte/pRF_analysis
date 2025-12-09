@@ -13,7 +13,7 @@ sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
-sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to use ROI vertices 
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
