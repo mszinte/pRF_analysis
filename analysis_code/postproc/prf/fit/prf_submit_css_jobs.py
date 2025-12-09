@@ -12,22 +12,24 @@ sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to use ROI vertices 
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_css_jobs.py [main directory] [project name] [subject] 
-                              [group] [server project] [analysis folder - optional]
+                              [group] [server project] [analysis folder - optional] [filter_rois - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
 python prf_submit_css_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 prf 0
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -56,8 +58,11 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
+if len(sys.argv) > 7: filter_rois = int(sys.argv[7])
+else: filter_rois = 1
 memory_val = 30
-hour_proc = 6
+if filter_rois: hour_proc = 6
+else: hour_proc = 12
 nb_procs = 32
 
 # Cluster settings
@@ -119,8 +124,8 @@ for fit_num, pp_fn in enumerate(pp_fns):
            log_dir=prf_logs_dir)
 
     # Define fit cmd
-    fit_cmd = "python prf_cssfit.py {} {} {} {} {} {}".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
+    fit_cmd = "python prf_cssfit.py {} {} {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder, filter_rois)
     
     # Create sh
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
