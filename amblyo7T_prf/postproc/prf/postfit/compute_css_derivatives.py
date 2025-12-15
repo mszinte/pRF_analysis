@@ -50,7 +50,6 @@ import nibabel as nb
 
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
-
 from prf_utils import fit2deriv
 from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
