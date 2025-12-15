@@ -18,7 +18,7 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/pcm
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/
 2. run python command
 >> python css_pcm_sbatch.py [main directory] [project] [subject] 
                             [group] [server] [analysis folder - optional]
@@ -29,9 +29,10 @@ cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python css_pcm_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
 python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 python css_pcm_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 

@@ -34,6 +34,7 @@ python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
 python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
 python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327 prf_em_ctrl
 python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
+python compute_css_derivatives.py /scratch/mszinte/data centbids sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -118,7 +119,7 @@ if subject != 'sub-170k':
                 deriv_img = make_surface_image(data=deriv_array, 
                                                source_img=fit_img, 
                                                maps_names=maps_names)
-    
+
             nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
             print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
     
@@ -147,6 +148,8 @@ if subject != 'sub-170k':
     print('Compute median across LOO')
     
     for loo_deriv_fns in loo_deriv_fns_list:
+        if not loo_deriv_fns:
+            continue
         if loo_deriv_fns[0].find('hemi-L') != -1: hemi = 'hemi-L'
         elif loo_deriv_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
         else: hemi = None
@@ -207,7 +210,7 @@ elif subject == 'sub-170k':
                                             maps_names=maps_names)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

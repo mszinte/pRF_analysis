@@ -64,9 +64,9 @@ if len(sys.argv) > 8: filter_rois = int(sys.argv[8])
 else: filter_rois = 1
 
 memory_val = 30
-if filter_rois: hour_proc = 1
-else: hour_proc = 4
-nb_procs = 32
+if filter_rois: hour_proc = 3
+else: hour_proc = 12
+nb_procs = 8
 
 # Cluster settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
