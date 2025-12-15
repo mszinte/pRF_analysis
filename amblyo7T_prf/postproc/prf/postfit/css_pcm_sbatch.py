@@ -12,6 +12,7 @@ sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project number (e.g. b327)
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+sys.argv[7]: OPTIONAL session name (e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 sh file for running batch command
@@ -25,8 +26,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFRightEye
-python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFLeftEye
+python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFRightEye ses-01
+python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 pRFLeftEye ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -54,6 +55,8 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 if len(sys.argv) > 6: output_folder = sys.argv[6]
 else: output_folder = "prf"
+if len(sys.argv) > 7: session = sys.argv[7]
+else: session = None
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -92,8 +95,8 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {}".format(
-    main_dir, project_dir, subject, group, output_folder)
+compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {} {}".format(
+    main_dir, project_dir, subject, group, output_folder, session)
 
 # Create sh fn
 sh_fn = "{}/{}_css_pcm.sh".format(job_dir, subject)
@@ -105,4 +108,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-#os.system("sbatch {}".format(sh_fn))
+os.system("sbatch {}".format(sh_fn))

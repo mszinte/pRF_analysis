@@ -65,7 +65,6 @@ if len(sys.argv) > 5:
     output_folder = sys.argv[5]
 else: 
     output_folder = "prf"
-
 if len(sys.argv) > 6:
     session = sys.argv[6]
 else:

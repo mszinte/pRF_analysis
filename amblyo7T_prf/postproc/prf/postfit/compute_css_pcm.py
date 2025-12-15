@@ -14,28 +14,22 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+sys.argv[6]: OPTIONAL session name (e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 New brain volume in derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
+>> cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
 2. run python command
 >> python compute_pcm.py [main directory] [project name] 
                          [subject] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-
-python compute_css_pcm.py /scratch/mszinte/data MotConf sub-01 327
-python compute_css_pcm.py /scratch/mszinte/data MotConf sub-170k 327
-
-python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-01 327
-python compute_css_pcm.py /scratch/mszinte/data amblyo_prf sub-170k 327
+python compute_css_pcm.py /scratch/mszinte/data amblyo7T_prf sub-01 327 pRFRightEye ses-01
+python compute_css_pcm.py /scratch/mszinte/data amblyo7T_prf sub-01 327 pRFLeftEye ses-01
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -59,7 +53,7 @@ import numpy as np
 import nibabel as nb
 
 # Personal iports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import make_surface_image 
 from maths_utils import  median_subject_template, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
@@ -71,6 +65,8 @@ subject = sys.argv[3]
 group = sys.argv[4]
 if len(sys.argv) > 5: output_folder = sys.argv[5]
 else: output_folder = "prf"
+if len(sys.argv) > 6: session = sys.argv[6]
+else: session = None
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -93,6 +89,8 @@ prf_task_name = analysis_info['prf_task_name']
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
+if session: pycortex_subject_name = f"{subject}_{session}"
+else: pycortex_subject_name = subject
 
 # Derivatives and stats idx 
 # Maps settings 
@@ -101,6 +99,7 @@ for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
 
 # compute duration 
 start_time = datetime.datetime.now()
+
 
 # sub-170k exception
 if subject != 'sub-170k':
@@ -116,33 +115,36 @@ if subject != 'sub-170k':
     
         if format_ == 'fsnative':
             # Derivatives
-            pycortex_subject = subject
+            pycortex_subject = pycortex_subject_name
             atlas_name = None 
             surf_size = None        
-            deriv_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name)
-            deriv_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-deriv_css_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name)
+            deriv_median_fn_L = '{}/{}_task-{}_hemi-L_dct_concat_prf-deriv_css.func.gii'.format(
+                prf_deriv_dir, subject, output_folder)
+            deriv_median_fn_R = '{}/{}_task-{}_hemi-R_dct_concat_prf-deriv_css.func.gii'.format(
+                prf_deriv_dir, subject, output_folder)
+
             results = load_surface_pycortex(L_fn=deriv_median_fn_L, R_fn=deriv_median_fn_R, return_img=True)
             deriv_mat = results['data_concat'] 
             img_L = results['img_L'] 
             img_R = results['img_R']
 
             # Stats
-            stats_median_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name)
-            stats_median_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
-                prf_deriv_dir, subject, prf_task_name)
+            stats_median_fn_L = '{}/{}_task-{}_hemi-L_dct_concat_prf-stats.func.gii'.format(
+                prf_deriv_dir, subject, output_folder)
+            stats_median_fn_R = '{}/{}_task-{}_hemi-R_dct_concat_prf-stats.func.gii'.format(
+                prf_deriv_dir, subject, output_folder)
             stats_results = load_surface_pycortex(L_fn=stats_median_fn_L, R_fn=stats_median_fn_R)
             stats_mat = stats_results['data_concat']
-            
+
+
+        
         elif format_ == '170k':
             # Derivatives
             pycortex_subject = 'sub-170k'
             atlas_name = 'mmp_group'
             surf_size = '59k'
-            deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii'.format(
-                prf_deriv_dir, subject, prf_task_name)
+            deriv_median_fn = '{}/{}_task-{}_dct_concat_prf-deriv_css.dtseries.nii'.format(
+                prf_deriv_dir, subject, output_folder)
             results = load_surface_pycortex(brain_fn=deriv_median_fn,
                                             return_img=True,
                                             return_59k_mask=True,  
@@ -154,11 +156,10 @@ if subject != 'sub-170k':
             img = results['img']
             
             # Stats
-            stats_median_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
-                prf_deriv_dir, subject, prf_task_name)
+            stats_median_fn = '{}/{}_task-{}_dct_concat_prf-stats.dtseries.nii'.format(
+                prf_deriv_dir, subject, output_folder)
             stats_results = load_surface_pycortex(brain_fn=stats_median_fn)
             stats_mat = stats_results['data_concat']
-        
         
         # Combine mat
         deriv_mat = np.concatenate((deriv_mat, stats_mat))
@@ -184,10 +185,11 @@ if subject != 'sub-170k':
                           )) 
         deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0
 
+
         # Get surfaces for each hemisphere
         surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
         surf_lh, surf_rh = surfs[0], surfs[1]
-        
+
         # Get the vertices number per hemisphere
         lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
         vert_num = lh_vert_num + rh_vert_num
@@ -352,7 +354,7 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
                                                                                     end_time=end_time, 
                                                                                     dur=end_time - start_time))
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
