@@ -17,24 +17,15 @@ Combined estimate nifti file and pRF derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
 2. run python command
 >> python compute_css_derivatives.py [main directory] [project name] 
                                      [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
-    
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
-
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327 prf_em_ctrl
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
-python compute_css_derivatives.py /scratch/mszinte/data centbids sub-170k 327
+cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
+python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 327 pRFLeftEye
+python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 327 pRFRightEye
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -58,7 +49,8 @@ import numpy as np
 import nibabel as nb
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
+
 from prf_utils import fit2deriv
 from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
@@ -105,7 +97,7 @@ if subject != 'sub-170k':
         # Get prf fit filenames
         fit_fns = glob.glob("{}/{}/{}/{}/fit/*prf-fit_css*.{}".format(
             pp_dir, subject, format_, output_folder, extension))
-        
+
         # Compute derivatives
         for fit_fn in fit_fns:
             deriv_fn = fit_fn.split('/')[-1].replace('prf-fit', 'prf-deriv')
@@ -120,70 +112,12 @@ if subject != 'sub-170k':
                                                source_img=fit_img, 
                                                maps_names=maps_names)
 
+                # add fake loo r2 as r2
+                deriv_array[-1,:] = deriv_array[0,:]
+
             nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
             print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
     
-    # Find all the derivatives files 
-    derives_fns = []
-    for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-deriv_css.{}".format(
-            pp_dir, subject, format_, output_folder, extension))
-        derives_fns.extend(list_)
-    
-    # Split filtered files depending of their nature
-    deriv_fsnative_hemi_L, deriv_fsnative_hemi_R, deriv_170k = [], [], []
-    for subtype in derives_fns:
-        if "hemi-L" in subtype: deriv_fsnative_hemi_L.append(subtype)
-        elif "hemi-R" in subtype: deriv_fsnative_hemi_R.append(subtype)
-        else : deriv_170k.append(subtype)
-    
-    loo_deriv_fns_list = [deriv_fsnative_hemi_L,
-                          deriv_fsnative_hemi_R, 
-                          deriv_170k]
-    hemi_data_median = {'hemi-L': [], 
-                     'hemi-R': [], 
-                     '170k': []}
-    
-    # Median
-    print('Compute median across LOO')
-    
-    for loo_deriv_fns in loo_deriv_fns_list:
-        if not loo_deriv_fns:
-            continue
-        if loo_deriv_fns[0].find('hemi-L') != -1: hemi = 'hemi-L'
-        elif loo_deriv_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
-        else: hemi = None
-    
-        deriv_img, deriv_data = load_surface(fn=loo_deriv_fns[0])
-        loo_deriv_data_median = np.zeros(deriv_data.shape)
-        for n_run, loo_deriv_fn in enumerate(loo_deriv_fns):
-            loo_deriv_median_fn = loo_deriv_fn.split('/')[-1]
-            loo_deriv_median_fn = re.sub(r'avg_loo-\d+_prf-deriv_css', 'avg_prf-deriv_css_loo-median', loo_deriv_median_fn)
-            
-            # Load data
-            print('adding {} to computing median'.format(loo_deriv_fn))
-            loo_deriv_img, loo_deriv_data = load_surface(fn=loo_deriv_fn)
-            
-            # Median
-            if n_run == 0: loo_deriv_data_median = np.copy(loo_deriv_data)
-            else: loo_deriv_data_median = np.nanmedian(np.array([loo_deriv_data_median, loo_deriv_data]), axis=0)
-        
-        if hemi:
-            median_fn = '{}/{}/fsnative/{}/prf_derivatives/{}'.format(
-                pp_dir, subject, output_folder, loo_deriv_median_fn)
-            hemi_data_median[hemi] = loo_deriv_data_median
-        else:
-            median_fn = '{}/{}/170k/{}/prf_derivatives/{}'.format(
-                pp_dir, subject, output_folder, loo_deriv_median_fn)
-            hemi_data_median['170k'] = loo_deriv_data_median
-            
-        # Export data in surface format 
-        loo_deriv_img = make_surface_image(data=loo_deriv_data_median, 
-                                           source_img=loo_deriv_img, 
-                                           maps_names=maps_names)
-        nb.save(loo_deriv_img, median_fn)
-        print('Saving median: {}'.format(median_fn))
-
 # Sub-170k computing median       
 elif subject == 'sub-170k':
     print('sub-170, computing median prf deriv across subject...')
@@ -196,7 +130,7 @@ elif subject == 'sub-170k':
 
     # Computing median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
-        
+
     # Export results
     sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives".format(
             main_dir, project_dir, output_folder)
@@ -210,7 +144,7 @@ elif subject == 'sub-170k':
                                             maps_names=maps_names)
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

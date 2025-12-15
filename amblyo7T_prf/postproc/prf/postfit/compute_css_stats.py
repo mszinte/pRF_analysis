@@ -96,8 +96,7 @@ if subject != 'sub-170k':
         prf_fit_dir = '{}/{}/{}/{}/fit'.format(pp_dir, subject, format_, output_folder)
         prf_bold_dir = '{}/{}/{}/func/fmriprep_dct_concat'.format(pp_dir, subject, format_)
         
-        prf_pred_fns_list = glob.glob('{}/*task-{}*_prf-pred_css.{}'.format(
-            prf_fit_dir, prf_task_name, extension))
+        prf_pred_fns_list = glob.glob('{}/*prf-pred_css.{}'.format(prf_fit_dir, extension))
 
         for prf_pred_fn in prf_pred_fns_list:
             # Find the corresponding bold signal

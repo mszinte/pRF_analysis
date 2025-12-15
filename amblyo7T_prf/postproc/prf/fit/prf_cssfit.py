@@ -164,6 +164,17 @@ img, data, data_roi, roi_idx = data_from_rois(fn=input_fn,
 
 print('roi extraction done')
 
+# Exclude vertices with all-NaN timeseries to avoid errors during fitting
+valid_vertices = ~np.isnan(data_roi).any(axis=0)
+valid_vertices_idx = np.where(valid_vertices)[0]
+original_roi_idx = roi_idx.copy()
+roi_idx = original_roi_idx[valid_vertices_idx]
+data_roi = data_roi[:, valid_vertices]
+n_excluded = len(valid_vertices_idx) - valid_vertices.sum()
+if n_excluded > 0:
+    print(f"Excluded {n_excluded} vertices with all-NaN values")
+print(f"Fitting {valid_vertices.sum()} valid vertices")
+
 # Determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[0],
                          screen_distance_cm=screen_distance_cm,
