@@ -105,7 +105,6 @@ n_th = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
-ecc_th = analysis_info['ecc_th']
 size_th = analysis_info['size_th']
 
 # Set pycortex db and colormaps

@@ -52,6 +52,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Create the video of each tasks and concatenated tasks from original .mat file [create_prf_videos.ipynb](postproc/prf/fit/create_prf_videos.ipynb)
 - [x] Create the visual matrix design of each tasks and concatenated tasks [create_vdm_files.ipynb](postproc/prf/fit/create_vdm_files.ipynb)
 - [x] Run pRF gaussian grid fit [prf_submit_gridfit_jobs.py](postproc/prf/fit/prf_submit_gridfit_jobs.py)
+
 - [x] Compute pRF gaussian grid fit derivatives [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
 - [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](postproc/prf/postfit/pycortex_maps_gridfit.py)
 

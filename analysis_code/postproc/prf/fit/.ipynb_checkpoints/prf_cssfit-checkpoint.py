@@ -13,7 +13,7 @@ sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
 sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 sys.argv[7]: OPTIONAL session number for freesurfer (e.g. ses-01)
-sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to use ROI vertices 
+sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to filter NaN vertices
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -105,7 +105,6 @@ n_th = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 prf_task_name = analysis_info['prf_task_name']
-ecc_th = analysis_info['ecc_th']
 size_th = analysis_info['size_th']
 
 # Set pycortex db and colormaps
