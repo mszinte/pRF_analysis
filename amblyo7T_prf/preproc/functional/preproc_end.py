@@ -94,12 +94,16 @@ anat_session = analysis_info['anat_session'][0]
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 
+preproc_prep = 'fmriprep'
+filtering = 'dct'
+run_grouping = 'concat'
+
 # Make extension folders
 for format_, extension in zip(formats, extensions):
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_concat".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}".format(
+        main_dir, project_dir, subject, format_, preproc_prep, filtering), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
+        main_dir, project_dir, subject, format_, preproc_prep, filtering, run_grouping), exist_ok=True)
     
 # High pass filtering
 # Dictionary to collect masks per format and hemisphere
@@ -119,7 +123,7 @@ for format_, extension in zip(formats, extensions):
         for func_fn in fmriprep_func_fns :
 
             # Make output filtered filenames
-            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', 'dct_bold')
+            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', '{}_bold'.format(filtering))
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
@@ -158,8 +162,8 @@ for format_, extension in zip(formats, extensions):
             filtered_img = make_surface_image(data=surf_data, source_img=surf_img)
 
             # Save surface
-            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct/{}".format(
-                main_dir, project_dir, subject, format_, filtered_data_fn_end)
+            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}".format(
+                main_dir, project_dir, subject, format_, preproc_prep, filtering, filtered_data_fn_end)
 
             nb.save(filtered_img, filtered_fn)
 
@@ -184,8 +188,8 @@ for key, mask_list in masks_dict.items():
         mask_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/mask".format(main_dir, project_dir, subject)
         os.makedirs(mask_dir, exist_ok=True)
         # Load a reference file to get the structure
-        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct/*{}*.func.gii".format(
-            main_dir, project_dir, subject, hemi))
+        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}/*{}*.func.gii".format(
+            main_dir, project_dir, subject, preproc_prep, filtering, hemi))
         if ref_files:
             ref_img = nb.load(ref_files[0])
             mask_img = make_surface_image(data=mask_data[np.newaxis, :], source_img=ref_img)
@@ -196,8 +200,8 @@ for key, mask_list in masks_dict.items():
     elif '170k' in key:
         mask_dir = "{}/{}/derivatives/pp_data/{}/170k/func/mask".format(main_dir, project_dir, subject)
         os.makedirs(mask_dir, exist_ok=True)
-        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct/*170k*.dtseries.nii".format(
-            main_dir, project_dir, subject))
+        ref_files = glob.glob("{}/{}/derivatives/pp_data/{}/170k/func/{}_{}/*170k*.dtseries.nii".format(
+            main_dir, project_dir, subject, preproc_prep, filtering))
         if ref_files:
             ref_img = nb.load(ref_files[0])
             mask_img = make_surface_image(data=mask_data[np.newaxis, :], source_img=ref_img)
@@ -210,8 +214,8 @@ for key, mask_list in masks_dict.items():
 # Find all the filtered files 
 preproc_fns = []
 for format_, extension in zip(formats, extensions):
-    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct/*_*.{}".format(
-            main_dir, project_dir, subject, format_, extension))
+    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/*_*.{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, extension))
     preproc_fns.extend(list_)
 
 # Split filtered files  depending of their nature
@@ -282,17 +286,17 @@ for preproc_files in preproc_files_list:
         
         # Create output directory and filename based on hemi
         if hemi:
-            output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_concat".format(
-                main_dir, project_dir, subject)
+            output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}".format(
+                main_dir, project_dir, subject, preproc_prep, filtering, run_grouping)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_{}_dct_concat_bold.func.gii".format(
-                output_dir, subject, eye_label, hemi)
+            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_{}_bold.func.gii".format(
+                output_dir, subject, eye_label, hemi, preproc_prep, filtering, run_grouping)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_concat".format(
                 main_dir, project_dir, subject)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_dct_concat_bold.dtseries.nii".format(
-                output_dir, subject, eye_label)
+            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_bold.dtseries.nii".format(
+                output_dir, subject, eye_label, preproc_prep, filtering, run_grouping)
         
         print(f"    Saved: {concat_fn}")
         concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
@@ -353,5 +357,5 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
