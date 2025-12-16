@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-prf_submit_gridfit_jobs.py
+prf_submit_gauss_jobs.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Create and submit jobscript to make a gaussian grid fit for pRF analysis
+Create and submit jobscript to make a prf gaussian fit
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -11,7 +11,6 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
-sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -20,18 +19,18 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
-python prf_submit_gridfit_jobs.py [main directory] [project name] [subject] 
-                                  [group] [server project] [analysis folder - optional]
+python prf_submit_gauss_jobs.py [main directory] [project name] [subject]
+                                [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 
-python prf_submit_gridfit_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
-python prf_submit_gridfit_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327 prf_em_ctrl
-python prf_submit_gridfit_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -56,8 +55,6 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-if len(sys.argv) > 6: output_folder = sys.argv[6]
-else: output_folder = "prf"
 
 memory_val = 30
 hour_proc = 2
@@ -72,6 +69,9 @@ with open(settings_path) as f:
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
 prf_task_name = analysis_info['prf_task_name']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+run_grouping = analysis_info['run_grouping']
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -81,30 +81,28 @@ chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
-if prf_task_name == 'prf_EM_shift':
-    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-prf_*avg*.dtseries.nii".format(pp_dir, subject)
-    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-prf_*avg*.func.gii".format(pp_dir, subject)
-else:
-    dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_avg/*_task-{}_*avg*.dtseries.nii".format(pp_dir, subject, prf_task_name)
-    dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_avg/*_task-{}_*avg*.func.gii".format(pp_dir, subject, prf_task_name)
+dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
+    pp_dir, subject, preproc_prep, filtering, run_grouping, prf_task_name, run_grouping)
+dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+    pp_dir, subject, preproc_prep, filtering, run_grouping, prf_task_name, run_grouping)
 
 pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
+        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/{}/jobs".format(pp_dir, subject, output_folder)
+        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
+        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
         os.makedirs(prf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
+        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/{}/jobs".format(pp_dir, subject, output_folder)
+        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
+        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
         os.makedirs(prf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
@@ -115,19 +113,19 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_grid_gaussfit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_grid_gaussfit_%N_%j_%a.out
-#SBATCH -J {subject}_grid_gaussfit
+#SBATCH -e {log_dir}/{subject}_gauss_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_gauss_%N_%j_%a.out
+#SBATCH -J {subject}_gaussfit
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=prf_logs_dir)
 
     # define fit cmd
-    fit_cmd = "python prf_gridfit.py {} {} {} {} {} {}".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder)
+    fit_cmd = "python prf_gaussfit.py {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs)
     
     # create sh
-    sh_fn = "{}/jobs/{}_prf_gridfit-{}.sh".format(prf_dir, subject, fit_num)
+    sh_fn = "{}/jobs/{}_prf_gaussfit-{}.sh".format(prf_dir, subject, fit_num)
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
                                         chmod_cmd, chgrp_cmd))
