@@ -58,6 +58,7 @@ all_subject_parcel_names = []
 # Loop over subjects
 for subject in subjects:
     print(f"\nProcessing {subject}")
+    
     # Load timeseries
     timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
     ts_img, ts_data_raw = load_surface(timeseries_fn)
@@ -80,7 +81,7 @@ for subject in subjects:
     # column-stack or empty array
     cluster_ts = np.column_stack(cluster_ts_list) if cluster_ts_list else np.empty((n_time, 0))
 
-    # --- Load parcel timeseries (targets) ---
+    # Load parcel timeseries (targets)
     parcel_ts_list = []
     parcel_names_used = []
     for parcel in parcels:
@@ -103,20 +104,19 @@ for subject in subjects:
         full_matrix = np.empty((n_clusters_present, n_parcels_present))
         partial_matrix = np.empty((n_clusters_present, n_parcels_present))
     else:
-        # --- Full correlation via Nilearn (useful as a sanity check wrt Workbench results) ---
+        # Full correlation via Nilearn (useful as a sanity check wrt Workbench results)
         combined_for_full = np.hstack([cluster_ts, parcel_ts])  # time x (n_clusters + n_parcels)
         full_conn = ConnectivityMeasure(kind='correlation')
         corr_all = full_conn.fit_transform([combined_for_full])[0]  # (nvars, nvars)
         full_matrix = corr_all[:n_clusters_present, n_clusters_present:(n_clusters_present + n_parcels_present)]
 
-        # --- Partial correlations computed per-seed while excluding seed-local parcels ---
-        # Initialize partial matrix with NaN; will only fill non-excluded parcels
+        # Partial correlations computed per-seed while excluding within seed parcels
         partial_matrix = np.full((n_clusters_present, n_parcels_present), np.nan)
 
         # Precompute index mapping: parcel name -> column index in parcel_ts / parcel_names_used
         parcel_name_to_idx = {name: idx for idx, name in enumerate(parcel_names_used)}
 
-        # For each seed (row) compute partials using combined_ts that excludes seed-local parcels
+        # For each seed (row) compute partials using combined_ts that excludes within seed parcels
         for i_cl, cl_name in enumerate(cluster_names_used):
             # Determine which parcel names to exclude for this cluster (intersection with present parcels)
             exclude_list = exclude_parcels_per_cluster.get(cl_name, [])
@@ -130,6 +130,7 @@ for subject in subjects:
 
             # Build combined timeseries containing: all clusters (same order) + included parcels only
             combined_seed = np.hstack([cluster_ts, parcel_ts[:, included_parcel_indices]])  # time x (n_clusters + n_included)
+            
             # Compute partial correlation on this combined set
             partial_conn = ConnectivityMeasure(kind='partial correlation')
             try:
@@ -151,7 +152,7 @@ for subject in subjects:
 
             # excluded parcel columns remain NaN for this seed (as desired)
 
-    # --- Fill global matrix with NaNs for missing parcels and clusters ---
+    # Fill global matrix with NaNs for missing parcels and clusters
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
 
