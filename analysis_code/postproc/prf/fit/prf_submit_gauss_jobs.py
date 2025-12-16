@@ -24,11 +24,7 @@ python prf_submit_gauss_jobs.py [main directory] [project name] [subject]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-
 python prf_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python prf_submit_gauss_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
-python prf_submit_gauss_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
-python prf_submit_gauss_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
