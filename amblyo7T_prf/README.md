@@ -43,7 +43,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [x] High-pass, z-score, mask (patial recording) and concatenation of runs [preproc_end.py](preproc/functional/preproc_end.py)
+- [x] High-pass, z-score, mask (partial recording) and concatenation of runs [preproc_end.py](preproc/functional/preproc_end.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
@@ -65,7 +65,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Compute CSS statistics [compute_css_stats.py](postproc/prf/postfit/compute_css_stats.py)
 - [x] Compute CSS fit derivatives [compute_css_derivatives.py](postproc/prf/postfit/compute_css_derivatives.py)
 - [x] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](postproc/prf/postfit/css_pcm_sbatch.py)
-- [x] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
+- [ ] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
 - [ ] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](analysis_code/postproc/prf/postfit/make_tsv_css.py)
 - [ ] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) 
 - [ ] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py)
