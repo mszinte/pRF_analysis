@@ -71,7 +71,7 @@ prf_task_name = analysis_info['prf_task_name']
 maps_names_gauss = analysis_info['maps_names_gauss']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-run_grouping = analysis_info['run_grouping']
+gauss_avg = analysis_info['gauss_avg']
 
 # sub-170k exception
 if subject != 'sub-170k':
@@ -115,7 +115,7 @@ elif subject == 'sub-170k':
     subjects_derivatives = []
     for subject in subjects: 
         subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, prf_task_name, preproc_prep, filtering, run_grouping]
+                main_dir, project_dir, subject, subject, prf_task_name, preproc_prep, filtering, gauss_avg]
 
     # Median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
@@ -126,7 +126,7 @@ elif subject == 'sub-170k':
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
     sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
-        sub_170k_deriv_dir, prf_task_name, preproc_prep, filtering, run_grouping)
+        sub_170k_deriv_dir, prf_task_name, preproc_prep, filtering, gauss_avg)
     
     print("save: {}".format(sub_170k_deriv_fn))
     sub_170k_deriv_img = make_surface_image(

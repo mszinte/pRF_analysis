@@ -67,7 +67,7 @@ cluster_name  = analysis_info['cluster_name']
 prf_task_name = analysis_info['prf_task_name']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-run_grouping = analysis_info['run_grouping']
+gauss_avg = analysis_info['gauss_avg']
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -78,9 +78,9 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
 dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-    pp_dir, subject, preproc_prep, filtering, run_grouping, prf_task_name, run_grouping)
+    pp_dir, subject, preproc_prep, filtering, gauss_avg, prf_task_name, gauss_avg)
 dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-    pp_dir, subject, preproc_prep, filtering, run_grouping, prf_task_name, run_grouping)
+    pp_dir, subject, preproc_prep, filtering, gauss_avg, prf_task_name, gauss_avg)
 
 pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
 for fit_num, pp_fn in enumerate(pp_fns):
