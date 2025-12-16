@@ -10,7 +10,6 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
-sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
@@ -20,22 +19,11 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python compute_gauss_gridfit_derivatives.py [main directory] [project name] 
-                                               [subject num] [group] [analysis folder - optional]
+                                               [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data MotConf sub-01 327
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
-
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
-
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-2100247523 327
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -68,8 +56,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
-if len(sys.argv) > 5: output_folder = sys.argv[5]
-else: output_folder = "prf"
 
 # load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -81,9 +67,11 @@ with open(settings_path) as f:
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
-
 prf_task_name = analysis_info['prf_task_name']
 maps_names_gauss = analysis_info['maps_names_gauss']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+run_grouping = analysis_info['run_grouping']
 
 # sub-170k exception
 if subject != 'sub-170k':
@@ -91,18 +79,18 @@ if subject != 'sub-170k':
         print(format_)
         # Define directories
         pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
-        prf_fit_dir = "{}/{}/{}/{}/fit".format(pp_dir, subject, format_, output_folder)
-        prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(pp_dir, subject, format_, output_folder)
+        prf_fit_dir = "{}/{}/{}/prf/fit".format(pp_dir, subject, format_)
+        prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(pp_dir, subject, format_)
         os.makedirs(prf_deriv_dir, exist_ok=True)
         
         # Get prf fit filenames
-        fit_fns= glob.glob("{}/{}/{}/{}/fit/*prf-fit_gauss_gridfit*".format(pp_dir, subject, format_, output_folder))
+        fit_fns= glob.glob("{}/{}/{}/{}/fit/*prf-gauss_fit*".format(pp_dir, subject, format_))
 
         # Compute derivatives 
         for fit_fn in fit_fns:
             
             deriv_fn = fit_fn.split('/')[-1]
-            deriv_fn = deriv_fn.replace('prf-fit', 'prf-deriv')
+            deriv_fn = deriv_fn.replace('prf-gauss_fit', 'prf-gauss_deriv')
         
             if os.path.isfile(fit_fn) == False:
                 sys.exit('Missing files, analysis stopped : {}'.format(fit_fn))
@@ -126,18 +114,19 @@ elif subject == 'sub-170k':
     # find all the subject prf derivatives
     subjects_derivatives = []
     for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/{}/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(
-                main_dir, project_dir, subject, output_folder, subject, prf_task_name)]
+        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
+                main_dir, project_dir, subject, subject, prf_task_name, preproc_prep, filtering, run_grouping]
 
     # Median across subject
     img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
     
     # Export results
-    sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives".format(
-            main_dir, project_dir, output_folder)
+    sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
+            main_dir, project_dir)
     os.makedirs(sub_170k_deriv_dir, exist_ok=True)
     
-    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_gauss_gridfit.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
+    sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
+        sub_170k_deriv_dir, prf_task_name, preproc_prep, filtering, run_grouping)
     
     print("save: {}".format(sub_170k_deriv_fn))
     sub_170k_deriv_img = make_surface_image(
@@ -145,6 +134,6 @@ elif subject == 'sub-170k':
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
 # Define permission cmd
-#print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-#os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-#os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
