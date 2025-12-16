@@ -60,7 +60,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Create the visual matrix design [vdm_builder.py](../analysis_code/postproc/prf/fit/vdm_builder.py)
 - [x] Run pRF gaussian fit [prf_submit_gaussfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gauss_jobs.py)
 - [x] Compute pRF gaussian fit derivatives [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
-- [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py) or [pycortex_maps_gridfit.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.sh)
+- [x] Make pRF maps with pycortex [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py) or [pycortex_maps_gauss.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.sh)
 
 #### PRF ROIs
 - [x] Create 170k MMP rois [create_hcp_rois.ipynb](../analysis_code/atlas/dev/create_hcp_rois.ipynb) or copy sub-170k in pycortex folder from Retinomaps. 
