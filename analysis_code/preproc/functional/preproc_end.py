@@ -23,9 +23,6 @@ python preproc_end.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python preproc_end.py /scratch/mszinte/data MotConf sub-01 327
-python preproc_end.py /scratch/mszinte/data RetinoMaps sub-01 327
-python preproc_end.py /scratch/mszinte/data amblyo_prf sub-01 327
-python preproc_end.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -84,18 +81,21 @@ sessions = analysis_info['sessions']
 anat_session = analysis_info['anat_session'][0]
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-# maps_names_vert_area = analysis_info["maps_names_vert_area"]
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+gauss_avg = analysis_info['gauss_avg']
+css_avg = analysis_info['css_avg']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/corr/fmriprep_dct_corr".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_avg".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_loo_avg".format(
-        main_dir, project_dir, subject, format_), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}".format(
+        main_dir, project_dir, subject, format_, preproc_prep, filtering), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_corr".format(
+        main_dir, project_dir, subject, format_, preproc_prep, filtering), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, gauss_avg), exist_ok=True)
+    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, css_avg), exist_ok=True)
     
 # High pass filtering
 for format_, extension in zip(formats, extensions):
@@ -112,7 +112,7 @@ for format_, extension in zip(formats, extensions):
         for func_fn in fmriprep_func_fns :
 
             # Make output filtered filenames
-            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', 'dct_bold')
+            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', '{}_bold'.format(filtering))
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
@@ -133,16 +133,16 @@ for format_, extension in zip(formats, extensions):
             filtered_img = make_surface_image(data=surf_data, source_img=surf_img)
 
             # Save surface
-            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct/{}".format(
-                main_dir, project_dir, subject, format_, filtered_data_fn_end)
+            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}".format(
+                main_dir, project_dir, subject, format_, preproc_prep, filtering, filtered_data_fn_end)
 
             nb.save(filtered_img, filtered_fn)
 
 # Find all the filtered files 
 preproc_fns = []
 for format_, extension in zip(formats, extensions):
-    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct/*_*.{}".format(
-            main_dir, project_dir, subject, format_, extension))
+    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/*_*.{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, extension))
     preproc_fns.extend(list_)
 
 # Split filtered files  depending of their nature
@@ -182,11 +182,11 @@ for preproc_files in preproc_files_list:
     
         # Export averaged data
         if hemi:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_avg/{}_task-{}_{}_fmriprep_dct_avg_bold.func.gii".format(
-                main_dir, project_dir, subject, subject, task, hemi)
+            avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_{}_bold.func.gii".format(
+                main_dir, project_dir, subject, preproc_prep, filtering, gauss_avg, subject, task, hemi, preproc_prep, filtering, gauss_avg)
         else:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_avg/{}_task-{}_fmriprep_dct_avg_bold.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, task)
+            avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_{}_bold.dtseries.nii".format(
+                main_dir, project_dir, subject, preproc_prep, filtering, gauss_avg, subject, task, preproc_prep, filtering, gauss_avg)
 
         print('avg save: {}'.format(avg_fn))
         avg_img = make_surface_image(data=data_avg, source_img=preproc_img)
@@ -209,16 +209,22 @@ for preproc_files in preproc_files_list:
                 data_loo_avg += preproc_data/len(avg_runs)
                 
             # Export leave one out file 
+            preproc_prep = analysis_info['preproc_prep']
+            filtering = analysis_info['filtering']
+            gauss_avg = analysis_info['gauss_avg']
+            css_avg = analysis_info['css_avg']
+    
+            
             if hemi:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_loo_avg/{}_task-{}_{}_fmriprep_dct_avg_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, subject, task, hemi, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/fmriprep_dct_loo_avg/{}_task-{}_{}_fmriprep_dct_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, subject, task, hemi, loo_num+1)
+                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_avg_loo-{}_bold.func.gii".format(
+                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, hemi, preproc_prep, filtering, loo_num+1)
+                loo_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_loo-{}_bold.func.gii".format(
+                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, hemi, preproc_prep, filtering, loo_num+1)
             else:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_loo_avg/{}_task-{}_fmriprep_dct_avg_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, subject, task, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/fmriprep_dct_loo_avg/{}_task-{}_fmriprep_dct_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, subject, task, loo_num+1)
+                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_avg_loo-{}_bold.dtseries.nii".format(
+                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, preproc_prep, filtering, loo_num+1)
+                loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_loo-{}_bold.dtseries.nii".format(
+                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, preproc_prep, filtering, loo_num+1)
             print('loo_avg save: {}'.format(loo_avg_fn))
             loo_avg_img = make_surface_image(data = data_loo_avg, source_img=preproc_img)
             nb.save(loo_avg_img, loo_avg_fn)
