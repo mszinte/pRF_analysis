@@ -41,10 +41,6 @@ import os
 import sys
 import json
 
-# Personal import
-sys.path.append("{}/../../../utils".format(os.getcwd()))
-from bids_utils import fast_copy
-
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
@@ -60,34 +56,35 @@ session_names = analysis_info['session_names']
 
 # Define directories
 sourcedata_dir = "{}/{}/sourcedata".format(main_dir, project_dir)
-bids_dir = "{}/{}".format(main_dir, project_dir)
 
-# Copy data from sourcedata_dir to bids_dir
-created_folders = []
+# Rename subjects directly in sourcedata
+renamed_folders = []
 
 for old_name, new_name in subject_names.items():
-    src = os.path.join(sourcedata_dir, old_name)
-    dst = os.path.join(bids_dir, new_name)
+    old_path = os.path.join(sourcedata_dir, old_name)
+    new_path = os.path.join(sourcedata_dir, new_name)
 
-    if not os.path.exists(src):
-        print("Source not found: {}".format(src))
+    if not os.path.exists(old_path):
+        print("Source not found: {}".format(old_path))
         continue
 
-    if os.path.exists(dst):
-        print("Destination already exists: {} — skipping copy.".format(dst))
+    if os.path.exists(new_path):
+        print("Destination already exists: {} — skipping folder rename.".format(new_path))
+        renamed_folders.append(new_path)
         continue
 
-    print("Copying {} → {}".format(src, dst))
-    fast_copy(src, dst)
-    created_folders.append(dst)
+    print("Renaming folder {} to {}".format(old_path, new_path))
+    os.rename(old_path, new_path)
+    renamed_folders.append(new_path)
 
-# Rename all files and folders inside the copied folders (subject + session)
-full_mapping = {**subject_names, **session_names}
+# Rename all files and folders inside the renamed folders
+full_mapping = {}
+full_mapping.update(subject_names)
+full_mapping.update(session_names)
 
-for folder in created_folders:
+for folder in renamed_folders:
     print("Renaming inside folder: {}".format(folder))
 
-    # Walk through the folder tree from bottom to top
     for dirpath, dirnames, filenames in os.walk(folder, topdown=False):
 
         # Rename files
@@ -101,7 +98,7 @@ for folder in created_folders:
                 old_path = os.path.join(dirpath, fname)
                 new_path = os.path.join(dirpath, new_fname)
                 os.rename(old_path, new_path)
-                print("File renamed: {} → {}".format(fname, new_fname))
+                print("File renamed: {} to {}".format(fname, new_fname))
 
         # Rename directories
         for dname in dirnames:
@@ -114,11 +111,11 @@ for folder in created_folders:
                 old_path = os.path.join(dirpath, dname)
                 new_path = os.path.join(dirpath, new_dname)
                 os.rename(old_path, new_path)
-                print("Directory renamed: {} → {}".format(dname, new_dname))
+                print("Directory renamed: {} to {}".format(dname, new_dname))
 
-print("\nFinished: all folders and files copied and renamed (subject + session).")
+print("Finished: all subject folders and internal files renamed directly in sourcedata.")
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# Permissions
+print("Changing files permissions in {}/{}".format(main_dir, project_dir))
 os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
 os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
