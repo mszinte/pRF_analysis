@@ -18,24 +18,31 @@ import json
 import numpy as np
 from nilearn.connectome import ConnectivityMeasure
 
+USER = os.environ["USER"]
+
 # Main folders
-main_data = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
-seed_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
-output_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91/rest/nilearn_full_and_partial_corr'
+main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+seed_folder = main_data
+output_folder = (
+    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/"
+    "nilearn_full_and_partial_corr"
+)
 
 # Custom utils
-main_codes = '/home/marc_be/GitHub_projects/'
-sys.path.append(os.path.abspath(f'{main_codes}/pRF_analysis/analysis_code/utils/'))
+main_codes = f"/home/{USER}/projects"
+utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
+sys.path.append(utils_path)
+
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
 # Settings
-settings_filepath = '/home/marc_be/GitHub_projects/pRF_analysis/RetinoMaps/settings.json'
-with open(settings_filepath, 'r') as file:
-    settings = json.load(file)
+settings_filepath = f"/home/{USER}/projects/pRF_analysis/RetinoMaps/settings.json"
+with open(settings_filepath, "r") as f:
+    settings = json.load(f)
 
-subjects = settings['subjects']
-task_name = settings['task_names'][0]
+subjects = settings["subjects"]
+task_name = settings["task_names"][0]
 
 # Seeds (clusters) and flattened parcels
 clusters = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
@@ -44,7 +51,7 @@ parcels = [p for group in settings['rois_groups'] for p in group]
 # Map: cluster -> list of parcel names to exclude from partial-conditioning
 exclude_parcels_per_cluster = {
     "mPCS": ['SCEF', 'p32pr', '24dv'],
-    "sPCS": ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'], # adjust if needed
+    "sPCS": ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'],
     "iPCS": ['PEF', 'IFJp', '6v', '6r', 'IFJa', '55b'],
     "sIPS": ['VIP', 'LIPv', 'LIPd', 'IP2', '7PC', 'AIP', '7AL', '7Am', '7Pm'],
     "iIPS": ['IP0', 'IPS1', 'V7', 'MIP', 'IP1', 'V6A', '7PL'],
@@ -58,6 +65,7 @@ all_subject_parcel_names = []
 # Loop over subjects
 for subject in subjects:
     print(f"\nProcessing {subject}")
+    
     # Load timeseries
     timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
     ts_img, ts_data_raw = load_surface(timeseries_fn)
@@ -65,7 +73,7 @@ for subject in subjects:
     ts_data = res['data_concat']  # (timepoints x vertices)
     n_time = ts_data.shape[0]
 
-    # --- Load cluster timeseries (seeds) ---
+    # Load cluster timeseries (seeds)
     cluster_ts_list = []
     cluster_names_used = []
     for roi in clusters:
@@ -80,7 +88,7 @@ for subject in subjects:
     # column-stack or empty array
     cluster_ts = np.column_stack(cluster_ts_list) if cluster_ts_list else np.empty((n_time, 0))
 
-    # --- Load parcel timeseries (targets) ---
+    # Load parcel timeseries (targets)
     parcel_ts_list = []
     parcel_names_used = []
     for parcel in parcels:
@@ -103,20 +111,19 @@ for subject in subjects:
         full_matrix = np.empty((n_clusters_present, n_parcels_present))
         partial_matrix = np.empty((n_clusters_present, n_parcels_present))
     else:
-        # --- Full correlation via Nilearn (useful as a sanity check wrt Workbench results) ---
+        # Full correlation via Nilearn (useful as a sanity check wrt Workbench results)
         combined_for_full = np.hstack([cluster_ts, parcel_ts])  # time x (n_clusters + n_parcels)
         full_conn = ConnectivityMeasure(kind='correlation')
         corr_all = full_conn.fit_transform([combined_for_full])[0]  # (nvars, nvars)
         full_matrix = corr_all[:n_clusters_present, n_clusters_present:(n_clusters_present + n_parcels_present)]
 
-        # --- Partial correlations computed per-seed while excluding seed-local parcels ---
-        # Initialize partial matrix with NaN; will only fill non-excluded parcels
+        # Partial correlations computed per-seed while excluding within seed parcels
         partial_matrix = np.full((n_clusters_present, n_parcels_present), np.nan)
 
         # Precompute index mapping: parcel name -> column index in parcel_ts / parcel_names_used
         parcel_name_to_idx = {name: idx for idx, name in enumerate(parcel_names_used)}
 
-        # For each seed (row) compute partials using combined_ts that excludes seed-local parcels
+        # For each seed (row) compute partials using combined_ts that excludes within seed parcels
         for i_cl, cl_name in enumerate(cluster_names_used):
             # Determine which parcel names to exclude for this cluster (intersection with present parcels)
             exclude_list = exclude_parcels_per_cluster.get(cl_name, [])
@@ -130,6 +137,7 @@ for subject in subjects:
 
             # Build combined timeseries containing: all clusters (same order) + included parcels only
             combined_seed = np.hstack([cluster_ts, parcel_ts[:, included_parcel_indices]])  # time x (n_clusters + n_included)
+            
             # Compute partial correlation on this combined set
             partial_conn = ConnectivityMeasure(kind='partial correlation')
             try:
@@ -151,7 +159,7 @@ for subject in subjects:
 
             # excluded parcel columns remain NaN for this seed (as desired)
 
-    # --- Fill global matrix with NaNs for missing parcels and clusters ---
+    # Fill global matrix with NaNs for missing parcels and clusters
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
 

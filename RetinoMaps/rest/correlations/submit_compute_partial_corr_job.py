@@ -35,7 +35,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-proc_time = sys.argv[5] # usually 2 hours are enough for all subjects
+proc_time = sys.argv[5] # try with 4 hours
 
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs
@@ -62,7 +62,6 @@ slurm_cmd = f"""#!/bin/bash
 #SBATCH --time={proc_time}
 #SBATCH -e {logs_dir}/job_%N_%j_%a.err
 #SBATCH -o {logs_dir}/job_%N_%j_%a.out
-#SBATCH -J all_{job_suffix}
 """
 
 # Assuming scripts are in the same directory as this Python script
@@ -71,16 +70,16 @@ script_name = 'nilearn_compute_partial_corr_cluster_by_parcel.py'
 script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 
-main_cmd = "bash {}".format(your_script_path)
+main_cmd = f"python3 {your_script_path}"
 
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
 # Create job script
-sh_fn = f"{job_dir}/all_{job_suffix}.sh"
+sh_fn = f"{job_dir}/all_nilearn_partial_corr.sh"
 with open(sh_fn, 'w') as of:
     of.write(f"{slurm_cmd}\n{main_cmd}\n{chmod_cmd}\n{chgrp_cmd}\n")
 
 # Submit job
-print("Submitting {} ({}) to queue".format(sh_fn, corr_type))
+print("Submitting ({}) to queue".format(sh_fn))
 os.system("sbatch {}".format(sh_fn))
