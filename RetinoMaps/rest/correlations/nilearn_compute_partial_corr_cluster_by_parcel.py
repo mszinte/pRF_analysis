@@ -18,24 +18,31 @@ import json
 import numpy as np
 from nilearn.connectome import ConnectivityMeasure
 
+USER = os.environ["USER"]
+
 # Main folders
-main_data = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
-seed_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data'
-output_folder = '/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91/rest/nilearn_full_and_partial_corr'
+main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+seed_folder = main_data
+output_folder = (
+    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/"
+    "nilearn_full_and_partial_corr"
+)
 
 # Custom utils
-main_codes = '/home/marc_be/GitHub_projects/'
-sys.path.append(os.path.abspath(f'{main_codes}/pRF_analysis/analysis_code/utils/'))
+main_codes = f"/home/{USER}/projects"
+utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
+sys.path.append(utils_path)
+
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
 # Settings
-settings_filepath = '/home/marc_be/GitHub_projects/pRF_analysis/RetinoMaps/settings.json'
-with open(settings_filepath, 'r') as file:
-    settings = json.load(file)
+settings_filepath = f"/home/{USER}/projects/pRF_analysis/RetinoMaps/settings.json"
+with open(settings_filepath, "r") as f:
+    settings = json.load(f)
 
-subjects = settings['subjects']
-task_name = settings['task_names'][0]
+subjects = settings["subjects"]
+task_name = settings["task_names"][0]
 
 # Seeds (clusters) and flattened parcels
 clusters = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
@@ -44,7 +51,7 @@ parcels = [p for group in settings['rois_groups'] for p in group]
 # Map: cluster -> list of parcel names to exclude from partial-conditioning
 exclude_parcels_per_cluster = {
     "mPCS": ['SCEF', 'p32pr', '24dv'],
-    "sPCS": ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'], # adjust if needed
+    "sPCS": ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'],
     "iPCS": ['PEF', 'IFJp', '6v', '6r', 'IFJa', '55b'],
     "sIPS": ['VIP', 'LIPv', 'LIPd', 'IP2', '7PC', 'AIP', '7AL', '7Am', '7Pm'],
     "iIPS": ['IP0', 'IPS1', 'V7', 'MIP', 'IP1', 'V6A', '7PL'],
@@ -66,7 +73,7 @@ for subject in subjects:
     ts_data = res['data_concat']  # (timepoints x vertices)
     n_time = ts_data.shape[0]
 
-    # --- Load cluster timeseries (seeds) ---
+    # Load cluster timeseries (seeds)
     cluster_ts_list = []
     cluster_names_used = []
     for roi in clusters:
