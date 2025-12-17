@@ -34,7 +34,7 @@
     "ecc_th": [0.05, 14],
     "size_th": [0.05, 14.0],
     "rsqr_th": 0,
-    "n_th": [0.05, 10.0],
+    "n_th": [0.05, 1.0],
     "amplitude_th": 0,
     "stats_th": 0.05,
     "alpha_range":[0, 0.4],

@@ -10,6 +10,7 @@
 # $3: subject name (e.g. sub-01)
 # $4: mesocentre login ID
 # $5: hemisphere (lh or rh)
+# $6: session name (optional, e.g. ses-01)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # 3D patch for each hemisphere
@@ -19,32 +20,42 @@
 # 1. cd to function
 # >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
 # 2. run shell command
-# sh preproc/cortex_cuts.sh [main directory] [project name] [subject name] [mesocentre_ID] [hemisphere]
+# sh preproc/cortex_cuts.sh [main directory] [project name] [subject name] [mesocentre_ID] [hemisphere] [session (optional)]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte lh
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte rh
+# sh cortex_cuts.sh /scratch/mszinte/data amblyo7T_prf sub-01 mszinte lh ses-01
+# sh cortex_cuts.sh /scratch/mszinte/data amblyo7T_prf sub-01 mszinte rh ses-01
 # -----------------------------------------------------------------------------------------
-# Written by Martin Szinte (mail@martinszinte.net)
+# Written by Martin Szinte (martin.szinte@gmail.com)
 # -----------------------------------------------------------------------------------------
 
+# Handle session parameter
+if [ -z "$6" ]; then
+    subject_name=$3
+else
+    subject_name="${3}_${6}"
+fi
+
 # rsync to desktop (faster processing)
-echo "\n>> Copying the files to the desktop"
-rsync -azuv --rsh='ssh -p 8822' --progress $4@login.mesocentre.univ-amu.fr:$1/$2/derivatives/fmriprep/freesurfer/$3 ~/temp_data/
+echo "\n>> Copying the files to a temporary folder"
+rsync -azuv --rsh='ssh -p 8822' --progress $4@login.mesocentre.univ-amu.fr:$1/$2/derivatives/fmriprep/freesurfer/$subject_name ~/temp_data/
 
 # Check + edit pial surface
 echo "\n>> Proceed to the cortex cuts : "
 echo "\n>> https://invibe.nohost.me/bookstack/books/preprocessing/page/cutting-inflated-brains-to-obtain-a-flattened-cortical-surface"
-echo "\n>> When you are done, save the patch as '$3/surf/$5.full.patch.3d'\n"
+echo "\n>> When you are done, save the patch as '$subject_name/surf/$5.full.patch.3d'\n"
 
-freeview -f ~/temp_data/$3/surf/$5.inflated:annot=aparc.a2009s -layout 1 -viewport 3d
+freeview -f ~/temp_data/$subject_name/surf/$5.inflated:annot=aparc.a2009s.annot -layout 1 -viewport 3d
+
 
 # move the file to the right place
 while true; do
     read -p "Do you wish to transfer the patch to the mesocentre? (y/n) " yn
     case $yn in
-        [Yy]* ) echo "\n>> Uploading the $3 patch to mesocentre";\
-                rsync -avuz --rsh='ssh -p 8822' ~/temp_data/$3/surf/$5.full.patch.3d $4@login.mesocentre.univ-amu.fr:$1/$2/derivatives/fmriprep/freesurfer/$3/surf/
+        [Yy]* ) echo "\n>> Uploading the $subject_name patch to mesocentre";\
+                rsync -avuz --rsh='ssh -p 8822' ~/temp_data/$subject_name/surf/$5.full.patch.3d $4@login.mesocentre.univ-amu.fr:$1/$2/derivatives/fmriprep/freesurfer/$subject_name/surf/
         break;;
         [Nn]* ) echo "\n>> No uploading of the brainmasks to mesocentre";\
                 exit;;

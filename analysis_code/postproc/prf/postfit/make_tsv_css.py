@@ -196,10 +196,11 @@ for format_ in formats:
                 data_dict['num_vert'] = np.where(roi_verts[roi])[0]
                 df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
 
+    df_rois[['hrf_1', 'hrf_2']] = df_rois[['hrf_1', 'hrf_2']].fillna('non_computed')
     print('Saving tsv: {}'.format(tsv_fn))
     df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

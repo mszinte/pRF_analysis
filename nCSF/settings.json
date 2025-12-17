@@ -1,0 +1,10 @@
+{
+    "project_name": "nCSF",
+    "cluster_name": "skylake",
+    "subject_names":{"sub-ult084p1": "sub-01", "sub-smt083p1": "sub-02"},
+    "session_names":{"ses-202511051352": "ses-01", "ses-202510241430": "ses-01"}, 
+    "subjects":["sub-01", "sub-02"],
+    "sessions" : ["ses-01"],
+    "tasks" : ["DeepMReye", "nCSF", "pRF"] 
+
+}

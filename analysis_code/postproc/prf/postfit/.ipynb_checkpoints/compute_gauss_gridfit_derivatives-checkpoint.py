@@ -17,7 +17,7 @@ Combined estimate nifti file and pRF derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python compute_gauss_gridfit_derivatives.py [main directory] [project name] 
                                                [subject num] [group] [analysis folder - optional]
@@ -33,6 +33,9 @@ python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data RetinoMaps sub
 
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
 python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
+
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-2100247523 327
+python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data centbids sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -78,13 +81,14 @@ with open(settings_path) as f:
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
+
 prf_task_name = analysis_info['prf_task_name']
 maps_names_gauss = analysis_info['maps_names_gauss']
 
 # sub-170k exception
 if subject != 'sub-170k':
-    print('{}, computing inter-run correlation...'.format(subject))
     for format_, extension in zip(formats, extensions):
+        print(format_)
         # Define directories
         pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
         prf_fit_dir = "{}/{}/{}/{}/fit".format(pp_dir, subject, format_, output_folder)
@@ -93,8 +97,8 @@ if subject != 'sub-170k':
         
         # Get prf fit filenames
         fit_fns= glob.glob("{}/{}/{}/{}/fit/*prf-fit_gauss_gridfit*".format(pp_dir, subject, format_, output_folder))
-        
-        # Compute derivatives
+
+        # Compute derivatives 
         for fit_fn in fit_fns:
             
             deriv_fn = fit_fn.split('/')[-1]
@@ -141,6 +145,6 @@ elif subject == 'sub-170k':
     nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
     
 # Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+#print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+#os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+#os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
