@@ -39,42 +39,78 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
+import glob
 import json
+import subprocess
 
-# Personal import
+# Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from bids_utils import bidsify_fmap, bidsify_anat
+from bids_utils import bidsify_fmap, bidsify_anat, bidsify_func, correct_task_columns_event
+from json_task_utils import create_subject_task_events_json
+
 
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 
-# Load settings and analysis parameters
-with open('../../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
-subjects = analysis_info['subjects']
-sessions = analysis_info['sessions']
+# Load settings
+with open("../../../settings.json") as f:
+    analysis_info = json.load(f)
 
-bids_data_dir = "{}/{}".format(main_dir, project_dir)
+subjects = analysis_info["subjects"]
+sessions = analysis_info["sessions"]
+tasks = analysis_info["tasks"]
 
-for n_subject, subject in enumerate(subjects):
-    for n_session, session in enumerate(sessions):
+base_dir = "{}/{}".format(main_dir, project_dir)
 
-        bidsify_fmap(
-            sub=subject,
-            ses=session,
-            base_dir=bids_data_dir
+for subject in subjects:
+    # Copy subject from sourcedata to main project directory
+    subprocess.run(
+        [
+            "rsync",
+            "-azuv",
+            "{}/{}/sourcedata/{}".format(main_dir, project_dir, subject),
+            "{}/{}".format(main_dir, project_dir)
+        ],
+        check=True
+    )
+
+    for session in sessions:
+        # Remove scans.tsv if present
+        scans_fn = "{}/{}/{}/{}/{}_{}_scans.tsv".format(
+            main_dir, project_dir, subject, session, subject, session
         )
+        if os.path.exists(scans_fn):
+            os.remove(scans_fn)
 
-        bidsify_anat(
-            sub=subject,
-            ses=session,
-            base_dir=bids_data_dir
+        # Remove matlab files 
+        mat_fns = glob.glob(
+            "{}/{}/{}/{}/func/*_matFile.mat".format(
+                main_dir, project_dir, subject, session
+            )
         )
+        if mat_fns:
+            subprocess.run(["rm", "-Rf"] + mat_fns, check=True)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+        # Apply BIDS fixes
+        bidsify_anat(subject, session, base_dir)
+        bidsify_fmap(subject, session, base_dir)
+        bidsify_func(subject, session, base_dir)
+        
+        # Change task column in DeepMReye events for trial_type
+        correct_task_columns_event(base_dir, subject, session)
+
+        # Create events.json sidecars
+        for task in tasks:
+            create_subject_task_events_json(
+                base_dir, subject, session, task
+            )
+
+
+print("BIDS correction done.")
+
+# Change permissions (kept exactly as requested)
+print("Changing files permissions in {}/{}".format(main_dir, project_dir))
 os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
 os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
