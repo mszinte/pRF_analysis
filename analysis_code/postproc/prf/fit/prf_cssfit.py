@@ -54,6 +54,7 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import load_surface ,make_surface_image
 from pycortex_utils import data_from_rois, set_pycortex_config_file
 from maths_utils import r2_score_surf
+from screen_utils import get_screen_settings
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -62,6 +63,7 @@ start_time = datetime.datetime.now()
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
+sub_num = subject[4:]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 if len(sys.argv) > 6: output_folder = sys.argv[6]
