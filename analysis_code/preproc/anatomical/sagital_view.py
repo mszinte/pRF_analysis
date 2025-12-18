@@ -8,7 +8,7 @@ Make freeview sagital video of segmentation (to run before and after manual edit
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: subject name (e.g. sub-01)
+sys.argv[3]: freesurfer subject name (e.g. sub-01 or sub-01_ses-01)
 sys.argv[4]: video name ('before_edit', 'after_edit')
 -----------------------------------------------------------------------------------------
 Output(s):
