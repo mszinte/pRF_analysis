@@ -175,9 +175,9 @@ for subject in subjects:
             
     all_subject_parcel_full.append(parcel_full_filled)
  
-    # --- Per-subject output folder ---
+    # Per-subject output folder
     sub_out = (
-        f"/home/marc_be/disks/meso_shared/RetinoMaps/derivatives/pp_data/"
+        f"/home/{USER}/disks/meso_shared/RetinoMaps/derivatives/pp_data/"
         f"{subject}/91k/rest/corr/partial_corr"
     )
     os.makedirs(sub_out, exist_ok=True)
