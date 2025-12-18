@@ -23,16 +23,12 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
-output_folder = (
-    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/"
-    "nilearn_full_and_partial_corr"
-)
+output_folder = ("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/nilearn_partial_corr")
 
 # Custom utils
 main_codes = f"/home/{USER}/projects"
 utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
 sys.path.append(utils_path)
-
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
@@ -59,6 +55,7 @@ exclude_parcels_per_cluster = {
 
 #%% Initialize storage
 all_subject_full_matrices = []
+all_subject_parcel_full = []
 all_subject_partial_matrices = []
 all_subject_parcel_names = []
 
@@ -92,7 +89,6 @@ for subject in subjects:
     parcel_ts_list = []
     parcel_names_used = []
     for parcel in parcels:
-        # parcel files use L_ and R_ prefix in your structure
         lh, rh = [load_surface(f'{seed_folder}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{parcel}_ROI.shape.gii')[1] for hemi in ('L','R')]
         mask = np.hstack((lh, rh)).ravel()
         if np.any(mask):
@@ -103,6 +99,13 @@ for subject in subjects:
     parcel_ts = np.column_stack(parcel_ts_list) if parcel_ts_list else np.empty((n_time, 0))
 
     print(f"{subject}: using {len(parcel_names_used)}/{len(parcels)} parcels")
+    
+     # Parcel × parcel full correlation (symmetric, no exclusions; useful as a sanity check wrt Workbench results)
+    if parcel_ts.shape[1] > 1:
+        parcel_conn = ConnectivityMeasure(kind='correlation')
+        parcel_corr = parcel_conn.fit_transform([parcel_ts])[0]
+    else:
+        parcel_corr = np.full((parcel_ts.shape[1], parcel_ts.shape[1]), np.nan)
 
     # If either side empty, create empty matrices and continue
     n_clusters_present = cluster_ts.shape[1]
@@ -111,7 +114,7 @@ for subject in subjects:
         full_matrix = np.empty((n_clusters_present, n_parcels_present))
         partial_matrix = np.empty((n_clusters_present, n_parcels_present))
     else:
-        # Full correlation via Nilearn (useful as a sanity check wrt Workbench results)
+        # Full correlation via Nilearn
         combined_for_full = np.hstack([cluster_ts, parcel_ts])  # time x (n_clusters + n_parcels)
         full_conn = ConnectivityMeasure(kind='correlation')
         corr_all = full_conn.fit_transform([combined_for_full])[0]  # (nvars, nvars)
@@ -156,12 +159,32 @@ for subject in subjects:
             # Place values back into the full-sized partial_matrix at correct parcel positions
             for k, pj in enumerate(included_parcel_indices):
                 partial_matrix[i_cl, pj] = partial_values_included[k]
-
             # excluded parcel columns remain NaN for this seed (as desired)
 
     # Fill global matrix with NaNs for missing parcels and clusters
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
+    
+    parcel_full_filled = np.full((len(parcels), len(parcels)), np.nan)
+
+    for i, p_i in enumerate(parcel_names_used):
+        gi = parcels.index(p_i)
+        for j, p_j in enumerate(parcel_names_used):
+            gj = parcels.index(p_j)
+            parcel_full_filled[gi, gj] = parcel_corr[i, j]
+            
+    all_subject_parcel_full.append(parcel_full_filled)
+ 
+    # Per-subject output folder
+    sub_out = (
+        f"/home/{USER}/disks/meso_shared/RetinoMaps/derivatives/pp_data/"
+        f"{subject}/91k/rest/corr/partial_corr"
+    )
+    os.makedirs(sub_out, exist_ok=True)
+
+    np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
+    np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
+    np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
 
     # Map subject-local cluster names to global cluster indices
     for i_cl, cl in enumerate(cluster_names_used):
@@ -180,8 +203,8 @@ for subject in subjects:
     all_subject_partial_matrices.append(partial_filled)
     all_subject_parcel_names.append(parcel_names_used)
 
-#%% Group stats
-all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)   # (n_subjects, n_clusters, n_parcels)
+#%% Group stats (n_subjects, n_clusters, n_parcels)
+all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
 all_subject_partial_matrices = np.stack(all_subject_partial_matrices, axis=0)
 
 mean_full_matrix = np.nanmean(all_subject_full_matrices, axis=0)
@@ -189,15 +212,22 @@ median_full_matrix = np.nanmedian(all_subject_full_matrices, axis=0)
 mean_partial_matrix = np.nanmean(all_subject_partial_matrices, axis=0)
 median_partial_matrix = np.nanmedian(all_subject_partial_matrices, axis=0)
 
-# Save results
-os.makedirs(output_folder, exist_ok=True)
-np.savez_compressed(os.path.join(output_folder, "cluster_by_parcel_corr.npz"),
-                    mean_full=mean_full_matrix,
-                    median_full=median_full_matrix,
-                    mean_partial=mean_partial_matrix,
-                    median_partial=median_partial_matrix,
-                    subjects=np.array(subjects),
-                    clusters=np.array(clusters),
-                    parcels=np.array(parcels))
+all_subject_parcel_full = np.stack(all_subject_parcel_full, axis=0)
+mean_parcel_full = np.nanmean(all_subject_parcel_full, axis=0)
+median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
 
-print(f"Cluster × parcel correlation matrices saved to {output_folder}/cluster_by_parcel_corr.npz")
+# Save results
+np.savez_compressed(
+    os.path.join(output_folder, "nilearn_partial_corr.npz"),
+    mean_cluster_parcel_full=mean_full_matrix,
+    median_cluster_parcel_full=median_full_matrix,
+    mean_cluster_parcel_partial=mean_partial_matrix,
+    median_cluster_parcel_partial=median_partial_matrix,
+    mean_parcel_full=mean_parcel_full,
+    median_parcel_full=median_parcel_full,
+    subjects=np.array(subjects),
+    clusters=np.array(clusters),
+    parcels=np.array(parcels),
+)
+
+print(f"Cluster × parcel correlation matrices saved to {output_folder}/nilearn_partial_corr.npz")
