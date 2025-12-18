@@ -52,9 +52,9 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ##### PRF Gaussian fit
 - [x] Create the video of each tasks and concatenated tasks from original .mat file [create_prf_videos.ipynb](postproc/prf/fit/create_prf_videos.ipynb)
 - [x] Create the visual matrix design of each tasks and concatenated tasks [create_vdm_files.ipynb](postproc/prf/fit/create_vdm_files.ipynb)
-- [ ] Run pRF gaussian grid fit [prf_submit_gaussfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gauss_jobs.py)
-- [x] Compute pRF gaussian grid fit derivatives [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
-- [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](postproc/prf/postfit/pycortex_maps_gridfit.py)
+- [x] Run pRF gaussian grid fit [prf_submit_gaussfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gauss_jobs.py)
+- [x] Compute pRF gaussian grid fit derivatives [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
+- [ ] Make pRF maps with pycortex [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
 ##### ROIs
 - [x] Draw individual ROI on fsnative data using Inkscape

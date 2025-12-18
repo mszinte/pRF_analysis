@@ -102,7 +102,7 @@ print("==============================\n")
 # Define directories
 if input_fn.endswith('.nii'):
     prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
-        main_dir, project_dir, subjectr)
+        main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 elif input_fn.endswith('.gii'):
