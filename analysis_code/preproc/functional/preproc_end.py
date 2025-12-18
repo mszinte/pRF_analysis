@@ -3,7 +3,7 @@
 preproc_end.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-High-pass filter, z-score, average, loo average and pick anat files
+High-pass filter, z-score, pick anat files
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -78,24 +78,16 @@ TR = analysis_info['TR']
 tasks = analysis_info['task_names']
 high_pass_threshold = analysis_info['high_pass_threshold'] 
 sessions = analysis_info['sessions']
-anat_session = analysis_info['anat_session'][0]
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 preproc_prep = analysis_info['preproc_prep']
+normalization = analysis_info['normalization']
 filtering = analysis_info['filtering']
-gauss_avg = analysis_info['gauss_avg']
-css_avg = analysis_info['css_avg']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}".format(
-        main_dir, project_dir, subject, format_, preproc_prep, filtering), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_corr".format(
-        main_dir, project_dir, subject, format_, preproc_prep, filtering), exist_ok=True)
     os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
-            main_dir, project_dir, subject, format_, preproc_prep, filtering, gauss_avg), exist_ok=True)
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
-            main_dir, project_dir, subject, format_, preproc_prep, filtering, css_avg), exist_ok=True)
+        main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization), exist_ok=True)
     
 # High pass filtering
 for format_, extension in zip(formats, extensions):
@@ -112,7 +104,8 @@ for format_, extension in zip(formats, extensions):
         for func_fn in fmriprep_func_fns :
 
             # Make output filtered filenames
-            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', '{}_bold'.format(filtering))
+            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', '{}_{}_{}_bold'.format(
+                preproc_prep, filtering, normalization))
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
@@ -133,107 +126,10 @@ for format_, extension in zip(formats, extensions):
             filtered_img = make_surface_image(data=surf_data, source_img=surf_img)
 
             # Save surface
-            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}".format(
-                main_dir, project_dir, subject, format_, preproc_prep, filtering, filtered_data_fn_end)
+            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/{}".format(
+                main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, filtered_data_fn_end)
 
             nb.save(filtered_img, filtered_fn)
-
-# Find all the filtered files 
-preproc_fns = []
-for format_, extension in zip(formats, extensions):
-    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/*_*.{}".format(
-            main_dir, project_dir, subject, format_, preproc_prep, filtering, extension))
-    preproc_fns.extend(list_)
-
-# Split filtered files  depending of their nature
-preproc_fsnative_hemi_L, preproc_fsnative_hemi_R, preproc_170k = [], [], []
-for subtype in preproc_fns:
-    if "hemi-L" in subtype:
-        preproc_fsnative_hemi_L.append(subtype)
-    elif "hemi-R" in subtype:
-        preproc_fsnative_hemi_R.append(subtype)
-    elif "170k" in subtype:
-        preproc_170k.append(subtype)
-        
-preproc_files_list = [preproc_fsnative_hemi_L,
-                      preproc_fsnative_hemi_R,
-                      preproc_170k]
-
-# Averaging
-for preproc_files in preproc_files_list:
-    for task in tasks:
-        # Defind output files names 
-        preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
-
-        if not preproc_files_task:
-            print('No files for {}'.format(task))
-            continue
-
-        if preproc_files_task[0].find('hemi-L') != -1: hemi = 'hemi-L'
-        elif preproc_files_task[0].find('hemi-R') != -1: hemi = 'hemi-R'
-        else: hemi = None
-
-        # Averaging computation
-        preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
-        data_avg = np.zeros(preproc_data.shape)
-        for preproc_file in preproc_files_task:
-            preproc_img, preproc_data = load_surface(fn=preproc_file)
-            data_avg += preproc_data/len(preproc_files_task)
-    
-        # Export averaged data
-        if hemi:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_{}_bold.func.gii".format(
-                main_dir, project_dir, subject, preproc_prep, filtering, gauss_avg, subject, task, hemi, preproc_prep, filtering, gauss_avg)
-        else:
-            avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_{}_bold.dtseries.nii".format(
-                main_dir, project_dir, subject, preproc_prep, filtering, gauss_avg, subject, task, preproc_prep, filtering, gauss_avg)
-
-        print('avg save: {}'.format(avg_fn))
-        avg_img = make_surface_image(data=data_avg, source_img=preproc_img)
-        nb.save(avg_img, avg_fn)
-
-        # Leave-one-out averaging
-        if len(preproc_files_task):
-            combi = []
-            combi = list(it.combinations(preproc_files_task, len(preproc_files_task)-1))
-
-        for loo_num, avg_runs in enumerate(combi):
-            # Load data and make the loo_avg object
-            preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
-            data_loo_avg = np.zeros(preproc_data.shape)
-        
-            # Compute leave-one-out averaging
-            for avg_run in avg_runs:
-                print('loo_avg-{} add: {}'.format(loo_num+1, avg_run))
-                preproc_img, preproc_data = load_surface(fn=avg_run)
-                data_loo_avg += preproc_data/len(avg_runs)
-                
-            # Export leave one out file 
-            preproc_prep = analysis_info['preproc_prep']
-            filtering = analysis_info['filtering']
-            gauss_avg = analysis_info['gauss_avg']
-            css_avg = analysis_info['css_avg']
-    
-            
-            if hemi:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_avg_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, hemi, preproc_prep, filtering, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}/{}_task-{}_{}_{}_{}_loo-{}_bold.func.gii".format(
-                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, hemi, preproc_prep, filtering, loo_num+1)
-            else:
-                loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_avg_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, preproc_prep, filtering, loo_num+1)
-                loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}/{}_task-{}_{}_{}_loo-{}_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, preproc_prep, filtering, css_avg, subject, task, preproc_prep, filtering, loo_num+1)
-            print('loo_avg save: {}'.format(loo_avg_fn))
-            loo_avg_img = make_surface_image(data = data_loo_avg, source_img=preproc_img)
-            nb.save(loo_avg_img, loo_avg_fn)
-        
-            for loo in preproc_files_task:
-                if loo not in avg_runs:
-                    print('loo_avg left: {}'.format(loo))
-                    print("loo save: {}".format(loo_fn))
-                    shutil.copyfile(loo, loo_fn)
                     
 # Anatomy
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
