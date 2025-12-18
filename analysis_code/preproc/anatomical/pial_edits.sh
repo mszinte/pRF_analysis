@@ -8,7 +8,7 @@
 # Input(s):
 # $1: project directory
 # $2: project name (correspond to directory)
-# $3: subject name (e.g. sub-01)
+# $3: freesurfer subject name (e.g. sub-01 or sub-01_ses-01)
 # $4: mesocentre login ID
 # -----------------------------------------------------------------------------------------
 # Output(s):
