@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-compute_gauss_gridfit_derivatives.py
+compute_gauss_derivatives.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Compute pRF derivatives from the pRF grid gauss fit
@@ -18,12 +18,12 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python compute_gauss_gridfit_derivatives.py [main directory] [project name] 
-                                               [subject num] [group]
+>> python compute_gauss_derivatives.py [main directory] [project name] [subject num] 
+                                       [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_gauss_gridfit_derivatives.py /scratch/mszinte/data MotConf sub-01 327
+python compute_gauss_derivatives.py /scratch/mszinte/data MotConf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -85,7 +85,7 @@ if subject != 'sub-170k':
         os.makedirs(prf_deriv_dir, exist_ok=True)
         
         # Get prf fit filenames
-        fit_fns= glob.glob("{}/{}/{}/{}/fit/*prf-gauss_fit*".format(pp_dir, subject, format_))
+        fit_fns = glob.glob("{}/{}/{}/prf/fit/*prf-gauss_fit*".format(pp_dir, subject, format_))
 
         # Compute derivatives 
         for fit_fn in fit_fns:
@@ -109,7 +109,6 @@ if subject != 'sub-170k':
                 nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
 
 # Sub-170k median          
-derivatives = []
 elif subject == 'sub-170k':
     print('sub-170, computing median derivatives across subject...')
 
@@ -117,7 +116,7 @@ elif subject == 'sub-170k':
         
         for avg_method in avg_methods:
             if "loo" in avg_method:
-            continue  # Skip if it contains "loo"
+                continue  # Skip if it contains "loo"
             
             # find all the subject prf derivatives
             derivatives = []

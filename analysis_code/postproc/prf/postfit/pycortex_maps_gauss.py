@@ -124,9 +124,9 @@ for avg_method in avg_methods:
             
             if format_ == 'fsnative':
                 pycortex_subject = subject
-                deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_()_prf-gauss_deriv.func.gii'.format(
+                deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-gauss_deriv.func.gii'.format(
                     prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
-                deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_()_prf-gauss_deriv.func.gii'.format(
+                deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_prf-gauss_deriv.func.gii'.format(
                     prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
                 results = load_surface_pycortex(L_fn=deriv_avg_fn_L, 
                                                 R_fn=deriv_avg_fn_R)
@@ -256,8 +256,8 @@ for avg_method in avg_methods:
                 volumes.update({vol_description:volume})
             
             # save dataset
-            dataset_file = "{}/{}_task-{}_{}_{}_{}_{}_gauss.hdf')".format(
-                    datasets_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method))
+            dataset_file = "{}/{}_task-{}_{}_{}_{}_{}_gauss.hdf".format(
+                    datasets_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
             
             if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
             dataset = cortex.Dataset(data=volumes)
