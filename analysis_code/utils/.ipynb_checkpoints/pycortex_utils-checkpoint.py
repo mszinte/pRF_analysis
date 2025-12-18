@@ -89,13 +89,16 @@ def load_rois_atlas(atlas_name, surf_size, return_hemis=False, rois=None, mask=T
             raise ValueError("Invalid value for 'rois'. It should be either None or a list of ROI names.")
 
             
-def data_from_rois(fn, subject, rois):
+def data_from_rois(fn, subject, rois, filter_rois=True):
     """
     Load a surface, and returne vertex only data from the specified ROIs
     ----------
     fn : surface filename
     subject : subject 
-    rois : list of rois you want extract 
+    rois : list of rois you want extract
+    filter_rois : bool, optional
+        If True (default), filters out NaN vertices from the ROI data.
+        If False, returns all vertices in the ROIs without NaN filtering.
     
     Returns
     -------
@@ -129,23 +132,34 @@ def data_from_rois(fn, subject, rois):
 
     # Create a brain mask
     # na_vertices = np.where(np.isnan(data).any(axis=0))[0]
-    na_vertices = np.isnan(data).any(axis=0)
     brain_mask = np.any(list(roi_verts.values()), axis=0)
+    
+    if filter_rois:
+        # Filter out NaN vertices
+        na_vertices = np.isnan(data).any(axis=0)
         
-    # create a hemi mask  
-    if 'hemi-L' in fn:
-        hemi_mask = brain_mask[:len_data]
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
-        
-    elif 'hemi-R' in fn: 
-        hemi_mask = brain_mask[-len_data:]
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
-    else: 
-        hemi_mask = brain_mask
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
+        # create a hemi mask  
+        if 'hemi-L' in fn:
+            hemi_mask = brain_mask[:len_data]
+            for i, na_vertex in enumerate(na_vertices):
+                hemi_mask[i] = not na_vertex and hemi_mask[i]
+            
+        elif 'hemi-R' in fn: 
+            hemi_mask = brain_mask[-len_data:]
+            for i, na_vertex in enumerate(na_vertices):
+                hemi_mask[i] = not na_vertex and hemi_mask[i]
+        else: 
+            hemi_mask = brain_mask
+            for i, na_vertex in enumerate(na_vertices):
+                hemi_mask[i] = not na_vertex and hemi_mask[i]
+    else:
+        # Don't filter NaN vertices, use brain_mask directly
+        if 'hemi-L' in fn:
+            hemi_mask = brain_mask[:len_data]
+        elif 'hemi-R' in fn:
+            hemi_mask = brain_mask[-len_data:]
+        else:
+            hemi_mask = brain_mask
     
     
     # Get indices of regions of interest (ROIs)
@@ -386,53 +400,6 @@ def make_image_pycortex(data,
                                      source_img=img, 
                                      maps_names=maps_names)
         return new_img
-
-def calculate_vertex_areas(pts, polys):
-    """
-    Calculate the area associated with each vertex on a surface.
-
-    Parameters:
-        surface: cortex.polyutils.Surface
-            The surface for which vertex areas will be calculated.
-        mask: bool or numpy.ndarray, optional
-            If provided, calculate vertex areas only for the specified vertices.
-            If True, calculates vertex areas for the entire surface.
-            If False or not provided, calculates vertex areas for the entire surface.
-
-    Returns:
-        numpy.ndarray: An array containing the area in mm2 associated with each vertex on the surface.
-    """
-    import numpy as np
-    from collections import defaultdict
-    
-    vertex_areas = np.zeros(len(pts))
-    vertex_triangle_map = defaultdict(list)
-    
-    # Create a mapping from each vertex to its adjacent triangles
-    for j, poly in enumerate(polys):
-        for vertex_index in poly:
-            vertex_triangle_map[vertex_index].append(j)
-    
-    for i, (x, y, z) in enumerate(pts):
-        connected_triangles = [polys[j] for j in vertex_triangle_map[i]]
-        
-        total_area = 0
-        for poly in connected_triangles:
-            # Get the coordinates of the vertices of the triangle
-            v0 = pts[poly[0]]
-            v1 = pts[poly[1]]
-            v2 = pts[poly[2]]
-            
-            # Calculate the area of the triangle using the cross product formula
-            area = 0.5 * np.linalg.norm(np.cross(v1 - v0, v2 - v0))
-            
-            # Add the area of the triangle to the total area
-            total_area += area
-        
-        # Divide the total area by 3 to account for each triangle being shared by 3 vertices
-        vertex_areas[i] = total_area / 3
-        
-    return vertex_areas
 
 def set_pycortex_config_file(cortex_folder):
 
@@ -773,3 +740,42 @@ def create_colormap(cortex_dir, colormap_name, colormap_dict, recreate=False):
         
 
     return None
+
+# Check and setup pycortex directory structure
+def setup_pycortex_dirs(cortex_dir):
+    import os
+    import urllib.request
+    import json
+    """Check for cortex/colormaps and cortex/db folders, create if missing and download colormaps"""
+    colormaps_dir = os.path.join(cortex_dir, "colormaps")
+    db_dir = os.path.join(cortex_dir, "db")
+    
+    # Create directories if they don't exist
+    os.makedirs(colormaps_dir, exist_ok=True)
+    os.makedirs(db_dir, exist_ok=True)
+    
+    # Check if colormaps directory is empty
+    if not os.listdir(colormaps_dir):
+        print("Downloading colormaps from GitHub...")
+        # GitHub API URL to list files in the colormaps directory
+        api_url = "https://api.github.com/repos/gallantlab/pycortex/contents/filestore/colormaps"
+        
+        try:
+            with urllib.request.urlopen(api_url) as response:
+                files = json.loads(response.read())
+            
+            # Download each colormap file
+            for file_info in files:
+                if file_info['type'] == 'file':
+                    file_url = file_info['download_url']
+                    file_name = file_info['name']
+                    file_path = os.path.join(colormaps_dir, file_name)
+                    
+                    print(f"  Downloading {file_name}...")
+                    urllib.request.urlretrieve(file_url, file_path)
+            
+            print("Colormaps downloaded successfully.")
+        except Exception as e:
+            print(f"Warning: Could not download colormaps: {e}")
+    else:
+        print("Colormaps directory already contains files.")
