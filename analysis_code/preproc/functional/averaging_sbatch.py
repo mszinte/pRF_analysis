@@ -78,9 +78,9 @@ slurm_cmd = """\
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_preproc_end_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_preproc_end_%N_%j_%a.out
-#SBATCH -J {subject}_preproc_end
+#SBATCH -e {log_dir}/{subject}_averaging_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_averaging_%N_%j_%a.out
+#SBATCH -J {subject}_averaging
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
