@@ -64,10 +64,11 @@ with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
-prf_task_name = analysis_info['prf_task_name']
+prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-gauss_avg = analysis_info['gauss_avg']
+normalization = analysis_info['normalization']
+avg_methods = analysis_info['avg_methods']
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -77,12 +78,18 @@ chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
 # Define fns (filenames)
-dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-    pp_dir, subject, preproc_prep, filtering, gauss_avg, prf_task_name, gauss_avg)
-dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-    pp_dir, subject, preproc_prep, filtering, gauss_avg, prf_task_name, gauss_avg)
+pp_fns = []
+for avg_method in avg_methods:
+    for prf_task_name in prf_task_names:
+        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*.func.gii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name)
+        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*.dtseries.nii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name)
 
-pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns) 
+        # Accumulate the results
+        pp_fns.extend(glob.glob(dct_avg_gii_fns))
+        pp_fns.extend(glob.glob(dct_avg_nii_fns))
+                
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):

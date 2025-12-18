@@ -19,11 +19,11 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 2. run python command
->> python preproc_end_sbatch.py [main directory] [project] [subject] [group] [server num]
+>> python averaging_sbatch.py [main directory] [project] [subject] [group] [server num]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python preproc_end_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python averaging_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -85,7 +85,7 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-cd_cmd = "../../../{}/preproc/functional/".format(project_dir)
+cd_cmd = "cd ../../../{}/preproc/functional/".format(project_dir)
 averaging_cmd = "python averaging.py {} {} {} {}".format(main_dir, project_dir, subject, group)
 
 # Create sh fn
