@@ -8,7 +8,7 @@ Run mris_flatten on mesocentre using job mode
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: subject (e.g. sub-01)
+sys.argv[3]: freesurfer subject name (e.g. sub-01 or sub-01_ses-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
 -----------------------------------------------------------------------------------------
