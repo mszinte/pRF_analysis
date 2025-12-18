@@ -70,6 +70,7 @@ n_batches = n_jobs
 verbose = True
 gauss_params_num = 8
 
+
 # Analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, 'settings.json')
@@ -78,18 +79,25 @@ with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 
-# Load screen settings from subject dependend task-events.json
-screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, analysis_info['prf_task_name'])
-
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
-prf_task_name = analysis_info['prf_task_name']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 size_th = analysis_info['size_th']
 prf_amp_th = analysis_info['prf_amp_th']
+prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
+
+# Load screen settings from subject dependend task-events.json
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
+
+print("\n===== PRF FIT PARAMETERS =====")
+print(f"Screen Size (cm): {screen_size_cm}")
+print(f"Screen Distance (cm): {screen_distance_cm}")
+print(f"TR: {TR}")
+print(f"Max eccentricity/size values: {max_ecc_size}")
+print("==============================\n")
 
 # Define directories
 if input_fn.endswith('.nii'):
@@ -117,13 +125,6 @@ vdm = np.load(vdm_fn)
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
 polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
-
-print("\n===== PRF FIT PARAMETERS =====")
-print(f"Screen Size (cm): {screen_size_cm}")
-print(f"Screen Distance (cm): {screen_distance_cm}")
-print(f"TR: {TR}")
-print(f"Max eccentricity/size values: {max_ecc_size}")
-print("==============================\n")
 
 # load data
 img, raw_data = load_surface(fn=input_fn)

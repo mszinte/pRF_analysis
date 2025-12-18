@@ -11,7 +11,6 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
-sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -54,8 +53,6 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-if len(sys.argv) > 6: output_folder = sys.argv[6]
-else: output_folder = "prf"
 
 memory_val = 30
 hour_proc = 6

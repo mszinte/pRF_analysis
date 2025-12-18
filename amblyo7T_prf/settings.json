@@ -10,7 +10,7 @@
         "BarsLeftEye", "BarsRightEye",
         "RingsLeftEye", "RingsRightEye",
         "WedgesLeftEye", "WedgesLeftEye"],
-    "prf_task_name": "pRF",
+    "prf_task_names": ["pRFRightEye", "pRFLeftEye"],
     "cluster_name": "skylake",
     "TR": 2,
     "TRs": 120,
