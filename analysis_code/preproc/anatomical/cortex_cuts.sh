@@ -10,7 +10,6 @@
 # $3: subject name (e.g. sub-01)
 # $4: mesocentre login ID
 # $5: hemisphere (lh or rh)
-# $6: session name (optional, e.g. ses-01)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # 3D patch for each hemisphere
@@ -20,23 +19,18 @@
 # 1. cd to function
 # >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
 # 2. run shell command
-# sh preproc/cortex_cuts.sh [main directory] [project name] [subject name] [mesocentre_ID] [hemisphere] [session (optional)]
+# sh preproc/cortex_cuts.sh [main directory] [project name] [subject name] [mesocentre_ID] 
+#                           [hemisphere] 
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte lh
 # sh cortex_cuts.sh /scratch/mszinte/data MotConf sub-01 mszinte rh
-# sh cortex_cuts.sh /scratch/mszinte/data amblyo7T_prf sub-01 mszinte lh ses-01
-# sh cortex_cuts.sh /scratch/mszinte/data amblyo7T_prf sub-01 mszinte rh ses-01
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # -----------------------------------------------------------------------------------------
 
 # Handle session parameter
-if [ -z "$6" ]; then
-    subject_name=$3
-else
-    subject_name="${3}_${6}"
-fi
+subject_name=$3
 
 # rsync to desktop (faster processing)
 echo "\n>> Copying the files to a temporary folder"
@@ -48,7 +42,6 @@ echo "\n>> https://invibe.nohost.me/bookstack/books/preprocessing/page/cutting-i
 echo "\n>> When you are done, save the patch as '$subject_name/surf/$5.full.patch.3d'\n"
 
 freeview -f ~/temp_data/$subject_name/surf/$5.inflated:annot=aparc.a2009s.annot -layout 1 -viewport 3d
-
 
 # move the file to the right place
 while true; do
