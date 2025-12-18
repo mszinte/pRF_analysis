@@ -16,10 +16,11 @@ Output(s):
 .sh file to execute in server
 -----------------------------------------------------------------------------------------
 Example:
-cd ~/projects/pRF_analysis/analysis_code/postproc/rest/correlations/
+conda activate pRF_env
+cd projects/pRF_analysis/RetinoMaps/rest/correlations/
 python submit_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 2:00:00
 -----------------------------------------------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
 
 # Stop warnings
@@ -71,7 +72,6 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 
 main_cmd = f"python3 {your_script_path}"
-
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
