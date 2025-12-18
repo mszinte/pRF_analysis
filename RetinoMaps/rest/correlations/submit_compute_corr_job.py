@@ -17,7 +17,8 @@ Output(s):
 .sh file to execute in server
 -----------------------------------------------------------------------------------------
 Example:
-cd ~/projects/pRF_analysis/analysis_code/postproc/rest/correlations/
+conda activate pRF_env
+cd projects/pRF_analysis/RetinoMaps/rest/correlations/
 python submit_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 2:00:00
 python submit_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 2:00:00
 -----------------------------------------------------------------------------------------
@@ -51,10 +52,10 @@ cluster_name = 'skylake'
 
 # Define your actual command based on correlation type
 if corr_type == 'full':
-    script_name = "compute_dtseries_corr_bilateral.sh"
+    script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
     job_suffix = "full"
 elif corr_type == 'fisher-z':
-    script_name = "compute_dtseries_corr_fisher-z_bilateral.sh"
+    script_name = "connectome-workbench_dense_full_corr_fisher-z_bilateral.sh"
     job_suffix = "fisher_z"
 
 # Define permission commands
@@ -91,7 +92,6 @@ if not os.path.exists(your_script_path):
     sys.exit(1)
 
 main_cmd = "bash {}".format(your_script_path)
-
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
