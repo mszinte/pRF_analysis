@@ -58,7 +58,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 ##### ROIs
 - [x] Draw individual ROI on fsnative data using Inkscape
-- [ ] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
 - [ ] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 ##### PRF CSS fit

@@ -181,10 +181,10 @@ for preproc_files in preproc_files_list:
                             main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
                             subject, task, hemi, preproc_prep, filtering, normalization, loo_num+1)
                     else:
-                        loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_loo-avg/{}_task-{}_{}_{}_{}_{}_loo-avg-{}_bold.dtseries.nii".format(
+                        loo_avg_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_loo-avg/{}_task-{}_{}_{}_{}_loo-avg-{}_bold.dtseries.nii".format(
                             main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
                             subject, task, preproc_prep, filtering, normalization, loo_num+1)
-                        loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_loo-avg/{}_task-{}_{}_{}_{}_{}_loo-{}_bold.dtseries.nii".format(
+                        loo_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_loo-avg/{}_task-{}_{}_{}_{}_loo-{}_bold.dtseries.nii".format(
                             main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
                             subject, task, preproc_prep, filtering, normalization, loo_num+1)
 
