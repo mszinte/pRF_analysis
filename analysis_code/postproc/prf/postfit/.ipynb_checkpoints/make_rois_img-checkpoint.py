@@ -10,8 +10,6 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
-sys.argv[5]: session name (optional, e.g. ses-01)
-sys.argv[6]: analysis folder (optional, e.g. pRFRightEye, default: prf)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
@@ -20,21 +18,11 @@ To run:
 1. cd to function
 >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
 2. run python command
->> python make_rois_img.py [main directory] [project name] [subject] [group] [session (optional)] [analysis folder (optional)]
+>> python make_rois_img.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-
 python make_rois_img.py /scratch/mszinte/data MotConf sub-01 327
-python make_rois_img.py /scratch/mszinte/data MotConf sub-170k 327
-
-python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python make_rois_img.py /scratch/mszinte/data amblyo_prf sub-01 327
-python make_rois_img.py /scratch/mszinte/data amblyo_prf sub-170k 327
-
-python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-01 327 ses-01 pRFRightEye
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -68,14 +56,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
-session = sys.argv[5] if len(sys.argv) > 5 else None
-output_folder = sys.argv[6] if len(sys.argv) > 6 else "prf"
-
-# Handle session parameter for pycortex subject name
-if session:
-    pycortex_subject_name = f"{subject}_{session}"
-else:
-    pycortex_subject_name = subject
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -89,7 +69,6 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 if subject == 'sub-170k': extensions = ['dtseries.nii']
 else: extensions = analysis_info['extensions']
-prf_task_name = analysis_info['prf_task_name']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -102,17 +81,14 @@ for format_, extension in zip(formats, extensions):
         main_dir, project_dir, subject, format_)
     os.makedirs(rois_dir, exist_ok=True)
     
-    if format_ == 'fsnative':
-        # Determine pycortex subject name for get_rois
-        pycortex_subject_for_rois = pycortex_subject_name
-        
+    if format_ == 'fsnative':        
         # Load rois 
-        roi_verts_dict_L, roi_verts_dict_R = get_rois(pycortex_subject_for_rois, 
-                                          return_concat_hemis=False, 
-                                          rois=rois, 
-                                          mask=True, 
-                                          atlas_name=None, 
-                                          surf_size=None)
+        roi_verts_dict_L, roi_verts_dict_R = get_rois(subject, 
+                                                      return_concat_hemis=False, 
+                                                      rois=rois, 
+                                                      mask=True, 
+                                                      atlas_name=None, 
+                                                      surf_size=None)
         
         for hemi in ['hemi-L','hemi-R']:
             if hemi == 'hemi-L':roi_verts_dict = roi_verts_dict_L
@@ -122,11 +98,11 @@ for format_, extension in zip(formats, extensions):
                 array_rois[mask] = i
                 
             # Load data to have source img
-            data_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives'.format(
-                main_dir, project_dir, subject, format_, output_folder)
+            data_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives'.format(
+                main_dir, project_dir, subject, format_)
 
             # Find first file with prf-deriv in the name
-            data_files = glob.glob('{}/{}_*{}_*prf-deriv*.{}'.format(data_dir, subject, hemi, extension))
+            data_files = glob.glob('{}/{}_*{}_*deriv*.{}'.format(data_dir, subject, hemi, extension))
             if not data_files:
                 raise FileNotFoundError(f"No prf-deriv file found for {subject} {hemi}")
             data_fn = data_files[0]
@@ -143,18 +119,18 @@ for format_, extension in zip(formats, extensions):
             
     elif format_ == '170k':
         # Load data to have source img
-        data_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives'.format(
-            main_dir, project_dir, subject, format_, output_folder)
+        data_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives'.format(
+            main_dir, project_dir, subject, format_)
         
         # Find first file with prf-deriv in the name
-        data_files = glob.glob('{}/{}_*prf-deriv*.{}'.format(data_dir, subject, extension))
+        data_files = glob.glob('{}/{}_*deriv*.{}'.format(data_dir, subject, extension))
         if not data_files:
             raise FileNotFoundError(f"No prf-deriv file found for {subject}")
         data_fn = data_files[0]
         img, data = load_surface(fn=data_fn)
         
         # MMP group rois
-        roi_verts_dict = get_rois(pycortex_subject_name, 
+        roi_verts_dict = get_rois(subject, 
                                   return_concat_hemis=True, 
                                   rois=rois,
                                   mask=True, 
