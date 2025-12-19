@@ -23,6 +23,7 @@
     "normalization": "z-score",
     "avg_methods": ["concat"],
     "partial_scan": 1,
+    "filter_rois": 0,
     "vdm_size_pix": [50, 50],
     "gauss_grid_nr": 36,
     "ecc_th": [0.05, 20.0],

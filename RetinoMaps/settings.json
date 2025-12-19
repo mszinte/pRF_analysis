@@ -24,6 +24,7 @@
     "filtering": "dct",
     "avg_methods": ["avg", "loo-avg"],
     "partial_scan": 0,
+    "filter_rois": 1,
     "n_runs_prf": 5,
     "screen_size_pix": [1080, 1080],
     "screen_size_cm" : [77.3, 43.5],
