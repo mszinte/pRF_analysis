@@ -62,7 +62,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 ##### PRF CSS fit
-- [ ] CSS fit [prf_submit_css_jobs.py](postproc/prf/fit/prf_submit_css_jobs.py)
+- [x] CSS fit [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 - [ ] Compute CSS statistics [compute_css_stats.py](postproc/prf/postfit/compute_css_stats.py)
 - [ ] Compute CSS fit derivatives [compute_css_derivatives.py](postproc/prf/postfit/compute_css_derivatives.py)
 - [ ] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](postproc/prf/postfit/css_pcm_sbatch.py)
