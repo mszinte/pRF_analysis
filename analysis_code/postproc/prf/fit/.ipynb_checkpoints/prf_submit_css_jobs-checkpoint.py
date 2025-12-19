@@ -83,9 +83,6 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 # Define fns (filenames)
 pp_fns = []
 for avg_method in avg_methods:
-    if "avg" in avg_method:
-        continue  # Skip if it contains "avg"
-
     for prf_task_name in prf_task_names:
         dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*.func.gii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name)
@@ -146,4 +143,4 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # Submit jobs
     print("Submitting {} to queue".format(sh_fn))
-    #os.system("sbatch {}".format(sh_fn))
+    os.system("sbatch {}".format(sh_fn))
