@@ -75,8 +75,8 @@ maps_names = analysis_info['maps_names_css_stats']
 prf_task_names = analysis_info['prf_task_names']
 subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
-normalization = analysis_info['normalization']
 filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
 # Set pycortex db and colormaps
@@ -114,7 +114,6 @@ if subject != 'sub-170k':
     
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
-                        # Find the correponding bold signal to the loo prediction
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
                         if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
@@ -133,9 +132,9 @@ if subject != 'sub-170k':
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
                         
                     # load data  
-                    print(f'loading pred: {prf_pred_fn}') 
+                    print(f'Loading pred: {prf_pred_fn}') 
                     bold_img, bold_data = load_surface(prf_bold_fn)
-                    print(f'loading bold: {prf_bold_fn}')
+                    print(f'Loading bold: {prf_bold_fn}')
                     pred_img, pred_data = load_surface(prf_pred_fn)
                     
                     # Compute linear regression 
@@ -165,8 +164,7 @@ if subject != 'sub-170k':
                     print('Saving: {}/{}'.format(prf_deriv_dir, prf_stats_fn))
                     nb.save(prf_stats_img, '{}/{}'.format(prf_deriv_dir, prf_stats_fn))
             
-            # Compute median across LOO
-            deb()
+            # Compute median across leave-one-out fit
             if 'loo-avg' in avg_method:
                 print('Compute median across LOO')
                 
@@ -179,41 +177,42 @@ if subject != 'sub-170k':
                 loo_prf_stats_170k_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
                 
                 # Process each group
-                for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "hemi-L"),
-                                          (loo_prf_stats_fsnative_hemi_R_fns, "hemi-R"),
+                for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "_hemi-L"),
+                                          (loo_prf_stats_fsnative_hemi_R_fns, "_hemi-R"),
                                           (loo_prf_stats_170k_fns, None)]:
-
+                    
                     if len(group_files)>0:
-                        # I'm here 
-                        # to check the code below
-                        # save it as loo-avg file with no number
-                        
-                        # Load first file to initialize median array
+
+                        # Load first file to initialize median array and define fn
                         stats_img, stats_data = load_surface(group_files[0])
-                        loo_stats_data_median = np.zeros_like(stats_data)
+                        loo_prf_stats = np.zeros_like(stats_data)
+                        loo_prf_stats_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_prf-css_stats.{}'.format(
+                            prf_deriv_dir, subject, prf_task_name, hemi, 
+                            preproc_prep, filtering, normalization, extension)
+                        group_files[0].split('/')[-1].replace('prf-css_pred', 'prf-css_stats')
                     
                         # Compute median across LOO runs
                         for n_run, loo_stats_fn in enumerate(group_files):
-                            loo_stats_img, loo_stats_data = load_surface(loo_stats_fn)
-                            loo_stats_data_median = np.nanmedian(np.stack([loo_stats_data_median, loo_stats_data]), axis=0)
+                            print(f'Loadding loo stats: {loo_stats_fn}')
+                            _, loo_prf_stats_data = load_surface(loo_stats_fn)
+                            loo_prf_stats = np.nanmedian(np.stack([loo_prf_stats, loo_prf_stats_data]), axis=0)
                     
                         # Recalculate p-values for median data
-                        t_statistic = loo_stats_data_median[slope_idx, :] / loo_stats_data_median[stderr_idx, :]
-                        degrees_of_freedom = np.nanmax(loo_stats_data_median[trs_idx, :]) - 2
+                        t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
+                        degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
                         p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
                         corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
-                    
-                        # Update median data with recalculated p-values
-                        loo_stats_data_median[pvalue_idx, :] = p_values
-                        loo_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
-                        loo_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
-                    
-                        # Save median results
                         
-                    
-                        loo_stats_img = make_surface_image(loo_stats_data_median, stats_img, maps_names)
-                        nb.save(loo_stats_img, median_fn)
-                        print(f"Saved median: {median_fn}")
+                        # Update median data with recalculated p-values
+                        loo_prf_stats[pvalue_idx, :] = p_values
+                        loo_prf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
+                        loo_prf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
+
+                        # Save median results
+                        loo_prf_stats_img = make_surface_image(loo_prf_stats, stats_img, maps_names)
+                        nb.save(loo_prf_stats_img, loo_prf_stats_fn)
+                        print(f"Saving median: {loo_prf_stats_fn}")
+                        
 
 # # Sub-170k median
 # elif subject == 'sub-170k':
@@ -251,7 +250,7 @@ if subject != 'sub-170k':
 #                                            maps_names=maps_names)
 #     nb.save(sub_170k_stat_img, sub_170k_stat_fn)
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
