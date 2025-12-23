@@ -16,7 +16,7 @@ Combined estimate nifti file and pRF derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 2. run python command
 >> python make_rois_img.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
