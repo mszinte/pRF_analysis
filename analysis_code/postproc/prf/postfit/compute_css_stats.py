@@ -92,164 +92,164 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # sub-170k exeption
 if subject != 'sub-170k':
-    
     for avg_method in avg_methods:
-            
         for format_, extension in zip(formats, extensions): 
-            print(format_)
             
-            # Find pRF fit files 
+            # define/create folders
             prf_fit_dir = '{}/{}/{}/prf/fit'.format(
-                pp_dir, subject, format_)
-            prf_bold_dir = '{}/{}/{}/func/{}_{}_{}_{}'.format(
-                pp_dir, subject, format_, 
-                preproc_prep, filtering, normalization, avg_method)
-            
-            prf_pred_loo_fns_list = glob.glob('{}/*_prf-css_pred.{}'.format(
-                prf_fit_dir, prf_task_name, extension))
-
-            # Rationale 
-            # if not loo => compare concat/avg predicted vs concat/avg
-            # if loo => compare loo-avg predicted vs loo 
-    
-            for prf_pred_loo_fn in prf_pred_loo_fns_list : 
-                # Find the correponding bold signal to the loo prediction
-                loo_number = re.search(r'loo-(\d+)', prf_pred_loo_fn).group(1)
-                if format_ == 'fsnative': 
-                    hemi = re.search(r'hemi-(\w)', prf_pred_loo_fn).group(1)
-                    prf_bold_fn = '{}/{}_task-{}_hemi-{}_fmriprep_dct_loo-{}_bold.{}'.format(
-                        prf_bold_dir, subject, prf_task_name, hemi, loo_number, extension)
-                elif format_ == '170k':
-                    prf_bold_fn = '{}/{}_task-{}_fmriprep_dct_loo-{}_bold.{}'.format(
-                        prf_bold_dir, subject, prf_task_name, loo_number, extension)
-    
-                # load data  
-                pred_img, pred_data = load_surface(prf_pred_loo_fn)
-                bold_img, bold_data = load_surface(prf_bold_fn)
-                
-                # Compute linear regression 
-                results = linear_regression_surf(bold_signal=bold_data, 
-                                                 model_prediction=pred_data, 
-                                                 correction='fdr_tsbh', 
-                                                 alpha=fdr_alpha)
-                
-                # Save results
-                prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
                     pp_dir, subject, format_)
-                os.makedirs(prf_deriv_dir, exist_ok=True)
-                stat_prf_loo_fn = prf_pred_loo_fn.split('/')[-1].replace('pred_css', 'stats')
-                stat_prf_loo_img = make_surface_image(data=results, 
-                                                      source_img=bold_img, 
-                                                      maps_names=maps_names)
-                print('Saving: {}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
-                nb.save(stat_prf_loo_img, '{}/{}'.format(prf_deriv_dir, stat_prf_loo_fn))
-             
-        # Compute median across LOO
-        print('Compute median across LOO')
-        
-        # Get files
-        prf_stats_loo_fns_list = []
-        for format_, extension in zip(formats, extensions):
-            list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-stats.{}".format(
-                pp_dir, subject, format_, output_folder, extension))
-            list_ = [item for item in list_ if "loo-median" not in item]
-            prf_stats_loo_fns_list.extend(list_)
-                    
-        # Split files depending of their nature
-        stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
-        for subtype in prf_stats_loo_fns_list:
-            if "hemi-L" in subtype: stats_fsnative_hemi_L.append(subtype)
-            elif "hemi-R" in subtype: stats_fsnative_hemi_R.append(subtype)
-            else : stats_170k.append(subtype)
-        loo_stats_fns_list = [stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k]
-        hemi_data_median = {'hemi-L': [], 'hemi-R': [], '170k': []}
-        
-        # Computing median
-        for loo_stats_fns in loo_stats_fns_list:
-            if not loo_stats_fns:
-                continue
-            if loo_stats_fns[0].find('hemi-L') != -1:  hemi = 'hemi-L'
-            elif loo_stats_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
-            else: hemi = None
-        
-            # Computing median
-            stats_img, stats_data = load_surface(fn=loo_stats_fns[0])
-            loo_stats_data_median = np.zeros(stats_data.shape)
-            
-            for n_run, loo_stats_fn in enumerate(loo_stats_fns):
-                loo_stats_median_fn = loo_stats_fn.split('/')[-1]
-                loo_stats_median_fn = re.sub(r'avg_loo-\d+_prf-stats', 'avg_prf-stats_loo-median', loo_stats_median_fn)
-        
-                # Load data 
-                print('adding {} to computing median'.format(loo_stats_fn))
-                loo_stats_img, loo_stats_data = load_surface(fn=loo_stats_fn)
-        
-                # median
-                if n_run == 0: loo_stats_data_median = np.copy(loo_stats_data)
-                else: loo_stats_data_median = np.nanmedian(np.array([loo_stats_data_median, loo_stats_data]), axis=0)
-                    
-            # Compute two sided corrected p-values
-            t_statistic = loo_stats_data_median[slope_idx, :] / loo_stats_data_median[stderr_idx, :]
-            degrees_of_freedom = np.nanmax(loo_stats_data_median[trs_idx, :]) - 2
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-            corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                       correction='fdr_tsbh', 
-                                                       alpha=fdr_alpha)
-            loo_stats_data_median[pvalue_idx, :] = p_values
-            loo_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            loo_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
-        
-            if hemi:
-                median_fn = '{}/{}/fsnative/prf/prf_derivatives/{}'.format(
-                    pp_dir, subject, loo_stats_median_fn)
-                hemi_data_median[hemi] = loo_stats_data_median
-            else:
-                median_fn = '{}/{}/170k/prf/prf_derivatives/{}'.format(
-                    pp_dir, subject, loo_stats_median_fn)
-                hemi_data_median['170k'] = loo_stats_data_median
-        
-            # Saving data in surface format
-            loo_stats_img = make_surface_image(data=loo_stats_data_median, 
-                                               source_img=loo_stats_img, 
-                                               maps_names=maps_names)
-            print('Saving median: {}'.format(median_fn))
-            nb.save(loo_stats_img, median_fn)
-            
-# Sub-170k median
-elif subject == 'sub-170k':
-    print('sub-170, computing median prf stats across subject...')
-    
-    # find all the subject prf derivatives
-    subjects_stats = []
-    for subject in subjects: 
-        subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(
-                main_dir, project_dir, subject, subject, prf_task_name)]
+            prf_func_dir = '{}/{}/{}/func/{}_{}_{}_{}'.format(
+                    pp_dir, subject, format_, 
+                    preproc_prep, filtering, normalization, avg_method)
+            prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
+                pp_dir, subject, format_)
+            os.makedirs(prf_deriv_dir, exist_ok=True)
 
-    # Computing median across subject
-    img, data_stat_median = median_subject_template(fns=subjects_stats)
+            for prf_task_name in prf_task_names:
+                print(f'{avg_method} - {format_} - {prf_task_name}')
+                
+                # Find pRF func/pred files
+                prf_pred_fns = glob.glob('{}/*task-{}*_{}*_prf-css_pred.{}'.format(
+                    prf_fit_dir, prf_task_name, avg_method, extension))
     
-    # Compute two sided corrected p-values
-    t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
-    degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
-    p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-    corrected_p_values = multipletests_surface(pvals=p_values, 
-                                               correction='fdr_tsbh', 
-                                               alpha=fdr_alpha)
-    data_stat_median[pvalue_idx, :] = p_values
-    data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-    data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                for prf_pred_fn in prf_pred_fns :
+                    if 'loo' in prf_pred_fn:
+                        # Find the correponding bold signal to the loo prediction
+                        loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
+                        if format_ == 'fsnative': 
+                            hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold.{}'.format(
+                                prf_func_dir, prf_task_name, hemi, loo_number, extension))[0]
+                        elif format_ == '170k':
+                            prf_bold_fn = glob.glob('{}/*task-{}*_loo-{}_bold.{}'.format(
+                                prf_func_dir, prf_task_name, loo_number, extension))[0]
+                    else:
+                        if format_ == 'fsnative': 
+                            hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
+                                prf_func_dir, prf_task_name, hemi, avg_method, extension))[0]
+                        elif format_ == '170k':
+                            prf_bold_fn = glob.glob('{}/*task-{}*_{}_bold.{}'.format(
+                                prf_func_dir, prf_task_name, avg_method, extension))[0]
+                        
+                    # load data  
+                    print(f'loading pred: {prf_pred_fn}') 
+                    bold_img, bold_data = load_surface(prf_bold_fn)
+                    print(f'loading bold: {prf_bold_fn}')
+                    pred_img, pred_data = load_surface(prf_pred_fn)
+                    
+                    # Compute linear regression 
+                    results = linear_regression_surf(bold_signal=bold_data, 
+                                                     model_prediction=pred_data, 
+                                                     correction='fdr_tsbh', 
+                                                     alpha=fdr_alpha)
+
+                    
+                    # Compute two-sided corrected p-values
+                    t_statistic = results[slope_idx, :] / results[stderr_idx, :]
+                    degrees_of_freedom = np.nanmax(results[trs_idx, :]) - 2
+                    p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                    corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                               correction='fdr_tsbh', 
+                                                               alpha=fdr_alpha)
+                    results[pvalue_idx, :] = p_values
+                    results[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+                    results[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                    
+                    # Save results
+                    prf_stats_fn = prf_pred_fn.split('/')[-1].replace('prf-css_pred', 'prf-css_stats')
+                    prf_stats_img = make_surface_image(data=results, 
+                                                       source_img=pred_img, 
+                                                       maps_names=maps_names)
+                    
+                    print('Saving: {}/{}'.format(prf_deriv_dir, prf_stats_fn))
+                    nb.save(prf_stats_img, '{}/{}'.format(prf_deriv_dir, prf_stats_fn))
+            
+            # Compute median across LOO
+            deb()
+            if 'loo-avg' in avg_method:
+                print('Compute median across LOO')
+                
+                # Get LOO files (excluding any with "median" in the name)
+                loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*loo-avg*_prf-css_stats.{extension}")
+                
+                # Group files by hemisphere/format
+                loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
+                loo_prf_stats_fsnative_hemi_R_fns = [fn for fn in loo_prf_stats_fns if "hemi-R" in fn]
+                loo_prf_stats_170k_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
+                
+                # Process each group
+                for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "hemi-L"),
+                                          (loo_prf_stats_fsnative_hemi_R_fns, "hemi-R"),
+                                          (loo_prf_stats_170k_fns, None)]:
+
+                    if len(group_files)>0:
+                        # I'm here 
+                        # to check the code below
+                        # save it as loo-avg file with no number
+                        
+                        # Load first file to initialize median array
+                        stats_img, stats_data = load_surface(group_files[0])
+                        loo_stats_data_median = np.zeros_like(stats_data)
+                    
+                        # Compute median across LOO runs
+                        for n_run, loo_stats_fn in enumerate(group_files):
+                            loo_stats_img, loo_stats_data = load_surface(loo_stats_fn)
+                            loo_stats_data_median = np.nanmedian(np.stack([loo_stats_data_median, loo_stats_data]), axis=0)
+                    
+                        # Recalculate p-values for median data
+                        t_statistic = loo_stats_data_median[slope_idx, :] / loo_stats_data_median[stderr_idx, :]
+                        degrees_of_freedom = np.nanmax(loo_stats_data_median[trs_idx, :]) - 2
+                        p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                        corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
+                    
+                        # Update median data with recalculated p-values
+                        loo_stats_data_median[pvalue_idx, :] = p_values
+                        loo_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
+                        loo_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
+                    
+                        # Save median results
+                        
+                    
+                        loo_stats_img = make_surface_image(loo_stats_data_median, stats_img, maps_names)
+                        nb.save(loo_stats_img, median_fn)
+                        print(f"Saved median: {median_fn}")
+
+# # Sub-170k median
+# elif subject == 'sub-170k':
+#     print('sub-170, computing median prf stats across subject...')
+    
+#     # find all the subject prf derivatives
+#     subjects_stats = []
+#     for subject in subjects: 
+#         subjects_stats += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(
+#                 main_dir, project_dir, subject, subject, prf_task_name)]
+
+#     # Computing median across subject
+#     img, data_stat_median = median_subject_template(fns=subjects_stats)
+    
+#     # Compute two sided corrected p-values
+#     t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
+#     degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
+#     p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+#     corrected_p_values = multipletests_surface(pvals=p_values, 
+#                                                correction='fdr_tsbh', 
+#                                                alpha=fdr_alpha)
+#     data_stat_median[pvalue_idx, :] = p_values
+#     data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+#     data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
         
-    # Export results
-    sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives/".format(
-            main_dir, project_dir)
-    os.makedirs(sub_170k_stats_dir, exist_ok=True)
+#     # Export results
+#     sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives/".format(
+#             main_dir, project_dir)
+#     os.makedirs(sub_170k_stats_dir, exist_ok=True)
     
-    sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(sub_170k_stats_dir, prf_task_name)
-    print("save: {}".format(sub_170k_stat_fn))
-    sub_170k_stat_img = make_surface_image(data=data_stat_median, 
-                                           source_img=img, 
-                                           maps_names=maps_names)
-    nb.save(sub_170k_stat_img, sub_170k_stat_fn)
+#     sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii".format(sub_170k_stats_dir, prf_task_name)
+#     print("save: {}".format(sub_170k_stat_fn))
+#     sub_170k_stat_img = make_surface_image(data=data_stat_median, 
+#                                            source_img=img, 
+#                                            maps_names=maps_names)
+#     nb.save(sub_170k_stat_img, sub_170k_stat_fn)
 
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
