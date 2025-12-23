@@ -50,6 +50,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 
+# Personal imports
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from pycortex_utils import set_pycortex_config_file
+
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
@@ -64,10 +68,14 @@ nb_procs = 1
 memory_val = 48
 hour_proc = 1
 
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
+
 # Set folders
-log_dir = "{}/{}/derivatives/pp_data/prf/log_outputs/{}".format(
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/".format(
     main_dir, project_dir, subject)
-job_dir = "{}/{}/derivatives/pp_data/prf/jobs/{}".format(
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs/".format(
     main_dir, project_dir, subject)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
@@ -104,4 +112,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-#os.system("sbatch {}".format(sh_fn))
+os.system("sbatch {}".format(sh_fn))
