@@ -17,21 +17,14 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/preproc/functional
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 2. run python command
->> python compute_run_corr_sbatch.py [main directory] [project] [subject] [group] 
-                                                                            [server num]
+>> python compute_run_corr_sbatch.py [main directory] [project] [subject] 
+                                     [group] [server num]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-
-python compute_run_corr_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
-
 python compute_run_corr_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-
-python compute_run_corr_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
-
-python compute_run_corr_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
