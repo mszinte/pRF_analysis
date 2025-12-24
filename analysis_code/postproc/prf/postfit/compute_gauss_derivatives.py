@@ -73,7 +73,6 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 
-
 # sub-170k exception
 if subject != 'sub-170k':
     for format_, extension in zip(formats, extensions):
