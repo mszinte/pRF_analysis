@@ -164,55 +164,54 @@ if subject != 'sub-170k':
                     print('Saving: {}/{}'.format(prf_deriv_dir, prf_stats_fn))
                     nb.save(prf_stats_img, '{}/{}'.format(prf_deriv_dir, prf_stats_fn))
             
-            # Compute median across leave-one-out fit
-            if 'loo-avg' in avg_method:
-                print('Compute median across LOO')
-                
-                # Get LOO files (excluding any with "median" in the name)
-                loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*loo-avg*_prf-css_stats.{extension}")
-                
-                # Group files by hemisphere/format
-                loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
-                loo_prf_stats_fsnative_hemi_R_fns = [fn for fn in loo_prf_stats_fns if "hemi-R" in fn]
-                loo_prf_stats_170k_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
-                
-                # Process each group
-                for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "_hemi-L"),
-                                          (loo_prf_stats_fsnative_hemi_R_fns, "_hemi-R"),
-                                          (loo_prf_stats_170k_fns, None)]:
-                    
-                    if len(group_files)>0:
+                # Compute median across leave-one-out fit
+                if 'loo-avg' in avg_method:
+                    print('Computing median across LOO')
 
-                        # Load first file to initialize median array and define fn
-                        stats_img, stats_data = load_surface(group_files[0])
-                        loo_prf_stats = np.zeros_like(stats_data)
-                        loo_prf_stats_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_prf-css_stats.{}'.format(
-                            prf_deriv_dir, subject, prf_task_name, hemi, 
-                            preproc_prep, filtering, normalization, extension)
-                        group_files[0].split('/')[-1].replace('prf-css_pred', 'prf-css_stats')
-                    
-                        # Compute median across LOO runs
-                        for n_run, loo_stats_fn in enumerate(group_files):
-                            print(f'Loadding loo stats: {loo_stats_fn}')
-                            _, loo_prf_stats_data = load_surface(loo_stats_fn)
-                            loo_prf_stats = np.nanmedian(np.stack([loo_prf_stats, loo_prf_stats_data]), axis=0)
-                    
-                        # Recalculate p-values for median data
-                        t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
-                        degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
-                        p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
-                        corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
-                        
-                        # Update median data with recalculated p-values
-                        loo_prf_stats[pvalue_idx, :] = p_values
-                        loo_prf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
-                        loo_prf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
+                    # Get LOO files (excluding any with "median" in the name)
+                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*loo-avg-*_prf-css_stats.{extension}")
 
-                        # Save median results
-                        loo_prf_stats_img = make_surface_image(loo_prf_stats, stats_img, maps_names)
-                        nb.save(loo_prf_stats_img, loo_prf_stats_fn)
-                        print(f"Saving median: {loo_prf_stats_fn}")
+                    # Group files by hemisphere/format
+                    loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
+                    loo_prf_stats_fsnative_hemi_R_fns = [fn for fn in loo_prf_stats_fns if "hemi-R" in fn]
+                    loo_prf_stats_170k_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
+                    
+                    # Process each group
+                    for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "_hemi-L"),
+                                              (loo_prf_stats_fsnative_hemi_R_fns, "_hemi-R"),
+                                              (loo_prf_stats_170k_fns, "")]:
                         
+                        if len(group_files)>0:
+    
+                            # Load first file to initialize median array and define fn
+                            stats_img, stats_data = load_surface(group_files[0])
+                            loo_prf_stats = np.zeros_like(stats_data)
+                            loo_prf_stats_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_prf-css_stats.{}'.format(
+                                prf_deriv_dir, subject, prf_task_name, hemi, 
+                                preproc_prep, filtering, normalization, extension)
+                        
+                            # Compute median across LOO runs
+                            for n_run, loo_stats_fn in enumerate(group_files):
+                                print(f'Loadding loo stats: {loo_stats_fn}')
+                                _, loo_prf_stats_run_data = load_surface(loo_stats_fn)
+                                if n_run == 0: loo_prf_stats = np.copy(loo_prf_stats_run_data)
+                                else: loo_prf_stats = np.nanmedian(np.array([loo_prf_stats, loo_prf_stats_run_data]), axis=0)
+                        
+                            # Recalculate p-values for median data
+                            t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
+                            degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
+                            p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                            corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
+                            
+                            # Update median data with recalculated p-values
+                            loo_prf_stats[pvalue_idx, :] = p_values
+                            loo_prf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
+                            loo_prf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
+    
+                            # Save median results
+                            loo_prf_stats_img = make_surface_image(loo_prf_stats, stats_img, maps_names)
+                            nb.save(loo_prf_stats_img, loo_prf_stats_fn)
+                            print(f"Saving median: {loo_prf_stats_fn}")
 
 # # Sub-170k median
 # elif subject == 'sub-170k':
