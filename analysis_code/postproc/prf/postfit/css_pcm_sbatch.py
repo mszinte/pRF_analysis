@@ -11,25 +11,19 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project number (e.g. b327)
-sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 2. run python command
->> python css_pcm_sbatch.py [main directory] [project] [subject] 
-                            [group] [server] [analysis folder - optional]
+>> python css_pcm_sbatch.py [main directory] [project] [subject] [group] [server] 
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-
-python css_pcm_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
 python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python css_pcm_sbatch.py /scratch/mszinte/data amblyo_prf sub-01 327 b327
-python css_pcm_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -55,8 +49,6 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-if len(sys.argv) > 6: output_folder = sys.argv[6]
-else: output_folder = "prf"
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -73,10 +65,10 @@ memory_val = 48
 hour_proc = 20
 
 # Set folders
-log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/{}".format(
-    main_dir, project_dir, subject, output_folder)
-job_dir = "{}/{}/derivatives/pp_data/{}/jobs/{}".format(
-    main_dir, project_dir, subject, output_folder)
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/prf".format(
+    main_dir, project_dir, subject)
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs/prf".format(
+    main_dir, project_dir, subject)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 
@@ -96,7 +88,7 @@ slurm_cmd = """\
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
 compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {}".format(
-    main_dir, project_dir, subject, group, output_folder)
+    main_dir, project_dir, subject, group)
 
 # Create sh fn
 sh_fn = "{}/{}_css_pcm.sh".format(job_dir, subject)
@@ -108,4 +100,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-os.system("sbatch {}".format(sh_fn))
+#os.system("sbatch {}".format(sh_fn))
