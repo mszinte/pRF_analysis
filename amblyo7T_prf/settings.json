@@ -45,7 +45,6 @@
     "rois_groups": [["V1"], ["V2"], ["V3", "V4"], ["V3A", "V3B", "V3CD"], ["LO1", "LO2", "LO3"], ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"], ["V4t", "MST", "MT", "FST"]],
     "vertex_pcm_rad": 30,
     "fdr_alpha": [0.05, 0.01],
-    "maps_names_corr": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
     "maps_names_gauss": ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2"],
     "maps_names_css": ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2", "prf_n", "prf_loo_r2"],
     "maps_names_pcm": ["n_neighbor", "pcm_median", "vert_geo_dist_median", "vert_prf_dist_median"],
