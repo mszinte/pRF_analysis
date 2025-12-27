@@ -104,8 +104,7 @@ if subject != 'sub-170k':
     
                 # Compute derivatives
                 for fit_fn in fit_fns:
-                    deriv_fn = fit_fn.split('/')[-1].replace(
-                        'prf-css_fit', 'prf-css_deriv')
+                    deriv_fn = fit_fn.split('/')[-1].replace('prf-css_fit', 'prf-css_deriv')
 
                     # get arrays
                     fit_img, fit_data = load_surface(fit_fn)
