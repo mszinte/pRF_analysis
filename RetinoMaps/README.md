@@ -44,13 +44,13 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 - [x] Compute inter-run correlation [compute_run_corr_sbatch](../analysis_code/preproc/functional/compute_run_corr_sbatch.py)
-- [x] Make inter-run correlations maps with pycortex [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](../analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
+- [x] Make maps with pycortex [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](../analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
 
 ### *Groupe and template*
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 - [x] Compute inter-run correlation for **sub-170k** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
-- [x] Make inter-run correlations maps with pycortex for **sub-170k** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
+- [x] Make maps with pycortex for **sub-170k** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
 
 # pRF 
 ---

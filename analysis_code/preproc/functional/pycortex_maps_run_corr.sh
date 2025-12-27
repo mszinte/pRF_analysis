@@ -16,15 +16,13 @@
 # To run:
 # 0. TO RUN ON INVIBE SERVER (with Inkscape)
 # 1. cd to function
-# >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/preproc/functional/
+# >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
 # 2. run python command
 # >> sh pycortex_maps_run_corr.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
-# sh pycortex_maps_run_corr.sh~/disks/meso_H/projects MotConf ~/disks/meso_S/data
 # sh pycortex_maps_run_corr.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_S/data
-# sh pycortex_maps_run_corr.sh ~/disks/meso_H/projects amblyo_prf ~/disks/meso_S/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
