@@ -219,8 +219,6 @@ elif subject == 'sub-170k':
     # find all the subject correlations
     for task in tasks:
         subjects_task_corr = []
-
-        subjects = ['sub-02','sub-03']
         
         for subject in subjects: 
             corr_dir = '{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr'.format(
