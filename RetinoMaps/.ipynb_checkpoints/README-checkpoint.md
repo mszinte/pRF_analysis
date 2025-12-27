@@ -1,6 +1,6 @@
 # About
 ---
-*We here study cortical areas involved in both vision and eye movements in 20 healthy controls.</br>*
+*We here study cortical areas involved in both vision and eye movements processes in 20 healthy controls.</br>*
 *All the analyses are done in surface with both **fsnative** and **HCP 170k or 91k** format.</br>*
 *This repository contains all codes allowing us to analyse our dataset [OpenNeuro:DSXXXXX](https://openneuro.org/datasets/dsXXXX).</br>*
 
@@ -18,7 +18,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
 # Structural preprocessing 
 ---
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 - [x] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Create sagittal view video before manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
@@ -30,7 +30,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 # Functional preprocessing 
 ---
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
@@ -40,13 +40,13 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 # Inter-run correlations 
 ---
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 - [x] Compute inter-run correlation [compute_run_corr_sbatch](../analysis_code/preproc/functional/compute_run_corr_sbatch.py)
 - [x] Make maps with pycortex [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](../analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
 
-### *Groupe and template*
+### *Group-level analysis*
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 - [x] Compute inter-run correlation for **sub-170k** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
@@ -54,7 +54,7 @@ Analysis are run on the template of the HCP cifti format (**sub-170k**) in which
 
 # pRF 
 ---
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 #### PRF Gaussian fit
@@ -81,7 +81,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py) or [make_rois_fig.sh](../analysis_code/postproc/prf/postfit/make_rois_fig.sh)
 - [x] Merge all figures [merge_fig_css.py](../analysis_code/postproc/prf/postfit/merge_fig_css.py)
 
-### *Groupe and template*
+### *Group-level analysis*
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 #### PRF Gaussian fit
@@ -104,20 +104,20 @@ Analysis are run on the template of the HCP cifti format (**sub-170k**) in which
 
 # GLM 
 --- 
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 - [x] Run GLM for the differents tasks [glm_fit.py](glm/fit/glm_fit.py) or [glm_sbatch.py](glm/fit/glm_sbatch.py)
 - [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
 
-### *Groupe and template*
+### *Group-level analysis*
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 - [x] Compute GLM statistics for **sub-170k** [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
 
 # Inter task analysis 
 ---
-### *Individual subject*
+### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 - [x] Make intertasks image [make_intertask_img.py](intertask/make_intertask_img.py)
@@ -127,7 +127,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
 - [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
 
-### *Groupe and template*
+### *Group-level analysis*
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 - [x] Make intertasks image for **sub-170k** [make_intertask_img.py](intertask/make_intertask_img.py)
@@ -181,6 +181,3 @@ https://invibe.nohost.me/predicteye/
 ---
 - [x] Make pRF behaviour figure TSV [make_prf_beh_fig_tsv.py](pRF_beh/make_prf_beh_fig_tsv.py)
 - [x] Make pRF behaviour figure [make_prf_beh_fig.py](pRF_beh/make_prf_beh_fig.py)
-
-
-

@@ -217,8 +217,6 @@ if subject != 'sub-170k':
 # Sub-170k median
 elif subject == 'sub-170k':
     print('sub-170, computing median prf stats across subject...')
-
-    subjects = ['sub-02', 'sub-03']
     
     for prf_task_name in prf_task_names:
         
@@ -233,7 +231,7 @@ elif subject == 'sub-170k':
                     prf_deriv_dir, subject, prf_task_name,
                     preproc_prep, filtering, normalization, avg_method)]
     
-            # Computing median across subject
+            # Computing  across subject
             img, data_stat_median = median_subject_template(fns=prf_stats_fns)
             
             # Compute two sided corrected p-values
