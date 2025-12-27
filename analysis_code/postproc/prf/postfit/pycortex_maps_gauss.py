@@ -125,9 +125,11 @@ for avg_method in avg_methods:
             if format_ == 'fsnative':
                 pycortex_subject = subject
                 deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-gauss_deriv.func.gii'.format(
-                    prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
+                    prf_deriv_dir, subject, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
                 deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_prf-gauss_deriv.func.gii'.format(
-                    prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
+                    prf_deriv_dir, subject, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
                 results = load_surface_pycortex(L_fn=deriv_avg_fn_L, 
                                                 R_fn=deriv_avg_fn_R)
                 deriv_mat = results['data_concat']
@@ -135,15 +137,12 @@ for avg_method in avg_methods:
             elif format_ == '170k':
                 pycortex_subject = 'sub-170k'
                 deriv_avg_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii'.format(
-                    prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
+                    prf_deriv_dir, subject, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
                 results = load_surface_pycortex(brain_fn=deriv_avg_fn)
                 deriv_mat = results['data_concat']
                 if subject == 'sub-170k': save_svg = save_svg
                 else: save_svg = False
-            
-            print('Creating flatmaps...')
-            
-            maps_names = []
             
             # threshold data
             deriv_mat_th = deriv_mat
@@ -155,6 +154,11 @@ for avg_method in avg_methods:
             ecc_th_up = deriv_mat_th[prf_ecc_idx,...] <= analysis_info['ecc_th'][1]
             all_th = np.array((amp_down, rsqr_th_down, size_th_down, size_th_up, ecc_th_down, ecc_th_up)) 
             deriv_mat[prf_rsq_idx,np.logical_and.reduce(all_th)==False]=0
+
+            # Create flatmaps
+            print('Creating flatmaps...')
+            maps_names = []
+
             
             # r-square
             rsq_data = deriv_mat[prf_rsq_idx,...]
