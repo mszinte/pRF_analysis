@@ -43,6 +43,10 @@ import os
 import sys
 import json
 
+# Personal iports
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from pycortex_utils import set_pycortex_config_file
+
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
@@ -54,20 +58,24 @@ server_project = sys.argv[5]
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.json")
 
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
+
 with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
-nb_procs = 1
+nb_procs = 8
 memory_val = 48
 hour_proc = 20
 
 # Set folders
-log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs/prf".format(
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(
     main_dir, project_dir, subject)
-job_dir = "{}/{}/derivatives/pp_data/{}/jobs/prf".format(
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs".format(
     main_dir, project_dir, subject)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
@@ -87,7 +95,7 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {}".format(
+compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {}".format(
     main_dir, project_dir, subject, group)
 
 # Create sh fn
@@ -100,4 +108,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-#os.system("sbatch {}".format(sh_fn))
+os.system("sbatch {}".format(sh_fn))
