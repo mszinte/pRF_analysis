@@ -78,7 +78,6 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 prf_task_names = analysis_info['prf_task_names']
-maps_names_css = analysis_info['maps_names_css']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 preproc_prep = analysis_info['preproc_prep']
@@ -91,8 +90,7 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Maps settings 
-for idx, col_name in enumerate(maps_names_css + maps_names_css_stats + maps_names_pcm):
-    exec("{}_idx = idx".format(col_name))
+
 cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255
@@ -105,9 +103,21 @@ n_scale = analysis_info['flatmap_n_scale']
 
 
 for avg_method in avg_methods:
+
+    # define maps name
+    if 'loo' in avg_method: maps_names_css = analysis_info['maps_names_css_loo']
+    else: maps_names_css = analysis_info['maps_names_css']
+    for idx, col_name in enumerate(maps_names_css + maps_names_css_stats + maps_names_pcm):
+        exec("{}_idx = idx".format(col_name))
+    
     # define rsquared or loo-rsquared idx
-    if 'loo' in avg_method: rsq_idx2use = 'prf_loo_rsq'
+    if 'loo' in avg_method: 
+        rsq_idx2use = 'prf_loo_rsq'
+        rsq_description = 'CSS pRF LOO R2'
+        rsq_cbar_label = 'pRF LOO R2'
     else: rsq_idx2use = 'prf_rsq'
+        rsq_description = 'CSS pRF R2'
+        rsq_cbar_label = 'pRF R2'
     
     for format_ in formats:
     
@@ -190,7 +200,7 @@ for avg_method in avg_methods:
             # Threshold mat
             all_deriv_mat_th = all_deriv_mat
             amp_down = all_deriv_mat_th[amplitude_idx,...] > 0
-            rsq_down = all_deriv_mat_th[prf_loo_r2_idx,...] >= analysis_info['rsqr_th']
+            rsq_down = all_deriv_mat_th[rsq_idx2use,...] >= analysis_info['rsqr_th']
             size_th_down = all_deriv_mat_th[prf_size_idx,...] >= analysis_info['size_th'][0]
             size_th_up = all_deriv_mat_th[prf_size_idx,...] <= analysis_info['size_th'][1]
             ecc_th_down = all_deriv_mat_th[prf_ecc_idx,...] >= analysis_info['ecc_th'][0]
@@ -201,37 +211,33 @@ for avg_method in avg_methods:
             elif analysis_info['stats_th'] == 0.01: stats_th_down = all_deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
             all_th = np.array((amp_down, rsq_down, size_th_down,size_th_up, 
                                ecc_th_down, ecc_th_up, n_th_down, n_th_up,stats_th_down)) 
-            all_deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0
+            all_deriv_mat[rsq_idx2use, np.logical_and.reduce(all_th)==False]=0
 
-            
             # Create flatmaps
             print('Creating flatmaps...')
             maps_names = []
             
             # R-square and alpha (loo or not)
-            
-
-            
-            loo_rsq_data = all_deriv_mat[prf_loo_r2_idx,...]
-            alpha = loo_rsq_data
+            rsq_data = all_deriv_mat[rsq_idx2use,...]
+            alpha = rsq_data
             alpha_range = analysis_info["alpha_range"]
             alpha = (alpha - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
             alpha[alpha>1]=1
         
-            param_loo_rsq = {'data': loo_rsq_data, 
-                             'cmap': cmap_uni, 
-                             'alpha': alpha, 
-                             'vmin': rsq_scale[0], 
-                             'vmax': rsq_scale[1], 
-                             'cbar': 'discrete', 
-                             'cortex_type': 'VertexRGB',
-                             'description': 'CSS pRF LOO R2',
-                             'curv_brightness':1,
-                             'curv_contrast': 0.1,
-                             'add_roi': save_svg,
-                             'cbar_label': 'pRF LOO R2', 
-                             'with_labels': True}
-            maps_names.append('loo_rsq')
+            param_rsq = {'data': rsq_data, 
+                         'cmap': cmap_uni, 
+                         'alpha': alpha, 
+                         'vmin': rsq_scale[0], 
+                         'vmax': rsq_scale[1], 
+                         'cbar': 'discrete', 
+                         'cortex_type': 'VertexRGB',
+                         'description': rsq_description,
+                         'curv_brightness':1,
+                         'curv_contrast': 0.1,
+                         'add_roi': save_svg,
+                         'cbar_label': rsq_cbar_label, 
+                         'with_labels': True}
+            maps_names.append('rsq')
             
             # Polar angle
             pol_comp_num = all_deriv_mat[polar_real_idx,...] + 1j * all_deriv_mat[polar_imag_idx,...]
@@ -327,12 +333,16 @@ for avg_method in avg_methods:
             for maps_name in maps_names:
             
                 # create flatmap
-                roi_name = 'pRF_{}'.format(maps_name)
-                roi_param = {'subject': pycortex_subject, 'xfmname': None, 'roi_name': roi_name}
+                roi_name = 'prf_{}'.format(maps_name)
+                roi_param = {'subject': pycortex_subject, 
+                             'xfmname': None, 
+                             'roi_name': roi_name}
                 print(roi_name)
                 exec('param_{}.update(roi_param)'.format(maps_name))
                 exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-                exec("plt.savefig('{}/{}_task-{}_{}_css.pdf')".format(flatmaps_dir, subject, prf_task_name, maps_name))
+                exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}_css-{}.pdf')".format(
+                    flatmaps_dir, subject, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method, maps_name))
                 plt.close()
             
                 # save flatmap as dataset
@@ -341,7 +351,9 @@ for avg_method in avg_methods:
                 volumes.update({vol_description:volume})
             
             # save dataset
-            dataset_file = "{}/{}_task-{}_css_loo-median.hdf".format(datasets_dir, subject, prf_task_name)
+            dataset_file = "{}/{}_task-{}_{}_{}_{}_{}_css.hdf".format(
+                datasets_dir, subject, prf_task_name, 
+                preproc_prep, filtering, normalization, avg_method)
             if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
             dataset = cortex.Dataset(data=volumes)
             dataset.save(dataset_file)
