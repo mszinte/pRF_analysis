@@ -459,7 +459,7 @@ def median_subject_template(fns):
     from surface_utils import load_surface
     
     for n_file, fn in enumerate(fns) : 
-        print('adding {} to '.format(fn))
+        print('adding {}'.format(fn))
         # Load data
         img, data = load_surface(fn=fn)
     
