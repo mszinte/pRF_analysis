@@ -73,7 +73,6 @@ with open(settings_path) as f:
 vert_dist_th = analysis_info['vertex_pcm_rad']
 formats = analysis_info['formats']
 rois = analysis_info["rois"]
-maps_names_css = analysis_info['maps_names_css']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 maps_names_pcm = analysis_info['maps_names_pcm']
 subjects = analysis_info['subjects']
@@ -88,17 +87,23 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Derivatives and stats idx 
-# Maps settings 
-for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
-    exec("{}_idx = idx".format(col_name))
-
 # compute duration 
 start_time = datetime.datetime.now()
 
 if subject != 'sub-170k':
 
     for avg_method in avg_methods:
-        
+        if 'loo' in avg_method:
+            maps_names_css = analysis_info['maps_names_css_loo']
+            rsq_idx2use = prf_loo_rsq_idx
+        else:
+            maps_names_css = analysis_info['maps_names_css']
+            rsq_idx2use = prf_rsq_idx
+
+        # Maps settings 
+        for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
+            exec("{}_idx = idx".format(col_name))
+
         for format_ in formats:
             
             print(f'{avg_method} - {format_}')
@@ -177,7 +182,7 @@ if subject != 'sub-170k':
                 # Threshold data
                 deriv_mat_th = deriv_mat
                 amp_down = deriv_mat_th[amplitude_idx,...] > 0
-                rsq_down = deriv_mat_th[prf_loo_r2_idx,...] >= analysis_info['rsqr_th']
+                rsq_down = deriv_mat_th[rsq_idx2use,...] >= analysis_info['rsqr_th']
                 size_th_down = deriv_mat_th[prf_size_idx,...] >= analysis_info['size_th'][0]
                 size_th_up = deriv_mat_th[prf_size_idx,...] <= analysis_info['size_th'][1]
                 ecc_th_down = deriv_mat_th[prf_ecc_idx,...] >= analysis_info['ecc_th'][0]
@@ -188,7 +193,7 @@ if subject != 'sub-170k':
                 elif analysis_info['stats_th'] == 0.01: stats_th_down = deriv_mat_th[corr_pvalue_1pt_idx,...] <= 0.01
                 all_th = np.array((amp_down, rsq_down, size_th_down, size_th_up, ecc_th_down, 
                                    ecc_th_up,n_th_down, n_th_up,stats_th_down)) 
-                deriv_mat[prf_loo_r2_idx, np.logical_and.reduce(all_th)==False]=0
+                deriv_mat[rsq_idx2use, np.logical_and.reduce(all_th)==False]=0
         
                 # Get surfaces for each hemisphere
                 surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(subject, "flat")]
@@ -209,7 +214,7 @@ if subject != 'sub-170k':
                                           surf_size=surf_size)
                 
                 # Derivatives settings        
-                vert_rsq_data = deriv_mat[prf_loo_r2_idx, ...]
+                vert_rsq_data = deriv_mat[rsq_idx2use, ...]
                 vert_x_data = deriv_mat[prf_x_idx, ...]
                 vert_y_data = deriv_mat[prf_y_idx, ...]
                 vert_size_data = deriv_mat[prf_size_idx, ...]
@@ -235,7 +240,7 @@ if subject != 'sub-170k':
                                           surf_size=surf_size)
                 
                 # Derivatives settings        
-                vert_rsq_data = deriv_mat[prf_loo_r2_idx, ...]
+                vert_rsq_data = deriv_mat[rsq_idx2use, ...]
                 vert_x_data = deriv_mat[prf_x_idx, ...]
                 vert_y_data = deriv_mat[prf_y_idx, ...]
                 vert_size_data = deriv_mat[prf_size_idx, ...]

@@ -69,7 +69,6 @@ with open(settings_path) as f:
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-maps_names = analysis_info['maps_names_css']
 subjects = analysis_info['subjects']
 prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
@@ -87,6 +86,13 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 # sub-170k exception
 if subject != 'sub-170k':
     for avg_method in avg_methods:
+        if 'loo' in avg_method:
+            is_loo_r2 = True
+            maps_names = analysis_info['maps_names_css_loo']
+        else: 
+            is_loo_r2 = False
+            maps_names = analysis_info['maps_names_css']
+            
         for format_, extension in zip(formats, extensions):
 
             # define/create folders
@@ -108,9 +114,11 @@ if subject != 'sub-170k':
 
                     # get arrays
                     fit_img, fit_data = load_surface(fit_fn)
+                    
                     deriv_array = fit2deriv(fit_array=fit_data, 
                                             model='css', 
-                                            is_loo_r2=True)
+                                            is_loo_r2=is_loo_r2)
+                    
                     deriv_img = make_surface_image(data=deriv_array, 
                                                    source_img=fit_img, 
                                                    maps_names=maps_names)
