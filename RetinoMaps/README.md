@@ -85,8 +85,8 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 #### PRF Gaussian fit
-- [x] Compute pRF gaussian grid fit derivatives for **sub-170k** [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
-- [x] Make pRF maps with pycortex for **sub-170k**  [pycortex_maps_gridfit.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gridfit.py)
+- [x] Compute pRF gaussian grid fit derivatives for **sub-170k** [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
+- [x] Make pRF maps with pycortex for **sub-170k**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
 #### PRF ROIs
 - [x] Make ROIS files for **sub-170k** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)

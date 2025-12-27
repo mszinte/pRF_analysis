@@ -24,7 +24,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_gauss.py ~/disks/meso_S/data MotConf sub-01 n
+python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -159,7 +160,6 @@ for avg_method in avg_methods:
             print('Creating flatmaps...')
             maps_names = []
 
-            
             # r-square
             rsq_data = deriv_mat[prf_rsq_idx,...]
             alpha_range = analysis_info["alpha_range"]
