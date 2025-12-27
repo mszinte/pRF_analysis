@@ -24,6 +24,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
 python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -83,6 +84,8 @@ maps_names_corr = analysis_info['maps_names_corr']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
+corr_scale = analysis_info['flatmap_corr_scale']
+
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
@@ -95,7 +98,7 @@ for idx, col_name in enumerate(maps_names_corr):
     exec("{}_idx = idx".format(col_name))
 
 # Plot scales
-corr_scale = [-1, 1]
+
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
         main_dir, project_dir, subject, format_,
