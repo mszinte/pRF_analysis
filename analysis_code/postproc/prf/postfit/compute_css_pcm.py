@@ -26,6 +26,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -368,6 +369,7 @@ elif subject == 'sub-170k':
 
             # find all the subject prf stats
             prf_pcm_fns = []
+            subjects = ['sub-02', 'sub-03']
             for subject in subjects: 
                 prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
                     main_dir, project_dir, subject)
