@@ -23,6 +23,7 @@ python compute_run_corr.py [main directory] [project name] [subject name] [group
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -218,11 +219,17 @@ elif subject == 'sub-170k':
     # find all the subject correlations
     for task in tasks:
         subjects_task_corr = []
+
+        subjects = ['sub-02','sub-03']
+        
         for subject in subjects: 
-            subjects_task_corr += ["{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                main_dir, project_dir, subject, preproc_prep, filtering, normalization,
-                subject, task, preproc_prep, filtering, normalization)]
- 
+            corr_dir = '{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr'.format(
+                main_dir, project_dir, subject,
+                preproc_prep, filtering, normalization)
+            subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                corr_dir, subject, task, preproc_prep, filtering, normalization)]
+
+        
         # median across subject
         img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
         
@@ -249,7 +256,7 @@ elif subject == 'sub-170k':
         sub_170k_corr_img = make_surface_image(
             data=data_task_corr_median, source_img=img, maps_names=maps_names)
         nb.save(sub_170k_corr_img, sub_170k_cor_fn)
-            
+
 # Time
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
