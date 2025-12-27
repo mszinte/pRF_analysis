@@ -245,13 +245,10 @@ for avg_method in avg_methods:
                              'roi_name': roi_name}
                 print(roi_name)
                 exec('param_{}.update(roi_param)'.format(maps_name))
-                exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name = maps_name))
-                preproc_prep = analysis_info['preproc_prep']
-                filtering = analysis_info['filtering']
-                normalization = analysis_info['normalization']
-                avg_methods = analysis_info['avg_methods']
+                exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
                 exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}_gauss-{}.pdf')".format(
-                    flatmaps_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method, maps_name))
+                    flatmaps_dir, subject, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method, maps_name))
                 plt.close()
             
                 # save flatmap as dataset
@@ -261,8 +258,8 @@ for avg_method in avg_methods:
             
             # save dataset
             dataset_file = "{}/{}_task-{}_{}_{}_{}_{}_gauss.hdf".format(
-                    datasets_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)
-            
+                datasets_dir, subject, prf_task_name, 
+                preproc_prep, filtering, normalization, avg_method)
             if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
             dataset = cortex.Dataset(data=volumes)
             dataset.save(dataset_file)
