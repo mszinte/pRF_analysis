@@ -18,12 +18,13 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python compute_gauss_derivatives.py [main directory] [project name] [subject num] 
-                                       [group]
+>> python compute_gauss_derivatives.py [main directory] [project name] 
+                                       [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_gauss_derivatives.py /scratch/mszinte/data MotConf sub-01 327
+python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
+python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -72,6 +73,7 @@ maps_names_gauss = analysis_info['maps_names_gauss']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
+avg_methods = analysis_info['avg_methods']
 
 # sub-170k exception
 if subject != 'sub-170k':
@@ -110,7 +112,7 @@ if subject != 'sub-170k':
 # Sub-170k median          
 elif subject == 'sub-170k':
     print('sub-170, computing median derivatives across subject...')
-
+    
     for prf_task_name in prf_task_names:
         
         for avg_method in avg_methods:
@@ -118,15 +120,16 @@ elif subject == 'sub-170k':
                 continue  # Skip if it contains "loo"
             
             # find all the subject prf derivatives
-            derivatives = []
+            prf_deriv_fns = []
             for subject in subjects: 
-                
-                derivatives_fns = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/*task-{}*{}*prf-gauss_deriv.dtseries.nii".format(
-                    main_dir, project_dir, subject, prf_task_name, avg_method)
-                derivatives.extend(glob.glob(subjects_derivatives_fns))
-        
+                prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives'.format(
+                    main_dir, project_dir, subject)
+                prf_deriv_fns_subject = "{}/{}_task-{}*{}*prf-gauss_deriv.dtseries.nii".format(
+                     prf_deriv_dir, subject, prf_task_name, avg_method)
+                prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
+
             # Median across subject
-            img, data_deriv_median = median_subject_template(fns=derivatives)
+            img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
             
             # Export results
             sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
@@ -136,7 +139,7 @@ elif subject == 'sub-170k':
             sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
                 sub_170k_deriv_dir, prf_task_name, preproc_prep, filtering, normalization, avg_method)
             
-            print("save: {}".format(sub_170k_deriv_fn))
+            print("saving: {}".format(sub_170k_deriv_fn))
             sub_170k_deriv_img = make_surface_image(
                 data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
             nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)

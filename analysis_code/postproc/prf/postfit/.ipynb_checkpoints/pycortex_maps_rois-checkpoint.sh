@@ -16,13 +16,14 @@
 # To run:
 # 0. TO RUN ON INVIBE SERVER (with Inkscape)
 # 1. cd to function
-# >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit
+# >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # 2. run python command
 # >> sh pycortex_maps_rois.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects MotConf /home/mszinte/disks/meso_S/data
+# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects RetinoMaps
+#                          /home/mszinte/disks/meso_S/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
