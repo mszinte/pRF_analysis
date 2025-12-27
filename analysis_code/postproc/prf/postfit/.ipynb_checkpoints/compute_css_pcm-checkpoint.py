@@ -95,14 +95,14 @@ if subject != 'sub-170k':
     for avg_method in avg_methods:
         if 'loo' in avg_method:
             maps_names_css = analysis_info['maps_names_css_loo']
-            rsq_idx2use = prf_loo_rsq_idx
         else:
             maps_names_css = analysis_info['maps_names_css']
-            rsq_idx2use = prf_rsq_idx
-
+            
         # Maps settings 
         for idx, col_name in enumerate(maps_names_css + maps_names_css_stats):
             exec("{}_idx = idx".format(col_name))
+        if 'loo' in avg_method: rsq_idx2use = prf_loo_rsq_idx
+        else: rsq_idx2use = prf_rsq_idx
 
         for format_ in formats:
             
