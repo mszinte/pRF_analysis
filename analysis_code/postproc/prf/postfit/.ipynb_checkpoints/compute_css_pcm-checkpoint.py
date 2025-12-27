@@ -358,34 +358,40 @@ if subject != 'sub-170k':
                     print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
                     nb.save(new_img, '{}/{}'.format(prf_deriv_dir, deriv_fn))
                 
-# # Sub-170k computing median
-# elif subject == 'sub-170k':
-#     print('sub-170, computing median pcm across subject...')
-    
-#     # find all the subject prf derivatives
-#     subjects_pcm = []
-#     for subject in subjects:
-#         subjects_pcm += ["{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-pcm_css_avg-loo-median.dtseries.nii".format(
-#                 main_dir, project_dir, subject, subject, prf_task_name)]
+# Sub-170k computing median
+elif subject == 'sub-170k':
+    print('sub-170, computing median pcm across subject...')
 
-#     # Compute median across subject
-#     img, data_pcm_median = median_subject_template(fns=subjects_pcm)
+    for prf_task_name in prf_task_names:
         
-#     # Export results
-#     sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-#             main_dir, project_dir)
-#     os.makedirs(sub_170k_pcm_dir, exist_ok=True)
-    
-#     sub_170k_pcm_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-pcm_css_loo-median.dtseries.nii".format(
-#         sub_170k_pcm_dir, prf_task_name)
-    
-#     print("Saving: {}".format(sub_170k_pcm_fn))
-    
-#     sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
-#                                           source_img=img, 
-#                                           maps_names=maps_names_pcm)
-#     nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
+        for avg_method in avg_methods:
 
+            # find all the subject prf stats
+            prf_pcm_fns = []
+            for subject in subjects: 
+                prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
+                    main_dir, project_dir, subject)
+                prf_pcm_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
+                    prf_deriv_dir, subject, prf_task_name,
+                    preproc_prep, filtering, normalization, avg_method)]
+
+             # Computing  across subject
+            img, data_pcm_median = median_subject_template(fns=prf_pcm_fns)
+    
+            # Export results
+            sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
+                    main_dir, project_dir)
+            os.makedirs(sub_170k_pcm_dir, exist_ok=True)
+            
+            sub_170k_pcm_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
+                sub_170k_pcm_dir, prf_task_name, 
+                preproc_prep, filtering, normalization, avg_method)
+            print("saving: {}".format(sub_170k_pcm_fn))
+            sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
+                                                  source_img=img, 
+                                                  maps_names=maps_names_pcm)
+            nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
+            
 # Print duration
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
