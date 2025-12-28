@@ -24,6 +24,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -100,7 +101,7 @@ rsq_scale = analysis_info['flatmap_rsq_scale']
 ecc_scale = analysis_info['flatmap_ecc_scale']
 size_scale = analysis_info['flatmap_size_scale']
 n_scale = analysis_info['flatmap_n_scale']
-
+pcm_scale = analysis_info['flatmap_pcm_scale']
 
 for avg_method in avg_methods:
 
@@ -109,13 +110,14 @@ for avg_method in avg_methods:
     else: maps_names_css = analysis_info['maps_names_css']
     for idx, col_name in enumerate(maps_names_css + maps_names_css_stats + maps_names_pcm):
         exec("{}_idx = idx".format(col_name))
-    
+
     # define rsquared or loo-rsquared idx
     if 'loo' in avg_method: 
-        rsq_idx2use = 'prf_loo_rsq'
+        rsq_idx2use = prf_loo_rsq_idx
         rsq_description = 'CSS pRF LOO R2'
         rsq_cbar_label = 'pRF LOO R2'
-    else: rsq_idx2use = 'prf_rsq'
+    else: 
+        rsq_idx2use = prf_rsq_idx
         rsq_description = 'CSS pRF R2'
         rsq_cbar_label = 'pRF R2'
     
@@ -196,7 +198,7 @@ for avg_method in avg_methods:
         
             # Combine mat
             all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
-        
+
             # Threshold mat
             all_deriv_mat_th = all_deriv_mat
             amp_down = all_deriv_mat_th[amplitude_idx,...] > 0
