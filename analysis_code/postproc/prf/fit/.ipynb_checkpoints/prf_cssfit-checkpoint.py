@@ -139,7 +139,6 @@ polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
 exponent_css_grid = np.linspace(n_th[0], n_th[1], css_grid_nr)
 
 # Load data
-filter_rois = 1
 if filter_rois:
     img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
                                                   subject=subject, 

@@ -23,7 +23,7 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python averaging_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
+python averaging_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -63,6 +63,7 @@ proj_name = analysis_info['project_name']
 nb_procs = 8
 memory_val = 48
 hour_proc = 10
+if project_dir == 'amblyo7T_prf': hour_proc = 1
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, project_dir, subject)
