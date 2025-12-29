@@ -89,7 +89,7 @@ def load_rois_atlas(atlas_name, surf_size, return_hemis=False, rois=None, mask=T
             raise ValueError("Invalid value for 'rois'. It should be either None or a list of ROI names.")
 
             
-def data_from_rois(fn, subject, rois, filter_rois=True):
+def data_from_rois(fn, subject, rois):
     """
     Load a surface, and returne vertex only data from the specified ROIs
     ----------
@@ -134,33 +134,23 @@ def data_from_rois(fn, subject, rois, filter_rois=True):
     # na_vertices = np.where(np.isnan(data).any(axis=0))[0]
     brain_mask = np.any(list(roi_verts.values()), axis=0)
     
-    if filter_rois:
-        # Filter out NaN vertices
-        na_vertices = np.isnan(data).any(axis=0)
-        
-        # create a hemi mask  
-        if 'hemi-L' in fn:
-            hemi_mask = brain_mask[:len_data]
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-            
-        elif 'hemi-R' in fn: 
-            hemi_mask = brain_mask[-len_data:]
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-        else: 
-            hemi_mask = brain_mask
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-    else:
-        # Don't filter NaN vertices, use brain_mask directly
-        if 'hemi-L' in fn:
-            hemi_mask = brain_mask[:len_data]
-        elif 'hemi-R' in fn:
-            hemi_mask = brain_mask[-len_data:]
-        else:
-            hemi_mask = brain_mask
+    # Filter out NaN vertices
+    na_vertices = np.isnan(data).any(axis=0)
     
+    # create a hemi mask  
+    if 'hemi-L' in fn:
+        hemi_mask = brain_mask[:len_data]
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
+        
+    elif 'hemi-R' in fn: 
+        hemi_mask = brain_mask[-len_data:]
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
+    else: 
+        hemi_mask = brain_mask
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
     
     # Get indices of regions of interest (ROIs)
     roi_idx = np.where(hemi_mask)[0]
