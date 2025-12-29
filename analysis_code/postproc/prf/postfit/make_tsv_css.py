@@ -68,7 +68,6 @@ extensions = analysis_info['extensions']
 rois = analysis_info['rois']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
-maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm
 prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
@@ -84,24 +83,25 @@ set_pycortex_config_file(cortex_dir)
 if subject != 'sub-170k':
     for avg_method in avg_methods:
         if 'loo' in avg_method:
-            is_loo_r2 = True
-            maps_names = analysis_info['maps_names_css_loo']
+            maps_names_css = analysis_info['maps_names_css_loo']
         else: 
-            is_loo_r2 = False
-            maps_names = analysis_info['maps_names_css']
-            
+            maps_names_css = analysis_info['maps_names_css']
+
+        maps_names = maps_names_css + maps_names_css_stats + maps_names_pcm
+        
         for format_, extension in zip(formats, extensions):
 
-            
-            prf_dir = '{}/{}/{}/prf'.format(
-                    pp_dir, subject, format_)
-            prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
-                pp_dir, subject, format_)
+            prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
+                main_dir, project_dir, subject, format_)
+            prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
+
             tsv_dir = "{}/tsv".format(prf_dir)
             os.makedirs(tsv_dir, exist_ok=True)
             for prf_task_name in prf_task_names:
+                
+                print(f'{prf_task_name} - {avg_method} - {format_}')
                 tsv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css-deriv.tsv'.format(
-                    tsv_dir, subject, prf_task_name
+                    tsv_dir, subject, prf_task_name,
                     preproc_prep, filtering, normalization, avg_method)
         
                 # Load all data
@@ -115,24 +115,30 @@ if subject != 'sub-170k':
                         deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
                             prf_deriv_dir, subject, prf_task_name, hemi,
                             preproc_prep, filtering, normalization, avg_method)
+                        print(f'loading {deriv_fn}')
                         deriv_img, deriv_mat = load_surface(deriv_fn)
-                    
+                        
+                        
                         # Stats
                         stats_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_stats.func.gii'.format(
                             prf_deriv_dir, subject, prf_task_name, hemi,
                             preproc_prep, filtering, normalization, avg_method)
+                        print(f'loading {stats_fn}')
                         stats_img, stats_mat = load_surface(stats_fn)
+                        
 
                         # pCM
                         pcm_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
                             prf_deriv_dir, subject, prf_task_name, hemi,
                             preproc_prep, filtering, normalization, avg_method)
+                        print(f'loading {pcm_fn}')
                         pcm_img, pcm_mat = load_surface(pcm_fn)
+                        
 
                         # Combine all derivatives
                         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
             
-                        # Get roi mask
+                        # Get roi masks
                         roi_verts = get_rois(subject=pycortex_subject, 
                                               return_concat_hemis=False, 
                                               return_hemi=hemi, 
@@ -142,6 +148,7 @@ if subject != 'sub-170k':
                                               surf_size=None)
                     
                         # Create and combine pandas df for each roi and brain hemisphere
+                        print('Creating dataframe...')
                         for roi in roi_verts.keys():
                             data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
                             data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
@@ -157,24 +164,27 @@ if subject != 'sub-170k':
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name,
                         preproc_prep, filtering, normalization, avg_method)
+                    print(f'loading {deriv_fn}')
                     deriv_img, deriv_mat = load_surface(deriv_fn)
-            
+                    
                     # Stats
                     stats_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name,
                         preproc_prep, filtering, normalization, avg_method)
+                    print(f'loading {stats_fn}')
                     stats_img, stats_mat = load_surface(stats_fn)
-            
+                    
                     # pRF CM
                     pcm_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name,
                         preproc_prep, filtering, normalization, avg_method)
+                    print(f'loading {pcm_fn}')
                     pcm_img, pcm_mat = load_surface(pcm_fn)
                     
                     # Combine all derivatives
                     all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
                 
-                    # Get roi mask
+                    # Get roi masks
                     roi_verts_L, roi_verts_R = get_rois(subject=subject,
                                                         return_concat_hemis=False,
                                                         return_hemi=None,
@@ -197,6 +207,7 @@ if subject != 'sub-170k':
                                                                     mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
             
                     # Create and combine pandas df for each roi and brain hemisphere
+                    print('Creating dataframe...')
                     for hemi in ['hemi-L', 'hemi-R']:
                         if hemi == 'hemi-L': roi_verts = roi_verts_L
                         elif hemi == 'hemi-R': roi_verts = roi_verts_R
