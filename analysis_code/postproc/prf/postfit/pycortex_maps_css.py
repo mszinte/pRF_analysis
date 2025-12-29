@@ -315,9 +315,11 @@ for avg_method in avg_methods:
             
             # pcm
             pcm_data = all_deriv_mat[pcm_median_idx,...]
+            alpha_pcm = np.copy(alpha)
+            alpha_pcm[np.isnan(pcm_data)]=0 # do that to avoid error of color outside ROIs for nan values
             param_pcm = {'data': pcm_data, 
                          'cmap': cmap_ecc_size, 
-                         'alpha': alpha, 
+                         'alpha': alpha_pcm, 
                          'vmin': pcm_scale[0], 
                          'vmax': pcm_scale[1], 
                          'cbar': 'discrete', 
