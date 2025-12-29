@@ -32,7 +32,7 @@ and Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
-# Debug 
+# Debug
 import ipdb
 deb = ipdb.set_trace
 
@@ -51,7 +51,7 @@ from nilearn.glm.first_level.design_matrix import _cosine_drift
 
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
-from surface_utils import load_surface , make_surface_image
+from surface_utils import load_surface, make_surface_image
 from pycortex_utils import set_pycortex_config_file
 
 # Time
@@ -87,17 +87,17 @@ avg_methods = analysis_info['avg_methods']
 for format_, extension in zip(formats, extensions):
     for avg_method in avg_methods:
         os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}".format(
-            main_dir, project_dir, subject, format_, preproc_prep, 
+            main_dir, project_dir, subject, format_, preproc_prep,
             filtering, normalization, avg_method), exist_ok=True)
 
-# Find all preprocessed files 
+# Find all preprocessed files
 preproc_fns = []
 for format_, extension in zip(formats, extensions):
     list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
             main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, extension))
     preproc_fns.extend(list_)
 
-# Split filtered files  depending of their nature
+# Split filtered files depending on their nature
 preproc_fsnative_hemi_L, preproc_fsnative_hemi_R, preproc_170k = [], [], []
 for subtype in preproc_fns:
     if "hemi-L" in subtype:
@@ -106,7 +106,7 @@ for subtype in preproc_fns:
         preproc_fsnative_hemi_R.append(subtype)
     elif "170k" in subtype:
         preproc_170k.append(subtype)
-        
+
 preproc_files_list = [preproc_fsnative_hemi_L,
                       preproc_fsnative_hemi_R,
                       preproc_170k]
@@ -114,55 +114,55 @@ preproc_files_list = [preproc_fsnative_hemi_L,
 # Concatenate files by eye condition
 print("\nConcatenating runs by eye condition")
 for preproc_files in preproc_files_list:
-    
+
     if not preproc_files:
         continue
-    
-    if preproc_files[0].find('hemi-L') != -1: 
+
+    if preproc_files[0].find('hemi-L') != -1:
         hemi = 'hemi-L'
         mask_key = 'fsnative_hemi-L'
-    elif preproc_files[0].find('hemi-R') != -1: 
+    elif preproc_files[0].find('hemi-R') != -1:
         hemi = 'hemi-R'
         mask_key = 'fsnative_hemi-R'
-    else: 
+    else:
         hemi = None
         mask_key = '170k'
-    
+
     # Separate by eye condition
     left_eye_files = sorted([f for f in preproc_files if 'LeftEye' in f])
     right_eye_files = sorted([f for f in preproc_files if 'RightEye' in f])
-    
+
     for eye_files, eye_label in [(left_eye_files, 'LeftEye'), (right_eye_files, 'RightEye')]:
-        
+
         if not eye_files:
             continue
         print(f"  Concatenating {len(eye_files)} files for {eye_label} ({mask_key})")
-        
+
         # Load all files and concatenate along time axis
         all_data = []
-        
+
         for fn in eye_files:
             print(f"    Loading: {fn}")
             img, data = load_surface(fn=fn)
             all_data.append(data)
             concat_img = img
-        
+
         # Concatenate along time (axis 0)
         concat_data = np.concatenate(all_data, axis=0)
-        
+
         # Check for vertices with all NaN values in the concatenated data
         nan_vertices = np.all(np.isnan(concat_data), axis=0)
-        
+
         # If any vertex is all NaN, set the entire time series for that vertex to NaN
         if np.any(nan_vertices):
             concat_data[:, nan_vertices] = np.nan
-        
+
         # Create output directory and filename based on hemi
         if hemi:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat".format(
                 main_dir, project_dir, subject, preproc_prep, filtering, normalization)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_{}_concat_bold.func.gii".format(
+            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_concat_bold.func.gii".format(
                 output_dir, subject, eye_label, hemi, preproc_prep, filtering, normalization)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat".format(
@@ -170,17 +170,17 @@ for preproc_files in preproc_files_list:
             os.makedirs(output_dir, exist_ok=True)
             concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_concat_bold.dtseries.nii".format(
                 output_dir, subject, eye_label, preproc_prep, filtering, normalization)
-        
+
         print(f"    Saved: {concat_fn}")
         concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
         nb.save(concat_img_final, concat_fn)
 
-## Time
+# Time
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
-        start_time=start_time,
-        end_time=end_time,
-        dur=end_time - start_time))
+    start_time=start_time,
+    end_time=end_time,
+    dur=end_time - start_time))
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
