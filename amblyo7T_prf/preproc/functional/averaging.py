@@ -52,7 +52,6 @@ from nilearn.glm.first_level.design_matrix import _cosine_drift
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface, make_surface_image
-from pycortex_utils import set_pycortex_config_file
 
 # Time
 start_time = datetime.datetime.now()
@@ -62,10 +61,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
-
-# Set pycortex db and colormaps
-cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
-set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -82,6 +77,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+prf_task_names = analysis_info['prf_task_names']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
@@ -113,35 +109,46 @@ preproc_files_list = [preproc_fsnative_hemi_L,
 
 # Concatenate files by eye condition
 print("\nConcatenating runs by eye condition")
-for preproc_files in preproc_files_list:
-
-    if not preproc_files:
-        continue
-
-    if preproc_files[0].find('hemi-L') != -1:
-        hemi = 'hemi-L'
-        mask_key = 'fsnative_hemi-L'
-    elif preproc_files[0].find('hemi-R') != -1:
-        hemi = 'hemi-R'
-        mask_key = 'fsnative_hemi-R'
-    else:
-        hemi = None
-        mask_key = '170k'
-
-    # Separate by eye condition
-    left_eye_files = sorted([f for f in preproc_files if 'LeftEye' in f])
-    right_eye_files = sorted([f for f in preproc_files if 'RightEye' in f])
-
-    for eye_files, eye_label in [(left_eye_files, 'LeftEye'), (right_eye_files, 'RightEye')]:
-
-        if not eye_files:
+for prf_task_name in prf_task_names:
+    for preproc_files in preproc_files_list:
+    
+        if not preproc_files:
             continue
-        print(f"  Concatenating {len(eye_files)} files for {eye_label} ({mask_key})")
-
+    
+        if preproc_files[0].find('hemi-L') != -1:
+            hemi = 'hemi-L'
+            mask_key = 'fsnative_hemi-L'
+        elif preproc_files[0].find('hemi-R') != -1:
+            hemi = 'hemi-R'
+            mask_key = 'fsnative_hemi-R'
+        else:
+            hemi = None
+            mask_key = '170k'
+        
+        if prf_task_name.endswith('RightEye'): eye_label = 'RightEye'
+        elif prf_task_name.endswith('LeftEye'): eye_label = 'LeftEye'
+        
+        if 'BarsBarsRingsWedges' in prf_task_name:
+            bold_fns = sorted(
+                [f for f in preproc_files if eye_label in f and ('Bars' in f or 'Rings' in f or 'Wedges' in f)],
+                key=lambda x: (
+                    0 if 'Bars' in x else 1 if 'Rings' in x else 2,
+                    0 if 'run-01' in x else 1 if 'run-02' in x else 2))
+        elif 'BarsBars' in prf_task_name:
+            bold_fns = sorted(
+                [f for f in preproc_files if eye_label in f and 'Bars' in f],
+                key=lambda x: (0 if 'run-01' in x else 1 if 'run-02' in x else 2))
+        elif 'RingsWedges' in prf_task_name:
+            bold_fns = sorted(
+                [f for f in preproc_files if eye_label in f and ('Rings' in f or 'Wedges' in f)],
+                key=lambda x: (0 if 'Rings' in x else 1))
+    
+        print(f"  Concatenating {len(bold_fns)} files for {prf_task_name} ({mask_key})")
+    
         # Load all files and concatenate along time axis
         all_data = []
 
-        for fn in eye_files:
+        for fn in bold_fns:
             print(f"    Loading: {fn}")
             img, data = load_surface(fn=fn)
             all_data.append(data)
@@ -162,14 +169,14 @@ for preproc_files in preproc_files_list:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat".format(
                 main_dir, project_dir, subject, preproc_prep, filtering, normalization)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_concat_bold.func.gii".format(
-                output_dir, subject, eye_label, hemi, preproc_prep, filtering, normalization)
+            concat_fn = "{}/{}_task-{}_{}_{}_{}_concat_bold.func.gii".format(
+                output_dir, subject, prf_task_name, hemi, preproc_prep, filtering, normalization)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat".format(
                 main_dir, project_dir, subject, preproc_prep, filtering, normalization)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-pRF{}_{}_{}_{}_concat_bold.dtseries.nii".format(
-                output_dir, subject, eye_label, preproc_prep, filtering, normalization)
+            concat_fn = "{}/{}_task-{}_{}_{}_{}_concat_bold.dtseries.nii".format(
+                output_dir, subject, prf_task_name, preproc_prep, filtering, normalization)
 
         print(f"    Saved: {concat_fn}")
         concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
