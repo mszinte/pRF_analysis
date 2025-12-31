@@ -119,7 +119,7 @@ def plotly_template(template_specs):
     return fig_template
 
 
-def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colors):
+def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colors, format):
     """
     Make bar plots of each roi number of vertex and the corresponding significative activer vertex for pRF  
     
@@ -129,6 +129,7 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     fig_width : figure width in pixels
     fig_height : figure height in pixels
     roi_colors : dictionary with keys as roi and value correspondig rgb color
+    format : format of data to define axis size
     
     Returns
     -------
@@ -197,8 +198,13 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     fig.update_xaxes(showline=True, 
                      ticklen=0, 
                      linecolor=('rgba(255,255,255,0)'))      
+
+    if format == 'fsnative':
+        range_val = [0,16000]
+    elif format == '170k':
+        range_val = [0,10000]
     
-    fig.update_yaxes(range=[0,16000], 
+    fig.update_yaxes(range=range_val, 
                      showline=True, 
                      nticks=10, 
                      title_text='Number of vertex',secondary_y=False)
@@ -216,7 +222,7 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     # Return outputs
     return fig
 
-def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
+def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2use):
     """
     Make violins plots for pRF loo_r2, size, n and pcm
 
@@ -227,6 +233,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
     fig_height : figure height in pixels
     rois : list of rois
     roi_colors : dictionary with keys as roi and value correspondig rgb color
+    rsq2use : rsquare value to use
     
     Returns
     -------
@@ -259,7 +266,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
         
         # pRF loo r2
         fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-                                y=df.prf_loo_r2, 
+                                y=df[rsq2use], 
                                 name=roi, 
                                 opacity=1,
                                 showlegend=False, 
@@ -331,10 +338,15 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
                       row=2, col=2)
         
         # Set axis titles only for the left-most column and bottom-most row
+        if 'loo' in rsq2use:
+            title_y = 'pRF LOO R<sup>2</sup>'
+        else:
+            title_y = 'pRF R<sup>2</sup>'
+            
         fig.update_yaxes(showline=True, 
                          range=[0, 1],
                          nticks=10, 
-                         title_text='pRF LOO R<sup>2</sup>',
+                         title_text=title_y,
                          row=1, col=1)
         
         fig.update_yaxes(showline=True, 
@@ -384,7 +396,7 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors):
 
     return fig
 
-def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_colors):
+def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_colors, rsq2use):
     """
     Make parameters median plots for pRF loo_r2, size, n and pcm
 
@@ -395,6 +407,7 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
     fig_height : figure height in pixels
     rois : list of rois
     roi_colors : dictionary with keys as roi and value correspondig rgb color
+    rsq2use : rsquare to use
     
     Returns
     -------
@@ -423,10 +436,10 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
     for j, roi in enumerate(rois):
         
         df = df_params_avg.loc[(df_params_avg.roi == roi)]
-
-        weighted_median = df.prf_loo_r2_weighted_median
-        ci_up = df.prf_loo_r2_ci_up
-        ci_down = df.prf_loo_r2_ci_down
+        
+        weighted_median = df[f'{rsq2use}_weighted_median']
+        ci_up = df[f'{rsq2use}_ci_up']
+        ci_down = df[f'{rsq2use}_ci_down']
         
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
@@ -550,6 +563,10 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
 
         
         # Set axis titles only for the left-most column and bottom-most row
+        if 'loo' in rsq2use:
+            title_y = 'pRF LOO R<sup>2</sup>',
+        else:
+            title_y = 'pRF R<sup>2</sup>',
         fig.update_yaxes(showline=True, 
                          range=[0, 1],
                          nticks=10, 
@@ -602,7 +619,7 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
 
     return fig
 
-def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc):
+def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc, rsq2use):
     """
     Make scatter plot for linear relationship between eccentricity and size
 
@@ -615,6 +632,7 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
     roi_colors : dictionary with keys as roi and value correspondig rgb color
     plot_groups : groups of roi to plot together
     max_ecc : maximum eccentricity 
+    rsq2use : rsquare to use
     
     Returns
     -------
@@ -650,7 +668,7 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
             df = df_ecc_size.loc[(df_ecc_size.roi == roi)]
             ecc_median = np.array(df.prf_ecc_bins)
             size_median = np.array(df.prf_size_bins_median)
-            r2_median = np.array(df.prf_loo_r2_bins_median)
+            r2_median = np.array(df[f'{rsq2use}_bins_median'])
             size_upper_bound = np.array(df.prf_size_bins_ci_upper_bound)
             size_lower_bound = np.array(df.prf_size_bins_ci_lower_bound)
             
@@ -716,7 +734,7 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
         
     return fig
 
-def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc):
+def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc, rsq2use):
     """
     Make scatter plot for relationship between eccentricity and pCM
 
@@ -729,6 +747,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
     roi_colors : dictionary with keys as roi and value correspondig rgb color
     plot_groups : groups of roi to plot together
     max_ecc : maximum eccentricity
+    rsq2use : rsquare to use
     
     Returns
     -------
@@ -764,7 +783,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
             df = df_ecc_pcm.loc[(df_ecc_pcm.roi == roi)]
             ecc_median = np.array(df.prf_ecc_bins)
             pcm_median = np.array(df.prf_pcm_bins_median)
-            r2_median = np.array(df.prf_loo_r2_bins_median)
+            r2_median = np.array(df[f'{rsq2use}_bins_median'])
             pcm_upper_bound = np.array(df.prf_pcm_bins_ci_upper_bound)
             pcm_lower_bound = np.array(df.prf_pcm_bins_ci_lower_bound)
             
@@ -821,7 +840,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
                           row=1, col=l + 1)
             
             # Add legend
-            annotation = go.layout.Annotation(x=12, y=(20)-j*2, text=roi, xanchor='left',
+            annotation = go.layout.Annotation(x=12, y=(15)-j*1.5, text=roi, xanchor='left',
                                               showarrow=False, font_color=roi_color, 
                                               font_family=template_specs['font'],
                                               font_size=template_specs['axes_font_size'],
@@ -831,7 +850,7 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
         # Set axis titles only for the left-most column and bottom-most row
         fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', row=1, col=1)
         fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True, row=1, col=l+1)
-        fig.update_yaxes(range=[0, 20], showline=True)
+        fig.update_yaxes(range=[0, 15], showline=True)
         fig.update_layout(height=fig_height, width=fig_width, showlegend=False, template=fig_template,
                          margin_l=100, margin_r=50, margin_t=50, margin_b=100)
         
