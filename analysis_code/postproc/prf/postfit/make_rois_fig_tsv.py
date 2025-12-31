@@ -18,8 +18,7 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
-python make_rois_fig.py [main directory] [project name] [subject] 
-                        [group] [analysis folder - optional]
+python make_rois_fig.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -103,15 +102,13 @@ hot_zone_percent = figure_info['hot_zone_percent']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 
-# Format loop
+# Main loop
 for avg_method in avg_methods:
-    if 'loo' in avg_method: 
-        rsq2use = 'prf_loo_rsq'
-    else: 
-        rsq2use = 'prf_rsq'
+    if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
+    else: rsq2use = 'prf_rsq'
         
     for format_, extension in zip(formats, extensions):
-        print(format_)
+        
         for prf_task_name in prf_task_names:
 
             print(f'{prf_task_name} - {avg_method} - {format_}')
@@ -121,9 +118,10 @@ for avg_method in avg_methods:
                 print('Subject {} is processed'.format(subject))
                 tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                     main_dir, project_dir, subject, format_)
-                tsv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css-deriv.tsv'.format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                fn_spec = "task-{}_{}_{}_{}_{}".format(
+                    prf_task_name, preproc_prep, filtering, normalization, avg_method)
+                tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(
+                    tsv_dir, subject, fn_spec)
                 data = pd.read_table(tsv_fn, sep="\t")
                
                 # Keep a raw data df 
@@ -181,18 +179,16 @@ for avg_method in avg_methods:
                 df_roi_active_vert = df_roi_active_vert.fillna(0)
                    
                 # Export tsv
-                tsv_roi_active_vert_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_active-vert.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_roi_active_vert_fn))
                 df_roi_active_vert.to_csv(tsv_roi_active_vert_fn, sep="\t", na_rep='NaN', index=False)
             
                 # Violins
                 # -------
                 df_violins = data
-                tsv_violins_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_violins.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_violins_fn))
                 df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -226,11 +222,9 @@ for avg_method in avg_methods:
             
                     if num_roi == 0: df_params_median = df_params_median_roi
                     else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
-
                 
-                tsv_params_median_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_params-median.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_params_median_fn))
                 df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -246,16 +240,15 @@ for avg_method in avg_methods:
                     df_ecc_size_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
                     df_ecc_size_bin['prf_size_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
                     df_ecc_size_bin[f'{rsq2use}_bins_median'] = np.array(df_bins[rsq2use].median())
-                    df_ecc_size_bin['prf_size_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 75)).values
-                    df_ecc_size_bin['prf_size_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 25)).values
+                    df_ecc_size_bin['prf_size_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
+                    df_ecc_size_bin['prf_size_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
                     if num_roi == 0: df_ecc_size_bins = df_ecc_size_bin
                     else: df_ecc_size_bins = pd.concat([df_ecc_size_bins, df_ecc_size_bin]) 
                 
                 df_ecc_size = df_ecc_size_bins
                 
-                tsv_ecc_size_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_ecc-size.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_ecc_size_fn))
                 df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -279,9 +272,8 @@ for avg_method in avg_methods:
             
                 df_ecc_pcm = df_ecc_pcm_bins
         
-                tsv_ecc_pcm_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css-ecc-pcm.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
                 df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -311,9 +303,8 @@ for avg_method in avg_methods:
                             
                 df_polar_angle = df_polar_angle_bins
         
-                tsv_polar_angle_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_polar-angle.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_polar_angle_fn))
                 df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -336,9 +327,8 @@ for avg_method in avg_methods:
                     if j == 0: df_contralaterality = df_contralaterality_roi
                     else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_roi]) 
         
-                tsv_contralaterality_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_contralaterality.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
                     
                 # Spatial distribution 
@@ -354,9 +344,8 @@ for avg_method in avg_methods:
                     if i == 0: df_distribution = df_distribution_hemi
                     else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
         
-                tsv_distribution_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_distribution.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_distribution_fn))
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -375,9 +364,8 @@ for avg_method in avg_methods:
                     if i == 0: df_barycentre = df_barycentre_hemi
                     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                 
-                tsv_barycentre_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_barycentre.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_barycentre_fn))
                 df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                 
@@ -390,18 +378,16 @@ for avg_method in avg_methods:
             
                     # ROI surface areas 
                     # -----------------
-                    tsv_roi_area_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_active-vert.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_roi_area_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_roi_area_indiv = pd.read_table(tsv_roi_area_fn, sep="\t")
                     if i == 0: df_roi_area = df_roi_area_indiv.copy()
                     else: df_roi_area = pd.concat([df_roi_area, df_roi_area_indiv])
             
                     # Violins
                     # -------
-                    tsv_violins_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_violins.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_violins_indiv = pd.read_table(tsv_violins_fn, sep="\t")
                     if i == 0: df_violins = df_violins_indiv.copy()
                     else: df_violins = pd.concat([df_violins, df_violins_indiv])
@@ -412,45 +398,40 @@ for avg_method in avg_methods:
             
                     # Ecc.size
                     # --------
-                    tsv_ecc_size_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_ecc-size.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_ecc_size_indiv = pd.read_table(tsv_ecc_size_fn, sep="\t")
                     if i == 0: df_ecc_size = df_ecc_size_indiv.copy()
                     else: df_ecc_size = pd.concat([df_ecc_size, df_ecc_size_indiv])
             
                     # Ecc.pCM
                     # -------
-                    tsv_ecc_pcm_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_pcm-size.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_pcm-size.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_ecc_pcm_indiv = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
                     if i == 0: df_ecc_pcm = df_ecc_pcm_indiv.copy()
                     else: df_ecc_pcm = pd.concat([df_ecc_pcm, df_ecc_pcm_indiv])
             
                     # Polar angle
                     # -----------
-                    tsv_polar_angle_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_polar-angle.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_polar_angle_indiv = pd.read_table(tsv_polar_angle_fn, sep="\t")
                     if i == 0: df_polar_angle = df_polar_angle_indiv.copy()
                     else: df_polar_angle = pd.concat([df_polar_angle, df_polar_angle_indiv])
             
                     # Contralaterality
                     # ----------------
-                    tsv_contralaterality_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_contralaterality.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_contralaterality_indiv = pd.read_table(tsv_contralaterality_fn, sep="\t")
                     if i == 0: df_contralaterality = df_contralaterality_indiv.copy()
                     else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_indiv])
                     
                     # Spatial distribution 
                     # -------------------
-                    tsv_distribution_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_distribution.tsv".format(
-                        tsv_dir, subject_to_group, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)                    
+                    tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
+                        tsv_dir, subject_to_group, fn_spec)
                     df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
                     mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
                     others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
@@ -466,18 +447,16 @@ for avg_method in avg_methods:
                 # ROI surface areas 
                 # -----------------
                 df_roi_area = df_roi_area.groupby(['roi'], sort=False).median().reset_index()
-                tsv_roi_area_fn =  "{}/{}_task-{}_{}_{}_{}_{}_prf-css_active-vert.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_roi_area_fn =  "{}/{}_{}_prf-css_active-vert.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_roi_area_fn))
                 df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
                 
                 # Violins
                 # -------
                 df_violins = df_violins # no averaging
-                tsv_violins_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_violins.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_violins_fn))
                 df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
 
@@ -504,53 +483,47 @@ for avg_method in avg_methods:
                         lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 97.5)) 
         
                 df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                tsv_params_median_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_params-median.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_params_median_fn))
                 df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
                 
                 # Ecc.size
                 # --------
                 df_ecc_size = df_ecc_size.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
-                tsv_ecc_size_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_ecc-size.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)                
+                tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_ecc_size_fn))
                 df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
             
                 # Ecc.pCM
                 # -------
                 df_ecc_pcm = df_ecc_pcm.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
-                tsv_ecc_pcm_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_ecc-pcm.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
                 df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
             
                 # Polar angle
                 # -----------
                 df_polar_angle = df_polar_angle.groupby(['roi', 'hemi', 'num_bins'], sort=False).median().reset_index()
-                tsv_polar_angle_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_polar-angle.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)                
+                tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_polar_angle_fn))
                 df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
             
                 # Contralaterality
                 # ----------------
                 df_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()
-                tsv_contralaterality_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_contralaterality.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_contralaterality_fn))
                 df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
                 
                 # Spatial distribution 
                 # -------------------
-                tsv_distribution_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_distribution.tsv".format(
-                        tsv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)                    
+                tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
+                        tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_distribution_fn))
                 median_mesh = np.median(mesh_group, axis=0)
                 df_distribution = pd.DataFrame(median_mesh)
@@ -573,9 +546,8 @@ for avg_method in avg_methods:
                     if j == 0: df_barycentre = df_barycentre_hemi
                     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                    
-                tsv_barycentre_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_barycentre.tsv".format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)
+                tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
+                    tsv_dir, subject, fn_spec)
                 print('Saving tsv: {}'.format(tsv_barycentre_fn))
                 df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         
