@@ -471,7 +471,7 @@ def median_subject_template(fns):
             
     return img, data_med
 
-def make_prf_distribution_df(data, rois, max_ecc, grain):
+def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
     """
     Load the PRF TSV file and compute the PRF distribution 
     
@@ -481,8 +481,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
     rois: list of ROIs (Regions Of Interest)
     max_ecc: maximum eccentricity for the Gaussian mesh
     grain: the granularity you want for the Gaussian mesh
-    hot_zone_percent: the percentage to define the hot zone (how much of the denser locations you take)
-    ci_confidence_level: the confidence level for the confidence interval
+    rsq2use : name of the rsquare value to use
 
     Returns
     -------
@@ -509,8 +508,8 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
                                 screen_side=max_ecc*2, 
                                 grain=grain)
             
-            # addition of pRF and ponderation by loo r2
-            gauss_z_tot += gauss_z * df_roi.prf_loo_r2[vert]
+            # addition of pRF and ponderation by rsquare (rsq or loo_rsq)
+            gauss_z_tot += gauss_z * df_roi[rsq2use][vert]
             
         # Normalisation 
         gauss_z_tot = (gauss_z_tot-gauss_z_tot.min())/(gauss_z_tot.max()-gauss_z_tot.min())
