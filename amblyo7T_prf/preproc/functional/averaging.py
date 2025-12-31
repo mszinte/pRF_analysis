@@ -169,7 +169,7 @@ for prf_task_name in prf_task_names:
             output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat".format(
                 main_dir, project_dir, subject, preproc_prep, filtering, normalization)
             os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-{}_{}_{}_{}_concat_bold.func.gii".format(
+            concat_fn = "{}/{}_task-{}_{}_{}_{}_{}_concat_bold.func.gii".format(
                 output_dir, subject, prf_task_name, hemi, preproc_prep, filtering, normalization)
         else:
             output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat".format(
