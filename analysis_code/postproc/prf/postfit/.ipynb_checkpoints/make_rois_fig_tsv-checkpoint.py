@@ -115,7 +115,6 @@ for avg_method in avg_methods:
                 
             # Individual subject analysis
             if 'group' not in subject:
-                print('Subject {} is processed'.format(subject))
                 tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                     main_dir, project_dir, subject, format_)
                 fn_spec = "task-{}_{}_{}_{}_{}".format(
@@ -157,7 +156,6 @@ for avg_method in avg_methods:
                                    .groupby('roi', sort=False)
                                    .size()
                                    .reset_index(name='n_vert_corr_pvalue_1pt'))
-                
                 
                 tmp_df = n_vert_tot_roi.merge(n_vert_corr_5pt, on='roi', how='left') \
                                        .merge(n_vert_corr_1pt, on='roi', how='left')
@@ -314,9 +312,9 @@ for avg_method in avg_methods:
                     df_rh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-R')]
                     df_lh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-L')]
                     try: 
-                        contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0][rsq2use]) +
-                                                 sum(df_lh.loc[df_lh.prf_x > 0][rsq2use]) /
-                                                (sum(df_rh[rsq2use]) + sum(df_lh[rsq2use])))
+                        contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0][rsq2use]) + \
+                                                 sum(df_lh.loc[df_lh.prf_x > 0][rsq2use])) / \
+                                                (sum(df_rh[rsq2use]) + sum(df_lh[rsq2use]))
                     except: 
                         contralaterality_prct = np.nan
                     
@@ -326,7 +324,7 @@ for avg_method in avg_methods:
             
                     if j == 0: df_contralaterality = df_contralaterality_roi
                     else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_roi]) 
-        
+                
                 tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
                     tsv_dir, subject, fn_spec)
                 df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
