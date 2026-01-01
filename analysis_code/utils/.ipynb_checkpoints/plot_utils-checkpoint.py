@@ -904,7 +904,7 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
             df = df_polar_angle.loc[(df_polar_angle.roi==roi) & (df_polar_angle.hemi==hemi)]
             
             # barpolar
-            fig.add_trace(go.Barpolar(r=df.loo_r2_sum, 
+            fig.add_trace(go.Barpolar(r=df.rsq_sum, 
                                       theta=df.theta_slices, 
                                       marker_color=roi_colors[roi], 
                                       width=360/(num_polar_angle_bins),

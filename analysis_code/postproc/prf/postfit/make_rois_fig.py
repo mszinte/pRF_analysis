@@ -159,7 +159,6 @@ for avg_method in avg_methods:
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
 
-
             # Ecc.pCM plot
             tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(tsv_dir, subject, fn_spec)
             df_ecc_pcm = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
@@ -170,50 +169,50 @@ for avg_method in avg_methods:
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
     
-            # # Polar angle distributions
-            # tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
-            # df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
-            # figs, hemis = prf_polar_angle_plot(df_polar_angle=df_polar_angle, fig_width=fig_width, 
-            #                                     fig_height=300, rois=rois, roi_colors=roi_colors,
-            #                                     num_polar_angle_bins=num_polar_angle_bins)
-            # for (fig, hemi) in zip(figs, hemis):
-            #     if hemi == 'hemi-LR':
-            #         fig_fn = "{}/{}{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
-            #         print('Saving pdf: {}'.format(fig_fn))
-            #         fig.write_image(fig_fn)
+            # Polar angle distributions
+            tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
+            df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
+            figs, hemis = prf_polar_angle_plot(df_polar_angle=df_polar_angle, fig_width=fig_width, 
+                                                fig_height=300, rois=rois, roi_colors=roi_colors,
+                                                num_polar_angle_bins=num_polar_angle_bins)
+            for (fig, hemi) in zip(figs, hemis):
+                if hemi == 'hemi-LR':
+                    fig_fn = "{}/{}_{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
             
-            # # Contralaterality plots
-            # tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
-            # df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
-            # fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
-            # fig = prf_contralaterality_plot(df_contralaterality=df_contralaterality, 
-            #                                 fig_width=fig_width, fig_height=300, 
-            #                                 rois=rois, roi_colors=roi_colors)
-            # print('Saving pdf: {}'.format(fig_fn))
-            # fig.write_image(fig_fn)
+            # Contralaterality plots
+            tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
+            df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
+            fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
+            fig = prf_contralaterality_plot(df_contralaterality=df_contralaterality, 
+                                            fig_width=fig_width, fig_height=300, 
+                                            rois=rois, roi_colors=roi_colors)
+            print('Saving pdf: {}'.format(fig_fn))
+            fig.write_image(fig_fn)
 
-            # # Spatial distribution plot
-            # tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
-            # df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
-            # figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
-            #                                     fig_width=fig_width, fig_height=300, 
-            #                                     rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+            # Spatial distribution plot
+            tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
+            df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
+            figs, hemis = prf_distribution_plot(df_distribution=df_distribution, 
+                                                fig_width=fig_width, fig_height=300, 
+                                                rois=rois, roi_colors=roi_colors, screen_side=screen_side)
         
-            # for (fig, hemi) in zip(figs, hemis):
-            #     if hemi == 'hemi-LR':
-            #         fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
-            #         print('Saving pdf: {}'.format(fig_fn))
-            #         fig.write_image(fig_fn)
+            for (fig, hemi) in zip(figs, hemis):
+                if hemi == 'hemi-LR':
+                    fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
 
-            # # Spatial distibution barycentre plot
-            # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
-            # df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-            # fig_fn = "{}/{}_{}_barycentre.pdf".format(fig_dir, subject, fn_spec)
-            # fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
-            #                                 fig_width=fig_width, fig_height=400, 
-            #                                 rois=rois, roi_colors=roi_colors, screen_side=screen_side)
-            # print('Saving pdf: {}'.format(fig_fn))
-            # fig.write_image(fig_fn)
+            # Spatial distibution barycentre plot
+            tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
+            df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+            fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
+            fig = prf_barycentre_plot(df_barycentre=df_barycentre, 
+                                            fig_width=fig_width, fig_height=400, 
+                                            rois=rois, roi_colors=roi_colors, screen_side=screen_side)
+            print('Saving pdf: {}'.format(fig_fn))
+            fig.write_image(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
