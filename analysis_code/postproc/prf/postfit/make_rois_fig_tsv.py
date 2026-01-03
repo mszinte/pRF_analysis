@@ -79,6 +79,8 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_task_names = analysis_info['prf_task_names']
+maps_names_pcm = analysis_info['maps_names_pcm']
+maps_names_css_stats = analysis_info['maps_names_css_stats']
 
 if subject == 'sub-170k': 
     formats = ['170k']
@@ -92,15 +94,14 @@ fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
 with open(fig_settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
-num_ecc_size_bins = figure_info['num_ecc_size_bins']
-num_ecc_pcm_bins = figure_info['num_ecc_pcm_bins']
-num_polar_angle_bins = figure_info['num_polar_angle_bins']
-max_ecc = figure_info['max_ecc']
-screen_side = figure_info['screen_side']
-gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
+ecc_size_num_bins = figure_info['ecc_size_num_bins']
+ecc_pcm_num_bins = figure_info['ecc_pcm_num_bins']
+polar_angle_num_bins = figure_info['polar_angle_num_bins']
+ecc_pcm_max_ecc = figure_info['ecc_pcm_max_ecc']
+ecc_size_max_ecc = figure_info['ecc_size_max_ecc']
+distribution_max_ecc = figure_info['distribution_max_ecc']
+distribution_mesh_grain = figure_info['distribution_mesh_grain']
 hot_zone_percent = figure_info['hot_zone_percent']
-maps_names_pcm = analysis_info['maps_names_pcm']
-maps_names_css_stats = analysis_info['maps_names_css_stats']
 
 # Main loop
 for avg_method in avg_methods:
@@ -228,13 +229,13 @@ for avg_method in avg_methods:
                 
                 # Ecc.size
                 # --------
-                ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
+                ecc_bins = np.linspace(0, ecc_size_max_ecc, ecc_size_num_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data.loc[(data.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
                     df_ecc_size_bin = pd.DataFrame()
-                    df_ecc_size_bin['roi'] = [roi]*num_ecc_size_bins
-                    df_ecc_size_bin['num_bins'] = np.arange(num_ecc_size_bins)  
+                    df_ecc_size_bin['roi'] = [roi]*ecc_size_num_bins
+                    df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
                     df_ecc_size_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
                     df_ecc_size_bin['prf_size_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
                     df_ecc_size_bin[f'{rsq2use}_bins_median'] = np.array(df_bins[rsq2use].median())
@@ -253,13 +254,13 @@ for avg_method in avg_methods:
                 # Ecc.pCM
                 # --------
                 data_pcm = data
-                ecc_bins = np.linspace(0, max_ecc, num_ecc_size_bins+1) 
+                ecc_bins = np.linspace(0, ecc_pcm_max_ecc, ecc_pcm_num_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_pcm.loc[(data.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
                     df_ecc_pcm_bin = pd.DataFrame()
-                    df_ecc_pcm_bin['roi'] = [roi]*num_ecc_pcm_bins
-                    df_ecc_pcm_bin['num_bins'] = np.arange(num_ecc_pcm_bins)
+                    df_ecc_pcm_bin['roi'] = [roi]*ecc_pcm_num_bins
+                    df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
                     df_ecc_pcm_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
                     df_ecc_pcm_bin['prf_pcm_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
                     df_ecc_pcm_bin[f'{rsq2use}_bins_median'] = np.array(df_bins[rsq2use].median())
@@ -277,7 +278,7 @@ for avg_method in avg_methods:
                 
                 # Polar angle
                 # -----------
-                theta_slices = np.linspace(0, 360, num_polar_angle_bins, endpoint=False)
+                theta_slices = np.linspace(0, 360, polar_angle_num_bins, endpoint=False)
                 data['prf_polar_angle'] = np.mod(np.degrees(np.angle(data.polar_real + 1j * data.polar_imag)), 360) 
                 hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                 for i, hemi in enumerate(hemis):
@@ -285,15 +286,15 @@ for avg_method in avg_methods:
                     for j, roi in enumerate(rois): #
                         df = data.loc[(data.roi==roi) & (data.hemi.isin(hemi_values))]
                         if len(df): 
-                            df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=num_polar_angle_bins))
+                            df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
                             rsq_sum = df_bins[rsq2use].sum()
                         else: 
-                            rsq_sum = [np.nan]*num_polar_angle_bins
+                            rsq_sum = [np.nan]*polar_angle_num_bins
             
                         df_polar_angle_bin = pd.DataFrame()
-                        df_polar_angle_bin['roi'] = [roi]*(num_polar_angle_bins)
-                        df_polar_angle_bin['hemi'] = [hemi]*(num_polar_angle_bins)
-                        df_polar_angle_bin['num_bins'] = np.arange((num_polar_angle_bins))
+                        df_polar_angle_bin['roi'] = [roi]*(polar_angle_num_bins)
+                        df_polar_angle_bin['hemi'] = [hemi]*(polar_angle_num_bins)
+                        df_polar_angle_bin['num_bins'] = np.arange((polar_angle_num_bins))
                         df_polar_angle_bin['theta_slices'] = np.array(theta_slices)
                         df_polar_angle_bin['rsq_sum'] = np.array(rsq_sum)                        
                         if j == 0 and i == 0: df_polar_angle_bins = df_polar_angle_bin
@@ -336,7 +337,7 @@ for avg_method in avg_methods:
                     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                     data_hemi = data.loc[data.hemi.isin(hemi_values)]
                     df_distribution_hemi = make_prf_distribution_df(
-                        data_hemi, rois, screen_side, gaussian_mesh_grain, rsq2use)
+                        data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use)
             
                     df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
                     if i == 0: df_distribution = df_distribution_hemi
@@ -355,8 +356,8 @@ for avg_method in avg_methods:
                     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                     df_barycentre_hemi = make_prf_barycentre_df(
-                        df_distribution_hemi, rois, screen_side, 
-                        gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
+                        df_distribution_hemi, rois, distribution_max_ecc, 
+                        distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
                     
                     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                     if i == 0: df_barycentre = df_barycentre_hemi
@@ -537,7 +538,7 @@ for avg_method in avg_methods:
                     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                     df_barycentre_hemi = make_prf_barycentre_df(
-                        df_distribution_hemi, rois, screen_side, 
+                        df_distribution_hemi, rois, distribution_max_ecc, 
                         gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
                    
                     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)

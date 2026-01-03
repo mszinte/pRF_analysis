@@ -15,15 +15,13 @@
 # -----------------------------------------------------------------------------------------
 # To run:
 # 1. cd to function
-# >> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit
+# >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # 2. run shell command
 # >> sh make_rois_fig.sh [code directory] [project name] [main directory]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh make_rois_fig_tsv.sh ~/projects MotConf /scratch/mszinte/data
 # sh make_rois_fig_tsv.sh ~/projects RetinoMaps /scratch/mszinte/data
-# sh make_rois_fig_tsv.sh ~/projects amblyo_prf /scratch/mszinte/data
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

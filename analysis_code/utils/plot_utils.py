@@ -119,17 +119,17 @@ def plotly_template(template_specs):
     return fig_template
 
 
-def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colors, format):
+def prf_roi_active_vert_plot(df, fig_width, fig_height, format, figure_info):
     """
     Make bar plots of each roi number of vertex and the corresponding significative activer vertex for pRF  
     
     Parameters
     ----------
-    df_roi_active_vert : dataframe for corresponding plot
+    df : dataframe for corresponding plot
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
     format : format of data to define axis size
+    figure_info : dict with figure settings
     
     Returns
     -------
@@ -149,6 +149,7 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     fig_template = plotly_template(template_specs)
     
     # colors 
+    roi_colors = figure_info['roi_colors']
     roi_colors = list(roi_colors.values())
     
     # General settings
@@ -159,9 +160,9 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     
     # FDR 0.05 
     # All vertices
-    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
-                         y=df_roi_active_vert['n_vert_tot'], 
-                         text=(df_roi_active_vert['ratio_5pt']*100).astype(int).astype(str) + '%',
+    fig.add_trace(go.Bar(x=df['roi'], 
+                         y=df['n_vert_tot'], 
+                         text=(df['ratio_5pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
                          textangle=-60,
                          showlegend=False, 
@@ -169,8 +170,8 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
                  row=1, col=1)
  
     # Significant vertices
-    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
-                         y=df_roi_active_vert['n_vert_corr_pvalue_5pt'], 
+    fig.add_trace(go.Bar(x=df['roi'], 
+                         y=df['n_vert_corr_pvalue_5pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
                  row=1, col=1)
@@ -178,9 +179,9 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     
     # FDR 0.01
     # All vertices
-    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
-                         y=df_roi_active_vert['n_vert_tot'], 
-                         text=(df_roi_active_vert['ratio_1pt']*100).astype(int).astype(str) + '%',
+    fig.add_trace(go.Bar(x=df['roi'], 
+                         y=df['n_vert_tot'], 
+                         text=(df['ratio_1pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
                          textangle=-60,
                          showlegend=False, 
@@ -188,8 +189,8 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
                  row=1, col=2)
  
     # Significant vertices
-    fig.add_trace(go.Bar(x=df_roi_active_vert['roi'], 
-                         y=df_roi_active_vert['n_vert_corr_pvalue_1pt'], 
+    fig.add_trace(go.Bar(x=df['roi'], 
+                         y=df['n_vert_corr_pvalue_1pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
                  row=1, col=2)
@@ -200,9 +201,9 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
                      linecolor=('rgba(255,255,255,0)'))      
 
     if format == 'fsnative':
-        range_val = [0,16000]
+        range_val = figure_info['active_vert_fsnative_range']
     elif format == '170k':
-        range_val = [0,10000]
+        range_val = figure_info['active_vert_170k_range']
     
     fig.update_yaxes(range=range_val, 
                      showline=True, 
@@ -222,18 +223,17 @@ def prf_roi_active_vert_plot(df_roi_active_vert, fig_width, fig_height, roi_colo
     # Return outputs
     return fig
 
-def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2use):
+def prf_violins_plot(df, fig_width, fig_height, rsq2use, figure_info):
     """
     Make violins plots for pRF loo_r2, size, n and pcm
 
     Parameters
     ----------
-    df_violins : dataframe
+    df : dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
     rsq2use : rsquare value to use
+    figure_info : dict with figure settings
     
     Returns
     -------
@@ -251,6 +251,8 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2us
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    roi_colors = figure_info['roi_colors']
+    rois = figure_info['rois']
 
     rows, cols = 2,2
     fig = make_subplots(rows=rows, 
@@ -262,76 +264,59 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2us
 
     for j, roi in enumerate(rois):
         
-        df = df_violins.loc[(df_violins.roi == roi)]
+        df_roi = df.loc[(df.roi == roi)]
         
-        # pRF loo r2
-        fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-                                y=df[rsq2use], 
+        # pRF r2 or loor2
+        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+                                y=df_roi[rsq2use], 
                                 name=roi, 
                                 opacity=1,
                                 showlegend=False, 
-                                legendgroup='loo', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 1],
+                                span=figure_info['violin_rsq_range'],
                                 scalemode='width', 
                                 fillcolor=roi_colors[roi],
                                 line_color=roi_colors[roi]), 
                       row=1, col=1)
                 
         # pRF size
-        fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-                                y=df.prf_size, 
+        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+                                y=df_roi.prf_size, 
                                 name=roi, 
                                 opacity=1,
                                 showlegend=False, 
-                                legendgroup='size', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 30],
+                                span=figure_info['violin_size_range'],
                                 scalemode='width', 
                                 fillcolor=roi_colors[roi],
                                 line_color=roi_colors[roi]), 
                       row=1, col=2)
         
-        # # pRF n
-        # fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-        #                         y=df.prf_n, 
-        #                         name=roi, 
-        #                         opacity=1,
-        #                         showlegend=False, 
-        #                         legendgroup='n', 
-        #                         points=False, 
-        #                         scalemode='width', 
-        #                         fillcolor=roi_colors[roi],
-        #                         line_color=roi_colors[roi]), 
-        #               row=2, col=1)
-
         # pRF ecc
-        fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-                                y=df.prf_ecc, 
+        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+                                y=df_roi.prf_ecc, 
                                 name=roi, 
                                 opacity=1,
                                 showlegend=False, 
-                                legendgroup='n', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 30],
+                                span=figure_info['violin_ecc_range'],
                                 scalemode='width', 
                                 fillcolor=roi_colors[roi],
                                 line_color=roi_colors[roi]), 
                       row=2, col=1)
         
         # pcm
-        fig.add_trace(go.Violin(x=df.roi[df.roi==roi], 
-                                y=df.pcm_median, 
+        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+                                y=df_roi.pcm_median, 
                                 name=roi, 
                                 opacity=1,
                                 showlegend=False, 
-                                legendgroup='pcm', 
                                 points=False, 
                                 spanmode='manual', 
-                                span=[0, 20],
+                                span=figure_info['violin_pcm_range'],
                                 scalemode='width', 
                                 fillcolor=roi_colors[roi],
                                 line_color=roi_colors[roi]), 
@@ -344,33 +329,27 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2us
             title_y = 'pRF R<sup>2</sup>'
             
         fig.update_yaxes(showline=True, 
-                         range=[0, 1],
+                         range=figure_info['violin_rsq_range'],
                          nticks=10, 
                          title_text=title_y,
                          row=1, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 30], 
+                         range=figure_info['violin_size_range'],
                          nticks=7, 
                          title_text='pRF size (dva)', 
                          row=1, col=2)
         
-        # fig.update_yaxes(showline=True, 
-        #                  range=[0, 2], 
-        #                  nticks=5, 
-        #                  title_text='pRF n', 
-        #                  row=2, col=1)
-
         fig.update_yaxes(showline=True, 
-                         range=[0, 30], 
+                         range=figure_info['violin_ecc_range'],
                          nticks=7, 
                          title_text='pRF eccentricity (dva)', 
                          row=2, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 20],
+                         range=figure_info['violin_pcm_range'],
                          nticks=5, 
-                         title_text='pRF pCM (mm/dva)', 
+                         title_text='pRF CM (mm/dva)', 
                          row=2, col=2)
         
         fig.update_xaxes(showline=True, 
@@ -396,18 +375,16 @@ def prf_violins_plot(df_violins, fig_width, fig_height, rois, roi_colors, rsq2us
 
     return fig
 
-def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_colors, rsq2use):
+def prf_params_median_plot(df, fig_width, fig_height, rsq2use, figure_info):
     """
     Make parameters median plots for pRF loo_r2, size, n and pcm
 
     Parameters
     ----------
-    df_params_avg : dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
     rsq2use : rsquare to use
+    figure_info : dict with figure settings
     
     Returns
     -------
@@ -425,6 +402,8 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    roi_colors = figure_info['roi_colors']
+    rois = figure_info['rois']
 
     rows, cols = 2,2
     fig = make_subplots(rows=rows, 
@@ -435,11 +414,11 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
     
     for j, roi in enumerate(rois):
         
-        df = df_params_avg.loc[(df_params_avg.roi == roi)]
+        df_roi = df.loc[(df.roi == roi)]
         
-        weighted_median = df[f'{rsq2use}_weighted_median']
-        ci_up = df[f'{rsq2use}_ci_up']
-        ci_down = df[f'{rsq2use}_ci_down']
+        weighted_median = df_roi[f'{rsq2use}_weighted_median']
+        ci_up = df_roi[f'{rsq2use}_ci_up']
+        ci_down = df_roi[f'{rsq2use}_ci_down']
         
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
@@ -462,9 +441,9 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                           row=1, col=1)
         
         # pRF size
-        weighted_median = df.prf_size_weighted_median
-        ci_up = df.prf_size_ci_up
-        ci_down = df.prf_size_ci_down
+        weighted_median = df_roi.prf_size_weighted_median
+        ci_up = df_roi.prf_size_ci_up
+        ci_down = df_roi.prf_size_ci_down
         
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
@@ -486,35 +465,10 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                                  showlegend=False), 
                           row=1, col=2)
                 
-        # # # pRF n
-        # weighted_median = df.prf_n_weighted_median
-        # ci_up = df.prf_n_ci_up
-        # ci_down = df.prf_n_ci_down
-        
-        # fig.add_trace(go.Scatter(x=[roi],
-        #                          y=tuple(weighted_median),
-        #                          mode='markers', 
-        #                          name=roi,
-        #                          error_y=dict(type='data', 
-        #                                       array=[ci_up-weighted_median], 
-        #                                       arrayminus=[weighted_median-ci_down],
-        #                                       visible=True, 
-        #                                       thickness=3,
-        #                                       width=0, 
-        #                                       color=roi_colors[roi]),
-        #                          marker=dict(symbol="square",
-        #                                      color=roi_colors[roi],
-        #                                      size=12, 
-        #                                      line=dict(color=roi_colors[roi], 
-        #                                                width=3)),
-        #                          legendgroup='n',
-        #                          showlegend=False), 
-        #                   row=2, col=1)
-        
         # pRF ecc
-        weighted_median = df.prf_ecc_weighted_median
-        ci_up = df.prf_ecc_ci_up
-        ci_down = df.prf_ecc_ci_down
+        weighted_median = df_roi.prf_ecc_weighted_median
+        ci_up = df_roi.prf_ecc_ci_up
+        ci_down = df_roi.prf_ecc_ci_down
         
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
@@ -537,9 +491,9 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
                           row=2, col=1)
         
         # pcm
-        weighted_median = df.pcm_median_weighted_median
-        ci_up = df.pcm_median_ci_up
-        ci_down = df.pcm_median_ci_down
+        weighted_median = df_roi.pcm_median_weighted_median
+        ci_up = df_roi.pcm_median_ci_up
+        ci_down = df_roi.pcm_median_ci_down
         
         fig.add_trace(go.Scatter(x=[roi],
                                  y=tuple(weighted_median),
@@ -564,37 +518,32 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
         
         # Set axis titles only for the left-most column and bottom-most row
         if 'loo' in rsq2use:
-            title_y = 'pRF LOO R<sup>2</sup>',
+            title_y = 'pRF LOO R<sup>2</sup>'
         else:
-            title_y = 'pRF R<sup>2</sup>',
+            title_y = 'pRF R<sup>2</sup>'
+            
         fig.update_yaxes(showline=True, 
-                         range=[0, 1],
+                         range=figure_info['params_median_rsq_range'],
                          nticks=10, 
-                         title_text='pRF LOO R<sup>2</sup>',
+                         title_text=title_y,
                          row=1, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 15], 
+                         range=figure_info['params_median_size_range'],
                          nticks=6, 
                          title_text='pRF size (dva)', 
                          row=1, col=2)
-        
-        # fig.update_yaxes(showline=True, 
-        #                  range=[0, 2], 
-        #                  nticks=5, 
-        #                  title_text='pRF n', 
-        #                  row=2, col=1)
 
         fig.update_yaxes(showline=True, 
-                         range=[0, 20], 
+                         range=figure_info['params_median_ecc_range'],
                          nticks=5, 
                          title_text='pRF eccentricity (dva)', 
                          row=2, col=1)
         
         fig.update_yaxes(showline=True, 
-                         range=[0, 15], 
+                         range=figure_info['params_median_pcm_range'],
                          nticks=6, 
-                         title_text='pRF pCM (mm/dva)', 
+                         title_text='pRF CM (mm/dva)', 
                          row=2, col=2)
         
         fig.update_xaxes(showline=True, 
@@ -619,20 +568,17 @@ def prf_params_median_plot(df_params_avg, fig_width, fig_height, rois, roi_color
 
     return fig
 
-def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc, rsq2use):
+def prf_ecc_size_plot(df, fig_width, fig_height, rsq2use, figure_info):
     """
     Make scatter plot for linear relationship between eccentricity and size
 
     Parameters
     ----------
-    df_ecc_size : A data dataframe
+    df : A data dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
-    plot_groups : groups of roi to plot together
-    max_ecc : maximum eccentricity 
     rsq2use : rsquare to use
+    figure_info : dict with figure settings
     
     Returns
     -------
@@ -652,12 +598,15 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    max_ecc = figure_info['ecc_size_max_ecc']
+    roi_colors = figure_info['roi_colors']
+    rois_groups = figure_info['rois_groups']
 
     # General settings
-    rows, cols = 1, len(plot_groups)
+    rows, cols = 1, len(rois_groups)
     fig = make_subplots(rows=rows, cols=cols, print_grid=False)
     
-    for l, line_label in enumerate(plot_groups):
+    for l, line_label in enumerate(rois_groups):
         for j, roi in enumerate(line_label):
             
             # Parametring colors
@@ -665,12 +614,12 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
-            df = df_ecc_size.loc[(df_ecc_size.roi == roi)]
-            ecc_median = np.array(df.prf_ecc_bins)
-            size_median = np.array(df.prf_size_bins_median)
-            r2_median = np.array(df[f'{rsq2use}_bins_median'])
-            size_upper_bound = np.array(df.prf_size_bins_ci_upper_bound)
-            size_lower_bound = np.array(df.prf_size_bins_ci_lower_bound)
+            df_roi = df.loc[(df.roi == roi)]
+            ecc_median = np.array(df_roi.prf_ecc_bins)
+            size_median = np.array(df_roi.prf_size_bins_median)
+            r2_median = np.array(df_roi[f'{rsq2use}_bins_median'])
+            size_upper_bound = np.array(df_roi.prf_size_bins_ci_upper_bound)
+            size_lower_bound = np.array(df_roi.prf_size_bins_ci_lower_bound)
             
             # Linear regression
             slope, intercept = weighted_regression(ecc_median, size_median, r2_median, model='linear')
@@ -734,20 +683,17 @@ def prf_ecc_size_plot(df_ecc_size, fig_width, fig_height, rois, roi_colors, plot
         
     return fig
 
-def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_groups, max_ecc, rsq2use):
+def prf_ecc_pcm_plot(df, fig_width, fig_height, rsq2use, figure_info):
     """
     Make scatter plot for relationship between eccentricity and pCM
 
     Parameters
     ----------
-    df_ecc_pcm : dataframe for the plot
+    df : dataframe for the plot
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
-    plot_groups : groups of roi to plot together
-    max_ecc : maximum eccentricity
     rsq2use : rsquare to use
+    figure_info : dict with figure settings
     
     Returns
     -------
@@ -767,12 +713,15 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    max_ecc = figure_info['ecc_pcm_max_ecc']
+    rois_groups = figure_info['rois_groups']
+    roi_colors = figure_info['roi_colors']
 
     # General settings
-    rows, cols = 1, len(plot_groups)
+    rows, cols = 1, len(rois_groups)
     fig = make_subplots(rows=rows, cols=cols, print_grid=False)
     
-    for l, line_label in enumerate(plot_groups):
+    for l, line_label in enumerate(rois_groups):
         for j, roi in enumerate(line_label):
 
             # Parametring colors
@@ -780,12 +729,12 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
-            df = df_ecc_pcm.loc[(df_ecc_pcm.roi == roi)]
-            ecc_median = np.array(df.prf_ecc_bins)
-            pcm_median = np.array(df.prf_pcm_bins_median)
-            r2_median = np.array(df[f'{rsq2use}_bins_median'])
-            pcm_upper_bound = np.array(df.prf_pcm_bins_ci_upper_bound)
-            pcm_lower_bound = np.array(df.prf_pcm_bins_ci_lower_bound)
+            df_roi = df.loc[(df.roi == roi)]
+            ecc_median = np.array(df_roi.prf_ecc_bins)
+            pcm_median = np.array(df_roi.prf_pcm_bins_median)
+            r2_median = np.array(df_roi[f'{rsq2use}_bins_median'])
+            pcm_upper_bound = np.array(df_roi.prf_pcm_bins_ci_upper_bound)
+            pcm_lower_bound = np.array(df_roi.prf_pcm_bins_ci_lower_bound)
             
             # Linear regression
             slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
@@ -856,18 +805,16 @@ def prf_ecc_pcm_plot(df_ecc_pcm, fig_width, fig_height, rois, roi_colors, plot_g
         
     return fig
 
-def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors, num_polar_angle_bins) :    
+def prf_polar_angle_plot(df, fig_width, fig_height, figure_info) :    
     """
     Make polar angle distribution plots
     
     Parameters
     ----------
-    df_polar_angle : polar angle dataframe
+    df : polar angle dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
-    num_bins : bins for the polar angle 
+    figure_info : figure settings dict
      
     Returns
     -------
@@ -885,7 +832,11 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-
+    max_ecc = figure_info['ecc_pcm_max_ecc']
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
+    num_bins = figure_info['polar_angle_num_bins']
+    
     # General settings
     rows, cols = 1, len(rois)
     specs = [[{'type': 'polar'}] * cols]
@@ -901,13 +852,13 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
             else: showlegend = False
     
             # Parts of polar angles and number of voxels in each part
-            df = df_polar_angle.loc[(df_polar_angle.roi==roi) & (df_polar_angle.hemi==hemi)]
+            df_roi = df.loc[(df.roi==roi) & (df.hemi==hemi)]
             
             # barpolar
-            fig.add_trace(go.Barpolar(r=df.rsq_sum, 
-                                      theta=df.theta_slices, 
+            fig.add_trace(go.Barpolar(r=df_roi.rsq_sum, 
+                                      theta=df_roi.theta_slices, 
                                       marker_color=roi_colors[roi], 
-                                      width=360/(num_polar_angle_bins),
+                                      width=360/(num_bins),
                                       marker_line_color='white', 
                                       marker_line_width=3, 
                                       opacity=1,
@@ -941,7 +892,7 @@ def prf_polar_angle_plot(df_polar_angle, fig_width, fig_height, rois, roi_colors
         
     return figs, hemispheres
 
-def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, roi_colors):
+def prf_contralaterality_plot(df, fig_height, fig_width, figure_info):
     """
     Make contralaterality pie plot
     
@@ -950,8 +901,7 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
     df_contralaterality : dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
+    figure_info : figure settings dict
      
     Returns
     -------
@@ -969,6 +919,8 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
     
     # General figure settings
     fig_template = plotly_template(template_specs)
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
 
     # General settings
     rows, cols = 1, len(rois)
@@ -977,8 +929,8 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
     
     for j, roi in enumerate(rois):
 
-        df = df_contralaterality.loc[df_contralaterality.roi==roi]
-        percentage_total = np.array(df.contralaterality_prct)
+        df_roi = df.loc[df.roi==roi]
+        percentage_total = np.array(df_roi.contralaterality_prct)
         percentage_rest = 1 - percentage_total
         percentage_total = percentage_total.tolist()
         percentage_rest = percentage_rest.tolist()
@@ -1002,18 +954,16 @@ def prf_contralaterality_plot(df_contralaterality, fig_height, fig_width, rois, 
     
     return fig 
 
-def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colors, screen_side):
+def prf_distribution_plot(df, fig_height, fig_width, figure_info):
     """
     Make prf distribution contour plot
     
     Parameters
     ----------
-    df_distribution : dataframe
+    df : dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
-    screen_side: mesh screen side (square) im dva (e.g. 20 dva from -10 to 10 dva)
+    figure_info : figure settings dict
      
     Returns
     -------
@@ -1029,6 +979,10 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
                           title_font_size=15,
                           plot_width=1.5)
     fig_template = plotly_template(template_specs)
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
+    distribution_screen_side = figure_info['distribution_screen_side']
+    distribution_max_ecc = figure_info['distribution_max_ecc']
     
     # General figure settings
     rows, cols = 1, len(rois)
@@ -1041,20 +995,20 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
     for i, hemi in enumerate(hemis):  
         fig = make_subplots(rows=rows ,cols=cols)
         for j, roi in enumerate(rois) :
-            if df_distribution.empty:
+            if df.empty:
                 print(f"[WARNING] No data for ROI: {roi}")
                 continue  # skip this ROI
             # Make df roi
-            df_roi = df_distribution.loc[(df_distribution['roi'] == roi) & (df_distribution['hemi'] == hemi)]
+            df_roi = df.loc[(df['roi'] == roi) & (df['hemi'] == hemi)]
 
             # make the two dimensional mesh for z dimension
             gauss_z_tot = df_roi.drop(columns=['roi', 'x', 'y', 'hemi']).values
             
-            # Contour plot
+            # Contour plotdf
             fig.add_trace(go.Contour(x=df_roi.x, 
                                      y=df_roi.y, 
                                      z=gauss_z_tot, 
-                                     colorscale=[[0, 'white'],[0.1, 'white'], [1, roi_colors[roi]]],  
+                                     colorscale=[[0, 'white'],[1, roi_colors[roi]]],  
                                      showscale=False,  
                                      line=dict(color='black', width=contour_width),  
                                      contours=dict(coloring='fill', 
@@ -1069,26 +1023,26 @@ def prf_distribution_plot(df_distribution, fig_height, fig_width, rois, roi_colo
             
             # x line
             fig.add_trace(go.Scatter(x=[0,0],
-                                     y=[-10,10],
+                                     y=[-distribution_max_ecc,distribution_max_ecc],
                                      mode='lines',
                                      line=dict(dash='2px',color='rgba(0, 0, 0, 0.6)', width=line_width)
                                     ),row=1, col=j+1)
             # y line
-            fig.add_trace(go.Scatter(x=[-10,10], 
+            fig.add_trace(go.Scatter(x=[-distribution_max_ecc,distribution_max_ecc], 
                                      y=[0,0], 
                                      mode='lines', 
                                      line=dict(dash='2px',color='rgba(0, 0, 0, 0.6)', width=line_width)),row=1, col=j+1)
             
-            # # square
-            # fig.add_shape(type="rect", 
-            #               x0=-10, 
-            #               y0=-10, 
-            #               x1=10, 
-            #               y1=10, 
-            #               line=dict(dash='2px',color='black', width=line_width),row=1, col=j+1)
+            # square of screen
+            fig.add_shape(type="rect", 
+                          x0=-distribution_screen_side/2, 
+                          y0=-distribution_screen_side/2, 
+                          x1=distribution_screen_side/2, 
+                          y1=distribution_screen_side/2, 
+                          line=dict(dash='2px',color='black', width=line_width),row=1, col=j+1)
             
-        fig.update_xaxes(range=[-10,10], color= ('rgba(255,255,255,0)'))
-        fig.update_yaxes(range=[-10,10], color= ('rgba(255,255,255,0)'))
+        fig.update_xaxes(range=[-distribution_max_ecc,distribution_max_ecc], color= ('rgba(255,255,255,0)'))
+        fig.update_yaxes(range=[-distribution_max_ecc,distribution_max_ecc], color= ('rgba(255,255,255,0)'))
         
         # Define parameters
         fig.update_layout(height=fig_height, 
@@ -1400,18 +1354,16 @@ def make_figures_html(subject, figures, figs_title):
 
     return subject_html
     
-def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, screen_side):
+def prf_barycentre_plot(df, fig_height, fig_width, figure_info):
     """
     Make prf barycentre plot
     
     Parameters
     ----------
-    df_barycentre : dataframe
+    df : dataframe
     fig_width : figure width in pixels
     fig_height : figure height in pixels
-    rois : list of rois
-    roi_colors : dictionary with keys as roi and value correspondig rgb color
-    screen_side: mesh screen side (square) im dva (e.g. 20 dva from -10 to 10 dva)
+    figure_info : figure settings dict
      
     Returns
     -------
@@ -1427,6 +1379,9 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
                           title_font_size=15,
                           plot_width=1.5)
     fig_template = plotly_template(template_specs)
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
+    distribution_screen_side = figure_info['distribution_screen_side']
     
     # General figure settings
     line_width = 1
@@ -1437,7 +1392,7 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
         elif hemi=='hemi-R': symbol, showlegend = 'circle' , False
         for j, roi in enumerate(rois) :
             # Make df roi
-            df_roi = df_barycentre.loc[(df_barycentre.roi == roi) & (df_barycentre.hemi == hemi)]    
+            df_roi = df.loc[(df.roi == roi) & (df.hemi == hemi)]    
     
             # barycentre position
             fig.add_trace(go.Scatter(x=df_roi.barycentre_x, 
@@ -1464,12 +1419,12 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
                                  showlegend=showlegend))
         # Center lignes
         fig.add_trace(go.Scatter(x=[0,0], 
-                                 y=[-screen_side, screen_side], 
+                                 y=[-distribution_screen_side, distribution_screen_side], 
                                  mode='lines', 
                                  showlegend=False, 
                                  line=dict(dash='2px',color='grey', width=line_width)))
         
-        fig.add_trace(go.Scatter(x=[-screen_side,screen_side], 
+        fig.add_trace(go.Scatter(x=[-distribution_screen_side,distribution_screen_side], 
                                  y=[0,0], 
                                  mode='lines', 
                                  showlegend=False,
@@ -1507,7 +1462,6 @@ def prf_barycentre_plot(df_barycentre, fig_height, fig_width, rois, roi_colors, 
                       margin_r=570, 
                       margin_t=50, 
                       margin_b=50)
-        
     return fig
 
 def categories_proportions_roi_plot(df_categories, fig_height, fig_width, rois, roi_colors, categorie_color_map):
