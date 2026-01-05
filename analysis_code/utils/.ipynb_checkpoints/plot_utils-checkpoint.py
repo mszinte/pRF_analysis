@@ -33,27 +33,27 @@ def plotly_template(template_specs):
                                     points=False,
                                     # opacity=1,
                                     line_color= "rgba(0, 0, 0, 1)",
-                                    line_width=template_specs['plot_width'],
+                                    line_width=template_specs['rois_plot_width'],
                                     width=0.8,
                                     #marker_symbol='x',
                                     #marker_opacity=1,
                                     hoveron='violins',
                                     meanline_visible=False,
                                     # meanline_color="rgba(0, 0, 0, 1)",
-                                    # meanline_width=template_specs['plot_width'],
+                                    # meanline_width=template_specs['rois_plot_width'],
                                     showlegend=False,
                                     )]
 
     # Barpolar
     fig_template.data.barpolar = [go.Barpolar(
                                     marker_line_color="rgba(0,0,0,1)",
-                                    marker_line_width=template_specs['plot_width'], 
+                                    marker_line_width=template_specs['rois_plot_width'], 
                                     showlegend=False, 
                                     )]
     # Pie plots
     fig_template.data.pie = [go.Pie(textposition=["inside","none"],
                                     # marker_line_color=['rgba(0,0,0,1)','rgba(255,255,255,0)'],
-                                    marker_line_width=0,#[template_specs['plot_width'],0],
+                                    marker_line_width=0,#[template_specs['rois_plot_width'],0],
                                     rotation=0,
                                     direction="clockwise",
                                     hole=0.4,
@@ -119,17 +119,15 @@ def plotly_template(template_specs):
     return fig_template
 
 
-def prf_roi_active_vert_plot(df, fig_width, fig_height, format, figure_info):
+def prf_roi_active_vert_plot(df, figure_info, format):
     """
     Make bar plots of each roi number of vertex and the corresponding significative activer vertex for pRF  
     
     Parameters
     ----------
     df : dataframe for corresponding plot
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
-    format : format of data to define axis size
     figure_info : dict with figure settings
+    format : format of data to define axis size
     
     Returns
     -------
@@ -143,19 +141,34 @@ def prf_roi_active_vert_plot(df, fig_width, fig_height, format, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
-    fig_template = plotly_template(template_specs)
-    
-    # colors 
+    fig_template = plotly_template(template_specs)    
+    rows = 1    
+    cols = 2
+    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
-    roi_colors = list(roi_colors.values())
+    fig_margin = figure_info['rois_fig_margin']
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
     
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
+    fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
+
+    # colors 
+    roi_colors = list(roi_colors.values())
+
     # General settings
-    fig = make_subplots(rows=1, 
-                        cols=2, 
+    fig = make_subplots(rows=rows, 
+                        cols=cols, 
                         subplot_titles=['FDR threshold = 0.05', 'FDR threshold = 0.01'],
+                        vertical_spacing=ver_spacing, 
+                        horizontal_spacing=hor_spacing
                        )
     
     # FDR 0.05 
@@ -214,26 +227,24 @@ def prf_roi_active_vert_plot(df, fig_width, fig_height, format, figure_info):
                       height=fig_height, 
                       width=fig_width, 
                       template=fig_template,
-                      margin_l=100, 
-                      margin_r=50, 
-                      margin_t=50, 
-                      margin_b=50,
+                      margin_l=fig_margin[0], 
+                      margin_t=fig_margin[1], 
+                      margin_r=fig_margin[2], 
+                      margin_b=fig_margin[3]
                      )
 
     # Return outputs
     return fig
 
-def prf_violins_plot(df, fig_width, fig_height, rsq2use, figure_info):
+def prf_violins_plot(df, figure_info, rsq2use):
     """
     Make violins plots for pRF loo_r2, size, n and pcm
 
     Parameters
     ----------
     df : dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
-    rsq2use : rsquare value to use
     figure_info : dict with figure settings
+    rsq2use : rsquare value to use
     
     Returns
     -------
@@ -247,20 +258,30 @@ def prf_violins_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    roi_colors = figure_info['roi_colors']
+    rows = 2
+    cols = 2
     rois = figure_info['rois']
-
-    rows, cols = 2,2
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['rois_fig_margin']
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
+    
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
+    fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
+    
     fig = make_subplots(rows=rows, 
                         cols=cols, 
                         print_grid=False, 
-                        vertical_spacing=0.08, 
-                        horizontal_spacing=0.05)
-
+                        vertical_spacing=ver_spacing,
+                        horizontal_spacing=hor_spacing)
 
     for j, roi in enumerate(rois):
         
@@ -368,23 +389,22 @@ def prf_violins_plot(df, fig_width, fig_height, rsq2use, figure_info):
                                   traceorder='normal', 
                                   itemwidth=30), 
                       template=fig_template,
-                      margin_l=100, 
-                      margin_r=50, 
-                      margin_t=100, 
-                      margin_b=100)
+                      margin_l=fig_margin[0], 
+                      margin_t=fig_margin[1], 
+                      margin_r=fig_margin[2], 
+                      margin_b=fig_margin[3]
+                     )
 
     return fig
 
-def prf_params_median_plot(df, fig_width, fig_height, rsq2use, figure_info):
+def prf_params_median_plot(df, figure_info, rsq2use):
     """
     Make parameters median plots for pRF loo_r2, size, n and pcm
 
     Parameters
     ----------
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
-    rsq2use : rsquare to use
     figure_info : dict with figure settings
+    rsq2use : rsquare to use
     
     Returns
     -------
@@ -398,19 +418,30 @@ def prf_params_median_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    roi_colors = figure_info['roi_colors']
+    rows = 2
+    cols = 2
     rois = figure_info['rois']
-
-    rows, cols = 2,2
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['rois_fig_margin']
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
+    
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
+    fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
+    
     fig = make_subplots(rows=rows, 
                         cols=cols, 
                         print_grid=False, 
-                        vertical_spacing=0.08, 
-                        horizontal_spacing=0.05)
+                        vertical_spacing=ver_spacing, 
+                        horizontal_spacing=hor_spacing)
     
     for j, roi in enumerate(rois):
         
@@ -561,24 +592,23 @@ def prf_params_median_plot(df, fig_width, fig_height, rsq2use, figure_info):
                                   traceorder='normal', 
                                   itemwidth=30), 
                       template=fig_template,
-                      margin_l=100, 
-                      margin_r=50, 
-                      margin_t=100, 
-                      margin_b=100)
+                      margin_l=fig_margin[0], 
+                      margin_t=fig_margin[1], 
+                      margin_r=fig_margin[2], 
+                      margin_b=fig_margin[3]
+                     )
 
     return fig
 
-def prf_ecc_size_plot(df, fig_width, fig_height, rsq2use, figure_info):
+def prf_ecc_size_plot(df, figure_info, rsq2use):
     """
     Make scatter plot for linear relationship between eccentricity and size
 
     Parameters
     ----------
     df : A data dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
-    rsq2use : rsquare to use
     figure_info : dict with figure settings
+    rsq2use : rsquare to use
     
     Returns
     -------
@@ -594,17 +624,33 @@ def prf_ecc_size_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    max_ecc = figure_info['ecc_size_max_ecc']
+    max_ecc = figure_info['ecc_size_max'][0]
+    max_size = figure_info['ecc_size_max'][1]
+    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['rois_fig_margin']
     rois_groups = figure_info['rois_groups']
+    rows, cols = 1, len(rois_groups)
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    # bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
+    rois_plot_width = figure_info['rois_plot_width']
+    
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
+    fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
 
     # General settings
-    rows, cols = 1, len(rois_groups)
-    fig = make_subplots(rows=rows, cols=cols, print_grid=False)
+    
+    fig = make_subplots(rows=rows, cols=cols, print_grid=False, 
+                       horizontal_spacing=hor_spacing,
+                       vertical_spacing=ver_spacing)
     
     for l, line_label in enumerate(rois_groups):
         for j, roi in enumerate(line_label):
@@ -667,23 +713,29 @@ def prf_ecc_size_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           row=1, col=l + 1)
             
             # Add legend
-            annotation = go.layout.Annotation(x=1, y=max_ecc-j*1.5, text=roi, xanchor='left',
+            annotation = go.layout.Annotation(x=1, y=max_size-(j*0.1*max_size), text=roi, xanchor='left',
                                               showarrow=False, font_color=roi_color, 
                                               font_family=template_specs['font'],
                                               font_size=template_specs['axes_font_size'],
                                              )
             fig.add_annotation(annotation, row=1, col=l+1)
 
-        # Set axis titles only for the left-most column and bottom-most row
-        fig.update_yaxes(title_text='pRF size (dva)', row=1, col=1)
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True, row=1, col=l+1)
-        fig.update_yaxes(range=[0, max_ecc], showline=True)
-        fig.update_layout(height=fig_height, width=fig_width, showlegend=False, template=fig_template,
-                         margin_l=100, margin_r=50, margin_t=50, margin_b=100)
+        # Set axis
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
+        fig.update_yaxes(title_text='pRF size (dva)', range=[0, max_size], showline=True)
+        fig.update_layout(height=fig_height, 
+                          width=fig_width, 
+                          showlegend=False, 
+                          template=fig_template,
+                          margin_l=fig_margin[0], 
+                          margin_t=fig_margin[1], 
+                          margin_r=fig_margin[2], 
+                          margin_b=fig_margin[3]
+                         )
         
     return fig
 
-def prf_ecc_pcm_plot(df, fig_width, fig_height, rsq2use, figure_info):
+def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     """
     Make scatter plot for relationship between eccentricity and pCM
 
@@ -709,17 +761,34 @@ def prf_ecc_pcm_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    max_ecc = figure_info['ecc_pcm_max_ecc']
-    rois_groups = figure_info['rois_groups']
+    max_ecc = figure_info['ecc_pcm_max'][0]
+    max_pcm = figure_info['ecc_pcm_max'][1]
+    
+    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['rois_fig_margin']
+    rois_groups = figure_info['rois_groups']
+    rows, cols = 1, len(rois_groups)
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    # bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
+    rois_plot_width = figure_info['rois_plot_width']
+    
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
+    fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
 
     # General settings
-    rows, cols = 1, len(rois_groups)
-    fig = make_subplots(rows=rows, cols=cols, print_grid=False)
+    fig = make_subplots(rows=rows, cols=cols, print_grid=False,
+                        horizontal_spacing=hor_spacing,
+                        vertical_spacing=ver_spacing
+                       )
     
     for l, line_label in enumerate(rois_groups):
         for j, roi in enumerate(line_label):
@@ -789,31 +858,35 @@ def prf_ecc_pcm_plot(df, fig_width, fig_height, rsq2use, figure_info):
                           row=1, col=l + 1)
             
             # Add legend
-            annotation = go.layout.Annotation(x=12, y=(15)-j*1.5, text=roi, xanchor='left',
+            annotation = go.layout.Annotation(x=max_ecc-0.2*max_ecc, y=max_pcm-(j*0.1*max_pcm), text=roi, xanchor='left',
                                               showarrow=False, font_color=roi_color, 
                                               font_family=template_specs['font'],
                                               font_size=template_specs['axes_font_size'],
                                              )
             fig.add_annotation(annotation, row=1, col=l+1)
 
-        # Set axis titles only for the left-most column and bottom-most row
-        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', row=1, col=1)
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True, row=1, col=l+1)
-        fig.update_yaxes(range=[0, 15], showline=True)
-        fig.update_layout(height=fig_height, width=fig_width, showlegend=False, template=fig_template,
-                         margin_l=100, margin_r=50, margin_t=50, margin_b=100)
+        # Set axis 
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
+        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[0, max_pcm], showline=True)
+        fig.update_layout(height=fig_height, 
+                          width=fig_width, 
+                          showlegend=False, 
+                          template=fig_template,
+                          margin_l=fig_margin[0], 
+                          margin_t=fig_margin[1], 
+                          margin_r=fig_margin[2], 
+                          margin_b=fig_margin[3]
+                         )
         
     return fig
 
-def prf_polar_angle_plot(df, fig_width, fig_height, figure_info) :    
+def prf_polar_angle_plot(df, figure_info) :    
     """
     Make polar angle distribution plots
     
     Parameters
     ----------
     df : polar angle dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
     figure_info : figure settings dict
      
     Returns
@@ -828,24 +901,39 @@ def prf_polar_angle_plot(df, fig_width, fig_height, figure_info) :
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    max_ecc = figure_info['ecc_pcm_max_ecc']
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     num_bins = figure_info['polar_angle_num_bins']
+    rows, cols = 1, len(rois)
+
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['roi_fig_margin']
+    rois_groups = figure_info['rois_groups']
+    rows, cols = 1, len(rois)
+    roi_hor_spacing = figure_info['roi_hor_spacing']
+    roi_ver_spacing = figure_info['roi_ver_spacing']
+    roi_plot_height = figure_info['roi_plot_height']
+    roi_plot_width = figure_info['roi_plot_width']
+    
+    fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
+    fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
+    hor_spacing = roi_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = roi_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])    
     
     # General settings
-    rows, cols = 1, len(rois)
     specs = [[{'type': 'polar'}] * cols]
     
     figs = []
     hemispheres = []
     hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
     for i, hemi in enumerate(hemis):
-        fig = make_subplots(rows=rows, cols=cols, print_grid=False, specs=specs)
+        fig = make_subplots(rows=rows, cols=cols, print_grid=False, specs=specs,
+                            horizontal_spacing=hor_spacing, 
+                            vertical_spacing=ver_spacing)
             
         for j, roi in enumerate(rois):
             if j == 0: showlegend = True
@@ -876,31 +964,29 @@ def prf_polar_angle_plot(df, fig_width, fig_height, figure_info) :
                           legend=dict(orientation="h", 
                                   font_family=template_specs['font'],
                                   font_size=template_specs['axes_font_size'],
-                                  y=1.1, 
+                                  y=1.4, 
                                   yanchor='top', 
                                   xanchor='left', 
                                   traceorder='normal', 
                                   itemwidth=30), 
                           template=fig_template,
-                          margin_l=50, 
-                          margin_r=50, 
-                          margin_t=50, 
-                          margin_b=50)
+                          margin_l=fig_margin[0], 
+                          margin_t=fig_margin[1], 
+                          margin_r=fig_margin[2], 
+                          margin_b=fig_margin[3])
                           
         figs.append(fig)
         hemispheres.append(hemi)
         
     return figs, hemispheres
 
-def prf_contralaterality_plot(df, fig_height, fig_width, figure_info):
+def prf_contralaterality_plot(df, figure_info):
     """
     Make contralaterality pie plot
     
     Parameters
     ----------
     df_contralaterality : dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
     figure_info : figure settings dict
      
     Returns
@@ -915,17 +1001,34 @@ def prf_contralaterality_plot(df, fig_height, fig_width, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
+    num_bins = figure_info['polar_angle_num_bins']
+    rows, cols = 1, len(rois)
+
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['roi_fig_margin']
+    rois_groups = figure_info['rois_groups']
+    rows, cols = 1, len(rois)
+    roi_hor_spacing = figure_info['roi_hor_spacing']
+    roi_ver_spacing = figure_info['roi_ver_spacing']
+    roi_plot_height = figure_info['roi_plot_height']
+    roi_plot_width = figure_info['roi_plot_width']
+    
+    fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
+    fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
+    hor_spacing = roi_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = roi_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])    
 
     # General settings
-    rows, cols = 1, len(rois)
     specs = [[{'type': 'pie'}] * cols]    
-    fig = make_subplots(rows=rows, cols=cols, print_grid=False, specs=specs)
+    fig = make_subplots(rows=rows, cols=cols, print_grid=False, specs=specs, 
+                        horizontal_spacing=hor_spacing, 
+                        vertical_spacing=ver_spacing)
     
     for j, roi in enumerate(rois):
 
@@ -938,31 +1041,30 @@ def prf_contralaterality_plot(df, fig_height, fig_width, figure_info):
 
 
         fig.add_trace(go.Pie(values=values,
-                             marker=dict(colors=[roi_colors[roi], 'white'])
+                             marker=dict(colors=[roi_colors[roi], 'white']),
+                             name=roi,
+                             showlegend=False
                             ),
                       row=1, col=j+1)
 
     # Define parameters
     fig.update_layout(height=fig_height, 
                       width=fig_width, 
-                      showlegend=False,
                       template=fig_template,
-                      margin_l=50, 
-                      margin_r=50, 
-                      margin_t=50, 
-                      margin_b=50)
+                      margin_l=fig_margin[0], 
+                      margin_t=fig_margin[1], 
+                      margin_r=fig_margin[2], 
+                      margin_b=fig_margin[3])
     
     return fig 
 
-def prf_distribution_plot(df, fig_height, fig_width, figure_info):
+def prf_distribution_plot(df, figure_info):
     """
     Make prf distribution contour plot
     
     Parameters
     ----------
     df : dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
     figure_info : figure settings dict
      
     Returns
@@ -977,23 +1079,38 @@ def prf_distribution_plot(df, fig_height, fig_width, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     fig_template = plotly_template(template_specs)
-    rois = figure_info['rois']
-    roi_colors = figure_info['roi_colors']
     distribution_screen_side = figure_info['distribution_screen_side']
     distribution_max_ecc = figure_info['distribution_max_ecc']
-    
-    # General figure settings
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
+    num_bins = figure_info['polar_angle_num_bins']
     rows, cols = 1, len(rois)
-    line_width = 1
-    contour_width = 0.5
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['roi_fig_margin']
+    rois_groups = figure_info['rois_groups']
+    rows, cols = 1, len(rois)
+    roi_hor_spacing = figure_info['roi_hor_spacing']
+    roi_ver_spacing = figure_info['roi_ver_spacing']
+    roi_plot_height = figure_info['roi_plot_height']
+    roi_plot_width = figure_info['roi_plot_width']
     
+    fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
+    fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
+    hor_spacing = roi_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = roi_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])    
+
+    # General figure settings
+    line_width = 1
+    contour_width = 0.5    
     figs = []
     hemispheres = []
     hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
     for i, hemi in enumerate(hemis):  
-        fig = make_subplots(rows=rows ,cols=cols)
+        fig = make_subplots(rows=rows, cols=cols, 
+                            horizontal_spacing=hor_spacing, 
+                            vertical_spacing=ver_spacing)
         for j, roi in enumerate(rois) :
             if df.empty:
                 print(f"[WARNING] No data for ROI: {roi}")
@@ -1010,7 +1127,7 @@ def prf_distribution_plot(df, fig_height, fig_width, figure_info):
                                      z=gauss_z_tot, 
                                      colorscale=[[0, 'white'],[1, roi_colors[roi]]],  
                                      showscale=False,  
-                                     line=dict(color='black', width=contour_width),  
+                                     line=dict(color=roi_colors[roi], width=contour_width),  
                                      contours=dict(coloring='fill', 
                                                    start=0.1, 
                                                    end=0.9, 
@@ -1018,7 +1135,7 @@ def prf_distribution_plot(df, fig_height, fig_width, figure_info):
                                                    showlines=True, 
                                                    showlabels = True, 
                                                    labelfont = dict(size=5, 
-                                                                    color='black')),
+                                                                    color=roi_colors[roi])),
                                      ),row=1, col=j+1)
             
             # x line
@@ -1049,10 +1166,10 @@ def prf_distribution_plot(df, fig_height, fig_width, figure_info):
                           width=fig_width, 
                           showlegend=False,
                           template=fig_template,
-                          margin_l=10, 
-                          margin_r=10, 
-                          margin_t=100, 
-                          margin_b=100)
+                          margin_l=fig_margin[0], 
+                          margin_t=fig_margin[1], 
+                          margin_r=fig_margin[2], 
+                          margin_b=fig_margin[3])
         figs.append(fig)
         hemispheres.append(hemi)
     return figs, hemispheres
@@ -1079,7 +1196,7 @@ def active_vertex_roi_plot(df_active_vertex_roi, fig_height, fig_width, roi_colo
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     fig_template = plotly_template(template_specs)
     
     rows, cols = 1, len(plot_groups)
@@ -1155,7 +1272,7 @@ def active_vertex_roi_mmp_plot(df_active_vertex_roi_mmp, fig_height, fig_width, 
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     fig_template = plotly_template(template_specs)
     
     rows, cols = len(plot_groups), 3 
@@ -1354,15 +1471,13 @@ def make_figures_html(subject, figures, figs_title):
 
     return subject_html
     
-def prf_barycentre_plot(df, fig_height, fig_width, figure_info):
+def prf_barycentre_plot(df, figure_info):
     """
     Make prf barycentre plot
     
     Parameters
     ----------
     df : dataframe
-    fig_width : figure width in pixels
-    fig_height : figure height in pixels
     figure_info : figure settings dict
      
     Returns
@@ -1377,91 +1492,140 @@ def prf_barycentre_plot(df, fig_height, fig_width, figure_info):
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
+
+    # Figure settings
     fig_template = plotly_template(template_specs)
+    distribution_screen_side = figure_info['distribution_screen_side']
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
-    distribution_screen_side = figure_info['distribution_screen_side']
-    
+    num_bins = figure_info['polar_angle_num_bins']
+    rows, cols = 1, len(rois)
+    fig_margin = figure_info['roi_fig_margin']
+    roi_hor_spacing = figure_info['roi_hor_spacing']
+    roi_ver_spacing = figure_info['roi_ver_spacing']
+    roi_plot_height = figure_info['roi_plot_height']
+    roi_plot_width = figure_info['roi_plot_width']
+    fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
+    fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
+    hor_spacing = roi_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = roi_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
+
     # General figure settings
     line_width = 1
-    fig = go.Figure()
     hemis = ['hemi-L', 'hemi-R']
-    for i, hemi in enumerate(hemis): 
-        if hemi=='hemi-L': symbol, showlegend = 'square' , True
-        elif hemi=='hemi-R': symbol, showlegend = 'circle' , False
-        for j, roi in enumerate(rois) :
+
+    fig = make_subplots(rows=rows, cols=cols,
+                        horizontal_spacing=hor_spacing,
+                        vertical_spacing=ver_spacing)
+
+    for i, hemi in enumerate(hemis):
+        if hemi == 'hemi-L':
+            symbol = 'square'
+            hemi_letter = 'L'
+        elif hemi == 'hemi-R':
+            symbol = 'square'
+            hemi_letter = 'R'
+
+        for j, roi in enumerate(rois):
             # Make df roi
-            df_roi = df.loc[(df.roi == roi) & (df.hemi == hemi)]    
+            df_roi = df.loc[(df.roi == roi) & (df.hemi == hemi)]
+
+            # Center lines
+            if hemi == 'hemi-L':
+                fig.add_trace(go.Scatter(
+                    x=[0, 0],
+                    y=[-distribution_screen_side, distribution_screen_side],
+                    mode='lines',
+                    showlegend=False,
+                    line=dict(dash='2px', color='grey', width=line_width)
+                ), row=1, col=j+1)
     
-            # barycentre position
-            fig.add_trace(go.Scatter(x=df_roi.barycentre_x, 
-                                     y=df_roi.barycentre_y, 
-                                     mode='markers', 
-                                     name = roi,
-                                     marker=dict(symbol=symbol, 
-                                                 color=roi_colors[roi], 
-                                                 size=12),
-                                     error_x=dict(type='data', 
-                                                  array=[df_roi.upper_ci_x - df_roi.barycentre_x], 
-                                                  arrayminus=[df_roi.barycentre_x - df_roi.lower_ci_x],
-                                                  visible=True, 
-                                                  thickness=3, 
-                                                  width=0, 
-                                                  color=roi_colors[roi]),
-                                     error_y=dict(type='data', 
-                                                  array=[df_roi.upper_ci_y - df_roi.barycentre_y], 
-                                                  arrayminus=[df_roi.barycentre_y - df_roi.lower_ci_y],
-                                                  visible=True, 
-                                                  thickness=3, 
-                                                  width=0, 
-                                                  color=roi_colors[roi]),
-                                 showlegend=showlegend))
-        # Center lignes
-        fig.add_trace(go.Scatter(x=[0,0], 
-                                 y=[-distribution_screen_side, distribution_screen_side], 
-                                 mode='lines', 
-                                 showlegend=False, 
-                                 line=dict(dash='2px',color='grey', width=line_width)))
-        
-        fig.add_trace(go.Scatter(x=[-distribution_screen_side,distribution_screen_side], 
-                                 y=[0,0], 
-                                 mode='lines', 
-                                 showlegend=False,
-                                 line=dict(dash='2px',color='grey', width=line_width)))
-        
-        # Add squares 
-        for position in [2,4,6,8,10]:
-            fig.add_shape(type="rect", 
-                          x0=-position, 
-                          y0=-position, 
-                          x1=position, 
-                          y1=position, 
-                          line=dict(dash='2px',color='grey', width=line_width))
-        # Add annotations 
-        fig.add_trace(go.Scatter(x=[0, 0, 0, 0, 0], 
-                                 y=[2.2, 4.2, 6.2, 8.2, 10.2], 
-                                 showlegend=False, 
-                                 text=["2 dva", 
-                                       "4 dva", 
-                                       "6 dva",
-                                       "8 dva", 
-                                       "10 dva"], 
-                                 mode="text", 
-                                 textfont=dict(size=10)))
+                fig.add_trace(go.Scatter(
+                    x=[-distribution_screen_side, distribution_screen_side],
+                    y=[0, 0],
+                    mode='lines',
+                    showlegend=False,
+                    line=dict(dash='2px', color='grey', width=line_width)
+                ), row=1, col=j+1)
     
-    fig.update_yaxes(range=[-12,12],color= ('rgba(255,255,255,0)'))
-    fig.update_xaxes(range=[-12,12],color= ('rgba(255,255,255,0)'))
+                # Draw circles instead of squares
+                for radius in [5, 10]:
+                    fig.add_trace(go.Scatter(
+                        x=[radius * np.cos(theta) for theta in np.linspace(0, 2*np.pi, 100)],
+                        y=[radius * np.sin(theta) for theta in np.linspace(0, 2*np.pi, 100)],
+                        mode="lines",
+                        line=dict(color="grey", width=line_width, dash="dot"),
+                        showlegend=False,
+                    ), row=1, col=j+1)
+    
+                # Add annotations
+                fig.add_trace(go.Scatter(
+                    x=[0, 0],
+                    y=[6, 11],
+                    showlegend=False,
+                    text=["5 dva", "10 dva"],
+                    mode="text",
+                    textfont=dict(size=8)
+                ), row=1, col=j+1)
+            
+            # Barycentre position
+            fig.add_trace(go.Scatter(
+                x=df_roi.barycentre_x,
+                y=df_roi.barycentre_y,
+                mode='markers+text',
+                name=roi,
+                marker=dict(
+                    symbol=symbol,
+                    color='white',
+                    size=12,
+                    line=dict(
+                        color=roi_colors[roi], 
+                        width=1.5 
+                    )
+                ),
+                text=[f"<b>{hemi_letter}</b>"],
+                textposition="middle center",
+                textfont=dict(size=8, color=roi_colors[roi]),
+                error_x=dict(
+                    type='data',
+                    array=[df_roi.upper_ci_x - df_roi.barycentre_x],
+                    arrayminus=[df_roi.barycentre_x - df_roi.lower_ci_x],
+                    visible=True,
+                    thickness=1.5,
+                    width=0,
+                    color=roi_colors[roi]
+                ),
+                error_y=dict(
+                    type='data',
+                    array=[df_roi.upper_ci_y - df_roi.barycentre_y],
+                    arrayminus=[df_roi.barycentre_y - df_roi.lower_ci_y],
+                    visible=True,
+                    thickness=1.5,
+                    width=0,
+                    color=roi_colors[roi]
+                ),
+                showlegend=False
+            ), row=1, col=j+1)
+
+            
+
+    fig.update_yaxes(range=[-12, 12], color='rgba(255,255,255,0)')
+    fig.update_xaxes(range=[-12, 12], color='rgba(255,255,255,0)')
 
     # Define parameters
-    fig.update_layout(height=fig_height, 
-                      width=fig_width, 
-                      showlegend=True,
-                      template=fig_template,
-                      margin_l=570, 
-                      margin_r=570, 
-                      margin_t=50, 
-                      margin_b=50)
+    fig.update_layout(
+        height=fig_height,
+        width=fig_width,
+        autosize=False,
+        showlegend=True,
+        template=fig_template,
+        margin_l=fig_margin[0],
+        margin_t=fig_margin[1],
+        margin_r=fig_margin[2],
+        margin_b=fig_margin[3]
+    )
+
     return fig
 
 def categories_proportions_roi_plot(df_categories, fig_height, fig_width, rois, roi_colors, categorie_color_map):
@@ -1497,7 +1661,7 @@ def categories_proportions_roi_plot(df_categories, fig_height, fig_width, rois, 
                           bg_col="rgba(255, 255, 255, 1)",
                           font='Arial',
                           title_font_size=15,
-                          plot_width=1.5)
+                          rois_plot_width=1.5)
     
     # General figure settings
     fig_template = plotly_template(template_specs)
@@ -1675,13 +1839,9 @@ def surface_rois_all_categories_plot(data, subject, fig_height, fig_width):
                      tickfont=dict(size=12))      
     
     fig.update_yaxes(range=[0,5000], 
-                     nticks=5, 
-                     title_text='Surface in mm<sup>2</sup>')
-    
-    fig.update_layout(height=fig_height, 
-                      width=fig_width,
-                      barmode='stack',
-                      showlegend=True, 
-                      template='simple_white')  
-    
-    return fig 
+                      margin_l=100, 
+                      margin_r=50, 
+                      margin_t=50, 
+                      margin_b=50)
+
+    return fig

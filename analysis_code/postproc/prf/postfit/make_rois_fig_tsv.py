@@ -97,8 +97,8 @@ with open(fig_settings_path) as f:
 ecc_size_num_bins = figure_info['ecc_size_num_bins']
 ecc_pcm_num_bins = figure_info['ecc_pcm_num_bins']
 polar_angle_num_bins = figure_info['polar_angle_num_bins']
-ecc_pcm_max_ecc = figure_info['ecc_pcm_max_ecc']
-ecc_size_max_ecc = figure_info['ecc_size_max_ecc']
+ecc_pcm_max = figure_info['ecc_pcm_max']
+ecc_size_max = figure_info['ecc_size_max']
 distribution_max_ecc = figure_info['distribution_max_ecc']
 distribution_mesh_grain = figure_info['distribution_mesh_grain']
 hot_zone_percent = figure_info['hot_zone_percent']
@@ -206,7 +206,7 @@ for avg_method in avg_methods:
                     df_params_median_roi['prf_size_weighted_median'] = weighted_nan_median(df_roi.prf_size, weights=df_roi[rsq2use])
                     df_params_median_roi['prf_size_ci_down'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 25)
                     df_params_median_roi['prf_size_ci_up'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 75)
-                    
+
                     df_params_median_roi['prf_ecc_weighted_median'] = weighted_nan_median(df_roi.prf_ecc, weights=df_roi[rsq2use])
                     df_params_median_roi['prf_ecc_ci_down'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 25)
                     df_params_median_roi['prf_ecc_ci_up'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 75)
@@ -229,7 +229,7 @@ for avg_method in avg_methods:
                 
                 # Ecc.size
                 # --------
-                ecc_bins = np.linspace(0, ecc_size_max_ecc, ecc_size_num_bins+1) 
+                ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data.loc[(data.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -254,7 +254,7 @@ for avg_method in avg_methods:
                 # Ecc.pCM
                 # --------
                 data_pcm = data
-                ecc_bins = np.linspace(0, ecc_pcm_max_ecc, ecc_pcm_num_bins+1) 
+                ecc_bins = np.linspace(0, ecc_pcm_max[1], ecc_pcm_num_bins+1) 
                 for num_roi, roi in enumerate(rois):
                     df_roi = data_pcm.loc[(data.roi == roi)]
                     df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))

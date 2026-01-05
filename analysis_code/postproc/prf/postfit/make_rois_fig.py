@@ -80,7 +80,13 @@ with open(fig_settings_path) as f:
     json_s = f.read()
     figure_info = json.loads(json_s)
 
-fig_width = 1440
+fig_width_roi = 120
+fig_width_rois = 360
+fig_lr_margin = 50
+
+fig_width_indiv = len(figure_info['rois'])*fig_width_roi
+fig_width_group = len(figure_info['rois_groups'])*fig_width_rois
+row_height = fig_width_roi + fig_lr_margin*2
 
 # Main loop
 for avg_method in avg_methods:
@@ -105,90 +111,78 @@ for avg_method in avg_methods:
             # Roi active vertex
             tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(tsv_dir, subject, fn_spec)
             df_roi_active_vert = pd.read_table(tsv_roi_active_vert_fn, sep="\t")
-            fig = prf_roi_active_vert_plot(df=df_roi_active_vert, fig_width=fig_width, fig_height=300,
-                                           format=format_, figure_info=figure_info)
+            fig = prf_roi_active_vert_plot(df=df_roi_active_vert, figure_info=figure_info, format=format_, )
             fig_fn = "{}/{}_{}_prf-css_active-vert.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
-
+            
             # Violins plot
             tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(tsv_dir, subject, fn_spec)
             df_violins = pd.read_table(tsv_violins_fn, sep="\t")
-            fig = prf_violins_plot(df=df_violins, fig_width=fig_width, fig_height=600, 
-                                   rsq2use=rsq2use, figure_info=figure_info)
+            fig = prf_violins_plot(df=df_violins, figure_info=figure_info, rsq2use=rsq2use)
             fig_fn = "{}/{}_{}_prf-css_violins.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
-
+            
             # Parameters median plot
             tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(tsv_dir, subject, fn_spec)
             df_params_median = pd.read_table(tsv_params_median_fn, sep="\t")
-            fig = prf_params_median_plot(df=df_params_median, fig_width=fig_width, fig_height=600, 
-                                         rsq2use=rsq2use, figure_info=figure_info)
+            fig = prf_params_median_plot(df=df_params_median, figure_info=figure_info, rsq2use=rsq2use)
             fig_fn = "{}/{}_{}_prf-css_params-median.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
-            
+
             # Ecc.size plots
             tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(tsv_dir, subject, fn_spec)
             df_ecc_size = pd.read_table(tsv_ecc_size_fn, sep="\t")
-            fig = prf_ecc_size_plot(df=df_ecc_size, fig_width=fig_width, fig_height=400, 
-                                    rsq2use=rsq2use, figure_info=figure_info)
+            fig = prf_ecc_size_plot(df=df_ecc_size, figure_info=figure_info, rsq2use=rsq2use)
             fig_fn = "{}/{}_{}_prf-css_ecc-size.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
-
+            
             # Ecc.pCM plot
             tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(tsv_dir, subject, fn_spec)
             df_ecc_pcm = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
             fig_fn = "{}/{}_{}_prf-css_ecc-pcm.pdf".format(fig_dir, subject, fn_spec)
-            fig = prf_ecc_pcm_plot(df=df_ecc_pcm, fig_width=fig_width, fig_height=400, 
-                                   rsq2use=rsq2use, figure_info=figure_info)
+            fig = prf_ecc_pcm_plot(df=df_ecc_pcm, figure_info=figure_info, rsq2use=rsq2use)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
 
             # Polar angle distributions
             tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
             df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
-            figs, hemis = prf_polar_angle_plot(df=df_polar_angle, fig_width=fig_width, fig_height=300, 
-                                               figure_info=figure_info)
+            figs, hemis = prf_polar_angle_plot(df=df_polar_angle, figure_info=figure_info)
             for (fig, hemi) in zip(figs, hemis):
                 if hemi == 'hemi-LR':
                     fig_fn = "{}/{}_{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
                     print('Saving pdf: {}'.format(fig_fn))
                     fig.write_image(fig_fn)
-            
+
             # Contralaterality plots
             tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
             df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
             fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
-            fig = prf_contralaterality_plot(df=df_contralaterality, fig_width=fig_width, fig_height=300,
-                                           figure_info=figure_info)
+            fig = prf_contralaterality_plot(df=df_contralaterality, figure_info=figure_info)
             print('Saving pdf: {}'.format(fig_fn))
-            fig.write_image(fig_fn)
-
+            fig.write_image(fig_fn)            
+            
             # Spatial distribution plot
             tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
             df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
-            df_distribution
-            figs, hemis = prf_distribution_plot(df=df_distribution, fig_width=fig_width, fig_height=300, 
-                                                figure_info=figure_info)
-        
+            figs, hemis = prf_distribution_plot(df=df_distribution, figure_info=figure_info)
             for (fig, hemi) in zip(figs, hemis):
                 if hemi == 'hemi-LR':
                     fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
                     print('Saving pdf: {}'.format(fig_fn))
                     fig.write_image(fig_fn)
-
+            
             # Spatial distibution barycentre plot
             tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
             df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
             fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
-            fig = prf_barycentre_plot(df=df_barycentre, fig_width=fig_width, fig_height=400,
-                                      figure_info=figure_info)
+            fig = prf_barycentre_plot(df=df_barycentre, figure_info=figure_info)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
-            
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
