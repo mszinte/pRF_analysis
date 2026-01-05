@@ -23,7 +23,7 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
-output_folder = ("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/nilearn_partial_corr")
+output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/nilearn_partial_corr"
 
 # Custom utils
 main_codes = f"/home/{USER}/projects"
@@ -161,7 +161,11 @@ for subject in subjects:
                 partial_matrix[i_cl, pj] = partial_values_included[k]
             # excluded parcel columns remain NaN for this seed (as desired)
 
-    # Fill global matrix with NaNs for missing parcels and clusters
+	# Fill global matrix with NaNs for missing parcels and clusters
+	# Note: NaNs here reflect parcels that are systematically excluded
+	# from partial correlation conditioning for a given seed.
+	# Group averages are therefore computed over the valid subset only.
+
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
     
@@ -176,15 +180,8 @@ for subject in subjects:
     all_subject_parcel_full.append(parcel_full_filled)
  
     # Per-subject output folder
-    sub_out = (
-        f"/home/{USER}/disks/meso_shared/RetinoMaps/derivatives/pp_data/"
-        f"{subject}/91k/rest/corr/partial_corr"
-    )
+    sub_out = f'{main_data}/{subject}/91k/rest/corr/partial_corr'
     os.makedirs(sub_out, exist_ok=True)
-
-    np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
-    np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
-    np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
 
     # Map subject-local cluster names to global cluster indices
     for i_cl, cl in enumerate(cluster_names_used):
@@ -198,10 +195,15 @@ for subject in subjects:
                 # partial_matrix has NaN for excluded parcels by construction
                 partial_filled[global_r, global_c] = partial_matrix[i_cl, j_pa]
 
-    # Append per-subject full-sized matrices (aligned to global clusters x parcels)
+    # Save per subject outputs
+    np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
+    np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
+    np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
+
+    # Append for group stats
     all_subject_full_matrices.append(full_filled)
     all_subject_partial_matrices.append(partial_filled)
-    all_subject_parcel_names.append(parcel_names_used)
+    all_subject_parcel_full.append(parcel_full_filled)
 
 #%% Group stats (n_subjects, n_clusters, n_parcels)
 all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
