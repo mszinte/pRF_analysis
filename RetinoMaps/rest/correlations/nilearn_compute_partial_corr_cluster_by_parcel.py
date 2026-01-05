@@ -23,7 +23,7 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
-output_folder = ("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/nilearn_partial_corr")
+output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/nilearn_partial_corr"
 
 # Custom utils
 main_codes = f"/home/{USER}/projects"
@@ -180,7 +180,7 @@ for subject in subjects:
     all_subject_parcel_full.append(parcel_full_filled)
  
     # Per-subject output folder
-    sub_out = (f'{main_data}/{subject}/91k/rest/corr/partial_corr")
+    sub_out = f'{main_data}/{subject}/91k/rest/corr/partial_corr'
     os.makedirs(sub_out, exist_ok=True)
 
     # Map subject-local cluster names to global cluster indices
