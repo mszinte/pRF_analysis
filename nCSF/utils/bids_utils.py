@@ -21,16 +21,34 @@ import pandas as pd
 
 def clean_anat_mp2rage(anat_dir):
     """
-    Remove unused .bvec/.bval files associated with MP2RAGE acquisitions only.
+    Keep only MP2RAGE UNIDEN T1w image and remove all other MP2RAGE-related files.
+
+    This function assumes that original files are safely stored in sourcedata.
     """
-    if not os.path.exists(anat_dir):
+    if not os.path.isdir(anat_dir):
         return
 
-    for f in os.listdir(anat_dir):
-        if "MP2RAGE" in f and (f.endswith(".bvec") or f.endswith(".bval")):
-            os.remove(os.path.join(anat_dir, f))
+    for fname in os.listdir(anat_dir):
 
-    print("Cleaned MP2RAGE .bvec/.bval in {}".format(anat_dir))
+        # Work only on MP2RAGE-related files
+        if "MP2RAGE" not in fname and "UNIDEN" not in fname:
+            continue
+
+        fpath = os.path.join(anat_dir, fname)
+
+        # Keep UNIDEN T1w (nii.gz and json)
+        if (
+            "UNIDEN" in fname
+            and "_T1w" in fname
+            and (fname.endswith(".nii.gz") or fname.endswith(".json"))
+        ):
+            continue
+
+        # Remove everything else related to MP2RAGE
+        if os.path.isfile(fpath):
+            os.remove(fpath)
+
+    print("Kept only UNIDEN T1w and removed other MP2RAGE files in {}".format(anat_dir))
 
 
 def update_mp2rage_json(anat_dir, tr_exc=0, tr_prep=5, nshots=1):

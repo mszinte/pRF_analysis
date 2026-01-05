@@ -39,6 +39,7 @@ python fmriprep_sbatch.py [main directory] [project name] [subject num]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-13 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.2.0.simg
+python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 30 anat_only_y aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 uriel.lascombes@univ-amu.fr 327 b327 fmriprep-25.2.3.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -74,7 +75,7 @@ fmriprep_simg = sys.argv[16]
 
 # Define cluster/server specific parameters
 cluster_name  = 'skylake'
-singularity_dir = f"{main_dir}/{project_dir}/code/singularity/{fmriprep_simg}"
+singularity_dir = "{}/{}/code/singularity/{}".format(main_dir, project_dir, fmriprep_simg)
 nb_procs = 32
 memory_val = 100
 log_dir = "{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs".format(
@@ -106,10 +107,33 @@ if hcp_cifti_val == 'cifti_output_170k_y':
     hcp_cifti = ' --cifti-output 170k'
     
 if fsaverage_val == 'fsaverage_y':
-    tf_export = 'export SINGULARITYENV_TEMPLATEFLOW_HOME=/opt/templateflow'
-    tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
-        main_dir=main_dir, project_dir=project_dir) 
-    fsaverage = 'fsaverage'
+    tf_dir = "{}/{}/code/singularity/fmriprep_tf".format(main_dir, project_dir)
+
+    # Install TemplateFlow only if the directory does not exist
+    if not os.path.exists(tf_dir):
+        print("TemplateFlow directory {} does not exist. Installing all templates...".format(tf_dir))
+        os.makedirs(tf_dir, exist_ok=True)
+
+        # Try to import templateflow, install it if missing
+        try:
+            import templateflow
+        except ImportError:
+            os.system("pip install --user templateflow")
+
+        import templateflow.api as tflow_api
+
+        # Set TEMPLATEFLOW_HOME
+        print("Install TemplateFlow in {}".format(tf_dir))
+        os.environ['TEMPLATEFLOW_HOME'] = tf_dir
+
+        # Download all available templates
+        for tpl in tflow_api.templates():
+            try:
+                tflow_api.get(tpl)
+            except RuntimeError as e:
+                print("Warning: Failed to download template {}, skipping. ({})".format(tpl, e))
+    else:
+        print("TemplateFlow directory {} already exists. Skipping installation.".format(tf_dir))      
 
 if fs_no_resume_val == 'fs_no_resume_y':
     use_fs_no_resume = " --fs-no-resume"
@@ -169,3 +193,4 @@ of.close()
 print("Submitting {sh_fn} to queue".format(sh_fn=sh_fn))
 os.chdir(log_dir)
 os.system("sbatch {sh_fn}".format(sh_fn=sh_fn))
+
