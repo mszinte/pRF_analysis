@@ -200,10 +200,10 @@ for subject in subjects:
     all_subject_partial_matrices.append(partial_filled)
     all_subject_parcel_names.append(parcel_names_used) ## not used later but maybe useful for sanity checks?
     
-	# Save (after filling)
-	np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
-	np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
-	np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
+# Save (after filling)
+np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
+np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
+np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
 
 #%% Group stats (n_subjects, n_clusters, n_parcels)
 all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
