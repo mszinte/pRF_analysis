@@ -25,7 +25,7 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
-python bidsonym_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 latest pydeface
+python bidsonym_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 v0.0.4 pydeface
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
@@ -54,8 +54,10 @@ defacing_algorithm = sys.argv[7]
 
 subject_num = subject.split('-')[1]
 
-# define analysis parameters
-with open('../settings.json') as f:
+# Define analysis parameters
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.json")
+with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 # Define cluster/server specific parameters
@@ -67,11 +69,11 @@ hour_proc = 1
 
 # set folders
 log_dir = "{}/{}/derivatives/log_outputs".format(main_dir, project_dir)
-job_dir = "{}/{}/derivativesjobs".format(main_dir, project_dir)
+job_dir = "{}/{}/derivatives/jobs".format(main_dir, project_dir)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 bids_dir = "{}/{}".format(main_dir, project_dir)
-bidsonym_img = "{}/code/bidsonym-{}.sim".format(bids_dir, bydsonym_version)
+bidsonym_img = "{}/code/singularity/bidsonym-{}.simg".format(bids_dir, bydsonym_version)
 
 slurm_cmd = """\
 #!/bin/bash
@@ -87,7 +89,8 @@ slurm_cmd = """\
 """.format(server_project=server_project, cluster_name=cluster_name, subject=subject,
 nb_procs=nb_procs, hour_proc=hour_proc, memory_val=memory_val, log_dir=log_dir)
 
-bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant-label {} --deid {} --brainextraction --bet_frac 0.5".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm)
+# bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant-label {} --deid {} --brainextraction --bet_frac 0.5".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm)
+bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant_label {} --deid {} --brainextraction nobrainer --skip_bids_validation".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm)
 
 # create sh fn
 sh_fn = "{}/{}_bidsonym.sh".format(job_dir, subject)

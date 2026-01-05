@@ -21,6 +21,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 ---
 ### *Individual subject*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
-- [x] Download BIDSonym singularity (singularity build /scratch/mszinte/data/nCSF/code/singularity/bidsonym-latest.simg docker://peerherholz/bidsonym:latest) 
-- [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
+- [x] Download BIDSonym singularity (singularity build /scratch/mszinte/data/nCSF/code/singularity/bidsonym-v0.0.4.simg docker://peerherholz/bidsonym:v0.0.4) 
+- [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py)
+- [x] Download fMRIprep singulatity (singularity build /scratch/mszinte/data/nCSF/code/singularity/fmriprep-25.2.3.simg docker://nipreps/fmriprep:25.2.3)
 - [x] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
