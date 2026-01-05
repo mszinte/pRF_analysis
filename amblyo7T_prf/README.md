@@ -70,4 +70,4 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) 
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
-- [ ] Merge all figures [merge_fig_css.py](../analysis_code/postproc/prf/postfit/merge_fig_css.py)
+- [x] Merge all figures [merge_fig_css.py](../analysis_code/postproc/prf/postfit/merge_fig_css.py)
