@@ -18,7 +18,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 2:00:00
+python submit_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -36,7 +36,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-proc_time = sys.argv[5] # try with 4 hours
+proc_time = sys.argv[5] # 1 hour is usually enough
 
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs
