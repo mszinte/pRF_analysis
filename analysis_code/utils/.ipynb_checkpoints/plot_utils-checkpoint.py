@@ -1845,3 +1845,18 @@ def surface_rois_all_categories_plot(data, subject, fig_height, fig_width):
                       margin_b=50)
 
     return fig
+
+def remove_second_page(pdf_path):
+    """
+    Remove the second page from a PDF file if it exists.
+
+    Parameters
+    ----------
+    pdf_path : str
+        Path to the PDF file.
+    """
+    import pikepdf
+    with pikepdf.open(pdf_path, allow_overwriting_input=True) as pdf:
+        if len(pdf.pages) > 1:
+            del pdf.pages[1]  # Remove the second page
+        pdf.save(pdf_path)

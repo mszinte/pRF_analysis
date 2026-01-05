@@ -1,8 +1,5 @@
 {   
     "account":"mszinte@login.mesocentre.univ-amu.fr",
-    "webapp_login": "admin@invibe.nohost.me",
-    "webapp_dir": "/var/www/my_webapp__5",
-    "project_name": "amblyo_prf",
     "sessions" : ["ses-01"],
     "subjects" : ["sub-01", "sub-02"],
     "func_session": ["ses-01"], 
@@ -35,7 +32,7 @@
     "rsq_iterative_th": 0.01,
     "css_grid_nr": 10,
     "max_ecc_size": 20,
-    "n_th": [0.05, 10.0],
+    "n_th": [0.05, 1.0],
     "amplitude_th": 0,
     "rsqr_th": 0,
     "stats_th": 0.05,
@@ -56,5 +53,4 @@
     "maps_names_pcm": ["n_neighbor", "pcm_median", "vert_geo_dist_median", "vert_prf_dist_median"],
     "maps_names_vert_area": ["vert_area"],
     "maps_names_css_stats": ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"],
-    "foveal_bound": 2.5
 }

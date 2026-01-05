@@ -23,6 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -115,6 +116,7 @@ for avg_method in avg_methods:
             fig_fn = "{}/{}_{}_prf-css_active-vert.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
             
             # Violins plot
             tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(tsv_dir, subject, fn_spec)
@@ -123,6 +125,7 @@ for avg_method in avg_methods:
             fig_fn = "{}/{}_{}_prf-css_violins.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
             
             # Parameters median plot
             tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(tsv_dir, subject, fn_spec)
@@ -131,6 +134,7 @@ for avg_method in avg_methods:
             fig_fn = "{}/{}_{}_prf-css_params-median.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
 
             # Ecc.size plots
             tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(tsv_dir, subject, fn_spec)
@@ -139,6 +143,7 @@ for avg_method in avg_methods:
             fig_fn = "{}/{}_{}_prf-css_ecc-size.pdf".format(fig_dir, subject, fn_spec)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
             
             # Ecc.pCM plot
             tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(tsv_dir, subject, fn_spec)
@@ -147,6 +152,7 @@ for avg_method in avg_methods:
             fig = prf_ecc_pcm_plot(df=df_ecc_pcm, figure_info=figure_info, rsq2use=rsq2use)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
 
             # Polar angle distributions
             tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
@@ -157,6 +163,7 @@ for avg_method in avg_methods:
                     fig_fn = "{}/{}_{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
                     print('Saving pdf: {}'.format(fig_fn))
                     fig.write_image(fig_fn)
+                    remove_second_page(fig_fn)
 
             # Contralaterality plots
             tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
@@ -164,7 +171,8 @@ for avg_method in avg_methods:
             fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
             fig = prf_contralaterality_plot(df=df_contralaterality, figure_info=figure_info)
             print('Saving pdf: {}'.format(fig_fn))
-            fig.write_image(fig_fn)            
+            fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
             
             # Spatial distribution plot
             tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
@@ -175,6 +183,7 @@ for avg_method in avg_methods:
                     fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
                     print('Saving pdf: {}'.format(fig_fn))
                     fig.write_image(fig_fn)
+                    remove_second_page(fig_fn)
             
             # Spatial distibution barycentre plot
             tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
@@ -183,6 +192,7 @@ for avg_method in avg_methods:
             fig = prf_barycentre_plot(df=df_barycentre, figure_info=figure_info)
             print('Saving pdf: {}'.format(fig_fn))
             fig.write_image(fig_fn)
+            remove_second_page(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

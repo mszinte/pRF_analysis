@@ -4,7 +4,7 @@
     "webapp_login": "admin@invibe.nohost.me",
     "webapp_dir": "/var/www/my_webapp",
     "sessions" : ["ses-01", "ses-02","ses-03"], 
-    "subjects" : ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-11", "sub-12", "sub-13", "sub-14", "sub-17", "sub-20", "sub-21", "sub-22", "sub-23", "sub-24", "sub-25"],
+    "subjects" : ["sub-02", "sub-03"],
     "func_session": ["ses-02"], 
     "outlier_prf_beh":["sub-07", "sub-12"],
     "task_names": ["rest", "pMF", "pRF", "PurLoc", "SacLoc", "PurVELoc", "SacVELoc"],
