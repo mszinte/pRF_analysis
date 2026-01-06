@@ -50,4 +50,3 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/fisher-z"
     done
 
 done
-

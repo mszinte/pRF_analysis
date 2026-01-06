@@ -50,4 +50,3 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
     done
 
 done
-
