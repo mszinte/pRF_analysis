@@ -24,6 +24,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -375,6 +376,9 @@ for avg_method in avg_methods:
                 for i, subject_to_group in enumerate(subjects_to_group):
                     tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                         main_dir, project_dir, subject_to_group, format_)
+
+                    fn_spec = "task-{}_{}_{}_{}_{}".format(
+                        prf_task_name, preproc_prep, filtering, normalization, avg_method)
             
                     # ROI surface areas 
                     # -----------------
@@ -403,15 +407,15 @@ for avg_method in avg_methods:
                     df_ecc_size_indiv = pd.read_table(tsv_ecc_size_fn, sep="\t")
                     if i == 0: df_ecc_size = df_ecc_size_indiv.copy()
                     else: df_ecc_size = pd.concat([df_ecc_size, df_ecc_size_indiv])
-            
+
                     # Ecc.pCM
                     # -------
-                    tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_pcm-size.tsv".format(
+                    tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
                         tsv_dir, subject_to_group, fn_spec)
                     df_ecc_pcm_indiv = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
                     if i == 0: df_ecc_pcm = df_ecc_pcm_indiv.copy()
                     else: df_ecc_pcm = pd.concat([df_ecc_pcm, df_ecc_pcm_indiv])
-            
+
                     # Polar angle
                     # -----------
                     tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
@@ -531,6 +535,7 @@ for avg_method in avg_methods:
                 # Concatenating non-numeric columns back to the dataframe
                 df_distribution = pd.concat([others_columns, df_distribution], axis=1)
                 df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
+
                 
                 # Spatial distribution hot zone barycentre 
                 # ----------------------------------------
@@ -540,7 +545,7 @@ for avg_method in avg_methods:
                     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                     df_barycentre_hemi = make_prf_barycentre_df(
                         df_distribution_hemi, rois, distribution_max_ecc, 
-                        gaussian_mesh_grain, hot_zone_percent=hot_zone_percent)
+                        distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
                    
                     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                     if j == 0: df_barycentre = df_barycentre_hemi
