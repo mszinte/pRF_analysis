@@ -203,9 +203,9 @@ for subject in subjects:
                 partial_filled[global_r, global_c] = partial_matrix[i_cl, j_pa]
 
     # Save per subject outputs
-    np.save(os.path.join(sub_out, "cluster_by_parcel_full.npy"), full_filled)
-    np.save(os.path.join(sub_out, "cluster_by_parcel_partial.npy"), partial_filled)
-    np.save(os.path.join(sub_out, "parcel_by_parcel_full.npy"), parcel_full_filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_full.npy"), full_filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.npy"), partial_filled)
+    np.save(os.path.join(sub_out, "parcel_by_mmp-parcel_full.npy"), parcel_full_filled)
 
     # Append for group stats
     all_subject_full_matrices.append(full_filled)
@@ -227,7 +227,7 @@ median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
 
 # Save results
 np.savez_compressed(
-    os.path.join(output_folder, "nilearn_partial_corr.npz"),
+    os.path.join(output_folder, "nilearn_partial_corr_task-mmp.npz"),
     mean_cluster_parcel_full=mean_full_matrix,
     median_cluster_parcel_full=median_full_matrix,
     mean_cluster_parcel_partial=mean_partial_matrix,
@@ -239,4 +239,4 @@ np.savez_compressed(
     parcels=np.array(parcels),
 )
 
-print(f"Cluster × parcel correlation matrices saved to {output_folder}/nilearn_partial_corr.npz")
+print(f"Cluster × parcel correlation matrices saved to {output_folder}/nilearn_partial_corr_task-mmp.npz")
