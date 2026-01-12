@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-submit_compute_corr_job.py
+submit_workbench_compute_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Submit the compute dtseries correlation scripts to SLURM queue

@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-submit_compute_partial_corr_job.py
+submit_nilearn_compute_partial_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Submit the nilearn partial correlation script to SLURM queue

@@ -39,7 +39,13 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/fisher-z"
             -right-roi "$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_rh_${ROI}.shape.gii" \
             -cifti "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dconn.nii";
 
-        # Mask for visualization
+        # Average correlation values within the target ROIs (both hemispheres)
+        wb_command -cifti-parcellate "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
+        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+        "$OUT_DIR/fisher-z/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" -method MEAN; 
+        ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
+
+        # Mask vertex-wise results for visualizations in supplementary information
         wb_command -cifti-restrict-dense-map "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" COLUMN \
             "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_masked.dscalar.nii" \
             -left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
