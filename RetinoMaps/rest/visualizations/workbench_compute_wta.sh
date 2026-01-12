@@ -37,13 +37,13 @@ declare -a PARCELS=(
 )
 
 # Create CSV header with parcel names (without _ROI suffix for cleaner output)
-echo -n "Subject," > "${OUTPUT_PATH}/winning_seeds__full_corr.csv"
+echo -n "Subject," > "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
 for parcel in "${PARCELS[@]}"; do
     # Remove R_/L_ prefix and _ROI suffix
     clean_name=$(echo "$parcel" | sed 's/^[RL]_//; s/_ROI$//')
     echo -n "${clean_name}," >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
 done
-echo "" >> "${OUTPUT_PATH}/winning_seeds_wb.csv"
+echo "" >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
 
 # Iterate through subjects
 for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
@@ -53,7 +53,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr"
     
     # Build the merge command - merge all ROI correlation maps
-    MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii"
+    MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii -direction ROW" \
     
     # Add each ROI in order (this creates rows 0-11 for mPCS-V1)
     for roi in "${ROIS[@]}"; do
@@ -66,9 +66,12 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     # Get the index of maximum correlation for each parcel (column)
     # This returns which ROW (seed) has the maximum correlation with each parcel
     # Output format: one line per parcel, value is the row index (0-11)
-    wb_command -cifti-stats \
+    wb_command -cifti-reduce \
         ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii \
-        -reduce INDEXMAX > ${OUTPUT_PATH}/sub-${sub}_indexmax_raw.txt
+        -reduce INDEXMAX > ${OUTPUT_PATH}/sub-${sub}_indexmax_raw.shape.gii \
+        -direction COLUMN;
+        
+done
     
     # Process the output: add 1 to convert 0-based to 1-based (mPCS=1, V1=12)
     echo -n "sub-${sub}," >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
