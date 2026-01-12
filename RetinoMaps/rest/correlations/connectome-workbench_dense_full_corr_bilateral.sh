@@ -4,6 +4,8 @@
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
+# Remember to source your bashrc before running
+
 # Define some paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"

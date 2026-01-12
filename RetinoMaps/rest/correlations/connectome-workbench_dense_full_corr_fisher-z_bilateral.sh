@@ -4,6 +4,8 @@
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
+# Remember to source your bashrc before running
+
 # Define some paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
@@ -19,7 +21,7 @@ OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
 chmod -Rf 771 "$SEED_DIR"
 chgrp -Rf 771 "$SEED_DIR"
 
-mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/fisher-z"
+mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/fisher-z"
 
     for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1; 
     do

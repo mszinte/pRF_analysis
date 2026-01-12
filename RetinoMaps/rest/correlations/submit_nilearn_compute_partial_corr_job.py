@@ -3,7 +3,7 @@
 submit_compute_partial_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Submit the compute dtseries correlation scripts to SLURM queue
+Submit the nilearn partial correlation script to SLURM queue
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -18,7 +18,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -66,7 +66,7 @@ slurm_cmd = f"""#!/bin/bash
 """
 
 # Assuming scripts are in the same directory as this Python script
-script_name = 'nilearn_compute_partial_corr_cluster-task_by_mmp-parcel.py'
+script_name = 'nilearn_partial_corr_cluster-task_by_mmp-parcel.py'
 script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 
