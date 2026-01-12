@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-submit_compute_corr_job.py
+submit_workbench_compute_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Submit the compute dtseries correlation scripts to SLURM queue
@@ -41,11 +41,6 @@ server_project = sys.argv[4]
 corr_type = sys.argv[5] # 'full' or 'fisher-z'
 proc_time = sys.argv[6] # usually 2 hours are enough for all subjects
 
-# Validate correlation type
-if corr_type not in ['full', 'fisher-z']:
-    print("Error: correlation type must be 'full' or 'fisher-z'")
-    sys.exit(1)
-
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
@@ -53,10 +48,10 @@ cluster_name = 'skylake'
 # Define your actual command based on correlation type
 if corr_type == 'full':
     script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
-    job_suffix = "full"
+    job_suffix = "full_corr"
 elif corr_type == 'fisher-z':
     script_name = "connectome-workbench_dense_full_corr_fisher-z_bilateral.sh"
-    job_suffix = "fisher_z"
+    job_suffix = "fisher-z"
 
 # Define permission commands
 chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)

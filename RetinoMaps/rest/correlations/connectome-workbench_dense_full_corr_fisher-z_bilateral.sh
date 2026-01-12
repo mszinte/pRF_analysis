@@ -4,6 +4,8 @@
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
+# Remember to source your bashrc before running
+
 # Define some paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
@@ -13,13 +15,13 @@ for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
 do
 
 SEED_DIR="$TASK_RESULTS/sub-${i}/91k/rest/seed"
-OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr"
+OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
 
 ## Make sure all files are accessible
 chmod -Rf 771 "$SEED_DIR"
 chgrp -Rf 771 "$SEED_DIR"
 
-mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/fisher-z"
+mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/fisher-z"
 
     for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1; 
     do
@@ -37,7 +39,13 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/fisher-z"
             -right-roi "$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_rh_${ROI}.shape.gii" \
             -cifti "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dconn.nii";
 
-        # Mask for visualization
+        # Average correlation values within the target ROIs (both hemispheres)
+        wb_command -cifti-parcellate "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
+        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+        "$OUT_DIR/fisher-z/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" -method MEAN; 
+        ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
+
+        # Mask vertex-wise results for visualizations in supplementary information
         wb_command -cifti-restrict-dense-map "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" COLUMN \
             "$OUT_DIR/fisher-z/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_masked.dscalar.nii" \
             -left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
@@ -50,4 +58,3 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/fisher-z"
     done
 
 done
-
