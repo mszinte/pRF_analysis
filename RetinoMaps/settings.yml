@@ -1,0 +1,34 @@
+# Main configuration
+project_name:
+  description: "Name of the project and of the dataset directory"
+  value: "RetinoMaps"
+
+webapp_login: 
+  description: "SSH login of the webapp server"
+  value: "admin@invibe.nohost.me",
+
+webapp_dir: 
+  description: "Directory of the web app server"
+  value: "/var/www/my_webapp"
+
+cluster_name: 
+  description: "Name of the cluster to use in AMU mesocenter"
+  value: "skylake",
+
+# Dataset description
+subjects:
+  description: "Subjects of the dataset"
+  value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-11", "sub-12", "sub-13", "sub-14", "sub-17", "sub-20", "sub-21", "sub-22", "sub-23", "sub-24", "sub-25"]
+
+sessions:
+  description: "Sessions of the dataset"
+  value: ["ses-01", "ses-02", "ses-03"]
+
+task_names: 
+  description: "Names of the tasks of the dataset"
+  value: ["rest", "pMF", "pRF", "PurLoc", "SacLoc", "PurVELoc", "SacVELoc"]
+
+partial_scan: 
+  description: "Dataset including non whole-head recording"
+  value: False
+  levels: [True, False]

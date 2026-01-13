@@ -1,0 +1,168 @@
+# General settings
+func_session:
+  description: "Session containing the pRF tasks"
+  value: ["ses-02"]
+
+prf_task_names:
+  description: "Names of the tasks analysed with pRF methods"
+  value: ["pRF"]
+
+formats: 
+  description: "Data format label names after preprocessing"
+  value: ["fsnative", "170k"],
+
+extensions: 
+  description: "Data format extensions after preprocessing"
+  value: ["func.gii", "dtseries.nii"],
+
+TR: 
+  description: "Time repetition of the pRF tasks"
+  unit: 'seconds"
+  value: 1.2
+
+TRs: 
+  description: "Number of TR of the pRF task"
+  value: 208
+
+# Preprocessing settings
+preproc_prep: 
+  description: "Name of the main preprocessing method"
+  value: "fmriprep",
+
+normalization: 
+  description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
+  value: "z-score",
+
+filtering:
+  description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"
+  value: "dct",
+
+avg_methods: 
+  description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
+  value: ["avg", "loo-avg"],
+  levels-description: ["averaging across runs", "leave-one-out averaging across runs"]
+
+filter_rois: 
+  description: "Use defined ROIS to mask bold signal to analyze"
+  value: False
+  levels: [True, False]
+  
+fit_rsq_threshold: 
+  description: ""
+  value: 0.01
+  
+high_pass_threshold: 
+  description: ""
+  value: 0.01
+
+maps_names_corr: 
+  description: "Inter-run correlation maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# Screen and visual design matrix settings
+screen_size_pix: 
+  description: "Horizontal and vertical size of the pRF tasks display"
+  units: "pixels"
+  value: [1080, 1080]
+
+screen_size_cm: 
+  description: "Horizontal and vertical size of the pRF tasks display"
+  units: "cm"
+  value: [77.3, 43.5]
+
+screen_distance_cm:
+  description: "Distance between subject and display"
+  units: "cm"
+  value: 120
+
+vdm_size_pix:
+  description: "Horizontal and vertical size of the pRF tasks visual design matrix"
+  units: "pixels"
+  value: 120
+
+# Fit settings
+gauss_grid_nr: 
+  description: "Number of grid steps of the Gaussian grid fit procedure"
+  value: 36
+
+css_grid_nr:
+  description: "Number of grid steps of the CSS grid fit procedure"
+  value: 10
+
+max_ecc_size: 
+  description: "Maximum eccentricity and size value"
+  units: "dva"
+  value: 20
+  
+rsq_iterative_th: 
+  description: "R-square minimum threshold for iterative fit"
+  value: 0.01
+
+# Postfit settings
+fdr_alpha: 
+  description: "P value level list for FDR corrected statistics"
+  value: [0.05, 0.01]
+
+ecc_th:
+  description: "Eccentricity range threshold for pRF post-fit analysis"
+  units: "dva"
+  value: [0.05, 20]
+
+size_th:
+  description: "Size range threshold for pRF post-fit analysis"
+  units: "dva"
+  value: [0.05, 20.0]
+
+rsqr_th:
+  description: "R-square minimum threshold for pRF post-fit analysis"
+  value: 0
+
+n_th:
+  description: "CSS n range threshold for pRF post-fit analysis"
+  value: [0.01, 1]
+
+prf_amp_th": 
+  description: "pRF amplitude range threshold for pRF post-fit analysis"
+  value: [0, 6]
+
+stats_th": 
+  description: "p value minimum threshold for pRF post-fit analysis"
+  value: 0.05
+  
+vertex_pcm_rad:
+  description: "Radius of vertex-vertex geodesic distance for population cortical magnification analysis"
+  units: mm
+  value: 30 
+
+maps_names_gauss: 
+  description: "PRF Gaussian analysis maps names of gifti files"
+  value: ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2"]
+  
+maps_names_css:
+  description: "PRF CSS analysis maps names of gifti files"
+  value: ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2", "prf_n"]
+
+maps_names_css_loo: 
+  description: "PRF CSS analysis maps names for leave-one-out dataset of gifti files"
+  value: ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2", "prf_n", "prf_loo_rsq"]
+  
+maps_names_pcm: 
+  description: "PRF cortical magnification analysis maps names of gifti files"
+  value: ["n_neighbor", "pcm_median", "vert_geo_dist_median", "vert_prf_dist_median"]
+
+maps_names_css_stats: 
+  description: "PRF CSS stats maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# ROIS
+rois: 
+  description: "List of regions of interest"
+  value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
+
+mmp_rois:
+  description: "List of MMP atlas parcels to analyze in 170k format"
+  value: ["V1", "V2", "V3", "V4", "V3A", "V3B", "V3CD", "LO1", "LO2", "LO3", "V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC", "V4t", "MST", "MT", "FST", "IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL", "VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm", "PEF", "IFJp", "6v", "6r", "IFJa", "55b", "FEF", "i6-8", "6a", "6d", "6mp", "6ma", "SCEF", "p32pr", "24dv"],
+
+rois_groups: 
+  description: "List of MMP atlas parcels group to correspond to the rois"
+  value: [["V1"], ["V2"], ["V3", "V4"], ["V3A", "V3B", "V3CD"],["LO1", "LO2", "LO3"], ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"], ["V4t", "MST", "MT", "FST"], ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"], ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"], ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"], ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"], ["SCEF", "p32pr", "24dv"]]

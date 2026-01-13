@@ -80,8 +80,8 @@ sessions = analysis_info['sessions']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 preproc_prep = analysis_info['preproc_prep']
-normalization = analysis_info['normalization']
 filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
 # Make extension folders
