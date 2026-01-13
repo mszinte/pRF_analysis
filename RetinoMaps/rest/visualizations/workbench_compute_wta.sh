@@ -1,11 +1,12 @@
 #!/bin/bash
 #####################################################
 # Winner-Take-All analysis using Connectome-Workbench
-# Note: INDEXMAX returns winning ROW (map) that corresponds to the seed cluster (e.g. sPCS)
+# Note: INDEXMAX returns winning COLUMN (seed cluster, e.g. sPCS) by ROW (MMP  label) 
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+ATLAS_DIR="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/leaveout"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta"
 mkdir -p "${OUTPUT_PATH}"
 
@@ -36,16 +37,11 @@ declare -a PARCELS=(
     "L_FST_ROI" "L_V3CD_ROI" "L_LO3_ROI" "L_VMV2_ROI" "L_VVC_ROI"
 )
 
-# Create CSV header with parcel names (without _ROI suffix for cleaner output)
-echo -n "Subject," > "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-for parcel in "${PARCELS[@]}"; do
-    # Remove R_/L_ prefix and _ROI suffix
-    clean_name=$(echo "$parcel" | sed 's/^[RL]_//; s/_ROI$//')
-    echo -n "${clean_name}," >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-done
-echo "" >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
+echo "=========================================="
+echo "STEP 1: Processing individual subjects"
+echo "=========================================="
 
-# Iterate through subjects
+# Iterate through subjects to compute individual WTA maps
 for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     
     echo "Processing sub-${sub}..."
@@ -53,45 +49,101 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr"
     
     # Build the merge command - merge all ROI correlation maps
-    MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii -direction ROW" \
+    MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii -direction ROW"
     
     # Add each ROI in order (this creates rows 0-11 for mPCS-V1)
     for roi in "${ROIS[@]}"; do
         MERGE_CMD="${MERGE_CMD} -cifti ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_parcellated.pscalar.nii"
+        
+        # Hollow seed cluster to 0s so it doesn't pop up in the winner-take-all map
+    	roi_file_lh="${ATLAS_PATH}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii"
+    	roi_file_rh="${ATLAS_PATH}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii"
+    
+		wb_command -cifti-restrict-dense-map ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_parcellated.pscalar.nii COLUMN \
+		${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged_hollow_seed.pscalar.nii \
+		-left-roi "$roi_file_lh" \
+    	-right-roi "$roi_file_rh"
+        
     done
     
     # Execute merge
     eval $MERGE_CMD
     
-    # Get the index of maximum correlation for each parcel (column)
-    # This returns which ROW (seed) has the maximum correlation with each parcel
-    # Output format: one line per parcel, value is the row index (0-11)
+    # Transpose so clusters are columns and parcels are rows
+    wb_command -cifti-transpose \
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged_hollow_seed.pscalar.nii \
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
+        -mem-limit 8
+    
+    # Get the index of maximum correlation for each parcel
+    # Output: 106 parcels × 1 column with winner index (1-12)
     wb_command -cifti-reduce \
-        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii \
-        -reduce INDEXMAX > ${OUTPUT_PATH}/sub-${sub}_indexmax_raw.shape.gii \
-        -direction COLUMN;
-        
-done
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
+        INDEXMAX \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.raw.nii \
+        -direction COLUMN
     
-    # Process the output: add 1 to convert 0-based to 1-based (mPCS=1, V1=12)
-    echo -n "sub-${sub}," >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-    
-    # Read each line, add 1, and append to CSV
-    while IFS= read -r index; do
-        winner=$((index + 1))
-        echo -n "${winner}," >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-    done < ${OUTPUT_PATH}/sub-${sub}_indexmax_raw.txt
-    
-    # Remove trailing comma and add newline
-    sed -i '$ s/,$//' "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-    echo "" >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
+    # Transpose back to standard orientation
+    wb_command -cifti-transpose \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.raw.nii \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii \
+        -mem-limit 8
     
     echo "  Completed sub-${sub}"
 done
 
 echo ""
-echo "Subject-level winner-take-all analysis complete!"
-echo "Output saved to: ${OUTPUT_PATH}/winning_seeds_full_corr.csv"
+echo "=========================================="
+echo "STEP 2: Computing group-level WTA (MODE)"
+echo "=========================================="
+
+# Build merge command for all subjects
+# This creates a file with 106 parcels (rows) × 20 subjects (columns)
+MERGE_GROUP_CMD="wb_command -cifti-merge ${OUTPUT_PATH}/all_subjects_wta_merged.pscalar.nii -direction ROW"
+
+for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
+    MERGE_GROUP_CMD="${MERGE_GROUP_CMD} -cifti ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii"
+done
+
+# Execute group merge
+eval $MERGE_GROUP_CMD
+
+echo "Merged all subjects into single file"
+
+# Transpose so subjects are rows and parcels are columns
+wb_command -cifti-transpose \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.pscalar.nii \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.transpose.nii \
+    -mem-limit 8
+
+echo "Transposed for MODE calculation"
+
+# Calculate MODE across subjects (rows) for each parcel (column)
+# This gives the most frequent winner across subjects for each parcel
+wb_command -cifti-reduce \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.transpose.nii \
+    MODE \
+    ${OUTPUT_PATH}/group_wta_mode_raw.pscalar.nii \
+    -direction COLUMN
+
+echo "Calculated MODE across subjects"
+
+# Transpose back to standard orientation (parcels as rows)
+wb_command -cifti-transpose \
+    ${OUTPUT_PATH}/group_wta_mode.raw.nii \
+    ${OUTPUT_PATH}/group_wta_mode.pscalar.nii \
+    -mem-limit 8
+
+echo "Group-level WTA map created!"
+
+echo ""
+echo "=========================================="
+echo "ANALYSIS COMPLETE"
+echo "=========================================="
+echo ""
+echo "Output files:"
+echo "  Individual subjects: ${OUTPUT_PATH}/sub-*_indexmax_wta.pscalar.nii"
+echo "  Group MODE:          ${OUTPUT_PATH}/group_wta_mode.pscalar.nii"
 echo ""
 echo "Winner seed mapping:"
 for i in "${!ROIS[@]}"; do
@@ -99,6 +151,6 @@ for i in "${!ROIS[@]}"; do
 done
 echo ""
 echo "Next steps:"
-echo "1. Compare with Python output to validate"
-echo "2. Create group-level winner map (mode across subjects)"
-echo "3. Generate label files for visualization"
+echo "1. Convert group_wta_mode.pscalar.nii to label file for visualization"
+echo "2. Compare with Python-derived results"
+echo "3. Calculate consistency metrics"

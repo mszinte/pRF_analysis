@@ -54,16 +54,35 @@ MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_
 	    # Execute merge
 	    eval $MERGE_CMD
 	    
-	    # Get the index of maximum correlation for each parcel (column)
+	    # Subject need to be mapped to columns, not rows
+	    wb_command -cifti-transpose \
+	    ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii \
+	    ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
+	    -mem-limit 8;
+	    
+	    # Get the index of maximum correlation for each parcel (row)
 	    # This returns which ROW (seed) has the maximum correlation with each parcel
-	    # Output format: one line per parcel, value is the row index (0-11)
+	    # Output format: one line per parcel, value is the row index (1-12)
 	    wb_command -cifti-reduce \
-		${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii \
+		${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
 		INDEXMAX \
 		${OUTPUT_PATH}/sub-${sub}_indexmax_raw.wta.nii \
 		-direction COLUMN;
-
+		
+		# Map back to a valid workbench format
+		wb_command -cifti-transpose \
+	    ${OUTPUT_PATH}/sub-${sub}_indexmax_raw.wta.nii \
+	    ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii \
+	    -mem-limit 8;
+		
 done
 echo "" >> "${OUTPUT_PATH}/winning_seeds_full_corr.csv"
-        
+
+# Find the wta across subjects (it's the data MODE) 
+# In this CIFTI file ROWS are subjects
+for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do 
+wb_command -cifti-merge ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii -direction ROW \
+
+wb_command -cifti-reduce ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii MODE \
+${OUTPUT_PATH}/sub-${sub}_indexmax_wta_all.pscalar.nii -direction COLUMN
 done
