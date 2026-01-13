@@ -61,7 +61,15 @@ for leave_out in "${CLUSTERS[@]}"; do
     -metric CORTEX_RIGHT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${leave_out}.shape.gii"
 done
 
-# 3. Convert all labels to ROIs (dscalar format)
+# 3. Make surface label files to mask winner take all outputs
+for leave_out in "${CLUSTERS[@]}"; do
+	DLABEL_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dlabel.nii"
+	wb_command -cifti-separate "$DLABEL_FILE" COLUMN \
+		-label CORTEX_LEFT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${leave_out}.label.gii" \
+    -label CORTEX_RIGHT "${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${leave_out}.label.gii"
+done
+
+# 4. Convert all labels to ROIs (dscalar format)
 echo "💡 Converting labels to ROIs..."
 for leave_out in "${CLUSTERS[@]}"; do
   DLABEL_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dlabel.nii"
@@ -70,7 +78,7 @@ for leave_out in "${CLUSTERS[@]}"; do
   wb_command -cifti-all-labels-to-rois "$DLABEL_FILE" 1 "$DSCALAR_FILE"
 done
 
-# 4. Create binary masks from ROIs
+# 5. Create binary masks from ROIs
 echo "💡 Creating binary masks..."
 for leave_out in "${CLUSTERS[@]}"; do
   DSCALAR_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dscalar.nii"
