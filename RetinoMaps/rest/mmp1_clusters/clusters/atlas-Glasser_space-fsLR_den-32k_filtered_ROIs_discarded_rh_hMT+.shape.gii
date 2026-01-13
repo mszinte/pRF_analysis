@@ -10,8 +10,8 @@
       </MD>
       <MD>
          <Name><![CDATA[ParentProvenance]]></Name>
-         <Value><![CDATA[clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii:
-/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii label_files/rh_hMT+_labels.txt clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii -discard-others
+         <Value><![CDATA[/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii:
+/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/label_files/rh_hMT+_labels.txt /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii -discard-others
 
 ]]></Value>
       </MD>
@@ -33,7 +33,7 @@ Compiled with OpenMP: YES
       </MD>
       <MD>
          <Name><![CDATA[Provenance]]></Name>
-         <Value><![CDATA[/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-separate clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii COLUMN -metric CORTEX_RIGHT clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.shape.gii]]></Value>
+         <Value><![CDATA[/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-separate /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.dlabel.nii COLUMN -metric CORTEX_LEFT /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.shape.gii -metric CORTEX_RIGHT /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_hMT+.shape.gii]]></Value>
       </MD>
       <MD>
          <Name><![CDATA[WorkingDirectory]]></Name>

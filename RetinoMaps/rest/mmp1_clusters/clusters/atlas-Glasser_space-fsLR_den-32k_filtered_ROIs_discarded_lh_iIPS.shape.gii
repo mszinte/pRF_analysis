@@ -6,12 +6,12 @@
    <MetaData>
       <MD>
          <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
-         <Value><![CDATA[CortexLeft]]></Value>
+         <Value><![CDATA[CortexRight]]></Value>
       </MD>
       <MD>
          <Name><![CDATA[ParentProvenance]]></Name>
-         <Value><![CDATA[clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii:
-/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii label_files/lh_iIPS_labels.txt clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii -discard-others
+         <Value><![CDATA[/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii:
+/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/label_files/lh_iIPS_labels.txt /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii -discard-others
 
 ]]></Value>
       </MD>
@@ -33,7 +33,7 @@ Compiled with OpenMP: YES
       </MD>
       <MD>
          <Name><![CDATA[Provenance]]></Name>
-         <Value><![CDATA[/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-separate clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii COLUMN -metric CORTEX_LEFT clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.shape.gii]]></Value>
+         <Value><![CDATA[/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-separate /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.dlabel.nii COLUMN -metric CORTEX_LEFT /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.shape.gii -metric CORTEX_RIGHT /home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_iIPS.shape.gii]]></Value>
       </MD>
       <MD>
          <Name><![CDATA[WorkingDirectory]]></Name>
@@ -58,6 +58,6 @@ Compiled with OpenMP: YES
          <Value><![CDATA[INDEXMAX]]></Value>
       </MD>
    </MetaData>
-   <Data>eJzt2kFOwzAURdHurWUjHbAO1lIk1okQRIpCnDquHX9H50ge575QiYFzuQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBv79ft85ZxbotD2vJd3TLf8bO/UwQttkVQsiu15z47I2+6J06UPTm/u9SG3pv2bsndcfSWqf9rdmpsOGrHsj21YRKtf619vmFulPY1Ubq33vdozSk9e/e2ppqPUNL5o8f/m72NvUTvAwAA2Ovz+v+cydq+M2xM7Rp949l2Zez5ePyeIWRumZ+QCnaE21VhQ/M9qXv66T6jYn+THcv+5X1Mg/5qO57d6TXqfrm9oDtE80i9W3e8I7b+fSsQsnPl24xQjYnvR6L3lTRWbXv2ndRGX1U7mw753qmkp2VTpBYdZQ29nt9KtOe2dOSzpucBAAAArxntTn7E1uhGaAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAavkG2RibuQ==</Data>
+   <Data>eJztwQENAAAAwqD3T20ON6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIB3A/u/AAE=</Data>
 </DataArray>
 </GIFTI>
