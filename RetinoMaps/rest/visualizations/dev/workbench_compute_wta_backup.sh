@@ -27,33 +27,41 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr"
     
     ################# Developing this part ###############################################
-    for roi in "${ROIS[@]}"; do
-        
-        # Get metric files for both hemi
-    	wb_command -cifti-separate "$FULL_CORR/sub-${sub}_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
-    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
-    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii"
     
-    	# Replace seed cluster with max negative correlation so it doesn't show up in the wta (hollow seed)
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
-    	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii"
-
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii" \
-    	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
+    # Remove volume info so we end up with approximately 59k vertices (use the fsLR file not the atlas it's cleaner conceptually)
+    for roi in "${ROIS[@]}"; do
+    	wb_command -cifti-restrict-dense-map \
+    	"${FULL_CORR}/sub-${sub}_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" \
+    	COLUMN \
+    	-left-roi "$ATLAS_DIR/tpl-fsLR_hemi-L_den-59k_desc-vaavg_midthickness.shape.gii" \
+    	-right-roi "$ATLAS_DIR/tpl-fsLR_hemi-R_den-59k_desc-vaavg_midthickness.shape.gii" \
+    	"${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex.dscalar.nii" 
     	
-    	# Go back to the combined hemi version in cifti format
-    	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
-    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii" \
-    	-right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
-    	
-    	# Parcellate the full corr outputs
+    # Zero out values outside the atlas
+    	wb_command -cifti-math \
+    	'corr * (atlas > 0)' \
+        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex.dscalar.nii" \
+        -var corr "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex.dscalar.nii" \
+        -var atlas "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg_bin.dscalar.nii"
+    
+    	# Copy file for debugging
+    	cp "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex.dscalar.nii" \
+    	"${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex_b.dscalar.nii"
+    
+    # Zero out values for the seed cluster (HERE USE THE SHAPE BIN FILE) 	
+    	wb_command -cifti-math \
+    	'(corr + (-0.999 * (cluster_lh > 0)) + (-0.999 * (cluster_rh > 0)))' \
+        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex_b.dscalar.nii" \
+        -var corr "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex_b.dscalar.nii" \
+        -var cluster_lh "${ATLAS_DIR}/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_${roi}_bin.shape.gii" \
+        -var cluster_rh "${ATLAS_DIR}/clusters/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_${roi}_bin.shape.gii"
+        
+    # Parcellate the outputs now
 	wb_command -cifti-parcellate \
-	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
+	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_cortex_b.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN; 
-        ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
+        "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.pscalar.nii" -method MEAN; 
+        ## to exclude outliers, add this flag at the end -exclude-outliers 3 3	
         
 	done
     #######################################################################################
@@ -63,7 +71,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     
     # Add each ROI in order (this creates rows 0-11 for mPCS-V1)
     for roi in "${ROIS[@]}"; do
-        MERGE_CMD="${MERGE_CMD} -cifti ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii"
+        MERGE_CMD="${MERGE_CMD} -cifti ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.pscalar.nii"
     done
     
     # Execute merge
@@ -71,22 +79,22 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     
     # Transpose so clusters are columns and parcels are rows
     wb_command -cifti-transpose \
-        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii" \
-        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii" \
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii \
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
         -mem-limit 8
     
     # Get the index of maximum correlation for each parcel
     # Output: 106 parcels × 1 column with winner index (1-12)
     wb_command -cifti-reduce \
-        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii" \
+        ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii \
         INDEXMAX \
-        "${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.raw.nii" \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.raw.nii \
         -direction COLUMN
     
     # Transpose back to standard orientation
     wb_command -cifti-transpose \
-        "${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.raw.nii" \
-        "${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii" \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.raw.nii \
+        ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii \
         -mem-limit 8
     
     echo "  Completed sub-${sub}"
@@ -99,10 +107,10 @@ echo "=========================================="
 
 # Build merge command for all subjects
 # This creates a file with 106 parcels (rows) × 20 subjects (columns)
-MERGE_GROUP_CMD="wb_command -cifti-merge ${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.pscalar.nii -direction ROW"
+MERGE_GROUP_CMD="wb_command -cifti-merge ${OUTPUT_PATH}/all_subjects_wta_merged.pscalar.nii -direction ROW"
 
 for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
-    MERGE_GROUP_CMD="${MERGE_GROUP_CMD} -cifti ${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii"
+    MERGE_GROUP_CMD="${MERGE_GROUP_CMD} -cifti ${OUTPUT_PATH}/sub-${sub}_indexmax_wta.pscalar.nii"
 done
 
 # Execute group merge
@@ -112,8 +120,8 @@ echo "Merged all subjects into single file"
 
 # Transpose so subjects are rows and parcels are columns
 wb_command -cifti-transpose \
-    "${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.pscalar.nii" \
-    "${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.transpose.nii" \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.pscalar.nii \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.transpose.nii \
     -mem-limit 8
 
 echo "Transposed for MODE calculation"
@@ -121,25 +129,18 @@ echo "Transposed for MODE calculation"
 # Calculate MODE across subjects (rows) for each parcel (column)
 # This gives the most frequent winner across subjects for each parcel
 wb_command -cifti-reduce \
-    "${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.transpose.nii" \
+    ${OUTPUT_PATH}/all_subjects_wta_merged.transpose.nii \
     MODE \
-    "${OUTPUT_PATH}/group_wta_full_corr_mode.raw.nii" \
+    ${OUTPUT_PATH}/group_wta_mode_raw.pscalar.nii \
     -direction COLUMN
 
 echo "Calculated MODE across subjects"
 
 # Transpose back to standard orientation (parcels as rows)
 wb_command -cifti-transpose \
-    "${OUTPUT_PATH}/group_wta_full_corr_mode.raw.nii" \
-    "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" \
+    ${OUTPUT_PATH}/group_wta_mode.raw.nii \
+    ${OUTPUT_PATH}/group_wta_mode.pscalar.nii \
     -mem-limit 8
-
-# Dump the main output into another format
-wb_command -cifti-convert -to-text "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" "${OUTPUT_PATH}/group_wta_full_corr.tsv"
-    
-# Change file permissions
-chmod -Rf 771 ${BASE_PATH}
-chgrp -Rf 327 ${BASE_PATH}
 
 echo "Group-level WTA map created!"
 
