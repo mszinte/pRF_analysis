@@ -40,7 +40,7 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
+import yaml
 import shutil
 import datetime
 import numpy as np
@@ -53,6 +53,7 @@ from nilearn.glm.first_level.design_matrix import _cosine_drift
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface , make_surface_image
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Time
 start_time = datetime.datetime.now()
@@ -69,11 +70,9 @@ set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_info, analysis_desc, _, _ = load_settings(settings_path)
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 TR = analysis_info['TR']
 tasks = analysis_info['task_names']
 high_pass_threshold = analysis_info['high_pass_threshold'] 

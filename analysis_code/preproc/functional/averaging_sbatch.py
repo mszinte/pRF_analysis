@@ -40,7 +40,11 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
+
+# Personal imports
+sys.path.append("{}/../../utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -49,13 +53,10 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 
-# Define analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_info, analysis_desc, _, _ = load_settings(settings_path)
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
@@ -63,7 +64,6 @@ proj_name = analysis_info['project_name']
 nb_procs = 8
 memory_val = 48
 hour_proc = 10
-if project_dir == 'amblyo7T_prf': hour_proc = 1
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, project_dir, subject)
