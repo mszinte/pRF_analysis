@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-prf_gridfit.py
+prf_gaussfit.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Prf fit computing gaussian grid fit
+Prf fit using gaussian model
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -11,7 +11,6 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
 sys.argv[5]: number of jobs 
-sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -20,13 +19,13 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
-python prf_gridfit.py [main directory] [project name] [subject name] 
-[inout file name] [number of jobs] [analysis folder - optional]
+python prf_gaussfit.py [main directory] [project name] [subject name] 
+                       [inout file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_gridfit.py /scratch/mszinte/data RetinoMaps sub-03 /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_avg_bold.func.gii 32  
+python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (martin.szinte@univ-amu.fr)
+Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -67,11 +66,10 @@ subject = sys.argv[3]
 sub_num = subject[4:]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
-if len(sys.argv) > 6: output_folder = sys.argv[6]
-else: output_folder = "prf"
 n_batches = n_jobs
 verbose = True
 gauss_params_num = 8
+
 
 # Analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -81,42 +79,18 @@ with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 
-# Load screen settings from subject dependend task-events.json
-screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, analysis_info['prf_task_name'])
-
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
-prf_task_name = analysis_info['prf_task_name']
+rsq_iterative_th = analysis_info['rsq_iterative_th']
+size_th = analysis_info['size_th']
+prf_amp_th = analysis_info['prf_amp_th']
 
-# Define directories
-if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/{}/fit".format(
-        main_dir, project_dir, subject, output_folder)
-    os.makedirs(prf_fit_dir, exist_ok=True)
-
-elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/{}/fit".format(
-        main_dir, project_dir, subject, output_folder)
-    os.makedirs(prf_fit_dir, exist_ok=True)
-
-fit_fn_gauss_gridfit = input_fn.split('/')[-1]
-fit_fn_gauss_gridfit = fit_fn_gauss_gridfit.replace('bold', 'prf-fit_gauss_gridfit')
-
-pred_fn_gauss_gridfit = input_fn.split('/')[-1]
-pred_fn_gauss_gridfit = pred_fn_gauss_gridfit.replace('bold', 'prf-pred_gauss_gridfit')
-
-# Get task specific visual design matrix
-vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
-vdm = np.load(vdm_fn)
-
-# defind model parameter grid range
-sizes = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
-eccs = max_ecc_size * np.linspace(0.1,1,gauss_grid_nr)**2
-polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
+# Load screen settings from subject dependend task-events.json
+prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
 
 print("\n===== PRF FIT PARAMETERS =====")
 print(f"Screen Size (cm): {screen_size_cm}")
@@ -125,6 +99,32 @@ print(f"TR: {TR}")
 print(f"Max eccentricity/size values: {max_ecc_size}")
 print("==============================\n")
 
+# Define directories
+if input_fn.endswith('.nii'):
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
+        main_dir, project_dir, subject)
+    os.makedirs(prf_fit_dir, exist_ok=True)
+
+elif input_fn.endswith('.gii'):
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
+        main_dir, project_dir, subject)
+    os.makedirs(prf_fit_dir, exist_ok=True)
+
+gauss_fit_fn  = input_fn.split('/')[-1]
+gauss_fit_fn = gauss_fit_fn.replace('bold', 'prf-gauss_fit')
+
+gauss_pred_fn = input_fn.split('/')[-1]
+gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
+
+# Get task specific visual design matrix
+vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
+    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+vdm = np.load(vdm_fn)
+
+# define model parameter grid range
+sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
+eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
+polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
 
 # load data
 img, raw_data = load_surface(fn=input_fn)
@@ -161,6 +161,31 @@ gauss_fitter.grid_fit(ecc_grid=eccs,
                       verbose=verbose, 
                       n_batches=n_batches)
 
+# Iterative fit gauss model
+gauss_bounds = [(-max_ecc_size, max_ecc_size), # x
+                (-max_ecc_size, max_ecc_size), # y
+                (size_th[0], size_th[1]), # prf size
+                (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
+                (-2, 2), # bold baseline
+                (0, 10), # hrf1
+                (0, 0) # hrf2
+                ]
+
+print("\n===== PRF FIT BOUNDS =====")
+print("Gauss bounds:")
+print("  x range:", gauss_bounds[0])
+print("  y range:", gauss_bounds[1])
+print("  prf size range:", gauss_bounds[2])
+print("  prf amplitude range:", gauss_bounds[3])
+print("  bold baseline range:", gauss_bounds[4])
+print("  hrf1 range:", gauss_bounds[5])
+print("  hrf2 range:", gauss_bounds[6])
+
+gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th, 
+                           bounds=gauss_bounds,
+                           verbose=verbose)
+gauss_fit = gauss_fitter.iterative_search_params
+
 # rearange result of Gauss model 
 gauss_fit = gauss_fitter.gridsearch_params
 gauss_fit_mat = np.zeros((raw_data.shape[1],gauss_params_num))
@@ -184,12 +209,12 @@ maps_names = ['mu_x', 'mu_y', 'prf_size', 'prf_amplitude', 'bold_baseline',
               'hrf_1','hrf_2', 'r_squared']
               
 # export fit
-img_gauss_gridfit_fit_mat = make_surface_image(data=gauss_fit_mat.T, source_img=img, maps_names=maps_names)
-nb.save(img_gauss_gridfit_fit_mat,'{}/{}'.format(prf_fit_dir, fit_fn_gauss_gridfit)) 
+img_gauss_fit_mat = make_surface_image(data=gauss_fit_mat.T, source_img=img, maps_names=maps_names)
+nb.save(img_gauss_fit_mat,'{}/{}'.format(prf_fit_dir, gauss_fit_fn)) 
 
 # export pred
-img_gauss_gridfit_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
-nb.save(img_gauss_gridfit_pred_mat,'{}/{}'.format(prf_fit_dir, pred_fn_gauss_gridfit)) 
+img_gauss_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
+nb.save(img_gauss_pred_mat,'{}/{}'.format(prf_fit_dir, gauss_pred_fn)) 
 
 # Print duration
 end_time = datetime.datetime.now()

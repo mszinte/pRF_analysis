@@ -11,8 +11,6 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
 sys.argv[5]: server project (e.g. b327)
-sys.argv[6]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
-sys.argv[8]: OPTIONAL filter_rois (0 or 1, default=1) - whether to use ROI vertices 
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -22,14 +20,11 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_submit_css_jobs.py [main directory] [project name] [subject] 
-                              [group] [server project] [analysis folder - optional] [filter_rois - optional]
+                              [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python prf_submit_css_jobs.py /scratch/mszinte/data MotConf sub-01 327 b327
-python prf_submit_css_jobs.py /scratch/mszinte/data centbids sub-2100247523 327 b327
-python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 prf 0
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -50,19 +45,17 @@ import sys
 import glob
 import json
 
+# Personal imports
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from pycortex_utils import set_pycortex_config_file
+
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-if len(sys.argv) > 6: output_folder = sys.argv[6]
-else: output_folder = "prf"
-if len(sys.argv) > 7: filter_rois = int(sys.argv[7])
-else: filter_rois = 1
 memory_val = 30
-if filter_rois: hour_proc = 6
-else: hour_proc = 12
 nb_procs = 32
 
 # Cluster settings
@@ -73,35 +66,55 @@ with open(settings_path) as f:
     json_s = f.read()
     analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
-prf_task_name = analysis_info['prf_task_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
+filter_rois = analysis_info['filter_rois']
+if filter_rois: hour_proc = 2
+else: hour_proc = 4
+prf_task_names = analysis_info['prf_task_names']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
+avg_methods = analysis_info['avg_methods']
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
+# define permission cmd
+chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
+chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
+
 # Define fns (filenames)
-dct_avg_gii_fns = "{}/{}/fsnative/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.func.gii".format(
-    pp_dir,subject, prf_task_name)
-dct_avg_nii_fns = "{}/{}/170k/func/fmriprep_dct_loo_avg/*_task-{}_*avg*.dtseries.nii".format(
-    pp_dir, subject, prf_task_name)
-pp_fns = glob.glob(dct_avg_gii_fns) + glob.glob(dct_avg_nii_fns)
+pp_fns = []
+for avg_method in avg_methods:
+    for prf_task_name in prf_task_names:
+        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*{}*.func.gii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
+        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*{}*.dtseries.nii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
+
+        # Accumulate the results
+        pp_fns.extend(glob.glob(dct_avg_gii_fns))
+        pp_fns.extend(glob.glob(dct_avg_nii_fns))
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
+        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/{}/jobs".format(pp_dir, subject, output_folder)
+        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
+        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
         os.makedirs(prf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
+        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
         os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/{}/jobs".format(pp_dir, subject, output_folder)
+        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
         os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
+        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
         os.makedirs(prf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
@@ -124,14 +137,15 @@ for fit_num, pp_fn in enumerate(pp_fns):
            log_dir=prf_logs_dir)
 
     # Define fit cmd
-    fit_cmd = "python prf_cssfit.py {} {} {} {} {} {} {}".format(
-        main_dir, project_dir, subject, pp_fn, nb_procs, output_folder, filter_rois)
+    fit_cmd = "python prf_cssfit.py {} {} {} {} {}".format(
+        main_dir, project_dir, subject, pp_fn, nb_procs)
     
     # Create sh
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')
-    of.write("{} \n{}".format(slurm_cmd, fit_cmd))
+    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
+                                        chmod_cmd, chgrp_cmd))
     of.close()
 
     # Submit jobs

@@ -89,7 +89,7 @@ def load_rois_atlas(atlas_name, surf_size, return_hemis=False, rois=None, mask=T
             raise ValueError("Invalid value for 'rois'. It should be either None or a list of ROI names.")
 
             
-def data_from_rois(fn, subject, rois, filter_rois=True):
+def data_from_rois(fn, subject, rois):
     """
     Load a surface, and returne vertex only data from the specified ROIs
     ----------
@@ -134,33 +134,23 @@ def data_from_rois(fn, subject, rois, filter_rois=True):
     # na_vertices = np.where(np.isnan(data).any(axis=0))[0]
     brain_mask = np.any(list(roi_verts.values()), axis=0)
     
-    if filter_rois:
-        # Filter out NaN vertices
-        na_vertices = np.isnan(data).any(axis=0)
-        
-        # create a hemi mask  
-        if 'hemi-L' in fn:
-            hemi_mask = brain_mask[:len_data]
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-            
-        elif 'hemi-R' in fn: 
-            hemi_mask = brain_mask[-len_data:]
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-        else: 
-            hemi_mask = brain_mask
-            for i, na_vertex in enumerate(na_vertices):
-                hemi_mask[i] = not na_vertex and hemi_mask[i]
-    else:
-        # Don't filter NaN vertices, use brain_mask directly
-        if 'hemi-L' in fn:
-            hemi_mask = brain_mask[:len_data]
-        elif 'hemi-R' in fn:
-            hemi_mask = brain_mask[-len_data:]
-        else:
-            hemi_mask = brain_mask
+    # Filter out NaN vertices
+    na_vertices = np.isnan(data).any(axis=0)
     
+    # create a hemi mask  
+    if 'hemi-L' in fn:
+        hemi_mask = brain_mask[:len_data]
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
+        
+    elif 'hemi-R' in fn: 
+        hemi_mask = brain_mask[-len_data:]
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
+    else: 
+        hemi_mask = brain_mask
+        for i, na_vertex in enumerate(na_vertices):
+            hemi_mask[i] = not na_vertex and hemi_mask[i]
     
     # Get indices of regions of interest (ROIs)
     roi_idx = np.where(hemi_mask)[0]
@@ -740,3 +730,42 @@ def create_colormap(cortex_dir, colormap_name, colormap_dict, recreate=False):
         
 
     return None
+
+# Check and setup pycortex directory structure
+def setup_pycortex_dirs(cortex_dir):
+    import os
+    import urllib.request
+    import json
+    """Check for cortex/colormaps and cortex/db folders, create if missing and download colormaps"""
+    colormaps_dir = os.path.join(cortex_dir, "colormaps")
+    db_dir = os.path.join(cortex_dir, "db")
+    
+    # Create directories if they don't exist
+    os.makedirs(colormaps_dir, exist_ok=True)
+    os.makedirs(db_dir, exist_ok=True)
+    
+    # Check if colormaps directory is empty
+    if not os.listdir(colormaps_dir):
+        print("Downloading colormaps from GitHub...")
+        # GitHub API URL to list files in the colormaps directory
+        api_url = "https://api.github.com/repos/gallantlab/pycortex/contents/filestore/colormaps"
+        
+        try:
+            with urllib.request.urlopen(api_url) as response:
+                files = json.loads(response.read())
+            
+            # Download each colormap file
+            for file_info in files:
+                if file_info['type'] == 'file':
+                    file_url = file_info['download_url']
+                    file_name = file_info['name']
+                    file_path = os.path.join(colormaps_dir, file_name)
+                    
+                    print(f"  Downloading {file_name}...")
+                    urllib.request.urlretrieve(file_url, file_path)
+            
+            print("Colormaps downloaded successfully.")
+        except Exception as e:
+            print(f"Warning: Could not download colormaps: {e}")
+    else:
+        print("Colormaps directory already contains files.")

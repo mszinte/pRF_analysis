@@ -10,30 +10,21 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: group (e.g. 327)
-sys.argv[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/postproc/prf/postfit/
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python compute_css_derivatives.py [main directory] [project name] 
                                      [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
-    
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data MotConf sub-170k 327
-
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-01 327 prf_em_ctrl
-python compute_css_derivatives.py /scratch/mszinte/data amblyo_prf sub-170k 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -68,8 +59,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
-if len(sys.argv) > 5: output_folder = sys.argv[5]
-else: output_folder = "prf"
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -81,9 +70,12 @@ with open(settings_path) as f:
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-maps_names = analysis_info['maps_names_css']
 subjects = analysis_info['subjects']
-prf_task_name = analysis_info['prf_task_name']
+prf_task_names = analysis_info['prf_task_names']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
+avg_methods = analysis_info['avg_methods']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -94,118 +86,123 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # sub-170k exception
 if subject != 'sub-170k':
-    for format_, extension in zip(formats, extensions):
-        print(format_)
-        
-        # Define directories
-        prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(pp_dir, subject, format_, output_folder)
-        os.makedirs(prf_deriv_dir, exist_ok=True)
-        
-        # Get prf fit filenames
-        fit_fns = glob.glob("{}/{}/{}/{}/fit/*prf-fit_css*.{}".format(
-            pp_dir, subject, format_, output_folder, extension))
-        
-        # Compute derivatives
-        for fit_fn in fit_fns:
-            deriv_fn = fit_fn.split('/')[-1].replace('prf-fit', 'prf-deriv')
-        
-            if os.path.isfile(fit_fn) == False:
-                sys.exit('Missing files, analysis stopped : {}'.format(fit_fn))
-            else:
-                # get arrays
-                fit_img, fit_data = load_surface(fit_fn)
-                deriv_array = fit2deriv(fit_array=fit_data, model='css', is_loo_r2=True)
-                deriv_img = make_surface_image(data=deriv_array, 
-                                               source_img=fit_img, 
-                                               maps_names=maps_names)
-    
-            nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
-            print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
-    
-    # Find all the derivatives files 
-    derives_fns = []
-    for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/{}/{}/prf_derivatives/*loo-*_prf-deriv_css.{}".format(
-            pp_dir, subject, format_, output_folder, extension))
-        derives_fns.extend(list_)
-    
-    # Split filtered files depending of their nature
-    deriv_fsnative_hemi_L, deriv_fsnative_hemi_R, deriv_170k = [], [], []
-    for subtype in derives_fns:
-        if "hemi-L" in subtype: deriv_fsnative_hemi_L.append(subtype)
-        elif "hemi-R" in subtype: deriv_fsnative_hemi_R.append(subtype)
-        else : deriv_170k.append(subtype)
-    
-    loo_deriv_fns_list = [deriv_fsnative_hemi_L,
-                          deriv_fsnative_hemi_R, 
-                          deriv_170k]
-    hemi_data_median = {'hemi-L': [], 
-                     'hemi-R': [], 
-                     '170k': []}
-    
-    # Median
-    print('Compute median across LOO')
-    
-    for loo_deriv_fns in loo_deriv_fns_list:
-        if loo_deriv_fns[0].find('hemi-L') != -1: hemi = 'hemi-L'
-        elif loo_deriv_fns[0].find('hemi-R') != -1: hemi = 'hemi-R'
-        else: hemi = None
-    
-        deriv_img, deriv_data = load_surface(fn=loo_deriv_fns[0])
-        loo_deriv_data_median = np.zeros(deriv_data.shape)
-        for n_run, loo_deriv_fn in enumerate(loo_deriv_fns):
-            loo_deriv_median_fn = loo_deriv_fn.split('/')[-1]
-            loo_deriv_median_fn = re.sub(r'avg_loo-\d+_prf-deriv_css', 'avg_prf-deriv_css_loo-median', loo_deriv_median_fn)
+    for avg_method in avg_methods:
+        if 'loo' in avg_method:
+            is_loo_r2 = True
+            maps_names = analysis_info['maps_names_css_loo']
+        else: 
+            is_loo_r2 = False
+            maps_names = analysis_info['maps_names_css']
             
-            # Load data
-            print('adding {} to computing median'.format(loo_deriv_fn))
-            loo_deriv_img, loo_deriv_data = load_surface(fn=loo_deriv_fn)
+        for format_, extension in zip(formats, extensions):
+
+            # define/create folders
+            prf_fit_dir = '{}/{}/{}/prf/fit'.format(
+                    pp_dir, subject, format_)
+            prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
+                pp_dir, subject, format_)
+
+            for prf_task_name in prf_task_names:
+                print(f'{avg_method} - {format_} - {prf_task_name}')
+
+                # Find pRF func/pred files
+                fit_fns = glob.glob('{}/*task-{}*_{}*_prf-css_fit.{}'.format(
+                        prf_fit_dir, prf_task_name, avg_method, extension))
+    
+                # Compute derivatives
+                for fit_fn in fit_fns:
+                    deriv_fn = fit_fn.split('/')[-1].replace('prf-css_fit', 'prf-css_deriv')
+
+                    # get arrays
+                    fit_img, fit_data = load_surface(fit_fn)
+                    
+                    deriv_array = fit2deriv(fit_array=fit_data, 
+                                            model='css', 
+                                            is_loo_r2=is_loo_r2)
+                    
+                    deriv_img = make_surface_image(data=deriv_array, 
+                                                   source_img=fit_img, 
+                                                   maps_names=maps_names)
+
+                    nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
+                    print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
             
-            # Median
-            if n_run == 0: loo_deriv_data_median = np.copy(loo_deriv_data)
-            else: loo_deriv_data_median = np.nanmedian(np.array([loo_deriv_data_median, loo_deriv_data]), axis=0)
-        
-        if hemi:
-            median_fn = '{}/{}/fsnative/{}/prf_derivatives/{}'.format(
-                pp_dir, subject, output_folder, loo_deriv_median_fn)
-            hemi_data_median[hemi] = loo_deriv_data_median
-        else:
-            median_fn = '{}/{}/170k/{}/prf_derivatives/{}'.format(
-                pp_dir, subject, output_folder, loo_deriv_median_fn)
-            hemi_data_median['170k'] = loo_deriv_data_median
-            
-        # Export data in surface format 
-        loo_deriv_img = make_surface_image(data=loo_deriv_data_median, 
-                                           source_img=loo_deriv_img, 
-                                           maps_names=maps_names)
-        nb.save(loo_deriv_img, median_fn)
-        print('Saving median: {}'.format(median_fn))
+                # Compute median across leave-one-out fit
+                if 'loo-avg' in avg_method:
+                    print('Compute median across LOO')                
+                    
+                    # Get LOO files (excluding any with "median" in the name)
+                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*_loo-avg-*_prf-css_deriv.{extension}")
+
+                    # Group files by hemisphere/format
+                    loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
+                    loo_prf_deriv_fsnative_hemi_R_fns = [fn for fn in loo_prf_deriv_fns if "hemi-R" in fn]
+                    loo_prf_deriv_170k_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" not in fn and "hemi-R" not in fn]
+
+                    # Process each group
+                    for group_files, hemi in [(loo_prf_deriv_fsnative_hemi_L_fns, "_hemi-L"),
+                                              (loo_prf_deriv_fsnative_hemi_R_fns, "_hemi-R"),
+                                              (loo_prf_deriv_170k_fns, "")]:
+                        if len(group_files)>0:
+                            
+                            # Load first file to initialize median array and define fn
+                            prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
+                            loo_prf_deriv = np.zeros_like(prf_deriv_data)
+                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_prf-css_deriv.{}'.format(
+                                prf_deriv_dir, subject, prf_task_name, hemi, 
+                                preproc_prep, filtering, normalization, extension)
+                            
+                            # Compute median across LOO runs
+                            for n_run, loo_deriv_fn in enumerate(group_files):
+                                print(f'Loadding loo deriv: {loo_deriv_fn}')
+                                _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
+                                if n_run == 0: loo_prf_deriv = np.copy(loo_prf_deriv_run_data)
+                                else: loo_prf_deriv = np.nanmedian(np.array([loo_prf_deriv, loo_prf_deriv_run_data]), axis=0)
+                            
+                            # Save median results
+                            loo_prf_deriv_img = make_surface_image(loo_prf_deriv, prf_deriv_img, maps_names)
+                            nb.save(loo_prf_deriv_img, loo_prf_deriv_fn)
+                            print(f"Saving median: {loo_prf_deriv_fn}")
+
 
 # Sub-170k computing median       
 elif subject == 'sub-170k':
     print('sub-170, computing median prf deriv across subject...')
     
-    # find all the subject prf derivatives
-    subjects_derivatives = []
-    for subject in subjects: 
-        subjects_derivatives += ["{}/{}/derivatives/pp_data/{}/170k/{}/prf_derivatives/{}_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(
-                main_dir, project_dir, subject, output_folder, subject, prf_task_name)]
-
-    # Computing median across subject
-    img, data_deriv_median = median_subject_template(fns=subjects_derivatives)
+    for prf_task_name in prf_task_names:
         
-    # Export results
-    sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/{}/prf_derivatives".format(
-            main_dir, project_dir, output_folder)
-    os.makedirs(sub_170k_deriv_dir, exist_ok=True)
-    
-    sub_170k_deriv_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_prf-deriv_css_loo-median.dtseries.nii".format(sub_170k_deriv_dir, prf_task_name)
-    
-    print("save: {}".format(sub_170k_deriv_fn))
-    sub_170k_deriv_img = make_surface_image(data=data_deriv_median, 
-                                            source_img=img, 
-                                            maps_names=maps_names)
-    nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
+        for avg_method in avg_methods:
+            if 'loo' in avg_method:
+                maps_names = analysis_info['maps_names_css_loo']
+            else: 
+                maps_names = analysis_info['maps_names_css']
+            
+            # find all the subject prf deriv
+            prf_deriv_fns = []
+            for subject in subjects:
+                prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
+                    main_dir, project_dir, subject)
+                prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
+                    prf_deriv_dir, subject, prf_task_name,
+                    preproc_prep, filtering, normalization, avg_method)]
+
+            # Computing median across subject
+            img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
+            
+            # Export results
+            sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
+                main_dir, project_dir)
+            os.makedirs(sub_170k_deriv_dir, exist_ok=True)
+
+            sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
+                sub_170k_deriv_dir, prf_task_name, 
+                preproc_prep, filtering, normalization, avg_method)
+            
+            print("save: {}".format(sub_170k_deriv_fn))
+            sub_170k_deriv_img = make_surface_image(data=data_deriv_median, 
+                                                    source_img=img, 
+                                                    maps_names=maps_names)
+            nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

@@ -16,25 +16,16 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/preproc/functional/
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 2. run python command
 python compute_run_corr.py [main directory] [project name] [subject name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
-
-python compute_run_corr.py /scratch/mszinte/data MotConf sub-01 327
-python compute_run_corr.py /scratch/mszinte/data MotConf sub-170k 327
-
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
-
-python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-01 327
-python compute_run_corr.py /scratch/mszinte/data amblyo_prf sub-170k 327
-
-python compute_run_corr.py /scratch/mszinte/data centbids sub-2100247523 327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (mail@martinszinte.net)
+Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
@@ -85,6 +76,9 @@ extensions = analysis_info['extensions']
 fdr_alpha = analysis_info['fdr_alpha']
 maps_names = analysis_info['maps_names_corr']
 subjects = analysis_info['subjects']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
 
 # Index
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
@@ -92,6 +86,7 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
         
 # sub-170k exception
 if subject != 'sub-170k':
+    
     print('{}, computing inter-run correlation...'.format(subject))
     # make extension folders
     corr_temp_dir = "{}/{}/derivatives/temp_data/{}_corr".format(main_dir, project_dir, subject)
@@ -100,8 +95,10 @@ if subject != 'sub-170k':
     # Find all the filtered files 
     preproc_fns = []
     for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct/*_*.{}".format(
-                main_dir, project_dir, subject, format_, extension))
+        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
+            main_dir, project_dir, subject, format_, 
+            preproc_prep, filtering, normalization, 
+            extension))
         preproc_fns.extend(list_)
     
     # Split filtered files  depending of their nature
@@ -125,7 +122,7 @@ if subject != 'sub-170k':
             preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
 
             print(task, len(preproc_files_task), preproc_files_task)
-    
+
             if not preproc_files_task:
                 print('No files for {}'.format(task))
                 continue
@@ -151,12 +148,16 @@ if subject != 'sub-170k':
                                                           alpha=fdr_alpha)
                 
                 # Save combi files in temp_data
-                if hemi: combi_corr_fn = "{}/{}_task-{}_{}_fmriprep_dct_corr_bold_combi-{}.func.gii".format(
-                    corr_temp_dir, subject, task, hemi, combi_num)
-                else: combi_corr_fn = "{}/{}_task-{}_fmriprep_dct_corr_bold_combi-{}.dtseries.nii".format(
-                    corr_temp_dir, subject, task, combi_num)
+                if hemi: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr-combi-{}_bold.func.gii".format(
+                    corr_temp_dir, subject, task, hemi, 
+                    preproc_prep, filtering, normalization, 
+                    combi_num)
+                else: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_corr-combi-{}_bold.dtseries.nii".format(
+                    corr_temp_dir, subject, task, 
+                    preproc_prep, filtering, normalization, 
+                    combi_num)
     
-                print("combi corr save: {}".format(combi_corr_fn))
+                print("Combi corr save: {}".format(combi_corr_fn))
                 corr_stats_fns.append(combi_corr_fn)
                 combi_corr_img = make_surface_image(data=combi_task_corr,
                                               source_img=preproc_img, 
@@ -188,17 +189,23 @@ if subject != 'sub-170k':
 
             # Export result
             if hemi:
-                corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/fmriprep_dct_corr/".format(main_dir, project_dir, subject)
+                corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/{}_{}_{}_corr/".format(
+                    main_dir, project_dir, subject, 
+                    preproc_prep, filtering, normalization)
                 os.makedirs(corr_dir, exist_ok=True)
-                cor_fn = "{}/{}_task-{}_{}_fmriprep_dct_corr_bold.func.gii".format(
-                        corr_dir, subject, task, hemi)
+                cor_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr_bold.func.gii".format(
+                    corr_dir, subject, task, hemi,
+                    preproc_prep, filtering, normalization)
             else:
-                corr_dir = "{}/{}/derivatives/pp_data/{}/170k/corr/fmriprep_dct_corr/".format(main_dir, project_dir, subject)
+                corr_dir = "{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr/".format(
+                    main_dir, project_dir, subject, 
+                    preproc_prep, filtering, normalization)   
                 os.makedirs(corr_dir, exist_ok=True)
-                cor_fn = "{}/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(
-                        corr_dir, subject, task)
+                cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                    corr_dir, subject, task, 
+                    preproc_prep, filtering, normalization)
     
-            print("corr save: {}".format(cor_fn))
+            print("Corr save: {}".format(cor_fn))
             corr_img = make_surface_image(data=corr_stats_data_median,
                                           source_img=preproc_img, 
                                           maps_names=maps_names)
@@ -212,10 +219,15 @@ elif subject == 'sub-170k':
     # find all the subject correlations
     for task in tasks:
         subjects_task_corr = []
+        
         for subject in subjects: 
-            subjects_task_corr += ["{}/{}/derivatives/pp_data/{}/170k/corr/fmriprep_dct_corr/{}_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(
-                    main_dir, project_dir, subject, subject, task)]
- 
+            corr_dir = '{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr'.format(
+                main_dir, project_dir, subject,
+                preproc_prep, filtering, normalization)
+            subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                corr_dir, subject, task, preproc_prep, filtering, normalization)]
+
+        
         # median across subject
         img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
         
@@ -231,17 +243,18 @@ elif subject == 'sub-170k':
         data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
             
         # Export results
-        sub_170k_cor_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/corr/fmriprep_dct_corr".format(
-                main_dir, project_dir)
+        sub_170k_cor_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/corr/{}_{}_{}_corr".format(
+                main_dir, project_dir, preproc_prep, filtering, normalization)
         os.makedirs(sub_170k_cor_dir, exist_ok=True)
         
-        sub_170k_cor_fn = "{}/sub-170k_task-{}_fmriprep_dct_corr_bold.dtseries.nii".format(sub_170k_cor_dir, task)
+        sub_170k_cor_fn = "{}/sub-170k_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+            sub_170k_cor_dir, task, preproc_prep, filtering, normalization)
         
         print("save: {}".format(sub_170k_cor_fn))
         sub_170k_corr_img = make_surface_image(
             data=data_task_corr_median, source_img=img, maps_names=maps_names)
         nb.save(sub_170k_corr_img, sub_170k_cor_fn)
-            
+
 # Time
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(

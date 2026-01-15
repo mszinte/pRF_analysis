@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-preproc_end_sbatch.py
+averaging_sbatch.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Run preproc end on mesocenter 
+Run task specific averaging on mesocenter 
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -17,14 +17,13 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/[PROJECT]/analysis_code/preproc/functional
+>> cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 2. run python command
->> python preproc_end_sbatch.py [main directory] [project] [subject] [group [server num]
+>> python averaging_sbatch.py [main directory] [project] [subject] [group] [server num]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
-python preproc_end_sbatch.py /scratch/mszinte/data MotConf sub-01 327 b327
-python preproc_end_sbatch.py /scratch/mszinte/data centbids sub-2100247523 327 b327
+python averaging_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -64,6 +63,7 @@ proj_name = analysis_info['project_name']
 nb_procs = 8
 memory_val = 48
 hour_proc = 10
+if project_dir == 'amblyo7T_prf': hour_proc = 1
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, project_dir, subject)
@@ -79,20 +79,21 @@ slurm_cmd = """\
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_preproc_end_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_preproc_end_%N_%j_%a.out
-#SBATCH -J {subject}_preproc_end
+#SBATCH -e {log_dir}/{subject}_averaging_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_averaging_%N_%j_%a.out
+#SBATCH -J {subject}_averaging
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
-    
-preproc_end_surf_cmd = "python preproc_end.py {} {} {} {}".format(main_dir, project_dir, subject, group)
+
+cd_cmd = "cd ../../../{}/preproc/functional/".format(project_dir)
+averaging_cmd = "python averaging.py {} {} {} {}".format(main_dir, project_dir, subject, group)
 
 # Create sh fn
-sh_fn = "{}/{}_preproc_end.sh".format(job_dir, subject)
+sh_fn = "{}/{}_averaging.sh".format(job_dir, subject)
 
 of = open(sh_fn, 'w')
-of.write("{} \n{}".format(slurm_cmd, preproc_end_surf_cmd))
+of.write("{} \n{} \n{}".format(slurm_cmd, cd_cmd, averaging_cmd))
 of.close()
 
 # Submit jobs

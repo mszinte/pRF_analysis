@@ -3,8 +3,9 @@ import ipdb
 deb = ipdb.set_trace
 def weighted_regression(x_reg, y_reg, weight_reg, model):
     """
-    Function to compute regression parameter weighted by a matrix (e.g. r2 value),
-    where the regression model is y = 1/(cx) + d.
+    Function to compute regression parameters weighted by a matrix (e.g. r2 value),
+    where the regression model is y = 1/(cx) + d for the 'pcm' model,
+    or a standard linear model otherwise.
 
     Parameters
     ----------
@@ -28,27 +29,35 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
     import numpy as np
     from scipy.optimize import curve_fit
     from sklearn import linear_model
-    import ipdb
-    deb = ipdb.set_trace
-    
+
+    # Convert inputs to numpy arrays
     x_reg = np.array(x_reg)
     y_reg = np.array(y_reg)
-    
     weight_reg = np.array(weight_reg)
 
-    # Filter out NaN values
-    x_reg_nan = x_reg[(~np.isnan(x_reg) & ~np.isnan(y_reg))]
-    y_reg_nan = y_reg[(~np.isnan(x_reg) & ~np.isnan(y_reg))]
-    weight_reg_nan = weight_reg[~np.isnan(weight_reg)]
-    
+    # Remove NaN values consistently across all vectors
+    mask = (~np.isnan(x_reg)) & (~np.isnan(y_reg)) & (~np.isnan(weight_reg))
+    x_reg_nan = x_reg[mask]
+    y_reg_nan = y_reg[mask]
+    weight_reg_nan = weight_reg[mask]
+
     if model == 'pcm':
-        # Define the model function
+        # Define the non-linear model function
         def model_function(x, c, d):
             return 1 / (c * x + d)
 
         if weight_reg_nan.size >= 2:
-            # Perform curve fitting
-            params, _ = curve_fit(model_function, x_reg_nan, y_reg_nan, sigma=weight_reg_nan, maxfev=10000)
+            # curve_fit expects sigma = uncertainty (smaller = more weight)
+            # so we invert the weight to represent uncertainty correctly
+            sigma = 1 / np.maximum(weight_reg_nan, 1e-8)
+            params, _ = curve_fit(
+                model_function, 
+                x_reg_nan, 
+                y_reg_nan,
+                sigma=sigma, 
+                absolute_sigma=True, 
+                maxfev=10000
+            )
             c, d = params
         else:
             c, d = np.nan, np.nan
@@ -57,16 +66,18 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
     elif model == 'linear':
         if weight_reg_nan.size >= 2:
             regr = linear_model.LinearRegression()
-            
-            # Filter out NaN values
+
+            # Reshape data for sklearn input
             x_reg_nan = x_reg_nan.reshape(-1, 1)
             y_reg_nan = y_reg_nan.reshape(-1, 1)
-            
+
+            # sample_weight in sklearn works directly as a confidence weight
             regr.fit(x_reg_nan, y_reg_nan, sample_weight=weight_reg_nan)
             coef_reg, intercept_reg = regr.coef_[0][0], regr.intercept_[0]
         else: 
             coef_reg, intercept_reg = np.nan, np.nan
         return coef_reg, intercept_reg
+
     else:
         raise ValueError("Invalid model type. Supported models are 'pcm' and 'linear'.")
 
@@ -236,6 +247,42 @@ def gaus_2d(gauss_x, gauss_y, gauss_sd, screen_side, grain=200):
     
     gauss_z = 1./(2.*np.pi*gauss_sd*gauss_sd)*np.exp(-((mesh_x-gauss_x)**2./(2.*gauss_sd**2.)+(mesh_y-gauss_y)**2./(2.*gauss_sd**2.)))
     return x, y, gauss_z
+
+def css_2d(css_x, css_y, css_sigma, css_n, screen_side, grain=200):
+    """
+    Generate 2D CSS mesh for a single vertex.
+
+    Parameters
+    ----------
+    css_x : float
+        Mean x CSS parameter in dva.
+    css_y : float
+        Mean y CSS parameter in dva.
+    css_sigma : float
+        Sigma CSS parameter in dva.
+    css_n : float
+        Exponent CSS parameter.
+    screen_side : float
+        Mesh screen side (square) in dva.
+    grain : int
+        Grain resolution of the mesh in pixels (default = 200).
+
+    Returns
+    -------
+    x : numpy.ndarray
+        Linspace x of the mesh.
+    y : numpy.ndarray
+        Linspace y of the mesh.
+    z : numpy.ndarray
+        Mesh z values (to plot).
+    """
+    import numpy as np
+    x = np.linspace(-screen_side/2, screen_side/2, grain)
+    y = np.linspace(-screen_side/2, screen_side/2, grain)
+    mesh_x, mesh_y = np.meshgrid(x, y)
+
+    css_z = 1 / (1 + ((np.sqrt((mesh_x - css_x)**2 + (mesh_y - css_y)**2)) / css_sigma)**css_n)
+    return x, y, css_z
 
 def bootstrap_ci_median(data, n_bootstrap=1000, ci_level=0.95):
     import numpy as np
@@ -448,7 +495,7 @@ def median_subject_template(fns):
     from surface_utils import load_surface
     
     for n_file, fn in enumerate(fns) : 
-        print('adding {} to '.format(fn))
+        print('adding {}'.format(fn))
         # Load data
         img, data = load_surface(fn=fn)
     
@@ -460,7 +507,7 @@ def median_subject_template(fns):
             
     return img, data_med
 
-def make_prf_distribution_df(data, rois, max_ecc, grain):
+def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
     """
     Load the PRF TSV file and compute the PRF distribution 
     
@@ -470,8 +517,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
     rois: list of ROIs (Regions Of Interest)
     max_ecc: maximum eccentricity for the Gaussian mesh
     grain: the granularity you want for the Gaussian mesh
-    hot_zone_percent: the percentage to define the hot zone (how much of the denser locations you take)
-    ci_confidence_level: the confidence level for the confidence interval
+    rsq2use : name of the rsquare value to use
 
     Returns
     -------
@@ -489,20 +535,21 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
             print(f"[WARNING] No data for ROI: {roi}")
             continue  # skip this ROI
         
-        gauss_z_tot = np.zeros((grain,grain)) 
+        css_z_tot = np.zeros((grain,grain)) 
         for vert in range(len(df_roi)):
-            # compute the gaussian mesh
-            x, y, gauss_z = gaus_2d(gauss_x=df_roi.prf_x[vert],  
-                                gauss_y=df_roi.prf_y[vert], 
-                                gauss_sd=df_roi.prf_size[vert], 
-                                screen_side=max_ecc*2, 
+            # compute the gaussian mesh            
+            x, y, css_z = css_2d(css_x=df_roi.prf_x[vert],  
+                                css_y=df_roi.prf_y[vert], 
+                                css_sigma=df_roi.prf_size[vert], 
+                                css_n=df_roi.prf_n[vert],
+                                screen_side=max_ecc*2,
                                 grain=grain)
             
-            # addition of pRF and ponderation by loo r2
-            gauss_z_tot += gauss_z * df_roi.prf_loo_r2[vert]
+            # addition of pRF and ponderation by rsquare (rsq or loo_rsq)
+            css_z_tot += css_z * df_roi[rsq2use][vert]
             
         # Normalisation 
-        gauss_z_tot = (gauss_z_tot-gauss_z_tot.min())/(gauss_z_tot.max()-gauss_z_tot.min())
+        css_z_tot = (css_z_tot-css_z_tot.min())/(css_z_tot.max()-css_z_tot.min())
         
         # create the df
         df_distribution_roi = pd.DataFrame()
@@ -510,8 +557,8 @@ def make_prf_distribution_df(data, rois, max_ecc, grain):
         df_distribution_roi['x'] = x
         df_distribution_roi['y'] = y
         
-        gauss_z_tot_df = pd.DataFrame(gauss_z_tot)
-        df_distribution_roi = pd.concat([df_distribution_roi, gauss_z_tot_df], axis=1)
+        css_z_tot_df = pd.DataFrame(css_z_tot)
+        df_distribution_roi = pd.concat([df_distribution_roi, css_z_tot_df], axis=1)
         
         if j == 0: df_distribution = df_distribution_roi
         else: df_distribution = pd.concat([df_distribution, df_distribution_roi])

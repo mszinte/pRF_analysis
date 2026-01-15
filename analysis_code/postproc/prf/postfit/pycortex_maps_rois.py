@@ -10,7 +10,6 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: save in svg (e.g. no)
-sys.argv[5]: session name (optional, e.g. ses-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -20,21 +19,13 @@ To run:
 1. cd to function
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python pycortex_maps_rois.py [main directory] [project name] [subject num] [save_in_svg] [session (optional)]
+>> python pycortex_maps_rois.py [main directory] [project name] [subject num] 
+                                [save_in_svg]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-
-python pycortex_maps_rois.py ~/disks/meso_S/data MotConf sub-01 n
-python pycortex_maps_rois.py ~/disks/meso_S/data MotConf sub-170k n
-
 python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-01 n
 python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-170k n
-
-python pycortex_maps_rois.py ~/disks/meso_S/data amblyo_prf sub-01 n
-python pycortex_maps_rois.py ~/disks/meso_S/data amblyo_prf sub-170k n
-
-python pycortex_maps_rois.py ~/disks/meso_S/data amblyo7T_prf sub-01 n ses-01
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -64,13 +55,6 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 save_svg_in = sys.argv[4]
-session = sys.argv[5] if len(sys.argv) > 5 else None
-
-# Handle session parameter for pycortex subject name
-if session:
-    pycortex_subject_name = f"{subject}_{session}"
-else:
-    pycortex_subject_name = subject
 
 try:
     if save_svg_in == 'yes' or save_svg_in == 'y':
@@ -93,8 +77,6 @@ with open(settings_path) as f:
     analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
-extensions = analysis_info['extensions']
-prf_task_name = analysis_info['prf_task_name']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -123,9 +105,9 @@ create_colormap(cortex_dir=cortex_dir,
                )
 
 # Create flatmaps
-for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     # Define directories and fn
-    rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject,format_)
+    rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject, format_)
     flatmaps_dir = '{}/pycortex/flatmaps_rois'.format(rois_dir)
     datasets_dir = '{}/pycortex/datasets_rois'.format(rois_dir)
     
@@ -151,7 +133,7 @@ for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k'
     print('Creating flatmaps...')
 
     # Rois
-    roi_name = '{}_rois'.format(prf_task_name)
+    roi_name = 'rois'
     param_rois = {'subject': pycortex_subject,
                   'data': roi_mat, 
                   'cmap': colormap_name,
@@ -162,7 +144,7 @@ for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k'
                   'cmap_steps': len(colormap_dict),
                   'cmap_dict': colormap_dict,
                   'cortex_type': 'VertexRGB',
-                  'description': 'Gaussian pRF ROIs',
+                  'description': 'ROIs',
                   'curv_brightness': 1, 
                   'curv_contrast': 0.25,
                   'add_roi': save_svg,
@@ -171,7 +153,7 @@ for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k'
                   
     # Draw flatmaps
     volume_roi = draw_cortex(**param_rois)
-    plt.savefig('{}/{}_task-{}_rois.pdf'.format(flatmaps_dir, subject, prf_task_name))
+    plt.savefig('{}/{}_rois.pdf'.format(flatmaps_dir, subject))
     plt.close()
 
     # Save flatmap as dataset
@@ -180,7 +162,7 @@ for format_, pycortex_subject in zip(formats, [pycortex_subject_name, 'sub-170k'
     volumes.update({vol_description:volume_roi})
 
     # Save dataset
-    dataset_file = "{}/{}_task-{}_rois.hdf".format(datasets_dir, subject, prf_task_name)
+    dataset_file = "{}/{}_rois.hdf".format(datasets_dir, subject)
     if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
     dataset = cortex.Dataset(data=volumes)
     dataset.save(dataset_file)

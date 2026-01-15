@@ -43,7 +43,8 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [x] High-pass, z-score, mask (patial recording) and concatenation of runs [preproc_end.py](preproc/functional/preproc_end.py)
+- [x] High-pass, z-score, mask (partial recording)  [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
+- [x] Concatenation/Averaging of runs  [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
 
 #### Functional postprocessing
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
@@ -51,22 +52,22 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ##### PRF Gaussian fit
 - [x] Create the video of each tasks and concatenated tasks from original .mat file [create_prf_videos.ipynb](postproc/prf/fit/create_prf_videos.ipynb)
 - [x] Create the visual matrix design of each tasks and concatenated tasks [create_vdm_files.ipynb](postproc/prf/fit/create_vdm_files.ipynb)
-- [x] Run pRF gaussian grid fit [prf_submit_gridfit_jobs.py](postproc/prf/fit/prf_submit_gridfit_jobs.py)
-- [x] Compute pRF gaussian grid fit derivatives [compute_gauss_gridfit_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_gridfit_derivatives.py)
-- [x] Make pRF maps with pycortex [pycortex_maps_gridfit.py](postproc/prf/postfit/pycortex_maps_gridfit.py)
+- [x] Run pRF gaussian grid fit [prf_submit_gaussfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gauss_jobs.py)
+- [x] Compute pRF gaussian grid fit derivatives [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
+- [x] Make maps with pycortex [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
-##### PRF ROIs
+##### ROIs
 - [x] Draw individual ROI on fsnative data using Inkscape
 - [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
 - [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 ##### PRF CSS fit
-- [x] CSS fit within the ROIs [prf_submit_css_jobs.py](postproc/prf/fit/prf_submit_css_jobs.py)
-- [x] Compute CSS statistics [compute_css_stats.py](postproc/prf/postfit/compute_css_stats.py)
-- [ ] Compute CSS fit derivatives [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
-- [ ] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](../analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
-- [ ] Make CSS pRF fit derivatives and CM maps with pycortex [pycortex_maps_css.py](analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
-- [ ] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](analysis_code/postproc/prf/postfit/make_tsv_css.py)
-- [ ] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) 
-- [ ] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](analysis_code/postproc/prf/postfit/make_rois_fig.py)
-- [ ] Merge all figures [merge_fig_css.py](analysis_code/postproc/prf/postfit/merge_fig_css.py)
+- [x] CSS fit [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [x] Compute CSS statistics [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
+- [x] Compute CSS fit derivatives [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [x] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](../analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
+- [x] Make maps with pycortex [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) 
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
+- [x] Merge all figures [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
