@@ -40,7 +40,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import glob
 import datetime
 import numpy as np
@@ -52,6 +52,7 @@ from scipy import stats
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from surface_utils import load_surface , make_surface_image
 from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
+from settings_utils import load_settings
 
 # Time
 start_time = datetime.datetime.now()
@@ -64,11 +65,9 @@ group = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_info, _, _, _ = load_settings([settings_path])
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 tasks = analysis_info['task_names']
 sessions = analysis_info['sessions']
 formats = analysis_info['formats']

@@ -13,10 +13,6 @@ fit_rsq_threshold:
   description: ""
   value: 0.01
 
-maps_names_corr: 
-  description: "Inter-run correlation maps names of gifti files"
-  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
-
 # Screen and visual design matrix settings
 screen_size_pix: 
   description: "Horizontal and vertical size of the pRF tasks display"
@@ -57,10 +53,6 @@ rsq_iterative_th:
   value: 0.01
 
 # Postfit settings
-fdr_alpha: 
-  description: "P value level list for FDR corrected statistics"
-  value: [0.05, 0.01]
-
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"

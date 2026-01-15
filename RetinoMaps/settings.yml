@@ -74,3 +74,12 @@ formats:
 extensions: 
   description: "Data format extensions after preprocessing"
   value: ["func.gii", "dtseries.nii"]
+
+maps_names_corr: 
+  description: "Inter-run correlation maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# Stats
+fdr_alpha: 
+  description: "P value level list for FDR corrected statistics"
+  value: [0.05, 0.01]

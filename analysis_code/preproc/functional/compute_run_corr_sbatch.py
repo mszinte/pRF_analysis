@@ -41,7 +41,11 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
+
+# Personal imports
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -52,11 +56,8 @@ server_project = sys.argv[5]
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_info, _, _, _ = load_settings([settings_path])
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']

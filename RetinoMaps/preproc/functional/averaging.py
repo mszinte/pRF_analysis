@@ -73,6 +73,7 @@ base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 analysis_info, _, _, _ = load_settings([settings_path, prf_settings_path])
+
 tasks = analysis_info['task_names']
 sessions = analysis_info['sessions']
 formats = analysis_info['formats']
