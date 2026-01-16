@@ -1,0 +1,4 @@
+# Inter-run correlations
+flatmap_corr_scale: 
+  description: "Inter-run correlation r-square flatmap colorscale"
+  value: [-1, 1]

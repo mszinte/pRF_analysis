@@ -32,7 +32,7 @@ screen_distance_cm:
 vdm_size_pix:
   description: "Horizontal and vertical size of the pRF tasks visual design matrix"
   units: "pixels"
-  value: 120
+  value: [50, 50]
 
 # Fit settings
 gauss_grid_nr: 

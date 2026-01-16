@@ -21,15 +21,18 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 2. run python command
->> python bidsonym_sbatch.py [main directory] [project name] [subject num] [group] [server project] [bidsonym_version] [defacing_algorithm]
+>> python bidsonym_sbatch.py [main directory] [project name] [subject num] [group] 
+                             [server project] [bidsonym_version] [defacing_algorithm]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 python bidsonym_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 v0.0.4 pydeface
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
+edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
+
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
@@ -61,11 +64,9 @@ subject_num = subject.split('-')[1]
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-analysis_info, _, _, _ = load_settings([settings_path])
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
-
-deb()
-
 nb_procs = 1
 memory_val = 48
 hour_proc = 1
@@ -104,4 +105,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-os.system("sbatch {}".format(sh_fn))
+#os.system("sbatch {}".format(sh_fn))

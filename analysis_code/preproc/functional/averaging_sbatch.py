@@ -56,7 +56,8 @@ server_project = sys.argv[5]
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-analysis_info, analysis_desc, _, _ = load_settings(settings_path)
+settings = load_settings(settings_path)
+analysis_info = settings[0]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']

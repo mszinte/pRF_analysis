@@ -71,7 +71,8 @@ set_pycortex_config_file(cortex_dir)
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-analysis_info, analysis_desc, _, _ = load_settings([settings_path])
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 
 TR = analysis_info['TR']
 tasks = analysis_info['task_names']

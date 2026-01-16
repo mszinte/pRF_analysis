@@ -1,6 +1,5 @@
 {
     "alpha_range":[0, 0.4],
-"flatmap_corr_scale": [-1, 1],
 "flatmap_rsq_scale" : [0, 1],
 "flatmap_ecc_scale" : [0, 10],
 "flatmap_size_scale" :[0, 10],
