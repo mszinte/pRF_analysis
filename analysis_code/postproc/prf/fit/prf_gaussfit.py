@@ -133,7 +133,6 @@ valid_vertices = ~np.isnan(raw_data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
-deb()
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,

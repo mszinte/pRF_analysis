@@ -43,11 +43,12 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
+import yaml
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -58,13 +59,13 @@ server_project = sys.argv[5]
 memory_val = 30
 nb_procs = 32
 
-# Cluster settings
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -76,6 +77,9 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+
+deb()
+
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
@@ -140,7 +144,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
     fit_cmd = "python prf_cssfit.py {} {} {} {} {}".format(
         main_dir, project_dir, subject, pp_fn, nb_procs)
     
-    # Create sh
+    # Create shs
     sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')

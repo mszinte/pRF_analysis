@@ -47,6 +47,7 @@ import yaml
 
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
+from pycortex_utils import set_pycortex_config_file
 from settings_utils import load_settings
 
 # inputs
@@ -73,6 +74,10 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -142,4 +147,4 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # submit jobs
     print("Submitting {} to queue".format(sh_fn))
-    #os.system("sbatch {}".format(sh_fn))
+    os.system("sbatch {}".format(sh_fn))

@@ -44,7 +44,7 @@ import os
 import re
 import sys
 import glob
-import json
+import yaml
 import numpy as np
 import nibabel as nb
 from scipy import stats
@@ -54,6 +54,7 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import make_surface_image , load_surface
 from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -61,13 +62,13 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
-# load settings
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 fdr_alpha = analysis_info['fdr_alpha']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
