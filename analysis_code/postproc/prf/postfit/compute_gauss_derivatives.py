@@ -43,7 +43,7 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
+import yaml
 import nibabel as nb
 
 # personal imports
@@ -51,6 +51,7 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from prf_utils import fit2deriv
 from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -58,13 +59,13 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
-# load settings
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']

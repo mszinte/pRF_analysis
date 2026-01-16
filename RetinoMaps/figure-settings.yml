@@ -1,0 +1,20 @@
+# Inter-run correlations
+flatmap_corr_scale: 
+  description: "Inter-run correlation r-square flatmap colorscale"
+  value: [-1, 1]
+
+flatmap_rsq_scale:
+  description: "pRF r-square flatmap colorscale"
+  value: [0, 1]
+
+flatmap_ecc_scale: 
+  description: "pRF eccentricity flatmap colorscale"
+  value: [0, 10]
+  
+flatmap_size_scale:
+  description: "pRF size flatmap colorscale"
+  value: [0, 10]
+
+flatmap_alpha_range:
+  description: "flatmap colorscale transparency range (min=transparent, max:fully opaque)"
+  value: [0, 0.4]

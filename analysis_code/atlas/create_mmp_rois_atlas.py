@@ -43,7 +43,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import cortex
 import numpy as np
 import pandas as pd
@@ -54,20 +54,20 @@ sys.path.append("{}/../utils".format(os.getcwd()))
 from cifti_utils import from_170k_to_59k
 from surface_utils import load_surface
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Get input
 main_dir = sys.argv[1]
 code_dir = sys.argv[2]
 project_dir = sys.argv[3]
 
-print(code_dir)
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois = analysis_info['rois']

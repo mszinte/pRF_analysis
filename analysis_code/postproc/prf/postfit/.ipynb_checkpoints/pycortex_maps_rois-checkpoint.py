@@ -42,13 +42,14 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import cortex
 import matplotlib.pyplot as plt
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex, create_colormap
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -68,13 +69,11 @@ except ValueError:
 if subject == 'sub-170k': save_svg = False
 else: save_svg = save_svg
 
-# Define analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 

@@ -41,7 +41,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 
 # Inputs
 main_dir = sys.argv[1]
@@ -53,14 +53,14 @@ server_project = sys.argv[5]
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
-# Define analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
@@ -112,4 +112,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-os.system("sbatch {}".format(sh_fn))
+#os.system("sbatch {}".format(sh_fn))

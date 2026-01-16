@@ -55,6 +55,7 @@ from prfpy.fit import Iso2DGaussianFitter
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image , load_surface
 from screen_utils import get_screen_settings
+from settings_utils import load_settings
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -70,14 +71,12 @@ n_batches = n_jobs
 verbose = True
 gauss_params_num = 8
 
-
-# Analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, 'settings.json')
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
@@ -117,8 +116,8 @@ gauss_pred_fn = input_fn.split('/')[-1]
 gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
 
 # Get task specific visual design matrix
-vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+vdm_fn = '{}/{}/derivatives/vdm/task-{}_vdm.npy'.format(
+    main_dir, project_dir, prf_task_name)
 vdm = np.load(vdm_fn)
 
 # define model parameter grid range

@@ -53,6 +53,7 @@ from nilearn.glm.first_level.design_matrix import _cosine_drift
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface , make_surface_image
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Time
 start_time = datetime.datetime.now()
@@ -69,11 +70,10 @@ set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
 tasks = analysis_info['task_names']
 sessions = analysis_info['sessions']

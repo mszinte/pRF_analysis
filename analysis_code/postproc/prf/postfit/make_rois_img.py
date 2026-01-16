@@ -40,7 +40,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import numpy as np
 import pandas as pd
 import nibabel as nb
@@ -51,6 +51,7 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from cifti_utils import from_170k_to_59k, from_59k_to_170k
 from surface_utils import make_surface_image, load_surface
 from pycortex_utils import get_rois, set_pycortex_config_file
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -60,11 +61,11 @@ group = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 rois = analysis_info["rois"]
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']

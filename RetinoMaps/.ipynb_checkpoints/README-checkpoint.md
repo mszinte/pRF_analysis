@@ -12,7 +12,7 @@ Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 ---
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
 - [x] Change the 'task' to 'task_condition' column name in event.tsv files to avoid BIDS problems [correct_events_files.ipynb](preproc/correct_events_files.ipynb)
-- [x] Deface participants t1w image [deface_sbatch.py](../analysis_code/preproc/bids/deface_sbatch.py) 
+- [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py) 
 - [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 

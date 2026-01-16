@@ -41,7 +41,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import datetime
 import numpy as np
 
@@ -57,6 +57,7 @@ from surface_utils import load_surface ,make_surface_image
 from pycortex_utils import data_from_rois, set_pycortex_config_file
 from maths_utils import r2_score_surf
 from screen_utils import get_screen_settings
+from settings_utils import load_settings
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -73,16 +74,13 @@ n_batches = n_jobs
 verbose = True
 css_params_num = 9
 
-# Analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
-
-vdm_width = analysis_info['vdm_size_pix'][0] 
-vdm_height = analysis_info['vdm_size_pix'][1]
 TR = analysis_info['TR']
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
@@ -128,8 +126,8 @@ css_pred_fn = input_fn.split('/')[-1]
 css_pred_fn = css_pred_fn.replace('bold', 'prf-css_pred')
 
 # Get task specific visual design matrix
-vdm_fn = '{}/{}/derivatives/vdm/vdm_{}_{}_{}.npy'.format(
-    main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+vdm_fn = '{}/{}/derivatives/vdm/task-{}_vdm.npy'.format(
+    main_dir, project_dir, prf_task_name)
 vdm = np.load(vdm_fn)
 
 # Define model parameter grid range
