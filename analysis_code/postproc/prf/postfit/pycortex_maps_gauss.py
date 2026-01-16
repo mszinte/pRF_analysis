@@ -43,7 +43,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import cortex
 import importlib
 import numpy as np
@@ -52,6 +52,7 @@ import matplotlib.pyplot as plt
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -71,13 +72,14 @@ except ValueError:
 if subject == 'sub-170k': save_svg = False
 else: save_svg = save_svg
 
-# Define analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
+settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -92,6 +94,7 @@ avg_methods = analysis_info['avg_methods']
 rsq_scale = analysis_info['flatmap_rsq_scale']
 ecc_scale = analysis_info['flatmap_ecc_scale']
 size_scale = analysis_info['flatmap_size_scale']
+alpha_range = analysis_info["flatmap_alpha_range"]
 
 # Maps settings
 for idx, col_name in enumerate(maps_names_gauss):
@@ -162,7 +165,6 @@ for avg_method in avg_methods:
 
             # r-square
             rsq_data = deriv_mat[prf_rsq_idx,...]
-            alpha_range = analysis_info["alpha_range"]
             alpha = (rsq_data - alpha_range[0]) / (alpha_range[1] - alpha_range[0])
             alpha[alpha>1]=1
             param_rsq = {'data': rsq_data, 

@@ -71,14 +71,14 @@ n_th:
   description: "CSS n range threshold for pRF post-fit analysis"
   value: [0.01, 1]
 
-prf_amp_th": 
+prf_amp_th: 
   description: "pRF amplitude range threshold for pRF post-fit analysis"
   value: [0, 6]
 
-stats_th": 
+stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"
   value: 0.05
-  
+
 vertex_pcm_rad:
   description: "Radius of vertex-vertex geodesic distance for population cortical magnification analysis"
   units: mm

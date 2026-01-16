@@ -43,7 +43,11 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
+import yaml
+
+# Personal imports
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # inputs
 main_dir = sys.argv[1]
@@ -56,13 +60,13 @@ memory_val = 30
 hour_proc = 6
 nb_procs = 8
 
-# cluster settings
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 cluster_name  = analysis_info['cluster_name']
 prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
@@ -138,4 +142,4 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # submit jobs
     print("Submitting {} to queue".format(sh_fn))
-    os.system("sbatch {}".format(sh_fn))
+    #os.system("sbatch {}".format(sh_fn))
