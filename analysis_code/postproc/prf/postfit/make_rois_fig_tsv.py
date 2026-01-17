@@ -60,12 +60,10 @@ group = sys.argv[4]
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
+settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 if subject == 'sub-170k': 
     formats = ['170k']
     extensions = ['dtseries.nii']
@@ -76,7 +74,7 @@ rois = analysis_info['rois']
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
-amplitude_threshold = analysis_info['amplitude_th']
+amplitude_threshold = analysis_info['prf_amp_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
 subjects_to_group = analysis_info['subjects']
@@ -87,7 +85,14 @@ avg_methods = analysis_info['avg_methods']
 prf_task_names = analysis_info['prf_task_names']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
-
+ecc_size_num_bins = analysis_info['ecc_size_num_bins']
+ecc_pcm_num_bins = analysis_info['ecc_pcm_num_bins']
+polar_angle_num_bins = analysis_info['polar_angle_num_bins']
+ecc_pcm_max = analysis_info['ecc_pcm_max']
+ecc_size_max = analysis_info['ecc_size_max']
+distribution_max_ecc = analysis_info['distribution_max_ecc']
+distribution_mesh_grain = analysis_info['distribution_mesh_grain']
+hot_zone_percent = analysis_info['hot_zone_percent']
 if subject == 'sub-170k': 
     formats = ['170k']
     extensions = ['dtseries.nii']
@@ -95,21 +100,6 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
-
-deb()
-
-fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
-with open(fig_settings_path) as f:
-    json_s = f.read()
-    figure_info = json.loads(json_s)
-ecc_size_num_bins = figure_info['ecc_size_num_bins']
-ecc_pcm_num_bins = figure_info['ecc_pcm_num_bins']
-polar_angle_num_bins = figure_info['polar_angle_num_bins']
-ecc_pcm_max = figure_info['ecc_pcm_max']
-ecc_size_max = figure_info['ecc_size_max']
-distribution_max_ecc = figure_info['distribution_max_ecc']
-distribution_mesh_grain = figure_info['distribution_mesh_grain']
-hot_zone_percent = figure_info['hot_zone_percent']
 
 # Main loop
 for avg_method in avg_methods:
@@ -121,7 +111,7 @@ for avg_method in avg_methods:
         for prf_task_name in prf_task_names:
 
             print(f'{prf_task_name} - {avg_method} - {format_}')
-                
+
             # Individual subject analysis
             if 'group' not in subject:
                 tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
@@ -138,9 +128,9 @@ for avg_method in avg_methods:
                 # Threshold data (replace by nan)
                 if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
                 elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                data.loc[(data.amplitude < amplitude_threshold) |
+                data.loc[(data.amplitude < amplitude_threshold[0]) |
                          (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                         (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
+                         (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                          (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
                          (data[rsq2use] < rsqr_threshold) |
                          (data[stats_col] > stats_threshold)] = np.nan
