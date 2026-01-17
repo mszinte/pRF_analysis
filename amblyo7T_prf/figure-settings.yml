@@ -38,19 +38,13 @@ roi_colors:
     LO: "rgb(150, 0, 90)"
     VO: "rgb(0, 0, 200)"
     hMT+: "rgb(0, 25, 255)"
-    iIPS: "rgb(0, 152, 255)"
-    sIPS: "rgb(44, 255, 150)"
-    iPCS: "rgb(151, 255, 0)"
-    sPCS: "rgb(255, 234, 0)"
-    mPCS: "rgb(255, 111, 0)"
 
 rois_groups_plot:
   description: "Grouping of ROIs in figures with grouped values"
   value:
-    - ["V1", "V2", "V3"]
-    - ["V3AB", "LO", "VO"]
-    - ["hMT+", "iIPS", "sIPS"]
-    - ["iPCS", "sPCS", "mPCS"]
+    - ["V1", "V2"]
+    - ["V3", "V3AB"]
+    - ["LO", "VO", "hMT+"]
 
 rois_fig_margin: 
   description: "Margin for figure with multiple ROIs"
@@ -110,7 +104,7 @@ ecc_pcm_num_bins:
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
-  value: [15, 15]
+  value: [15, 20]
 
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
@@ -166,7 +160,7 @@ distribution_mesh_grain:
   
 distribution_screen_side: 
   description: "Side of the screen in dva of the pRF spatial distribution plot"
-  value: 20
+  value: 16
 
 hot_zone_percent: 
   description: "Hot zone percent in the barycentre plot"

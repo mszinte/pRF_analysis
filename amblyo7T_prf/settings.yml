@@ -1,0 +1,85 @@
+# Main configuration
+project_name:
+  description: "Name of the project and of the dataset directory"
+  value: "RetinoMaps"
+
+webapp_login: 
+  description: "SSH login of the webapp server"
+  value: "admin@invibe.nohost.me"
+
+webapp_dir: 
+  description: "Directory of the web app server"
+  value: "/var/www/my_webapp"
+
+cluster_name: 
+  description: "Name of the cluster to use in AMU mesocenter"
+  value: "skylake"
+
+# Dataset description
+subjects:
+  description: "Subjects of the dataset"
+  value: ["sub-01", "sub-02"]
+
+sessions:
+  description: "Sessions of the dataset"
+  value: ["ses-01"]
+
+task_names: 
+  description: "Names of the tasks of the dataset"
+  value: ["BarsLeftEye", "BarsRightEye", "RingsLeftEye", "RingsRightEye", "WedgesLeftEye", "WedgesLeftEye"],
+
+func_session:
+  description: "Session containing the pRF tasks"
+  value: ["ses-01"]
+
+prf_task_names:
+  description: "Names of the tasks analysed with pRF methods"
+  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"],
+
+partial_scan: 
+  description: "Dataset including non whole-head recording"
+  value: True
+  levels: [True, False]
+
+TR: 
+  description: "Time repetition of the pRF tasks"
+  unit: "seconds"
+  value: 2
+
+TRs: 
+  description: "Number of TR of the pRF task"
+  value: 120
+  
+# Preprocessing
+preproc_prep: 
+  description: "Name of the main preprocessing method"
+  value: "fmriprep"
+
+normalization: 
+  description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
+  value: "z-score"
+
+filtering:
+  description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"
+  value: "dct"
+
+high_pass_threshold: 
+  description: "Frequency (in Hz) below which signals are attenuated or removed."
+  value: 0.01
+
+formats: 
+  description: "Data format label names after preprocessing"
+  value: ["fsnative", "170k"]
+
+extensions: 
+  description: "Data format extensions after preprocessing"
+  value: ["func.gii", "dtseries.nii"]
+
+maps_names_corr: 
+  description: "Inter-run correlation maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# Stats
+fdr_alpha: 
+  description: "P value level list for FDR corrected statistics"
+  value: [0.05, 0.01]

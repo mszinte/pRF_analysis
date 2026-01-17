@@ -1,17 +1,13 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["avg", "loo-avg"]
-  level-description: ["averaging across runs", "leave-one-out averaging across runs"]
+  value: ["concat"]
+  level-description: ["concatenations of runs"]
 
 filter_rois: 
   description: "Use defined ROIS to mask bold signal to analyze"
   value: False
   level: [True, False]
-  
-fit_rsq_threshold: 
-  description: ""
-  value: 0.01
 
 # Screen and visual design matrix settings
 screen_size_pix: 
@@ -73,7 +69,7 @@ n_th:
 
 prf_amp_th: 
   description: "pRF amplitude range threshold for pRF post-fit analysis"
-  value: [0, 6]
+  value: [-6, 6]
 
 stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"
@@ -106,11 +102,11 @@ maps_names_css_stats:
 # ROIS
 rois: 
   description: "List of regions of interest"
-  value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
+  value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+"]
 
 mmp_rois:
   description: "List of MMP atlas parcels to analyze in 170k format"
-  value: ["V1", "V2", "V3", "V4", "V3A", "V3B", "V3CD", "LO1", "LO2", "LO3", "V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC", "V4t", "MST", "MT", "FST", "IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL", "VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm", "PEF", "IFJp", "6v", "6r", "IFJa", "55b", "FEF", "i6-8", "6a", "6d", "6mp", "6ma", "SCEF", "p32pr", "24dv"]
+  value: ["V1", "V2", "V3", "V4", "V3A", "V3B", "V3CD", "LO1", "LO2", "LO3", "V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC", "V4t", "MST", "MT"]
 
 rois_groups: 
   description: "List of MMP atlas parcels group to correspond to the rois"
@@ -122,8 +118,3 @@ rois_groups:
     - ["LO1", "LO2", "LO3"] 
     - ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
     - ["V4t", "MST", "MT", "FST"]
-    - ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"]
-    - ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
-    - ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
-    - ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
-    - ["SCEF", "p32pr", "24dv"]
