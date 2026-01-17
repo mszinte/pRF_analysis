@@ -77,7 +77,6 @@ normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_task_names = analysis_info['prf_task_names']
 
-
 # Main loop
 for avg_method in avg_methods:
     if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'

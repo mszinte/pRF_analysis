@@ -633,7 +633,7 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
-    rois_groups = figure_info['rois_groups']
+    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois_groups)
     rois_hor_spacing = figure_info['rois_hor_spacing']
     rois_ver_spacing = figure_info['rois_ver_spacing']
@@ -771,7 +771,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
-    rois_groups = figure_info['rois_groups']
+    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois_groups)
     rois_hor_spacing = figure_info['rois_hor_spacing']
     rois_ver_spacing = figure_info['rois_ver_spacing']
@@ -912,7 +912,7 @@ def prf_polar_angle_plot(df, figure_info) :
 
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['roi_fig_margin']
-    rois_groups = figure_info['rois_groups']
+    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois)
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
@@ -1012,7 +1012,7 @@ def prf_contralaterality_plot(df, figure_info):
 
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['roi_fig_margin']
-    rois_groups = figure_info['rois_groups']
+    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois)
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
@@ -1089,7 +1089,7 @@ def prf_distribution_plot(df, figure_info):
     rows, cols = 1, len(rois)
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['roi_fig_margin']
-    rois_groups = figure_info['rois_groups']
+    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois)
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
