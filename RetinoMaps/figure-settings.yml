@@ -16,5 +16,157 @@ flatmap_size_scale:
   value: [0, 10]
 
 flatmap_alpha_range:
-  description: "flatmap colorscale transparency range (min=transparent, max:fully opaque)"
+  description: "Flatmap colorscale transparency range (min=transparent, max:fully opaque)"
   value: [0, 0.4]
+
+flatmap_n_scale: 
+  description: "pRF n flatmap colorscale"
+  value: [0, 1]
+
+flatmap_pcm_scale: 
+  description: "pRF cortical magnification flatmap colorscale"
+  value: [0, 10]
+
+roi_colors:
+  description: "Colors to use for each ROI"
+  value:
+    V1: "rgb(243, 231, 155)"
+    V2: "rgb(250, 196, 132)"
+    V3: "rgb(248, 160, 126)"
+    V3AB: "rgb(235, 127, 134)"
+    LO: "rgb(150, 0, 90)"
+    VO: "rgb(0, 0, 200)"
+    hMT+: "rgb(0, 25, 255)"
+    iIPS: "rgb(0, 152, 255)"
+    sIPS: "rgb(44, 255, 150)"
+    iPCS: "rgb(151, 255, 0)"
+    sPCS: "rgb(255, 234, 0)"
+    mPCS: "rgb(255, 111, 0)"
+
+rois_groups:
+  description: "Grouping of ROIs in figures with grouped values"
+  value:
+    - ["V1", "V2", "V3"]
+    - ["V3AB", "LO", "VO"]
+    - ["hMT+", "iIPS", "sIPS"]
+    - ["iPCS", "sPCS", "mPCS"]
+
+rois_fig_margin: 
+  description: "Margin for figure with multiple ROIs"
+  value: [100, 50, 50, 75]
+  
+rois_hor_spacing: 
+  description: "Horizontal spacing between figure with multiple ROIs"
+  value: 100
+  
+rois_ver_spacing: 
+  description: "Vertical spacing between figure with multiple ROIs"
+  value: 50
+
+rois_bar_width: 
+  description: "Bar width of plots with multiple ROIs"
+  value: 50
+  
+rois_plot_height: 
+  description: "Figure height of figure with multiple ROIs"
+  value: 200
+  
+rois_plot_width:
+  description: "Figure width of figure with multiple ROIs"
+  value: 200
+
+roi_fig_margin: 
+  description: "Margin for figure with individual ROI"
+  value: [50, 50, 50, 50]
+  
+roi_hor_spacing: 
+  description: "Horizontal spacing between figure with individual ROI"
+  value: 10
+  
+roi_ver_spacing: 
+  description: "Vertical spacing between figure with individual ROI"
+  value: 50
+
+roi_plot_height: 
+  description: "Figure height of figure with individual ROI"
+  value: 100
+  
+roi_plot_width: 
+  description: "Figure width of figure with individual ROI"
+  value: 100
+
+ecc_size_num_bins: 
+  description: "Number of bins for eccentricity vs size plot"
+  value: 6
+
+ecc_size_max: 
+  description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
+  value: [15, 15]
+  
+ecc_pcm_num_bins: 
+  description: "Number of bins for eccentricity vs pcm plot"
+  value: 6
+
+ecc_pcm_max: 
+  description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
+  value: [15, 15]
+
+polar_angle_num_bins: 
+  description: "Number of bins in the polar angle plot"
+  value: 9
+
+active_vert_fsnative_range:
+  description: "Range of number of active vertex plot with fsnative format"
+  value: [0, 16000]
+  
+active_vert_170k_range:
+  description: "Range of number of active vertex plot with 170k format"
+  value: [0, 10000]
+  
+violin_rsq_range:
+  description: "R-square range in the violin plot"
+  value: [0, 1]
+  
+violin_size_range: 
+  description: "Size range in the violin plot"
+  value: [0, 20]
+  
+violin_ecc_range: 
+  description: "Eccentricity range in the violin plot"
+  value: [0, 20]
+  
+violin_pcm_range: 
+  description: "pRF CM range in the violin plot"
+  value: [0, 20]
+  
+params_median_rsq_range:
+  description: "R-square range in the median parameters plot"
+  value: [0, 1]
+  
+params_median_size_range: 
+  description: "Size range in the median parameters plot"
+  value: [0, 20]
+
+params_median_ecc_range: 
+  description: "Eccentricity range in the median parameters plot"
+  value: [0, 20]
+  
+params_median_pcm_range: 
+  description: "PRF CM range in the median parameters plot"
+  value: [0, 20]
+  
+distribution_max_ecc: 
+  description: "Maximum eccentricity in the pRF spatial distribution plot"
+  value: 30
+  
+distribution_mesh_grain: 
+  description: "Mesh grain of the pRF spatial distribution plot"
+  value: 100
+  
+distribution_screen_side: 
+  description: "Side of the screen in dva of the pRF spatial distribution plot"
+  value: 20
+
+hot_zone_percent: 
+  description: "Hot zone percent in the barycentre plot"
+  value: 0.01

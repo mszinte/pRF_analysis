@@ -41,13 +41,14 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import numpy as np
 import pandas as pd
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_nan_percentile, make_prf_barycentre_df
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -57,7 +58,10 @@ group = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
 with open(settings_path) as f:
     json_s = f.read()
@@ -91,6 +95,8 @@ else:
     formats = analysis_info['formats']
     extensions = analysis_info['extensions']
 rois = analysis_info['rois']
+
+deb()
 
 fig_settings_path = os.path.join(base_dir, project_dir, "figure_settings.json")
 with open(fig_settings_path) as f:
