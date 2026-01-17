@@ -43,7 +43,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 import cortex
 import datetime
 import numpy as np
@@ -54,6 +54,7 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import make_surface_image 
 from maths_utils import  median_subject_template, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -63,13 +64,12 @@ group = sys.argv[4]
 if len(sys.argv) > 5: output_folder = sys.argv[5]
 else: output_folder = "prf"
 
-# Define analysis parameters
+# Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
 vert_dist_th = analysis_info['vertex_pcm_rad']
 formats = analysis_info['formats']

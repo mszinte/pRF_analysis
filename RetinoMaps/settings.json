@@ -1,6 +1,6 @@
 {
-"flatmap_pcm_scale": [0, 10],
-"flatmap_n_scale": [0, 1],   
+    "categories_to_plot": ["vision", "vision_and_pursuit_and_saccade", "pursuit_and_saccade"],
+    "categories_active_vertex_plot":["saccade", "pursuit", "vision", "all"],
     "outlier_prf_beh":["sub-07", "sub-12"],
     "task_glm": ["PurLoc", "SacLoc", "PurVELoc", "SacVELoc"],
     "task_intertask": [["PurLoc", "SacLoc", "pRF"], ["PurVELoc", "SacVELoc", "pRF"]],

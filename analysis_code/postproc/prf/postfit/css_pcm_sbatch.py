@@ -41,11 +41,12 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+import yaml
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -54,17 +55,15 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 
-# Define analysis parameters
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']

@@ -43,7 +43,7 @@ import os
 import re
 import sys
 import glob
-import json
+import yaml
 import numpy as np
 import nibabel as nb
 
@@ -53,6 +53,7 @@ from prf_utils import fit2deriv
 from maths_utils import  median_subject_template
 from surface_utils import make_surface_image , load_surface
 from pycortex_utils import set_pycortex_config_file
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -62,11 +63,11 @@ group = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
 
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois = analysis_info['rois']

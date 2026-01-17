@@ -40,7 +40,7 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
+import yaml
 import shutil
 import datetime
 import numpy as np
@@ -52,6 +52,7 @@ from nilearn.glm.first_level.design_matrix import _cosine_drift
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface, make_surface_image
+from settings_utils import load_settings
 
 # Time
 start_time = datetime.datetime.now()
@@ -63,12 +64,12 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.json")
-
-with open(settings_path) as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
+settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
+analysis_info = settings[0]
 
 tasks = analysis_info['task_names']
 formats = analysis_info['formats']
