@@ -39,7 +39,7 @@ python fmriprep_sbatch.py [main directory] [project name] [subject num]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-13 30 anat_only_n aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 martin.szinte@univ-amu.fr 327 b327 fmriprep-25.2.0.simg
-python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 30 anat_only_y aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 uriel.lascombes@univ-amu.fr 327 b327 fmriprep-25.2.3.simg
+python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 30 anat_only_y aroma_n fmapfree_n skip_bids_val_y cifti_output_170k_y fsaverage_y fs_no_resume_y 12 uriel.lascombes@univ-amu.fr 327 b327 fmriprep-25.2.4.simg
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -138,6 +138,9 @@ if fsaverage_val == 'fsaverage_y':
 if fs_no_resume_val == 'fs_no_resume_y':
     use_fs_no_resume = " --fs-no-resume"
 
+temp_dir = "{}/temp/{}/sub-{}".format(main_dir, project_dir, sub_num)
+os.makedirs(temp_dir, exist_ok=True)
+
 # define SLURM cmd
 slurm_cmd = """\
 #!/bin/bash
@@ -159,11 +162,12 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 #define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/ --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --low-mem --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w {temp_dir} --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, use_fs_no_resume=use_fs_no_resume,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
         use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
+        temp_dir=temp_dir,
         dof=dof, aroma_end=aroma_end)
 
 # define permission cmd
