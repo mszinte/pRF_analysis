@@ -1,0 +1,4 @@
+# Main configuration
+eye-tracking_task_names: 
+  description: "Names of the tasks gor whicj we process eye tracking data"
+  value: ["rest", "pRF", "PurLoc", "SacLoc"]
