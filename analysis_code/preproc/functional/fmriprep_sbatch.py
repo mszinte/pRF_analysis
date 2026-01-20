@@ -162,7 +162,7 @@ slurm_cmd = """\
            cluster_name=cluster_name)
 
 #define singularity cmd
-singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w {temp_dir} --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/{project_dir}/sub-{sub_num} --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
         tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
         simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, use_fs_no_resume=use_fs_no_resume,
         anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
