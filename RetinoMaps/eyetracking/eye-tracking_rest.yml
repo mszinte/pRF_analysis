@@ -1,46 +1,18 @@
 session:
-  description: ""
+  description: "Session of the task"
   value: "ses-01"
 
 eye:
-  description: ""
+  description: "Only left eye (eye1) recorded. According to BIDS standards"
   value: "eye1"
+
+eyetrack_sampling: 
+  description: 'Sampling rate of the SR research eye-tracker'
+  value: 1000
 
 num_run:
   description: ""
   value: 5
-
-eyetrack_sampling:
-  description: ""
-  value: 1000
-
-blinks_remove:
-  description: ""
-  value: "pupil_off"
-
-drift_corr:
-  description: ""
-  value: "linear"
-
-downsampling:
-  description: ""
-  value: null
-
-desired_sampling_rate:
-  description: ""
-  value: 100
-
-smoothing:
-  description: ""
-  value: "moving_avg"
-
-window:
-  description: ""
-  value: 50
-
-sigma:
-  description: ""
-  value: 20
 
 first_trial_pattern:
   description: "String specifiying first trial onset in eye tracking message files"
@@ -50,7 +22,4 @@ last_trial_pattern:
   description: "String specifiying last trial offset in eye tracking message files"
   value: "TR num 500 offset"
 
-threshold:
-  description: ""
-  value: 2
 
