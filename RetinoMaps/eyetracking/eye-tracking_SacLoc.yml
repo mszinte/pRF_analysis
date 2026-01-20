@@ -1,3 +1,15 @@
+session:
+  description: "Session of the task"
+  value: "ses-01"
+
+eye:
+  description: "Only left eye (eye1) recorded. According to BIDS standards"
+  value: "eye1"
+
+eyetrack_sampling: 
+  description: 'Sampling rate of the SR research eye-tracker'
+  value: 1000
+
 num_run:
   description: "Number of runs of the task"
   value: 2
@@ -73,9 +85,5 @@ first_trial_pattern:
 last_trial_pattern:
   description: "Regex pattern specifiying last trial offset in eye tracking message file"
   value: "sequence\\s9\\strial\\s16\\soffset"
-
-threshold:
-  description: "Distance threshold to calculate the fraction of samples whose Euclidean error is smaller said threshold. Used for quality measurement"
-  value: 
 
 

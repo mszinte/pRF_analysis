@@ -1,130 +1,74 @@
 session:
-  description: ""
+  description: "Session of the task"
   value: "ses-01"
 
 eye:
-  description: ""
+  description: "Only left eye (eye1) recorded. According to BIDS standards"
   value: "eye1"
 
+eyetrack_sampling: 
+  description: 'Sampling rate of the SR research eye-tracker'
+  value: 1000
+
 num_run:
-  description: ""
+  description: "Number of runs of the task"
   value: 5
 
 num_seq:
-  description: ""
+  description: "Number of sequences in the task design"
   value: 9
 
 seq_trs:
-  description: ""
+  description: "Number of trials within one sequence in the task design"
   value: 32
 
 seq_type:
-  description: ""
+  description: "Task design: Specifing order of either sequence (1) or intertrial interval (0)"
   value: [0, 1, 0, 1, 0, 1, 0, 1, 0]
 
 trials_seq:
-  description: ""
+  description: "Number of trials depedning on task design as specified above"
   value: [16, 32, 16, 32, 16, 32, 16, 32, 16]
 
 eye_mov_seq:
-  description: ""
+  description: "Sequence number in which there was eye movements"
   value: [1, 3, 5, 7]
 
 eye_fix_seq:
-  description: ""
+  description: "Sequence number in which there was fixation (inter trial interval)"
   value: [2, 4, 6, 8]
 
 rads:
-  description: ""
+  description: "Amplitudes of task design in degrees of visual angle"
   value: [0, 2.5, 5, 7.5, 10, 0]
 
-sampling_rate:
-  description: ""
-  value: 1000
-
 velocity_th:
-  description: ""
+  description: "Velocity threshold for saccade detection in degrees of visual angle"
   value: 1.5
 
 min_dur:
-  description: ""
+  description: "Minimum duration for saccade detection"
   value: 20
 
 merge_interval:
-  description: ""
+  description: "Merge interval for subsequent saccade candidates for saccade detection"
   value: 20
 
 tolerance_ratio:
-  description: ""
+  description: "Ratio to define tolerance of fixation area, to define correct trials. In degrees of visual angle"
   value: 0.5
 
 ang_steps:
-  description: ""
+  description: "Angular step size (in degrees) used to discretize saccade directions. Defines evenly spaced polar angles around 360° from which saccade directions are selected (e.g., 22.5° → 16 possible directions)"
   value: 22.5
 
-scr_sizeX:
-  description: ""
-  value: 1920
-
-scr_sizeY:
-  description: ""
-  value: 1080
-
-screen_size:
-  description: ""
-  value: [1920, 1080]
-
-ppd:
-  description: ""
-  value: 52.00031911320716
-
-center:
-  description: ""
-  value: [960.0, 540.0]
-
-eyetrack_sampling:
-  description: ""
-  value: 1000
-
-blinks_remove:
-  description: ""
-  value: "pupil_off"
-
-drift_corr:
-  description: ""
-  value: "linear"
-
-downsampling:
-  description: ""
-  value: null
-
-desired_sampling_rate:
-  description: ""
-  value: 100
-
-smoothing:
-  description: ""
-  value: "moving_avg"
-
-window:
-  description: ""
-  value: 50
-
-sigma:
-  description: ""
-  value: 20
-
 first_trial_pattern:
-  description: ""
+  description: "Regex pattern specifiying first trial onset in eye tracking message files"
   value: "bar\\spass\\s1\\strial\\sonset\\s1"
 
 last_trial_pattern:
-  description: ""
+  description: "Regex pattern specifiying last trial offset in eye tracking message file"
   value: "bar\\spass\\s9\\strial\\soffset\\s208"
-
-threshold:
-  description: ""
-  value: 2
 
 fixation_column:
   description: ""
