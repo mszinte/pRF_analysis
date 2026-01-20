@@ -1,3 +1,5 @@
+
+    
 def extract_data(main_dir, project_dir, subject, task, ses, runs, eye, file_type):
     """
     Load and process eye-tracking data and associated metadata from TSV and JSON files.
@@ -376,6 +378,43 @@ def detrending(eyetracking_1D, subject, ses, run, fixation_column, task, design_
     return detrended_full_data
 
 
+def detrending_resting_state(eyetracking_1D):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    """
+    Remove linear trends from resting-state eye-tracking data
+    and median-center it (assuming the whole recording is fixation).
+
+    Args:
+        eyetracking_1D (np.array): 1D array of eye-tracking data to detrend.
+
+    Returns:
+        np.array: Detrended eye-tracking data with linear trend removed and median-centered.
+    """
+    # All data is considered fixation
+    full_indices = np.arange(len(eyetracking_1D))
+    
+    # Fit a linear trend to the entire series
+    trend_coefficients = np.polyfit(full_indices, eyetracking_1D, deg=1)
+    linear_trend_full = np.polyval(trend_coefficients, full_indices)
+    
+    # Subtract the trend
+    detrended_full_data = eyetracking_1D - linear_trend_full
+    
+    # Median-center
+    fixation_median = np.median(detrended_full_data)
+    detrended_full_data -= fixation_median
+    
+    # Optional: plot for verification
+    plt.plot(eyetracking_1D, label="Original Data")
+    plt.plot(detrended_full_data, label="Detrended Data")
+    plt.title("Detrended Resting-State Eye Data")
+    plt.xlabel("Time")
+    plt.ylabel("Detrended Eye Position")
+    plt.legend()
+    # plt.show()
+    
+    return detrended_full_data
     
 
 """

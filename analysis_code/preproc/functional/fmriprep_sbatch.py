@@ -90,6 +90,9 @@ else:
     anat_only_end = ''
     procs_hours_in = procs_hours_anat
 
+temp_dir = "{}/temp/{}/sub-{}".format(main_dir, project_dir, sub_num)
+os.makedirs(temp_dir, exist_ok=True)
+
 # define SLURM cmd
 slurm_cmd = f"\
 #!/bin/bash\n\

@@ -165,7 +165,7 @@ https://invibe.nohost.me/predicteye/
 
 # Eyetracking preprocessing 
 ---
-- [x] Generate experimental design matrix [create_design_matrix.py](../analysis_code/preproc/bids/create_design_matrix.py)
+- [x] Generate experimental design matrix [create_eye_tracking_DM.py](../analysis_code/preproc/bids/create_eye_tracking_DM.py)
 - [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
 
 # Eyetracking postprocessing

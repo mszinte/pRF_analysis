@@ -1,0 +1,81 @@
+num_run:
+  description: "Number of runs of the task"
+  value: 2
+
+num_seq:
+  description: "Number of sequences in the task design"
+  value: 9
+
+seq_trs:
+  description: "Number of trials within one sequence in the task design"
+  value: 32
+
+seq_type:
+  description: "Task design: Specifing order of either sequence (1) or intertrial interval (0)"
+  value: [0, 1, 0, 1, 0, 1, 0, 1, 0]
+
+trials_seq:
+  description: "Number of trials depedning on task design as specified above"
+  value: [16, 32, 16, 32, 16, 32, 16, 32, 16]
+
+eye_mov_seq:
+  description: "Sequence number in which there was eye movements"
+  value: [1, 3, 5, 7]
+
+eye_fix_seq:
+  description: "Sequence number in which there was fixation (inter trial interval)"
+  value: [2, 4, 6, 8]
+
+fixation_column:
+  description: "Name of fixation column in design matrix. Used to extract only fixation times for detrending preprocessing"
+  value: "trial_type_fixation"
+
+trials_out:
+  description: "Trials numbers in which there was an outwards saccade"
+  value: [17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,65,67,69,71,73,75,77,79,81,83,85,87,89,91,93,95,113,115,117,119,121,123,125,127,129,131,133,135,137,139,141,143,161,163,165,167,169,171,173,175,177,179,181,183,185,187,189,191] 
+
+trials_in: 
+  description: "Trials numbers in which there was an inwards saccade"
+  value: [16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,64,66,68,70,72,74,76,78,80,82,84,86,88,90,92,94,112,114,116,118,120,122,124,126,128,130,132,134,136,138,140,142,160, 162,164,166,168,170,172,174,176,178,180,182,184,186,188,190]
+
+rads:
+  description: "Amplitudes of task design in degrees of visual angle"
+  value: [0, 2.5, 5, 7.5, 10, 0]
+
+velocity_th:
+  description: "Velocity threshold for saccade detection in degrees of visual angle"
+  value: 1.5
+
+min_dur:
+  description: "Minimum duration for saccade detection"
+  value: 20
+
+merge_interval:
+  description: "Merge interval for subsequent saccade candidates for saccade detection"
+  value: 20
+
+tolerance_ratio:
+  description: "Ratio to define tolerance of fixation area, to define correct trials. In degrees of visual angle"
+  value: 0.5
+
+ang_steps:
+  description: "Angular step size (in degrees) used to discretize saccade directions. Defines evenly spaced polar angles around 360° from which saccade directions are selected (e.g., 22.5° → 16 possible directions)"
+  value: 22.5
+
+total_len_sac_model: 
+  description: "Total length of the created saccade model in seconds"
+  value: 2500
+
+first_trial_pattern:
+  description: "Regex pattern specifiying first trial onset in eye tracking message files"
+  value: "sequence\\s1\\strial\\s1\\sonset"
+
+last_trial_pattern:
+  description: "Regex pattern specifiying last trial offset in eye tracking message file"
+  value: "sequence\\s9\\strial\\s16\\soffset"
+
+threshold:
+  description: "Distance threshold to calculate the fraction of samples whose Euclidean error is smaller said threshold. Used for quality measurement"
+  value: 
+
+

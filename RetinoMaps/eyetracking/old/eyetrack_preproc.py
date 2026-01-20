@@ -45,7 +45,7 @@ from scipy.signal import detrend
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from eyetrack_utils import load_event_files, extract_data, blinkrm_pupil_off, \
     blinkrm_pupil_off_smooth, interpol_nans, detrending, downsample_to_targetrate, \
-    moving_average_smoothing, gaussian_smoothing, extract_eye_data_and_triggers, convert_to_dva \
+    moving_average_smoothing, gaussian_smoothing, extract_eye_data_and_triggers, convert_to_dva, detrending_resting_state \
 
 # --------------------- Load settings and inputs -------------------------------------
 
@@ -171,9 +171,13 @@ def main_preprocessing_pipeline():
         eye_data_run_p = normalize_data(eye_data_run_p)
 
         # ------------- detrending ----------------
-        if settings.get('drift_corr'):
-            eye_data_run_x = detrending(eye_data_run_x, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
-            eye_data_run_y = detrending(eye_data_run_y, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
+        if task == "rest":
+            eye_data_run_x = detrending_resting_state(eye_data_run_x)
+            eye_data_run_y = detrending_resting_state(eye_data_run_y)
+        else: 
+            if settings.get('drift_corr'):
+                eye_data_run_x = detrending(eye_data_run_x, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
+                eye_data_run_y = detrending(eye_data_run_y, subject, ses, run_idx, settings["fixation_column"], task, design_dir_save)
 
         
         eye_data_run = np.stack((eye_data_run[:,0],
