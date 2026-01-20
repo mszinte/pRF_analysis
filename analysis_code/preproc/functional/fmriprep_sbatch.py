@@ -110,7 +110,13 @@ slurm_cmd = f"\
 #SBATCH --mail-type=BEGIN,END\n\n"
 
 #define singularity cmd
-singularity_cmd = f"singularity run --cleanenv -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/ --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nb_procs:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
+singularity_cmd = "singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep{aroma_end}/ participant --participant-label {sub_num} -w /work_dir/temp/{project_dir}/sub-{sub_num} --bold2anat-dof {dof} --output-spaces T1w fsnative {fsaverage} {hcp_cifti} --mem-mb {memory_val}000 --nthreads {nb_procs:.0f} {anat_only}{use_aroma}{use_fmapfree}{use_fs_no_resume}{use_skip_bids_val}".format(
+        tf_bind=tf_bind, main_dir=main_dir, project_dir=project_dir,
+        simg=singularity_dir, sub_num=sub_num, nb_procs=nb_procs, use_fs_no_resume=use_fs_no_resume,
+        anat_only=anat_only, use_aroma=use_aroma, use_fmapfree=use_fmapfree,
+        use_skip_bids_val=use_skip_bids_val, fsaverage = fsaverage,hcp_cifti=hcp_cifti, memory_val=memory_val,
+        temp_dir=temp_dir,
+        dof=dof, aroma_end=aroma_end)
 
 # define permission cmd
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir} \n"
