@@ -109,21 +109,21 @@ maps_names_css_stats:
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
 # ROIS
-rois_type:
+rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 
     fsnative: ["rois-drawn"]
-    170k: ["rois-mmp-group"]
-  levels: ["rois-drawn", "rois-mmp-groups"]
+    170k: ["rois-group-mmp"]
+  levels: ["rois-drawn", "rois-group-mmp"]
   level-description: 
     rois-drawn: "ROIs hand-drawn using Inskape as defined in rois-drawn (see below)"
-    rois-mmp-groups: "ROIS based on grouped mmp glasser atlas parcelations as defined in rois_mmp_groups (see below)"
+    rois-group-mmp: "ROIS based on grouped mmp glasser atlas parcelations as defined in rois_mmp_groups (see below)"
 
-rois_drawn: 
+rois-drawn: 
   description: "List of regions of interest drawn using Inskape"
   value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
 
-rois_mmp_groups: 
+rois-group-mmp: 
   description: "List of Glasser MMP atlas parcelations grouped to form an ROI"
   value: 
     V1: ["V1"]
