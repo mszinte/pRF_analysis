@@ -494,3 +494,115 @@ def load_design_matrix_fixations(subject, ses, run, fixation_column, task, desig
     fixation_trials = np.array(design_matrix[fixation_column])
 
     return fixation_trials
+
+"""
+------------------------------ Retinal VdM functions ---------------------------------------------
+
+"""
+def create_visual_frame_target_gaze(
+    target_x, target_y,
+    gaze_x, gaze_y,
+    n_pixels=50,
+    visual_field_size=20,
+    target_radius=0.3,
+    gaze_radius=0.2
+):
+    """
+    Create a 2-channel visual frame:
+    channel 0 = target
+    channel 1 = gaze
+    """
+    import numpy as np
+    coords = np.linspace(-visual_field_size/2, visual_field_size/2, n_pixels)
+    X, Y = np.meshgrid(coords, coords)  # Default 'xy' indexing
+    frame = np.zeros((2, n_pixels, n_pixels), dtype=np.float32)
+    
+    # Handle missing data
+    if not (np.isnan(target_x) or np.isnan(target_y)):
+        dist_target = np.sqrt((X - target_x)**2 + (Y - (-target_y))**2)
+        frame[0] = (dist_target <= target_radius).astype(np.float32)
+    if not (np.isnan(gaze_x) or np.isnan(gaze_y)):
+        dist_gaze = np.sqrt((X - gaze_x)**2 + (Y - (-gaze_y))**2)
+        frame[1] = (dist_gaze <= gaze_radius).astype(np.float32)
+    
+    return frame
+
+def create_visual_frame(retino_x, retino_y, n_pixels=50, visual_field_size=20, target_radius=0.3):
+    """
+    Create a binary visual stimulus frame based on retinotopic position.
+    
+    Args:
+        retino_x: Retinotopic X position in degrees
+        retino_y: Retinotopic Y position in degrees
+        n_pixels: Size of visual field grid
+        visual_field_size: Total size of visual field in degrees
+        target_radius: Radius of target stimulus in degrees
+    
+    Returns:
+        frame: Binary n_pixels x n_pixels array
+    """
+    # Create coordinate grid (centered at 0)
+    import numpy as np
+    coords = np.linspace(-visual_field_size/2, visual_field_size/2, n_pixels)
+    X, Y = np.meshgrid(coords, coords)  # Default 'xy' indexing
+    
+    # Handle NaN (blinks/missing data) - return empty frame
+    if np.isnan(retino_x) or np.isnan(retino_y):
+        return np.zeros((n_pixels, n_pixels), dtype=np.float32)
+    
+    # Calculate distance from retinotopic position to each pixel
+    # Note: need to negate retino_y because image coordinates have y increasing downward
+    distance = np.sqrt((X - retino_x)**2 + (Y - (-retino_y))**2)
+    
+    # Create binary mask (1 where target is present)
+    frame = (distance <= target_radius).astype(np.float32)
+    
+    return frame
+
+def flatten_time_start_trial(time_start_trial, run_idx):
+    """
+    Flatten time_start_trial for one run into a 1D array of EyeLink ms,
+    ordered by actual occurrence time.
+    """
+    import numpy as np
+    ts = time_start_trial[:, :, run_idx]
+
+    # Keep only valid timestamps
+    ts_valid = ts[ts > 0]
+
+    # Sort by time (EyeLink clock)
+    ts_sorted = np.sort(ts_valid)
+
+    return ts_sorted
+
+
+def downsample_vdm_to_tr(design_matrix, TR, original_sampling_rate=1000):
+    """
+    Downsample design matrix to TR resolution by averaging within each TR window.
+    
+    Parameters
+    ----------
+    design_matrix : np.ndarray
+        Input array of shape (n_timepoints, *spatial_dims)
+    TR : float
+        Repetition time in seconds
+    original_sampling_rate : float, optional
+        Sampling rate in Hz (default: 1000)
+    
+    Returns
+    -------
+    downsampled : np.ndarray
+        Downsampled array of shape (n_trs, *spatial_dims)
+    """
+    import numpy as np
+    downsample_factor = int(TR * original_sampling_rate)
+    n_trs = design_matrix.shape[0] // downsample_factor
+    
+    downsampled = np.zeros((n_trs,) + design_matrix.shape[1:], dtype=design_matrix.dtype)
+    
+    for tr_idx in range(n_trs):
+        start_idx = tr_idx * downsample_factor
+        end_idx = start_idx + downsample_factor
+        downsampled[tr_idx] = np.mean(design_matrix[start_idx:end_idx], axis=0)
+    
+    return downsampled

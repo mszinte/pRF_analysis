@@ -59,6 +59,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 #### PRF Gaussian fit
 - [x] Create the visual matrix design [vdm_builder.py](../analysis_code/postproc/prf/fit/vdm_builder.py)
+- [ ] Create the visual matrix design with eye movements (retinal view vdm)[vdm_builder_sacloc.py](../analysis_code/postproc/prf/fit/vdm_builder_sacloc.py)
 - [x] Run pRF gaussian fit [prf_submit_gaussfit_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_gauss_jobs.py)
 - [x] Compute pRF gaussian fit derivatives [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
 - [x] Make pRF maps with pycortex [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py) or [pycortex_maps_gauss.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.sh)

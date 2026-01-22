@@ -12,6 +12,7 @@ ipython
 jupyter
 pydeface
 pypdf
+pyyaml
 
 # pip dependencies
 ipdb==0.13.13

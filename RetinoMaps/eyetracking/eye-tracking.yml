@@ -3,6 +3,14 @@ eye-tracking_task_names:
   description: "Names of the tasks for which we process eye tracking data"
   value: ["rest", "pRF", "PurLoc", "SacLoc"]
 
+ppd: 
+  description: "Pixel per degree: how many pixels were dispayed within one degree of visual angle. Derived from matlab set-up"
+  value: 52.00031911320716
+
+center: 
+  description: "Center of the screen where stimulus was displayed in pixels. Derived from matlab set-up"
+  value: [960.0,540.0]
+
 blinks_remove: 
   description: "Type of method used to remove blinks from eye tracking data"
   value: "pupil_off"
