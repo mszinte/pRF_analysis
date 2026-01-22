@@ -2,12 +2,17 @@
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
   value: ["avg", "loo-avg"]
-  level-description: ["averaging across runs", "leave-one-out averaging across runs"]
+  levels: ["avg", "loo-avg", "concat", "runs"]
+  level-description: 
+    avg: "averaging across runs"
+    loo-avg: "leave-one-out averaging across runs"
+    concat: "concatenation of runs"
+    runs: "single run analysis"
 
 filter_rois: 
   description: "Use defined ROIS to mask bold signal to analyze"
   value: False
-  level: [True, False]
+  levels: [True, False]
   
 fit_rsq_threshold: 
   description: ""
@@ -104,26 +109,32 @@ maps_names_css_stats:
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
 # ROIS
-rois: 
-  description: "List of regions of interest"
+rois_type:
+  description: "Method use to define ROIS, defined for each format"
+  value: 
+    fsnative: ["rois-drawn"]
+    170k: ["rois-mmp-group"]
+  levels: ["rois-drawn", "rois-mmp-groups"]
+  level-description: 
+    rois-drawn: "ROIs hand-drawn using Inskape as defined in rois-drawn (see below)"
+    rois-mmp-groups: "ROIS based on grouped mmp glasser atlas parcelations as defined in rois_mmp_groups (see below)"
+
+rois_drawn: 
+  description: "List of regions of interest drawn using Inskape"
   value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
 
-mmp_rois:
-  description: "List of MMP atlas parcels to analyze in 170k format"
-  value: ["V1", "V2", "V3", "V4", "V3A", "V3B", "V3CD", "LO1", "LO2", "LO3", "V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC", "V4t", "MST", "MT", "FST", "IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL", "VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm", "PEF", "IFJp", "6v", "6r", "IFJa", "55b", "FEF", "i6-8", "6a", "6d", "6mp", "6ma", "SCEF", "p32pr", "24dv"]
-
-rois_groups: 
-  description: "List of MMP atlas parcels group to correspond to the rois"
+rois_mmp_groups: 
+  description: "List of Glasser MMP atlas parcelations grouped to form an ROI"
   value: 
-    - ["V1"]
-    - ["V2"]
-    - ["V3", "V4"]
-    - ["V3A", "V3B", "V3CD"]
-    - ["LO1", "LO2", "LO3"] 
-    - ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
-    - ["V4t", "MST", "MT", "FST"]
-    - ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"]
-    - ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
-    - ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
-    - ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
-    - ["SCEF", "p32pr", "24dv"]
+    V1: ["V1"]
+    V2: ["V2"]
+    V3: ["V3", "V4"]
+    V3AB: ["V3A", "V3B", "V3CD"]
+    LO: ["LO1", "LO2", "LO3"] 
+    VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
+    hMT+: ["V4t", "MST", "MT", "FST"]
+    iIPS: ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"]
+    sIPS: ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
+    iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
+    sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
+    mPCS: ["SCEF", "p32pr", "24dv"]
