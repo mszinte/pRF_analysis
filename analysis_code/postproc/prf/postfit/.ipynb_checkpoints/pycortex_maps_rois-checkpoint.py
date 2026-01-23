@@ -72,31 +72,24 @@ else: save_svg = save_svg
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-settings = load_settings([settings_path])
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
+rois_methods = analysis_info['rois_methods']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Define/create colormap
+rois_colors = analysis_info['rois_colors']
 colormap_name = 'rois_colors'
-colormap_dict = {'n/a': (255, 255, 255),
-                 'V1': (243, 231, 155),
-                 'V2': (250, 196, 132),
-                 'V3': (248, 160, 126),
-                 'V3AB': (235, 127, 134),
-                 'LO': (150, 0, 90), 
-                 'VO': (0, 0, 200),
-                 'hMT+': (0, 25, 255),
-                 'iIPS': (0, 152, 255),
-                 'sIPS': (44, 255, 150),
-                 'iPCS': (151, 255, 0),
-                 'sPCS': (255, 234, 0),
-                 'mPCS': (255, 111, 0)}
-
+colormap_dict = {key: tuple(value) for d in rois_colors for key, value in d.items()}
 create_colormap(cortex_dir=cortex_dir, 
                 colormap_name=colormap_name, 
                 colormap_dict=colormap_dict,
@@ -105,6 +98,7 @@ create_colormap(cortex_dir=cortex_dir,
 
 # Create flatmaps
 for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+    
     # Define directories and fn
     rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject, format_)
     flatmaps_dir = '{}/pycortex/flatmaps_rois'.format(rois_dir)
@@ -112,56 +106,70 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
     
     os.makedirs(flatmaps_dir, exist_ok=True)
     os.makedirs(datasets_dir, exist_ok=True)
+
+    rois_methods_format = rois_methods[format_]
     
-    if format_ == 'fsnative':
-        roi_fn_L = '{}/{}_hemi-L_rois.func.gii'.format(rois_dir, subject)
-        roi_fn_R = '{}/{}_hemi-R_rois.func.gii'.format(rois_dir, subject)
-        results = load_surface_pycortex(L_fn=roi_fn_L, 
-                                        R_fn=roi_fn_R)
-        roi_mat = results['data_concat']
-        
-    elif format_ == '170k':
-        roi_fn = '{}/{}_rois.dtseries.nii'.format(rois_dir, subject)
-        results = load_surface_pycortex(brain_fn=roi_fn)
-        roi_mat = results['data_concat']
-        if subject == 'sub-170k': save_svg = save_svg
-        else: save_svg = False
-    rois_opacity = 0.5
-    alpha_mat = roi_mat*0+rois_opacity
-    alpha_mat[roi_mat==0]=0
-    print('Creating flatmaps...')
-
-    # Rois
-    roi_name = 'rois'
-    param_rois = {'subject': pycortex_subject,
-                  'data': roi_mat, 
-                  'cmap': colormap_name,
-                  'alpha': alpha_mat,
-                  'cbar': 'discrete_personalized', 
-                  'vmin': 0,
-                  'vmax': 12,
-                  'cmap_steps': len(colormap_dict),
-                  'cmap_dict': colormap_dict,
-                  'cortex_type': 'VertexRGB',
-                  'description': 'ROIs',
-                  'curv_brightness': 1, 
-                  'curv_contrast': 0.25,
-                  'add_roi': save_svg,
-                  'with_labels': True,
-                  'roi_name': roi_name}
-                  
-    # Draw flatmaps
-    volume_roi = draw_cortex(**param_rois)
-    plt.savefig('{}/{}_rois.pdf'.format(flatmaps_dir, subject))
-    plt.close()
-
-    # Save flatmap as dataset
-    volumes = {}
-    vol_description = param_rois["description"]
-    volumes.update({vol_description:volume_roi})
-
-    # Save dataset
-    dataset_file = "{}/{}_rois.hdf".format(datasets_dir, subject)
-    if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
-    dataset = cortex.Dataset(data=volumes)
-    dataset.save(dataset_file)
+    for rois_method_format in rois_methods_format:
+    
+        if format_ == 'fsnative':
+            roi_fn_L = '{}/{}_hemi-L_{}_{}_{}_{}.func.gii'.format(rois_dir, subject, 
+                                                                  preproc_prep, filtering, 
+                                                                  normalization, rois_method_format)
+            roi_fn_R = '{}/{}_hemi-R_{}_{}_{}_{}.func.gii'.format(rois_dir, subject,
+                                                                  preproc_prep, filtering, 
+                                                                  normalization, rois_method_format)
+            results = load_surface_pycortex(L_fn=roi_fn_L, R_fn=roi_fn_R)
+            roi_mat = results['data_concat']
+            
+        elif format_ == '170k':
+            roi_fn = '{}/{}_{}_{}_{}_{}.dtseries.nii'.format(rois_dir, subject,
+                                                      preproc_prep, filtering, 
+                                                      normalization, rois_method_format)
+            results = load_surface_pycortex(brain_fn=roi_fn)
+            roi_mat = results['data_concat']
+            if subject == 'sub-170k': save_svg = save_svg
+            else: save_svg = False
+                
+        rois_opacity = 0.5
+        alpha_mat = roi_mat*0+rois_opacity
+        alpha_mat[roi_mat==0]=0
+        print('Creating flatmaps...')
+    
+        # Rois
+        roi_name = 'rois'
+        param_rois = {'subject': pycortex_subject,
+                      'data': roi_mat, 
+                      'cmap': colormap_name,
+                      'alpha': alpha_mat,
+                      'cbar': 'discrete_personalized', 
+                      'vmin': 0,
+                      'vmax': len(colormap_dict),
+                      'cmap_steps': len(colormap_dict),
+                      'cmap_dict': colormap_dict,
+                      'cortex_type': 'VertexRGB',
+                      'description': 'ROIs',
+                      'curv_brightness': 1, 
+                      'curv_contrast': 0.25,
+                      'add_roi': save_svg,
+                      'with_labels': True,
+                      'roi_name': roi_name}
+                      
+        # Draw flatmaps
+        volume_roi = draw_cortex(**param_rois)
+        plt.savefig('{}/{}_{}_{}_{}_{}_rois.pdf'.format(flatmaps_dir, subject,
+                                                        preproc_prep, filtering, 
+                                                        normalization, rois_method_format))
+        plt.close()
+    
+        # Save flatmap as dataset
+        volumes = {}
+        vol_description = param_rois["description"]
+        volumes.update({vol_description:volume_roi})
+    
+        # Save dataset
+        dataset_file = "{}/{}_{}_{}_{}_{}.hdf".format(datasets_dir, subject,
+                                                      preproc_prep, filtering, 
+                                                      normalization, rois_method_format)
+        if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
+        dataset = cortex.Dataset(data=volumes)
+        dataset.save(dataset_file)
