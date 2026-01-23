@@ -9,10 +9,6 @@ avg_methods:
     concat: "concatenation of runs"
     runs: "single run analysis"
 
-fit_rsq_threshold: 
-  description: ""
-  value: 0.01
-
 # Screen and visual design matrix settings
 screen_size_pix: 
   description: "Horizontal and vertical size of the pRF tasks display"
@@ -133,20 +129,3 @@ rois-group-mmp:
     iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
     sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
     mPCS: ["SCEF", "p32pr", "24dv"]
-
-rois_colors:
-  description: "Color in RGB used in different plots for each ROI"
-  value:
-    - n/a: [255, 255, 255]
-    - V1: [243, 231, 155]
-    - V2: [250, 196, 132]
-    - V3: [248, 160, 126]
-    - V3AB: [235, 127, 134]
-    - LO: [150, 0, 90] 
-    - VO: [0, 0, 200]
-    - hMT+: [0, 25, 255]
-    - iIPS: [0, 152, 255]
-    - sIPS: [44, 255, 150]
-    - iPCS: [151, 255, 0]
-    - sPCS: [255, 234, 0]
-    - mPCS: [255, 111, 0]

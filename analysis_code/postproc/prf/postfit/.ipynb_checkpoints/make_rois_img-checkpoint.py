@@ -81,9 +81,9 @@ set_pycortex_config_file(cortex_dir)
 
 # Create roi image files
 for format_, extension in zip(formats, extensions): 
+    
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
-    
     for rois_method_format in rois_methods_format:
 
         print(format_)

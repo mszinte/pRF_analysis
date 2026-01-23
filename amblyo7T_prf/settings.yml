@@ -26,7 +26,7 @@ sessions:
 
 task_names: 
   description: "Names of the tasks of the dataset"
-  value: ["BarsLeftEye", "BarsRightEye", "RingsLeftEye", "RingsRightEye", "WedgesLeftEye", "WedgesLeftEye"],
+  value: ["BarsLeftEye", "BarsRightEye", "RingsLeftEye", "RingsRightEye", "WedgesLeftEye", "WedgesLeftEye"]
 
 func_session:
   description: "Session containing the pRF tasks"
@@ -34,7 +34,7 @@ func_session:
 
 prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"],
+  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
 
 partial_scan: 
   description: "Dataset including non whole-head recording"

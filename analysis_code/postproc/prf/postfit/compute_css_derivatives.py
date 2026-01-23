@@ -70,7 +70,6 @@ analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-rois = analysis_info['rois']
 subjects = analysis_info['subjects']
 prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
