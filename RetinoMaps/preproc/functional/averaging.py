@@ -197,6 +197,37 @@ for preproc_files in preproc_files_list:
                             print('loo_avg left: {}'.format(loo))
                             print("loo save: {}".format(loo_fn))
                             shutil.copyfile(loo, loo_fn)
+
+            elif avg_method == 'concat': 
+                # Concatonate all runs and save 
+                preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
+                data_concat = []
+                
+                for preproc_file in preproc_files_task:
+                    print('concat add: {}'.format(preproc_file))
+                    preproc_img, preproc_data = load_surface(fn=preproc_file)
+                    data_concat.append(preproc_data)
+                
+                # Concatenate along the time axis (shape is (time, vertices))
+                data_concat = np.concatenate(data_concat, axis=0)
+                
+                # Export concatenated data
+                if hemi:
+                    concat_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat/{}_task-{}_{}_{}_{}_{}_concat_bold.func.gii".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
+                        subject, task, hemi, preproc_prep, filtering, normalization)
+                else:
+                    concat_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat/{}_task-{}_{}_{}_{}_concat_bold.dtseries.nii".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
+                        subject, task, preproc_prep, filtering, normalization)
+                
+                print('concat save: {}'.format(concat_fn))
+                concat_img = make_surface_image(data=data_concat, source_img=preproc_img)
+                nb.save(concat_img, concat_fn)
+
+            else: 
+                print("No valid averaging method provided. Stopping.")
+                break 
                     
 
 # Define permission cmd
