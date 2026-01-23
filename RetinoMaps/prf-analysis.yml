@@ -9,11 +9,6 @@ avg_methods:
     concat: "concatenation of runs"
     runs: "single run analysis"
 
-filter_rois: 
-  description: "Use defined ROIS to mask bold signal to analyze"
-  value: False
-  levels: [True, False]
-  
 fit_rsq_threshold: 
   description: ""
   value: 0.01

@@ -8,11 +8,6 @@ avg_methods:
     loo-avg: "leave-one-out averaging across runs"
     concat: "concatenation of runs"
     runs: "single run analysis"
-    
-filter_rois: 
-  description: "Use defined ROIS to mask bold signal to analyze"
-  value: False
-  levels: [True, False]
 
 # Screen and visual design matrix settings
 screen_size_pix: 

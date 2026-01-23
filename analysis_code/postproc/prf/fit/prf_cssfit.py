@@ -54,7 +54,7 @@ from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from surface_utils import load_surface ,make_surface_image
-from pycortex_utils import data_from_rois, set_pycortex_config_file
+from pycortex_utils import set_pycortex_config_file
 from maths_utils import r2_score_surf
 from screen_utils import get_screen_settings
 from settings_utils import load_settings
@@ -89,7 +89,6 @@ rsq_iterative_th = analysis_info['rsq_iterative_th']
 css_grid_nr = analysis_info['css_grid_nr']
 size_th = analysis_info['size_th']
 prf_amp_th = analysis_info['prf_amp_th']
-filter_rois = analysis_info['filter_rois']
 
 # Load screen settings from subject dependend task-events.json
 prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
@@ -111,13 +110,11 @@ if input_fn.endswith('.nii'):
     prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
-    rois = analysis_info['mmp_rois']
 
 elif input_fn.endswith('.gii'):
     prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
-    rois = analysis_info['rois']
 
 css_fit_fn = input_fn.split('/')[-1]
 css_fit_fn = css_fit_fn.replace('bold', 'prf-css_fit')
@@ -137,28 +134,15 @@ polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
 exponent_css_grid = np.linspace(n_th[0], n_th[1], css_grid_nr)
 
 # Load data
-if filter_rois:
-    img, data, data_roi, roi_idx = data_from_rois(fn=input_fn, 
-                                                  subject=subject, 
-                                                  rois=rois)
-    print('roi extraction done')
-else:
-    img, data = load_surface(fn=input_fn)
-    data_roi = data
-    roi_idx = np.arange(data.shape[1])
-    print('no roi extraction')
+img, data = load_surface(fn=input_fn)
 
 # Exclude vertices with all-NaN timeseries to avoid errors during fitting
-# This applies regardless of filter_rois setting
-valid_vertices = ~np.isnan(data_roi).any(axis=0)
+valid_vertices = ~np.isnan(data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 
-# Update roi_idx to reflect only valid vertices
-original_roi_idx = roi_idx.copy()
-roi_idx = original_roi_idx[valid_vertices_idx]
 
-# Filter data_roi to only include valid vertices
-data_roi = data_roi[:, valid_vertices]
+# Filter data to only include valid vertices
+data = data[:, valid_vertices]
 
 n_excluded = len(valid_vertices_idx) - valid_vertices.sum()
 if n_excluded > 0:
@@ -226,7 +210,7 @@ print("==========================\n")
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit gauss model
-gauss_fitter = Iso2DGaussianFitter(data=data_roi.T, 
+gauss_fitter = Iso2DGaussianFitter(data=data.T, 
                                    model=gauss_model, 
                                    n_jobs=n_jobs)
 
@@ -246,7 +230,7 @@ gauss_fit = gauss_fitter.iterative_search_params
 css_model = CSS_Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit CSS model
-css_fitter = CSS_Iso2DGaussianFitter(data=data_roi.T, 
+css_fitter = CSS_Iso2DGaussianFitter(data=data.T, 
                                      model=css_model, 
                                      n_jobs=n_jobs,
                                      use_previous_gaussian_fitter_hrf=False,
@@ -269,7 +253,7 @@ css_fit = css_fitter.iterative_search_params
 css_fit_mat = np.full((data.shape[1], css_params_num), np.nan, dtype=float)
 css_pred_mat = np.full_like(data, np.nan, dtype=float) 
 
-for est, vert in enumerate(roi_idx):
+for est, vert in enumerate(valid_vertices_idx):
     css_fit_mat[vert] = css_fit[est]
     css_pred_mat[:,vert] = css_model.return_prediction(mu_x=css_fit[est][0],
                                                       mu_y=css_fit[est][1], 

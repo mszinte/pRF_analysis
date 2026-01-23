@@ -174,7 +174,8 @@ if subject != 'sub-170k':
         
                 # median
                 if n_run == 0: corr_stats_data_median = np.copy(corr_stats_data)
-                else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]), axis=0)
+                else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]),
+                                                            axis=0)
             
             # Compute two sided corrected p-values
             t_statistic = corr_stats_data_median[slope_idx, :] / corr_stats_data_median[stderr_idx, :]
