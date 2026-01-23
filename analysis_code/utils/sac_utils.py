@@ -590,12 +590,11 @@ def predicted_pursuit(df_run,settings):
     return purs_x_intpl,purs_y_intpl
 
 
-def predicted_saccade(df_run,settings):  
+def predicted_saccade(main_dir, project_dir, df_run,settings):  
     import os
-    path = "{}/".format(os.getcwd())
-    saccade_coord_x = np.load(f"{path}/design_coordinates_x.npy")
-    saccade_coord_y = np.load(f"{path}design_coordinates_y.npy")
-
+    path = os.path.join(main_dir,project_dir, "derivatives", "exp_design")
+    saccade_coord_x = np.load(f"{path}/sacloc_design_coordinates_x.npy")
+    saccade_coord_y = np.load(f"{path}/sacloc_design_coordinates_y.npy")
 
     amplitude = list(df_run['eyemov_amplitude'])
     seq_trial = list(df_run['sequence_trial'])
