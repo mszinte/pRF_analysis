@@ -116,6 +116,8 @@ gauss_pred_fn = input_fn.split('/')[-1]
 gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
 
 # Get task specific visual design matrix
+# TODO add option to have run specific vdm
+# if vdm per run setting is true, check for different path
 vdm_fn = '{}/{}/derivatives/vdm/task-{}_vdm.npy'.format(
     main_dir, project_dir, prf_task_name)
 vdm = np.load(vdm_fn)
