@@ -73,7 +73,6 @@ analysis_info = settings[0]
 
 vert_dist_th = analysis_info['vertex_pcm_rad']
 formats = analysis_info['formats']
-rois = analysis_info["rois"]
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 maps_names_pcm = analysis_info['maps_names_pcm']
 subjects = analysis_info['subjects']
@@ -82,6 +81,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+rois_methods = analysis_info['rois_methods']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -204,161 +204,177 @@ if subject != 'sub-170k':
                 # Get the vertices number per hemisphere
                 lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
                 vert_num = lh_vert_num + rh_vert_num
-                
-                # Get a dict with the surface vertices contained in each ROI
-                print('Get a dict with the surface vertices contained in each ROI...')
-                roi_verts_dict = get_rois(pycortex_subject, 
-                                          return_concat_hemis=True, 
-                                          rois=rois,
-                                          mask=False, 
-                                          atlas_name=atlas_name, 
-                                          surf_size=surf_size)
-                
-                # Derivatives settings        
-                vert_rsq_data = deriv_mat[rsq_idx2use, ...]
-                vert_x_data = deriv_mat[prf_x_idx, ...]
-                vert_y_data = deriv_mat[prf_y_idx, ...]
-                vert_size_data = deriv_mat[prf_size_idx, ...]
-                vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
-                
-                # Create empty results
-                vert_cm = np.zeros((4,vert_num))*np.nan
-                
-                # Get surfaces for each hemisphere
-                surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
-                surf_lh, surf_rh = surfs[0], surfs[1]
-                
-                # Get the vertices number per hemisphere
-                lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
-                vert_num = lh_vert_num + rh_vert_num
-                
-                # Get a dict with the surface vertices contained in each ROI
-                roi_verts_dict = get_rois(pycortex_subject, 
-                                          return_concat_hemis=True, 
-                                          rois=rois,
-                                          mask=False, 
-                                          atlas_name=atlas_name, 
-                                          surf_size=surf_size)
-                
-                # Derivatives settings        
-                vert_rsq_data = deriv_mat[rsq_idx2use, ...]
-                vert_x_data = deriv_mat[prf_x_idx, ...]
-                vert_y_data = deriv_mat[prf_y_idx, ...]
-                vert_size_data = deriv_mat[prf_size_idx, ...]
-                vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
-                
-                # Create empty results
-                vert_cm = np.zeros((4,vert_num))*np.nan
-                
-                for roi in rois:
-                    # Find ROI vertex
-                    roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
-                    roi_vert_rh_idx = roi_verts_dict[roi][roi_verts_dict[roi] >= lh_vert_num]
-                    roi_surf_lh_idx = roi_vert_lh_idx
-                    roi_surf_rh_idx = roi_vert_rh_idx - lh_vert_num
-                
-                    # Get mean distance of surounding vertices included in threshold
-                    vert_lh_rsq, vert_lh_size = vert_rsq_data[:lh_vert_num], vert_size_data[:lh_vert_num]
-                    vert_lh_x, vert_lh_y = vert_x_data[:lh_vert_num], vert_y_data[:lh_vert_num]
-                    vert_rh_rsq, vert_rh_size = vert_rsq_data[lh_vert_num:], vert_size_data[lh_vert_num:]
-                    vert_rh_x, vert_rh_y = vert_x_data[lh_vert_num:], vert_y_data[lh_vert_num:]
-                
-                    for hemi in ['lh', 'rh']:
-                        if hemi == 'lh':
-                            surf = surf_lh
-                            roi_vert_idx, roi_surf_idx = roi_vert_lh_idx, roi_surf_lh_idx
-                            vert_rsq, vert_x, vert_y, vert_size = vert_lh_rsq, vert_lh_x, vert_lh_y, vert_lh_size
-                        elif hemi == 'rh':
-                            surf = surf_rh
-                            roi_vert_idx, roi_surf_idx = roi_vert_rh_idx, roi_surf_rh_idx
-                            vert_rsq, vert_x, vert_y, vert_size = vert_rh_rsq, vert_rh_x, vert_rh_y, vert_rh_size
-                
-                        print('ROI -> {} / Hemisphere -> {}'.format(roi, hemi))
-                        for i, (vert_idx, surf_idx) in enumerate(zip(roi_vert_idx, roi_surf_idx)):
-                            if vert_rsq[surf_idx] > 0:
-                                # Get geodesic distances (mm)
-                                try :
-                                    geo_patch = surf.get_geodesic_patch(radius=vert_dist_th, 
-                                                                        vertex=surf_idx)
-                                except Exception as e:
-                                    print("Vertex #{}: error: {} within {} mm".format(vert_idx, e, vert_dist_th))
-                                    geo_patch['vertex_mask'] = np.zeros(surf.pts.shape[0]).astype(bool)
-                                    geo_patch['geodesic_distance'] = []
-                
-                                vert_dist_th_idx  = geo_patch['vertex_mask']
-                                vert_dist_th_dist = np.ones_like(vert_dist_th_idx)*np.nan
-                                vert_dist_th_dist[vert_dist_th_idx] = geo_patch['geodesic_distance']
-                
-                                # Exclude vextex out of roi
-                                vert_dist_th_not_in_roi_idx = [idx for idx in np.where(vert_dist_th_idx)[0] if idx not in roi_surf_idx]
-                                vert_dist_th_idx[vert_dist_th_not_in_roi_idx] = False
-                                vert_dist_th_dist[vert_dist_th_not_in_roi_idx] = np.nan
-                                
-                                # Compute the n neighbor of each vertex
-                                n_neighbor = np.where(vert_dist_th_idx)[0].shape[0]
-                                vert_cm[0,vert_idx] = n_neighbor
-        
-                                if np.sum(vert_dist_th_idx) > 1:
-        
-                                    # Get prf parameters of vertices (center and surround) in geodesic distance threshold
-                                    vert_ctr_x, vert_ctr_y = vert_x[surf_idx], vert_y[surf_idx]
-                                    vert_dist_th_idx[surf_idx] = False
-                                    vert_srd_x = vert_x[vert_dist_th_idx]
-                                    vert_srd_y = vert_y[vert_dist_th_idx]
+
+                # Loop over rois-methods
+                rois_methods_format = rois_methods[format_]
+                for rois_method_format in rois_methods_format:
+
+                    # get rois
+                    if rois_method_format == 'rois-drawn':
+                        rois = analysis_info[rois_method_format]
+                    elif rois_method_format == 'rois-group-mmp':
+                        rois = list(analysis_info[rois_method_format].keys())
+                    
+                    # Get a dict with the surface vertices contained in each ROI
+                    print('Get a dict with the surface vertices contained in each ROI...')
+                    roi_verts_dict = get_rois(pycortex_subject, 
+                                              return_concat_hemis=True, 
+                                              rois=rois,
+                                              mask=False, 
+                                              atlas_name=atlas_name, 
+                                              surf_size=surf_size)
+                    
+                    # Derivatives settings        
+                    vert_rsq_data = deriv_mat[rsq_idx2use, ...]
+                    vert_x_data = deriv_mat[prf_x_idx, ...]
+                    vert_y_data = deriv_mat[prf_y_idx, ...]
+                    vert_size_data = deriv_mat[prf_size_idx, ...]
+                    vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
+                    
+                    # Create empty results
+                    vert_cm = np.zeros((4,vert_num))*np.nan
+                    
+                    # Get surfaces for each hemisphere
+                    surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
+                    surf_lh, surf_rh = surfs[0], surfs[1]
+                    
+                    # Get the vertices number per hemisphere
+                    lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
+                    vert_num = lh_vert_num + rh_vert_num
+                    
+                    # Get a dict with the surface vertices contained in each ROI
+                    roi_verts_dict = get_rois(pycortex_subject, 
+                                              return_concat_hemis=True, 
+                                              rois=rois,
+                                              mask=False, 
+                                              atlas_name=atlas_name, 
+                                              surf_size=surf_size)
+                    
+                    # Derivatives settings        
+                    vert_rsq_data = deriv_mat[rsq_idx2use, ...]
+                    vert_x_data = deriv_mat[prf_x_idx, ...]
+                    vert_y_data = deriv_mat[prf_y_idx, ...]
+                    vert_size_data = deriv_mat[prf_size_idx, ...]
+                    vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
+                    
+                    # Create empty results
+                    vert_cm = np.zeros((4,vert_num))*np.nan
+                    
+                    for roi in rois:
+                        # Find ROI vertex
+                        roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
+                        roi_vert_rh_idx = roi_verts_dict[roi][roi_verts_dict[roi] >= lh_vert_num]
+                        roi_surf_lh_idx = roi_vert_lh_idx
+                        roi_surf_rh_idx = roi_vert_rh_idx - lh_vert_num
+                    
+                        # Get mean distance of surounding vertices included in threshold
+                        vert_lh_rsq, vert_lh_size = vert_rsq_data[:lh_vert_num], vert_size_data[:lh_vert_num]
+                        vert_lh_x, vert_lh_y = vert_x_data[:lh_vert_num], vert_y_data[:lh_vert_num]
+                        vert_rh_rsq, vert_rh_size = vert_rsq_data[lh_vert_num:], vert_size_data[lh_vert_num:]
+                        vert_rh_x, vert_rh_y = vert_x_data[lh_vert_num:], vert_y_data[lh_vert_num:]
+                    
+                        for hemi in ['lh', 'rh']:
+                            if hemi == 'lh':
+                                surf = surf_lh
+                                roi_vert_idx, roi_surf_idx = roi_vert_lh_idx, roi_surf_lh_idx
+                                vert_rsq, vert_x, vert_y, vert_size = vert_lh_rsq, vert_lh_x, vert_lh_y, vert_lh_size
+                            elif hemi == 'rh':
+                                surf = surf_rh
+                                roi_vert_idx, roi_surf_idx = roi_vert_rh_idx, roi_surf_rh_idx
+                                vert_rsq, vert_x, vert_y, vert_size = vert_rh_rsq, vert_rh_x, vert_rh_y, vert_rh_size
+                    
+                            print('ROI -> {} / Hemisphere -> {}'.format(roi, hemi))
+                            for i, (vert_idx, surf_idx) in enumerate(zip(roi_vert_idx, roi_surf_idx)):
+                                if vert_rsq[surf_idx] > 0:
+                                    # Get geodesic distances (mm)
+                                    try :
+                                        geo_patch = surf.get_geodesic_patch(radius=vert_dist_th, 
+                                                                            vertex=surf_idx)
+                                    except Exception as e:
+                                        print("Vertex #{}: error: {} within {} mm".format(vert_idx, e, vert_dist_th))
+                                        geo_patch['vertex_mask'] = np.zeros(surf.pts.shape[0]).astype(bool)
+                                        geo_patch['geodesic_distance'] = []
+                    
+                                    vert_dist_th_idx  = geo_patch['vertex_mask']
+                                    vert_dist_th_dist = np.ones_like(vert_dist_th_idx)*np.nan
+                                    vert_dist_th_dist[vert_dist_th_idx] = geo_patch['geodesic_distance']
+                    
+                                    # Exclude vextex out of roi
+                                    vert_dist_th_not_in_roi_idx = [idx for idx in np.where(vert_dist_th_idx)[0] if idx not in roi_surf_idx]
+                                    vert_dist_th_idx[vert_dist_th_not_in_roi_idx] = False
+                                    vert_dist_th_dist[vert_dist_th_not_in_roi_idx] = np.nan
                                     
-                                    # median
-                                    # Compute median geodesic distance 
-                                    vert_geo_dist_median = weighted_nan_median(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
-                                    
-                                    # Compute prf center suround distance (deg)
-                                    vert_prf_dist_median_array = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
-                                    
-                                    # Compute median of prf center suround distance
-                                    vert_prf_dist_median = weighted_nan_median(vert_prf_dist_median_array, vert_rsq[vert_dist_th_idx])
-                                    
-                                    # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
-                                    vert_cm[1, vert_idx] = vert_geo_dist_median/vert_prf_dist_median
-                                    
-                                    # export median geodesic and prf distance
-                                    vert_cm[2, vert_idx] = vert_geo_dist_median
-                                    vert_cm[3, vert_idx] = vert_prf_dist_median
-                                    
-                deriv_mat_new = vert_cm
-                        
-                # Save data
-                if format_ == 'fsnative':
-                    # Save as image
-                    new_img_L, new_img_R  = make_image_pycortex(data=deriv_mat_new, 
-                                                                maps_names=maps_names_pcm,
-                                                                img_L=img_L, 
-                                                                img_R=img_R, 
-                                                                lh_vert_num=lh_vert_num, 
-                                                                rh_vert_num=rh_vert_num, 
-                                                                img=None, 
-                                                                brain_mask_59k=None)
-        
-                    deriv_fn_L = deriv_fn_L.split('/')[-1].replace('deriv', 'pcm')
-                    deriv_fn_R = deriv_fn_R.split('/')[-1].replace('deriv', 'pcm')
-                    print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_L))
-                    nb.save(new_img_L, '{}/{}'.format(prf_deriv_dir, deriv_fn_L))
-                    print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_R))
-                    nb.save(new_img_R, '{}/{}'.format(prf_deriv_dir, deriv_fn_R))
-                            
-                elif format_ == '170k':
-                    # Save as image
-                    new_img = make_image_pycortex(data=deriv_mat_new, 
-                                          maps_names=None,
-                                          img_L=None, 
-                                          img_R=None, 
-                                          lh_vert_num=None, 
-                                          rh_vert_num=None, 
-                                          img=img, 
-                                          brain_mask_59k=mask_59k)
+                                    # Compute the n neighbor of each vertex
+                                    n_neighbor = np.where(vert_dist_th_idx)[0].shape[0]
+                                    vert_cm[0,vert_idx] = n_neighbor
             
-                    deriv_fn = deriv_fn.split('/')[-1].replace('deriv', 'pcm')
-                    print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
-                    nb.save(new_img, '{}/{}'.format(prf_deriv_dir, deriv_fn))
+                                    if np.sum(vert_dist_th_idx) > 1:
+            
+                                        # Get prf parameters of vertices (center and surround) in geodesic distance threshold
+                                        vert_ctr_x, vert_ctr_y = vert_x[surf_idx], vert_y[surf_idx]
+                                        vert_dist_th_idx[surf_idx] = False
+                                        vert_srd_x = vert_x[vert_dist_th_idx]
+                                        vert_srd_y = vert_y[vert_dist_th_idx]
+                                        
+                                        # median
+                                        # Compute median geodesic distance 
+                                        vert_geo_dist_median = weighted_nan_median(vert_dist_th_dist[vert_dist_th_idx], vert_rsq[vert_dist_th_idx])
+                                        
+                                        # Compute prf center suround distance (deg)
+                                        vert_prf_dist_median_array = np.sqrt((vert_ctr_x - vert_srd_x)**2 + (vert_ctr_y - vert_srd_y)**2)
+                                        
+                                        # Compute median of prf center suround distance
+                                        vert_prf_dist_median = weighted_nan_median(vert_prf_dist_median_array, vert_rsq[vert_dist_th_idx])
+                                        
+                                        # Compute cortical magnification in mm/deg (surface distance / pRF positon distance)
+                                        vert_cm[1, vert_idx] = vert_geo_dist_median/vert_prf_dist_median
+                                        
+                                        # export median geodesic and prf distance
+                                        vert_cm[2, vert_idx] = vert_geo_dist_median
+                                        vert_cm[3, vert_idx] = vert_prf_dist_median
+                                        
+                    deriv_mat_new = vert_cm
+                            
+                    # Save data
+                    if format_ == 'fsnative':
+                        # Save as image
+                        new_img_L, new_img_R  = make_image_pycortex(data=deriv_mat_new, 
+                                                                    maps_names=maps_names_pcm,
+                                                                    img_L=img_L, 
+                                                                    img_R=img_R, 
+                                                                    lh_vert_num=lh_vert_num, 
+                                                                    rh_vert_num=rh_vert_num, 
+                                                                    img=None, 
+                                                                    brain_mask_59k=None)
+            
+                        deriv_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
+                            prf_deriv_dir, subject, prf_task_name, 
+                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        deriv_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
+                            prf_deriv_dir, subject, prf_task_name, 
+                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_L))
+                        nb.save(new_img_L, deriv_fn_L)
+                        print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_R))
+                        nb.save(new_img_R, deriv_fn_R)
+
+                    elif format_ == '170k':
+                        # Save as image
+                        new_img = make_image_pycortex(data=deriv_mat_new, 
+                                              maps_names=None,
+                                              img_L=None, 
+                                              img_R=None, 
+                                              lh_vert_num=None, 
+                                              rh_vert_num=None, 
+                                              img=img, 
+                                              brain_mask_59k=mask_59k)
                 
+                        deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
+                            prf_deriv_dir, subject, prf_task_name,
+                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
+                        nb.save(new_img, deriv_fn)
+
 # Sub-170k computing median
 elif subject == 'sub-170k':
     print('sub-170, computing median pcm across subject...')
@@ -367,32 +383,34 @@ elif subject == 'sub-170k':
         
         for avg_method in avg_methods:
 
-            # find all the subject prf stats
-            prf_pcm_fns = []
-            subjects = ['sub-02', 'sub-03']
-            for subject in subjects: 
-                prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir, subject)
-                prf_pcm_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
-                    prf_deriv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)]
+            rois_methods_format = rois_methods['170k']
+            for rois_method_format in rois_methods_format:
 
-             # Computing  across subject
-            img, data_pcm_median = median_subject_template(fns=prf_pcm_fns)
+                # find all the subject prf stats
+                prf_pcm_fns = []
+                for subject in subjects: 
+                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
+                        main_dir, project_dir, subject)
+                    prf_pcm_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
+                        prf_deriv_dir, subject, prf_task_name,
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)]
     
-            # Export results
-            sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir)
-            os.makedirs(sub_170k_pcm_dir, exist_ok=True)
-            
-            sub_170k_pcm_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
-                sub_170k_pcm_dir, prf_task_name, 
-                preproc_prep, filtering, normalization, avg_method)
-            print("saving: {}".format(sub_170k_pcm_fn))
-            sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
-                                                  source_img=img, 
-                                                  maps_names=maps_names_pcm)
-            nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
+                 # Computing  across subject
+                img, data_pcm_median = median_subject_template(fns=prf_pcm_fns)
+        
+                # Export results
+                sub_170k_pcm_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
+                        main_dir, project_dir)
+                os.makedirs(sub_170k_pcm_dir, exist_ok=True)
+                
+                sub_170k_pcm_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
+                    sub_170k_pcm_dir, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                print("saving: {}".format(sub_170k_pcm_fn))
+                sub_170k_pcm_img = make_surface_image(data=data_pcm_median, 
+                                                      source_img=img, 
+                                                      maps_names=maps_names_pcm)
+                nb.save(sub_170k_pcm_img, sub_170k_pcm_fn)
             
 # Print duration
 end_time = datetime.datetime.now()

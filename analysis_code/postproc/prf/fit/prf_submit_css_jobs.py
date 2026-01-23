@@ -58,6 +58,7 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 memory_val = 30
 nb_procs = 32
+hour_proc = 4
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -69,16 +70,11 @@ analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-filter_rois = analysis_info['filter_rois']
-if filter_rois: hour_proc = 2
-else: hour_proc = 4
 prf_task_names = analysis_info['prf_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
-
-deb()
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)

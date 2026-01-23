@@ -1,18 +1,13 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["avg", "loo-avg"]
+  value: ["concat"]
   levels: ["avg", "loo-avg", "concat", "runs"]
   level-description: 
     avg: "averaging across runs"
     loo-avg: "leave-one-out averaging across runs"
     concat: "concatenation of runs"
     runs: "single run analysis"
-    
-filter_rois: 
-  description: "Use defined ROIS to mask bold signal to analyze"
-  value: False
-  levels: [True, False]
 
 # Screen and visual design matrix settings
 screen_size_pix: 
@@ -105,7 +100,7 @@ maps_names_css_stats:
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
 # ROIS
-rois_type:
+rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 
     fsnative: ["rois-drawn"]
@@ -129,15 +124,3 @@ rois-group-mmp:
     LO: ["LO1", "LO2", "LO3"] 
     VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
     hMT+: ["V4t", "MST", "MT", "FST"]
-
-rois_colors:
-  description: "Color in RGB used in different plots for each ROI"
-  value:
-    - n/a: [255, 255, 255]
-    - V1: [243, 231, 155]
-    - V2: [250, 196, 132]
-    - V3: [248, 160, 126]
-    - V3AB: [235, 127, 134]
-    - LO: [150, 0, 90)] 
-    - VO: [0, 0, 200]
-    - hMT+: [0, 25, 255]

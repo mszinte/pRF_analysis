@@ -73,7 +73,8 @@ else: save_svg = save_svg
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
+settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
@@ -89,7 +90,7 @@ set_pycortex_config_file(cortex_dir)
 # Define/create colormap
 rois_colors = analysis_info['rois_colors']
 colormap_name = 'rois_colors'
-colormap_dict = {key: tuple(value) for d in rois_colors for key, value in d.items()}
+colormap_dict = {key: tuple(value) for key, value in rois_colors.items()}
 create_colormap(cortex_dir=cortex_dir, 
                 colormap_name=colormap_name, 
                 colormap_dict=colormap_dict,

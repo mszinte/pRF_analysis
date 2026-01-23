@@ -56,7 +56,8 @@ server_project = sys.argv[5]
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-settings = load_settings(settings_path)
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 # Define cluster/server specific parameters

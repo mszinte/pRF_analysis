@@ -27,6 +27,23 @@ flatmap_pcm_scale:
   description: "pRF cortical magnification flatmap colorscale"
   value: [0, 10]
 
+rois_colors:
+  description: "Color in RGB used in different plots for each ROI"
+  value:
+    n/a: [255, 255, 255]
+    V1: [243, 231, 155]
+    V2: [250, 196, 132]
+    V3: [248, 160, 126]
+    V3AB: [235, 127, 134]
+    LO: [150, 0, 90] 
+    VO: [0, 0, 200]
+    hMT+: [0, 25, 255]
+    iIPS: [0, 152, 255]
+    sIPS: [44, 255, 150]
+    iPCS: [151, 255, 0]
+    sPCS: [255, 234, 0]
+    mPCS: [255, 111, 0]
+
 # Main figures
 roi_colors:
   description: "Colors to use for each ROI"
