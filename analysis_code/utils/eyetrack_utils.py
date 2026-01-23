@@ -495,6 +495,22 @@ def load_design_matrix_fixations(subject, ses, run, fixation_column, task, desig
 
     return fixation_trials
 
+
+def load_eye_data(main_dir, project_dir, subject, task):
+    import pandas as pd
+    """Load eye tracking timeseries data for all runs."""
+    eye_tracking_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking" 
+    
+    eye_data_runs = []
+    run_nums = ['01', '02']
+    
+    for run_num in run_nums:
+        filepath = f"{eye_tracking_dir}/timeseries/{subject}_task-{task}_run_{run_num}_eyedata.tsv.gz"
+        df = pd.read_csv(filepath, compression='gzip', delimiter='\t')
+        eye_data_runs.append(df[['timestamp', 'x', 'y', 'pupil_size']].to_numpy())
+    
+    return eye_data_runs
+
 """
 ------------------------------ Retinal VdM functions ---------------------------------------------
 
