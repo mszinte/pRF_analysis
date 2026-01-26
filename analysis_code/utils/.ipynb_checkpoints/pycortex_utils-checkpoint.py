@@ -447,7 +447,8 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                 alpha=None, depth=1, thick=1, height=1024, sampler='nearest',\
                 with_curvature=True, with_labels=False, with_colorbar=False,\
                 with_borders=False, curv_brightness=0.95, curv_contrast=0.05, add_roi=False,\
-                roi_name='empty', col_offset=0, zoom_roi=None, zoom_hem=None, zoom_margin=0.0, cbar_label=''):
+                roi_name='empty', col_offset=0, zoom_roi=None, zoom_hem=None, zoom_margin=0.0, cbar_label='', \
+                overlay_fn='None'):
     """
     Plot brain data onto a previously saved flatmap.
     
@@ -482,6 +483,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     zoom_roi            : name of the roi on which to zoom on
     zoom_hem            : hemifield fo the roi zoom
     zoom_margin         : margin in mm around the zoom
+    overlay_fn          : file name of the overlay file (e.g. 'overlay_rois-drawn.svg')
     
     Returns
     -------
@@ -500,7 +502,21 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     # define colormap
     try: base = plt.cm.get_cmap(cmap)
     except: base = cortex.utils.get_cmap(cmap)
+
     
+
+    if overlay_fn == 'None': 
+        overlay_file = None
+    else:
+        # define overlay path
+        pycortex_config_file  = cortex.options.usercfg
+        with open(pycortex_config_file, 'r') as fileIn:
+            for line in fileIn:
+                if 'filestore' in line:
+                    db_path=line[10:-2]
+        overlay_file = f"{db_path}/{subject}/{overlay_fn}"
+        
+
     if '_alpha' in cmap: base.colors = base.colors[1,:,:]
     val = np.linspace(0, 1, cmap_steps, endpoint=False)
     
@@ -565,6 +581,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                                      sampler = sampler,
                                      with_curvature = with_curvature,
                                      nanmean = True,
+                                     overlay_file=None,
                                      with_labels = with_labels,
                                      with_colorbar = with_colorbar,
                                      with_borders = with_borders,
