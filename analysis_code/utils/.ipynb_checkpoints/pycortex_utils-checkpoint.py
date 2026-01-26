@@ -515,7 +515,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                 if 'filestore' in line:
                     db_path=line[10:-2]
         overlay_file = f"{db_path}/{subject}/{overlay_fn}"
-        
+
 
     if '_alpha' in cmap: base.colors = base.colors[1,:,:]
     val = np.linspace(0, 1, cmap_steps, endpoint=False)
@@ -581,7 +581,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                                      sampler = sampler,
                                      with_curvature = with_curvature,
                                      nanmean = True,
-                                     overlay_file=None,
+                                     overlay_file=overlay_file,
                                      with_labels = with_labels,
                                      with_colorbar = with_colorbar,
                                      with_borders = with_borders,
