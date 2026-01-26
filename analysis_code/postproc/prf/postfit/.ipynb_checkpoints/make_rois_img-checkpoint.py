@@ -104,7 +104,9 @@ for format_, extension in zip(formats, extensions):
                                                           rois=rois,
                                                           mask=True,
                                                           atlas_name=None,
-                                                          surf_size=None)
+                                                          surf_size=None,
+                                                          overlay_fn=f"overlays_{rois_method_format}.svg"
+                                                         )
             
             for hemi in ['hemi-L','hemi-R']:
                 if hemi == 'hemi-L':roi_verts_dict = roi_verts_dict_L
@@ -155,7 +157,9 @@ for format_, extension in zip(formats, extensions):
                                       rois=rois,
                                       mask=True, 
                                       atlas_name='mmp_group', 
-                                      surf_size='170k')
+                                      surf_size='170k',
+                                      overlay_fn=f"overlays_{rois_method_format}.svg"
+                                     )
     
             array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
             for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
@@ -225,11 +229,8 @@ for format_, extension in zip(formats, extensions):
                                               brain_mask_59k=mask_59k)
             
             # Define filename
-            rois_mmp_fn = '{}_{}_{}_{}_{}_rois-mmp.{}'.format(subject, hemi,
-                                                        preproc_prep, filtering, 
-                                                        normalization,
-                                                        extension
-                                                       )
+            rois_mmp_fn = '{}_{}_{}_{}_rois-mmp.{}'.format(subject, preproc_prep, filtering, 
+                                                           normalization, extension)
     
             # Saving file
             array_rois = array_rois.reshape(1, -1)
