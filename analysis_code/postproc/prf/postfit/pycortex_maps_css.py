@@ -139,6 +139,9 @@ for avg_method in avg_methods:
             datasets_dir = '{}/pycortex/datasets_css'.format(prf_dir)
             os.makedirs(flatmaps_dir, exist_ok=True)
             os.makedirs(datasets_dir, exist_ok=True)
+
+            # Define overlay
+            overlay_fn = f"overlays_{rois_method_format}.svg"
     
             for prf_task_name in prf_task_names:
                 
@@ -246,6 +249,7 @@ for avg_method in avg_methods:
                              'curv_contrast': 0.1,
                              'add_roi': save_svg,
                              'cbar_label': rsq_cbar_label, 
+                             'overlay_fn': overlay_fn,
                              'with_labels': True}
                 maps_names.append('rsq')
                 
@@ -266,6 +270,7 @@ for avg_method in avg_methods:
                                'description': 'CSS pRF polar angle', 
                                'curv_brightness': 0.1, 
                                'curv_contrast': 0.25, 
+                               'overlay_fn': overlay_fn,
                                'add_roi': save_svg, 
                                'with_labels': True}
                 exec('param_polar_{cmap_steps} = param_polar'.format(cmap_steps = int(cmap_steps)))
@@ -284,6 +289,7 @@ for avg_method in avg_methods:
                              'curv_brightness': 1,
                              'curv_contrast': 0.1, 
                              'add_roi': save_svg, 
+                             'overlay_fn': overlay_fn,
                              'with_labels': True}
                 maps_names.append('ecc')
                 
@@ -301,6 +307,7 @@ for avg_method in avg_methods:
                               'curv_contrast': 0.1, 
                               'add_roi': False, 
                               'cbar_label': 'pRF size (dva)',
+                              'overlay_fn': overlay_fn,
                               'with_labels': True}
                 maps_names.append('size')
                 
@@ -318,6 +325,7 @@ for avg_method in avg_methods:
                            'curv_contrast': 0.1, 
                            'add_roi': False, 
                            'cbar_label': 'pRF n',
+                           'overlay_fn': overlay_fn,
                            'with_labels': True}
                 maps_names.append('n')
                 
@@ -337,6 +345,7 @@ for avg_method in avg_methods:
                              'curv_contrast': 0.1, 
                              'add_roi': False, 
                              'cbar_label': 'pRF CM (mm/dva)',
+                             'overlay_fn': overlay_fn,
                              'with_labels': True}
                 maps_names.append('pcm')
                     

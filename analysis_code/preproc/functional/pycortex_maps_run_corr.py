@@ -145,14 +145,16 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                       'curv_contrast': 0.25, 
                       'add_roi': save_svg, 
                       'cbar_label': 'Pearson coefficient',
-                      'with_labels': True}
+                      'with_labels': True,
+                      'overlay_fn': 'overlay.svg'
+                     }
         maps_names.append('corr')
 
         # Correlation corrected mat
         corr_mat_corrected = copy.copy(corr_mat)
         corr_mat_corrected_th = corr_mat_corrected
-        if analysis_info['stats_th'] == 0.05: stats_th_down = corr_mat_corrected_th[corr_pvalue_5pt_idx,...] <= 0.05
-        elif analysis_info['stats_th'] == 0.01: stats_th_down = corr_mat_corrected_th[corr_pvalue_1pt_idx,...] <= 0.01
+        if analysis_info['corr_stats_th'] == 0.05: stats_th_down = corr_mat_corrected_th[corr_pvalue_5pt_idx,...] <= 0.05
+        elif analysis_info['corr_stats_th'] == 0.01: stats_th_down = corr_mat_corrected_th[corr_pvalue_1pt_idx,...] <= 0.01
         corr_mat_corrected[rvalue_idx, stats_th_down==False]=0 # put this to zero to not plot it
         corr_mat_corrected = corr_mat_corrected[rvalue_idx, :]
         
@@ -169,7 +171,9 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
                             'curv_contrast': 0.25, 
                             'add_roi': save_svg, 
                             'cbar_label': 'Pearson coefficient',
-                            'with_labels': True}
+                            'with_labels': True,
+                            'overlay_fn': 'overlay.svg'
+                           }
         maps_names.append('corr_stats')
 
         # draw flatmaps
@@ -192,7 +196,7 @@ for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
             exec('vol_description = param_{}["description"]'.format(maps_name))
             exec('volume = volume_{}'.format(maps_name))
             volumes.update({vol_description:volume})
-        
+
         # save dataset
         dataset_file = "{}/{}_task-{}_{}_{}_{}_corr.hdf".format(datasets_dir, subject, task, 
                                                                 preproc_prep, filtering, normalization)

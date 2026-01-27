@@ -163,7 +163,7 @@ def data_from_rois(fn, subject, rois):
 
 
 
-def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, mask=True, atlas_name=None, surf_size=None):
+def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, mask=True, atlas_name=None, surf_size=None, overlay_fn=None):
     """
     Accesses single hemisphere ROI masks for GIFTI and atlas ROI for CIFTI.
 
@@ -185,6 +185,8 @@ def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, ma
     surf_size : str, optional
         The size in which you want the ROIs. It should be '59k' or '170k'. 
         Required if `atlas_name` is provided.
+    overlay_fn : str, optional
+        File name of the overlay file (e.g. 'overlay_rois-drawn.svg')
 
     Returns
     -------
@@ -214,6 +216,17 @@ def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, ma
     surf_lh, surf_rh = surfs[0], surfs[1]
     lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
 
+    # define overlay
+    if overlay_fn == 'None': 
+        overlay_file = None
+    else:
+        # define overlay path
+        pycortex_config_file  = cortex.options.usercfg
+        with open(pycortex_config_file, 'r') as fileIn:
+            for line in fileIn:
+                if 'filestore' in line:
+                    db_path=line[10:-2]
+        overlay_file = f"{db_path}/{subject}/{overlay_fn}"
     
     # get rois 
     if atlas_name :
@@ -240,7 +253,8 @@ def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, ma
     else:
         roi_verts = cortex.get_roi_verts(subject=subject, 
                                           roi=rois, 
-                                          mask=True)
+                                          mask=True,
+                                          overlay_file=overlay_file)
         rois_masks_L = {roi: data[:lh_vert_num] for roi, data in roi_verts.items()}
         rois_masks_R = {roi: data[-rh_vert_num:] for roi, data in roi_verts.items()}
         
@@ -259,7 +273,10 @@ def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, ma
             rois_idx_R = {roi: np.where(rois_masks_R[roi])[0] for roi in rois_masks_R}
 
             if return_concat_hemis :
-                roi_verts = cortex.get_roi_verts(subject=subject, roi=rois, mask=False)
+                roi_verts = cortex.get_roi_verts(subject=subject, 
+                                                 roi=rois, 
+                                                 mask=False,
+                                                 overlay_file=overlay_file)
                 return roi_verts
             elif return_hemi == 'hemi-L':
                 return rois_idx_L
@@ -447,7 +464,8 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                 alpha=None, depth=1, thick=1, height=1024, sampler='nearest',\
                 with_curvature=True, with_labels=False, with_colorbar=False,\
                 with_borders=False, curv_brightness=0.95, curv_contrast=0.05, add_roi=False,\
-                roi_name='empty', col_offset=0, zoom_roi=None, zoom_hem=None, zoom_margin=0.0, cbar_label=''):
+                roi_name='empty', col_offset=0, zoom_roi=None, zoom_hem=None, zoom_margin=0.0, cbar_label='', \
+                overlay_fn='None'):
     """
     Plot brain data onto a previously saved flatmap.
     
@@ -482,6 +500,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     zoom_roi            : name of the roi on which to zoom on
     zoom_hem            : hemifield fo the roi zoom
     zoom_margin         : margin in mm around the zoom
+    overlay_fn          : file name of the overlay file (e.g. 'overlay_rois-drawn.svg')
     
     Returns
     -------
@@ -500,7 +519,21 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     # define colormap
     try: base = plt.cm.get_cmap(cmap)
     except: base = cortex.utils.get_cmap(cmap)
+
     
+
+    if overlay_fn == 'None': 
+        overlay_file = None
+    else:
+        # define overlay path
+        pycortex_config_file  = cortex.options.usercfg
+        with open(pycortex_config_file, 'r') as fileIn:
+            for line in fileIn:
+                if 'filestore' in line:
+                    db_path=line[10:-2]
+        overlay_file = f"{db_path}/{subject}/{overlay_fn}"
+
+
     if '_alpha' in cmap: base.colors = base.colors[1,:,:]
     val = np.linspace(0, 1, cmap_steps, endpoint=False)
     
@@ -565,6 +598,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                                      sampler = sampler,
                                      with_curvature = with_curvature,
                                      nanmean = True,
+                                     overlay_file=overlay_file,
                                      with_labels = with_labels,
                                      with_colorbar = with_colorbar,
                                      with_borders = with_borders,

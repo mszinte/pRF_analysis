@@ -83,3 +83,7 @@ maps_names_corr:
 fdr_alpha: 
   description: "P value level list for FDR corrected statistics"
   value: [0.05, 0.01]
+
+corr_stats_th: 
+  description: "p value minimum threshold for inter-run correlation analysis"
+  value: 0.05
