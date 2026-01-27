@@ -8,6 +8,10 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
+# TO DO 
+---
+- [ ] make a github repo for sub-170k 
+
 # Data stucture and BIDS
 ---
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 

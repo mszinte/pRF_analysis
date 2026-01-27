@@ -27,6 +27,7 @@ python freesurfer_project_mmp_fsnative.py /scratch/mszinte/data RetinoMaps sub-0
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
+
 # stop warnings
 import warnings
 warnings.filterwarnings("ignore")
