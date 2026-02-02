@@ -62,8 +62,11 @@ exclude_parcels_per_cluster = {
 
 #%% Initialize storage
 all_subject_full_matrices = []
+all_subject_full_matrices_fisherz = []
 all_subject_parcel_full = []
+all_subject_parcel_full_fisherz = []
 all_subject_partial_matrices = []
+all_subject_partial_matrices_fisherz = []
 all_subject_parcel_names = []
 
 # Loop over subjects
@@ -107,28 +110,34 @@ for subject in subjects:
 
     print(f"{subject}: using {len(parcel_names_used)}/{len(parcels)} parcels")
     
-     # Parcel × parcel full correlation (symmetric, no exclusions; useful as a sanity check wrt Workbench results)
+    # Parcel × parcel full correlation (symmetric, no exclusions; useful as a sanity check wrt Workbench results)
     if parcel_ts.shape[1] > 1:
         parcel_conn = ConnectivityMeasure(kind='correlation')
         parcel_corr = parcel_conn.fit_transform([parcel_ts])[0]
+        parcel_corr_fisherz = np.arctanh(parcel_corr)
     else:
         parcel_corr = np.full((parcel_ts.shape[1], parcel_ts.shape[1]), np.nan)
+        parcel_corr_fisherz = np.full((parcel_ts.shape[1], parcel_ts.shape[1]), np.nan)
 
     # If either side empty, create empty matrices and continue
     n_clusters_present = cluster_ts.shape[1]
     n_parcels_present = parcel_ts.shape[1]
     if n_clusters_present == 0 or n_parcels_present == 0:
         full_matrix = np.empty((n_clusters_present, n_parcels_present))
+        full_matrix_fisherz = np.empty((n_clusters_present, n_parcels_present))
         partial_matrix = np.empty((n_clusters_present, n_parcels_present))
+        partial_matrix_fisherz = np.empty((n_clusters_present, n_parcels_present))
     else:
         # Full correlation via Nilearn
         combined_for_full = np.hstack([cluster_ts, parcel_ts])  # time x (n_clusters + n_parcels)
         full_conn = ConnectivityMeasure(kind='correlation')
         corr_all = full_conn.fit_transform([combined_for_full])[0]  # (nvars, nvars)
         full_matrix = corr_all[:n_clusters_present, n_clusters_present:(n_clusters_present + n_parcels_present)]
+        full_matrix_fisherz = np.arctanh(full_matrix)
 
         # Partial correlations computed per-seed while excluding within seed parcels
         partial_matrix = np.full((n_clusters_present, n_parcels_present), np.nan)
+        partial_matrix_fisherz = np.full((n_clusters_present, n_parcels_present), np.nan)
 
         # Precompute index mapping: parcel name -> column index in parcel_ts / parcel_names_used
         parcel_name_to_idx = {name: idx for idx, name in enumerate(parcel_names_used)}
@@ -150,41 +159,43 @@ for subject in subjects:
             
             # Compute partial correlation on this combined set
             partial_conn = ConnectivityMeasure(kind='partial correlation')
-            try:
-                tmp = partial_conn.fit_transform([combined_seed])[0]
-            except Exception as e:
-                # If estimation fails (too many features / ill-conditioned), warn and skip seed
-                print(f"Warning: partial estimation failed for {subject}, seed {cl_name}: {e}")
-                continue
+            tmp = partial_conn.fit_transform([combined_seed])[0]
 
             # Extract row corresponding to the seed (seed is among the first n_clusters_present columns)
             seed_col = i_cl
             n_included = len(included_parcel_indices)
             # The parcel block starts at column index n_clusters_present and spans n_included columns
             partial_values_included = tmp[seed_col, n_clusters_present:(n_clusters_present + n_included)]
+            partial_values_included_fisherz = np.arctanh(partial_values_included)
 
             # Place values back into the full-sized partial_matrix at correct parcel positions
             for k, pj in enumerate(included_parcel_indices):
                 partial_matrix[i_cl, pj] = partial_values_included[k]
+                partial_matrix_fisherz[i_cl, pj] = partial_values_included_fisherz[k]
             # excluded parcel columns remain NaN for this seed (as desired)
 
-	# Fill global matrix with NaNs for missing parcels and clusters
-	# Note: NaNs here reflect parcels that are systematically excluded
-	# from partial correlation conditioning for a given seed.
-	# Group averages are therefore computed over the valid subset only.
+    # Fill global matrix with NaNs for missing parcels and clusters
+    # Note: NaNs here reflect parcels that are systematically excluded
+    # from partial correlation conditioning for a given seed.
+    # Group averages are therefore computed over the valid subset only.
 
     full_filled = np.full((len(clusters), len(parcels)), np.nan)
+    full_filled_fisherz = np.full((len(clusters), len(parcels)), np.nan)
     partial_filled = np.full((len(clusters), len(parcels)), np.nan)
+    partial_filled_fisherz = np.full((len(clusters), len(parcels)), np.nan)
     
     parcel_full_filled = np.full((len(parcels), len(parcels)), np.nan)
+    parcel_full_filled_fisherz = np.full((len(parcels), len(parcels)), np.nan)
 
     for i, p_i in enumerate(parcel_names_used):
         gi = parcels.index(p_i)
         for j, p_j in enumerate(parcel_names_used):
             gj = parcels.index(p_j)
             parcel_full_filled[gi, gj] = parcel_corr[i, j]
+            parcel_full_filled_fisherz[gi, gj] = parcel_corr_fisherz[i, j]
             
     all_subject_parcel_full.append(parcel_full_filled)
+    all_subject_parcel_full_fisherz.append(parcel_full_filled_fisherz)
  
     # Per-subject output folder
     sub_out = f'{main_data}/{subject}/91k/rest/corr/partial_corr'
@@ -198,42 +209,63 @@ for subject in subjects:
             # Guard indexing (full_matrix and partial_matrix are subject-local shapes)
             if full_matrix.size:
                 full_filled[global_r, global_c] = full_matrix[i_cl, j_pa]
+                full_filled_fisherz[global_r, global_c] = full_matrix_fisherz[i_cl, j_pa]
             if partial_matrix.size:
                 # partial_matrix has NaN for excluded parcels by construction
                 partial_filled[global_r, global_c] = partial_matrix[i_cl, j_pa]
+                partial_filled_fisherz[global_r, global_c] = partial_matrix_fisherz[i_cl, j_pa]
 
     # Save per subject outputs
     np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_full.npy"), full_filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_full_fisherz.npy"), full_filled_fisherz)
     np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.npy"), partial_filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.npy"), partial_filled_fisherz)
     np.save(os.path.join(sub_out, "parcel_by_mmp-parcel_full.npy"), parcel_full_filled)
+    np.save(os.path.join(sub_out, "parcel_by_mmp-parcel_full_fisherz.npy"), parcel_full_filled_fisherz)
 
     # Append for group stats
     all_subject_full_matrices.append(full_filled)
+    all_subject_full_matrices_fisherz.append(full_filled_fisherz)
     all_subject_partial_matrices.append(partial_filled)
-    all_subject_parcel_full.append(parcel_full_filled)
+    all_subject_partial_matrices_fisherz.append(partial_filled_fisherz)
 
 #%% Group stats (n_subjects, n_clusters, n_parcels)
 all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
+all_subject_full_matrices_fisherz = np.stack(all_subject_full_matrices_fisherz, axis=0)
 all_subject_partial_matrices = np.stack(all_subject_partial_matrices, axis=0)
+all_subject_partial_matrices_fisherz = np.stack(all_subject_partial_matrices_fisherz, axis=0)
 
 mean_full_matrix = np.nanmean(all_subject_full_matrices, axis=0)
+mean_full_matrix_fisherz = np.nanmean(all_subject_full_matrices_fisherz, axis=0)
 median_full_matrix = np.nanmedian(all_subject_full_matrices, axis=0)
+median_full_matrix_fisherz = np.nanmedian(all_subject_full_matrices_fisherz, axis=0)
 mean_partial_matrix = np.nanmean(all_subject_partial_matrices, axis=0)
+mean_partial_matrix_fisherz = np.nanmean(all_subject_partial_matrices_fisherz, axis=0)
 median_partial_matrix = np.nanmedian(all_subject_partial_matrices, axis=0)
+median_partial_matrix_fisherz = np.nanmedian(all_subject_partial_matrices_fisherz, axis=0)
 
 all_subject_parcel_full = np.stack(all_subject_parcel_full, axis=0)
+all_subject_parcel_full_fisherz = np.stack(all_subject_parcel_full_fisherz, axis=0)
 mean_parcel_full = np.nanmean(all_subject_parcel_full, axis=0)
+mean_parcel_full_fisherz = np.nanmean(all_subject_parcel_full_fisherz, axis=0)
 median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
+median_parcel_full_fisherz = np.nanmedian(all_subject_parcel_full_fisherz, axis=0)
 
 # Save results
 np.savez_compressed(
     os.path.join(output_folder, "nilearn_partial_corr_task-mmp.npz"),
     mean_cluster_parcel_full=mean_full_matrix,
+    mean_cluster_parcel_full_fisherz=mean_full_matrix_fisherz,
     median_cluster_parcel_full=median_full_matrix,
+    median_cluster_parcel_full_fisherz=median_full_matrix_fisherz,
     mean_cluster_parcel_partial=mean_partial_matrix,
+    mean_cluster_parcel_partial_fisherz=mean_partial_matrix_fisherz,
     median_cluster_parcel_partial=median_partial_matrix,
+    median_cluster_parcel_partial_fisherz=median_partial_matrix_fisherz,
     mean_parcel_full=mean_parcel_full,
+    mean_parcel_full_fisherz=mean_parcel_full_fisherz,
     median_parcel_full=median_parcel_full,
+    median_parcel_full_fisherz=median_parcel_full_fisherz,
     subjects=np.array(subjects),
     clusters=np.array(clusters),
     parcels=np.array(parcels),
