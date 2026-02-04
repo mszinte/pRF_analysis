@@ -25,6 +25,7 @@ python pycortex_import.py [main directory] [project name] [fs_subject]
 Executions:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python pycortex_import.py /scratch/mszinte/data MotConf sub-01_ses-01 sub-01 327
+python pycortex_import.py /scratch/mszinte/data RetinoMaps sub-01 sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -71,7 +72,8 @@ importlib.reload(cortex)
 
 # add participant to pycortex db
 print('import subject in pycortex')
-cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'smoothwm')
+# cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'smoothwm')
+cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'white')
 
 # add participant flat maps
 print('import subject flatmaps')

@@ -770,36 +770,80 @@ def setup_pycortex_dirs(cortex_dir):
     import os
     import urllib.request
     import json
-    """Check for cortex/colormaps and cortex/db folders, create if missing and download colormaps"""
+
+    """
+    - Create cortex/colormaps and cortex/db directories if missing
+    - Download pycortex colormaps if not present
+    - Download HCP pycortex subjects (sub-hcp32k, sub-hcp59k) from GitHub if missing
+    """
+
     colormaps_dir = os.path.join(cortex_dir, "colormaps")
     db_dir = os.path.join(cortex_dir, "db")
-    
+
     # Create directories if they don't exist
     os.makedirs(colormaps_dir, exist_ok=True)
     os.makedirs(db_dir, exist_ok=True)
-    
-    # Check if colormaps directory is empty
+
+    # ------------------------------------------------------------------
+    # 1) Pycortex colormaps
+    # ------------------------------------------------------------------
     if not os.listdir(colormaps_dir):
-        print("Downloading colormaps from GitHub...")
-        # GitHub API URL to list files in the colormaps directory
+        print("Downloading colormaps from pycortex GitHub...")
         api_url = "https://api.github.com/repos/gallantlab/pycortex/contents/filestore/colormaps"
-        
+
         try:
             with urllib.request.urlopen(api_url) as response:
                 files = json.loads(response.read())
-            
+
             # Download each colormap file
             for file_info in files:
-                if file_info['type'] == 'file':
-                    file_url = file_info['download_url']
-                    file_name = file_info['name']
-                    file_path = os.path.join(colormaps_dir, file_name)
-                    
-                    print(f"  Downloading {file_name}...")
-                    urllib.request.urlretrieve(file_url, file_path)
-            
+                if file_info["type"] == "file":
+                    dst = os.path.join(colormaps_dir, file_info["name"])
+                    print(f"  Downloading {file_info['name']}...")
+                    urllib.request.urlretrieve(file_info["download_url"], dst)
+
             print("Colormaps downloaded successfully.")
         except Exception as e:
             print(f"Warning: Could not download colormaps: {e}")
     else:
         print("Colormaps directory already contains files.")
+
+    # ------------------------------------------------------------------
+    # 2) HCP pycortex subjects (sub-hcp32k / sub-hcp59k)
+    # ------------------------------------------------------------------
+    def download_github_dir(api_url, local_dir):
+        """Recursively download a GitHub directory using the GitHub API."""
+        os.makedirs(local_dir, exist_ok=True)
+
+        with urllib.request.urlopen(api_url) as response:
+            items = json.loads(response.read())
+
+        for item in items:
+            local_path = os.path.join(local_dir, item["name"])
+
+            if item["type"] == "file":
+                print(f"  Downloading {local_path}")
+                urllib.request.urlretrieve(item["download_url"], local_path)
+
+            elif item["type"] == "dir":
+                download_github_dir(item["url"], local_path)
+
+    github_base = (
+        "https://api.github.com/repos/ulascombes/"
+        "HCP_pycortex_subjects/contents/data/cortex/db"
+    )
+
+    for subject in ["sub-hcp32k", "sub-hcp59k"]:
+        local_subject_dir = os.path.join(db_dir, subject)
+
+        if not os.path.exists(local_subject_dir):
+            print(f"Downloading {subject} from GitHub...")
+            api_url = f"{github_base}/{subject}"
+
+            try:
+                download_github_dir(api_url, local_subject_dir)
+                print(f"{subject} downloaded successfully.")
+            except Exception as e:
+                print(f"Warning: Could not download {subject}: {e}")
+        else:
+            print(f"{subject} already exists.")

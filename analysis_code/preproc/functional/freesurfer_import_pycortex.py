@@ -74,13 +74,21 @@ py_cortex_cmd = "python pycortex_import.py {} {} {} {} {}".format(main_dir, proj
 # create sh folder and file
 sh_dir = "{}/{}_{}_freesurfer_import_pycortex.sh".format(jobs_dir, fs_subject, cx_subject)
 
-# # Define permission cmd
-chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
-chgrp_cmd = "chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
+# # # Define permission cmd
+# chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
+# chgrp_cmd = "chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
+
+
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}".format(jobs_dir))
+os.system("chgrp -Rf {} {}".format(group, jobs_dir))
+
 
 of = open(sh_dir, 'w')
-of.write("{}\n{}\n{}\n{}".format(chmod_cmd, chgrp_cmd, freesurfer_cmd, py_cortex_cmd))
+of.write("{}\n{}".format(freesurfer_cmd, py_cortex_cmd))
 of.close()
 
 # Run freesurfer and pycortex
 os.system("{}".format(sh_dir))
+
