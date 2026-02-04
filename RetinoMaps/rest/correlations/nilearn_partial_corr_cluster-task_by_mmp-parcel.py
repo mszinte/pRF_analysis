@@ -14,8 +14,9 @@ seed-local parcels from the conditioning set (those entries set to NaN).
 
 import os
 import sys
-import json
+import yaml
 import numpy as np
+import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
 
 USER = os.environ["USER"]
@@ -32,20 +33,19 @@ sys.path.append(utils_path)
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
-# Settings
-settings_filepath = f"/home/{USER}/projects/pRF_analysis/RetinoMaps/settings.json"
-with open(settings_filepath, "r") as f:
-    settings = json.load(f)
+#%% This block is a temporary patch until I replace it with importing from the .yml settings
 
-subjects = settings["subjects"]
-task_name = settings["task_names"][0]
+# Define subjects
+subjects = ['sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05', 'sub-06', 
+            'sub-07', 'sub-08', 'sub-09', 'sub-11', 'sub-12', 'sub-13', 
+            'sub-14', 'sub-17', 'sub-20', 'sub-21', 'sub-22', 'sub-23', 
+            'sub-24', 'sub-25']
 
-# Seeds (clusters) and flattened parcels
-clusters = settings['rois']
-parcels = [p for group in settings['rois_groups'] for p in group]
+# Define clusters and parcels (from your settings)
+clusters = ['mPCS', 'sPCS', 'iPCS', 'sIPS', 'iIPS', 'hMT+', 'VO', 'LO', 'V3AB', 'V3', 'V2', 'V1']
 
-# Map: cluster -> list of parcel names to exclude from partial-conditioning
-exclude_parcels_per_cluster = {
+# Define mapping between clusters and parcels
+seed_to_parcels = {
     'mPCS': ['SCEF', 'p32pr', '24dv'],
     'sPCS': ['FEF', 'i6-8', '6a', '6d', '6mp', '6ma'],
     'iPCS': ['PEF', 'IFJp', '6v', '6r', 'IFJa', '55b'],
@@ -60,7 +60,24 @@ exclude_parcels_per_cluster = {
     'V1': ['V1']
 }
 
-#%% Initialize storage
+# Get parcel names in order following the cluster order
+parcels = []
+for cluster in clusters:
+    parcels.extend(seed_to_parcels[cluster])
+
+# Map: cluster -> list of parcel names to exclude from partial-conditioning
+exclude_parcels_per_cluster = seed_to_parcels
+
+#%% Block ends here
+
+""" Example code
+settings_path = os.path.join(project_dir, 'settings', 'settings.yml')
+# Loading the YAML settings file
+with open(settings_path) as f:
+    settings_raw = yaml.safe_load(f)
+"""
+
+# Initialize storage
 all_subject_full_matrices = []
 all_subject_full_matrices_fisherz = []
 all_subject_parcel_full = []
@@ -74,7 +91,7 @@ for subject in subjects:
     print(f"\nProcessing {subject}")
     
     # Load timeseries
-    timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-{task_name}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
+    timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
     ts_img, ts_data_raw = load_surface(timeseries_fn)
     res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True, return_32k_mask=True)
     ts_data = res['data_concat']  # (timepoints x vertices)
@@ -114,6 +131,8 @@ for subject in subjects:
     if parcel_ts.shape[1] > 1:
         parcel_conn = ConnectivityMeasure(kind='correlation')
         parcel_corr = parcel_conn.fit_transform([parcel_ts])[0]
+        # Remove diagonal to avoid ±1 that give a warning for Fisher-z
+        np.fill_diagonal(parcel_corr, np.nan)
         parcel_corr_fisherz = np.arctanh(parcel_corr)
     else:
         parcel_corr = np.full((parcel_ts.shape[1], parcel_ts.shape[1]), np.nan)
@@ -222,6 +241,20 @@ for subject in subjects:
     np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.npy"), partial_filled_fisherz)
     np.save(os.path.join(sub_out, "parcel_by_mmp-parcel_full.npy"), parcel_full_filled)
     np.save(os.path.join(sub_out, "parcel_by_mmp-parcel_full_fisherz.npy"), parcel_full_filled_fisherz)
+    
+    # Save as labeled DataFrames for debugging
+    df_full = pd.DataFrame(full_filled, index=clusters, columns=parcels)
+    df_partial = pd.DataFrame(partial_filled, index=clusters, columns=parcels)
+    df_full_fz = pd.DataFrame(full_filled_fisherz, index=clusters, columns=parcels)
+    df_partial_fz = pd.DataFrame(partial_filled_fisherz, index=clusters, columns=parcels)
+    df_parcel_full = pd.DataFrame(parcel_full_filled, index=parcels, columns=parcels)
+    df_parcel_full_fz = pd.DataFrame(parcel_full_filled_fisherz, index=parcels, columns=parcels)
+    df_full.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_full.csv"))
+    df_partial.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.csv"))
+    df_full_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_full_fisherz.csv"))
+    df_partial_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.csv"))
+    df_parcel_full.to_csv(os.path.join(sub_out, "parcel_by_mmp-parcel_full.csv"))
+    df_parcel_full_fz.to_csv(os.path.join(sub_out, "parcel_by_mmp-parcel_full_fisherz.csv"))
 
     # Append for group stats
     all_subject_full_matrices.append(full_filled)
@@ -251,9 +284,20 @@ mean_parcel_full_fisherz = np.nanmean(all_subject_parcel_full_fisherz, axis=0)
 median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
 median_parcel_full_fisherz = np.nanmedian(all_subject_parcel_full_fisherz, axis=0)
 
+# Group-level DataFrames
+df_mean_full = pd.DataFrame(mean_full_matrix, index=clusters, columns=parcels)
+df_median_full = pd.DataFrame(median_full_matrix, index=clusters, columns=parcels)
+df_mean_partial = pd.DataFrame(mean_partial_matrix, index=clusters, columns=parcels)
+df_median_partial = pd.DataFrame(median_partial_matrix, index=clusters, columns=parcels)
+df_mean_full.to_csv(os.path.join(output_folder, "group_mean_cluster_by_mmp-parcel_full.csv"))
+df_median_full.to_csv(os.path.join(output_folder, "group_median_cluster_by_mmp-parcel_full.csv"))
+df_mean_partial.to_csv(os.path.join(output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
+df_median_partial.to_csv(os.path.join(output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
+
+
 # Save results
 np.savez_compressed(
-    os.path.join(output_folder, "nilearn_partial_corr_task-mmp.npz"),
+    os.path.join(output_folder, "nilearn_partial_corr_cluster_by_mmp-parcel.npz"),
     mean_cluster_parcel_full=mean_full_matrix,
     mean_cluster_parcel_full_fisherz=mean_full_matrix_fisherz,
     median_cluster_parcel_full=median_full_matrix,
