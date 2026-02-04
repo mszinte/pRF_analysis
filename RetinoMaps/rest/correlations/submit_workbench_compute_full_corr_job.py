@@ -19,8 +19,8 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 2:00:00
-python submit_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 2:00:00
+python submit_workbench_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 2:00:00
+python submit_workbench_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 2:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 """
