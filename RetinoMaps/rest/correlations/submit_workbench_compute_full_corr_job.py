@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-submit_workbench_compute_corr_job.py
+submit_workbench_compute_full_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Submit the compute dtseries correlation scripts to SLURM queue
@@ -11,7 +11,7 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: correlation type ('full' or 'fisher-z')
-sys.argv[6]: runtime (e.g. 2:00:00)
+sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -19,8 +19,8 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 2:00:00
-python submit_workbench_compute_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 2:00:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 0:30:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 """
@@ -39,7 +39,7 @@ project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
 corr_type = sys.argv[5] # 'full' or 'fisher-z'
-proc_time = sys.argv[6] # usually 2 hours are enough for all subjects
+proc_time = sys.argv[6] # usually half an hour is enough
 
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs
