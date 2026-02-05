@@ -46,11 +46,11 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     	# Go back to the combined hemi version in cifti format
     	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
     	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii" \
-    	-right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
+        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
     	
     	# Parcellate the full corr outputs
-	wb_command -cifti-parcellate \
-	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
+        wb_command -cifti-parcellate \
+        "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN; 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
@@ -73,7 +73,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     wb_command -cifti-transpose \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii" \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii" \
-        -mem-limit 8
+        -mem-limit 20
     
     # Get the index of maximum correlation for each parcel
     # Output: 106 parcels × 1 column with winner index (1-12)
@@ -87,7 +87,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     wb_command -cifti-transpose \
         "${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.raw.nii" \
         "${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii" \
-        -mem-limit 8
+        -mem-limit 20
     
     echo "  Completed sub-${sub}"
 done
@@ -114,7 +114,7 @@ echo "Merged all subjects into single file"
 wb_command -cifti-transpose \
     "${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.pscalar.nii" \
     "${OUTPUT_PATH}/all_subjects_wta_full_corr_merged.transpose.nii" \
-    -mem-limit 8
+    -mem-limit 20
 
 echo "Transposed for MODE calculation"
 
@@ -132,7 +132,7 @@ echo "Calculated MODE across subjects"
 wb_command -cifti-transpose \
     "${OUTPUT_PATH}/group_wta_full_corr_mode.raw.nii" \
     "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" \
-    -mem-limit 8
+    -mem-limit 20
 
 # Dump the main output into another format
 wb_command -cifti-convert -to-text "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" "${OUTPUT_PATH}/group_wta_full_corr.tsv"
@@ -156,8 +156,3 @@ echo "Winner seed mapping:"
 for i in "${!ROIS[@]}"; do
     echo "  $((i+1)) = ${ROIS[$i]}"
 done
-echo ""
-echo "Next steps:"
-echo "1. Convert group_wta_mode.pscalar.nii to label file for visualization"
-echo "2. Compare with Python-derived results"
-echo "3. Calculate consistency metrics"
