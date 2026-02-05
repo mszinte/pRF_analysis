@@ -199,14 +199,45 @@ for subject in subjects:
     os.makedirs(sub_partial,exist_ok=True)
     os.makedirs(sub_full,exist_ok=True)
 
-    # save subject
-    np.save(os.path.join(sub_full,"cluster_by_mmp-parcel_full.npy"),full_filled)
-    np.save(os.path.join(sub_full,"cluster_by_mmp-parcel_full_fisherz.npy"),full_filled_fz)
-    np.save(os.path.join(sub_full,"parcel_by_mmp-parcel_full.npy"),parcel_full_filled)
-    np.save(os.path.join(sub_full,"parcel_by_mmp-parcel_full_fisherz.npy"),parcel_full_filled_fz)
+    # =========================
+    # Save NUMPY arrays
+    # =========================
 
-    np.save(os.path.join(sub_partial,"cluster_by_mmp-parcel_partial.npy"),partial_filled)
-    np.save(os.path.join(sub_partial,"cluster_by_mmp-parcel_partial_fisherz.npy"),partial_filled_fz)
+    # FULL
+    np.save(os.path.join(sub_full, "cluster_by_mmp-parcel_full.npy"), full_filled)
+    np.save(os.path.join(sub_full, "cluster_by_mmp-parcel_full_fisherz.npy"), full_filled_fz)
+    np.save(os.path.join(sub_full, "parcel_by_mmp-parcel_full.npy"), parcel_full_filled)
+    np.save(os.path.join(sub_full, "parcel_by_mmp-parcel_full_fisherz.npy"), parcel_full_filled_fz)
+
+    # PARTIAL
+    np.save(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial.npy"), partial_filled)
+    np.save(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial_fisherz.npy"), partial_filled_fz)
+
+    # =========================
+    # Save as labeled DataFrames (CSV)
+    # =========================
+
+    df_full = pd.DataFrame(full_filled, index=clusters, columns=parcels)
+    df_full_fz = pd.DataFrame(full_filled_fz, index=clusters, columns=parcels)
+    df_partial = pd.DataFrame(partial_filled, index=clusters, columns=parcels)
+    df_partial_fz = pd.DataFrame(partial_filled_fz, index=clusters, columns=parcels)
+
+    df_parcel_full = pd.DataFrame(parcel_full_filled, index=parcels, columns=parcels)
+    df_parcel_full_fz = pd.DataFrame(parcel_full_filled_fz, index=parcels, columns=parcels)
+
+    # FULL CSVs
+    df_full.to_csv(os.path.join(sub_full, "cluster_by_mmp-parcel_full.csv"))
+    df_full_fz.to_csv(os.path.join(sub_full, "cluster_by_mmp-parcel_full_fisherz.csv"))
+    df_parcel_full.to_csv(os.path.join(sub_full, "parcel_by_mmp-parcel_full.csv"))
+    df_parcel_full_fz.to_csv(os.path.join(sub_full, "parcel_by_mmp-parcel_full_fisherz.csv"))
+
+    # PARTIAL CSVs
+    df_partial.to_csv(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial.csv"))
+    df_partial_fz.to_csv(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial_fisherz.csv"))
+
+    # =========================
+    # Append for group stats
+    # =========================
 
     all_subject_full_matrices.append(full_filled)
     all_subject_full_matrices_fisherz.append(full_filled_fz)
@@ -215,37 +246,98 @@ for subject in subjects:
     all_subject_parcel_full.append(parcel_full_filled)
     all_subject_parcel_full_fisherz.append(parcel_full_filled_fz)
 
-#%% Group stats
 
-all_subject_full_matrices = np.stack(all_subject_full_matrices)
-all_subject_full_matrices_fisherz = np.stack(all_subject_full_matrices_fisherz)
-all_subject_partial_matrices = np.stack(all_subject_partial_matrices)
-all_subject_partial_matrices_fisherz = np.stack(all_subject_partial_matrices_fisherz)
+#%% Group stats (n_subjects, n_clusters, n_parcels)
 
-mean_full = np.nanmean(all_subject_full_matrices,axis=0)
-mean_full_fz = np.nanmean(all_subject_full_matrices_fisherz,axis=0)
-median_full = np.nanmedian(all_subject_full_matrices,axis=0)
-median_full_fz = np.nanmedian(all_subject_full_matrices_fisherz,axis=0)
+all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
+all_subject_full_matrices_fisherz = np.stack(all_subject_full_matrices_fisherz, axis=0)
+all_subject_partial_matrices = np.stack(all_subject_partial_matrices, axis=0)
+all_subject_partial_matrices_fisherz = np.stack(all_subject_partial_matrices_fisherz, axis=0)
 
-mean_partial = np.nanmean(all_subject_partial_matrices,axis=0)
-mean_partial_fz = np.nanmean(all_subject_partial_matrices_fisherz,axis=0)
-median_partial = np.nanmedian(all_subject_partial_matrices,axis=0)
-median_partial_fz = np.nanmedian(all_subject_partial_matrices_fisherz,axis=0)
+all_subject_parcel_full = np.stack(all_subject_parcel_full, axis=0)
+all_subject_parcel_full_fisherz = np.stack(all_subject_parcel_full_fisherz, axis=0)
+
+# =========================
+# Cluster × Parcel stats
+# =========================
+
+mean_full = np.nanmean(all_subject_full_matrices, axis=0)
+mean_full_fz = np.nanmean(all_subject_full_matrices_fisherz, axis=0)
+
+median_full = np.nanmedian(all_subject_full_matrices, axis=0)
+median_full_fz = np.nanmedian(all_subject_full_matrices_fisherz, axis=0)
+
+mean_partial = np.nanmean(all_subject_partial_matrices, axis=0)
+mean_partial_fz = np.nanmean(all_subject_partial_matrices_fisherz, axis=0)
+
+median_partial = np.nanmedian(all_subject_partial_matrices, axis=0)
+median_partial_fz = np.nanmedian(all_subject_partial_matrices_fisherz, axis=0)
+
+# =========================
+# Parcel × Parcel stats
+# =========================
+
+mean_parcel_full = np.nanmean(all_subject_parcel_full, axis=0)
+mean_parcel_full_fisherz = np.nanmean(all_subject_parcel_full_fisherz, axis=0)
+
+median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
+median_parcel_full_fisherz = np.nanmedian(all_subject_parcel_full_fisherz, axis=0)
+
+# =========================
+# Group-level DataFrames
+# =========================
+
+df_mean_full = pd.DataFrame(mean_full, index=clusters, columns=parcels)
+df_median_full = pd.DataFrame(median_full, index=clusters, columns=parcels)
+
+df_mean_partial = pd.DataFrame(mean_partial, index=clusters, columns=parcels)
+df_median_partial = pd.DataFrame(median_partial, index=clusters, columns=parcels)
+
+df_mean_parcel_full = pd.DataFrame(mean_parcel_full, index=parcels, columns=parcels)
+df_median_parcel_full = pd.DataFrame(median_parcel_full, index=parcels, columns=parcels)
+
+# =========================
+# Save CSVs
+# =========================
+
+df_mean_full.to_csv(os.path.join(full_output_folder, "group_mean_cluster_by_mmp-parcel_full.csv"))
+df_median_full.to_csv(os.path.join(full_output_folder, "group_median_cluster_by_mmp-parcel_full.csv"))
+
+df_mean_partial.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
+df_median_partial.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
+
+df_mean_parcel_full.to_csv(os.path.join(full_output_folder, "group_mean_parcel_by_mmp-parcel_full.csv"))
+df_median_parcel_full.to_csv(os.path.join(full_output_folder, "group_median_parcel_by_mmp-parcel_full.csv"))
+
+# =========================
+# Save NPZ bundles
+# =========================
 
 np.savez_compressed(
-    os.path.join(full_output_folder,"group_full_corr.npz"),
-    mean_full=mean_full,
-    mean_full_fisherz=mean_full_fz,
-    median_full=median_full,
-    median_full_fisherz=median_full_fz
+    os.path.join(full_output_folder, "group_full_corr.npz"),
+    mean_cluster_parcel_full=mean_full,
+    mean_cluster_parcel_full_fisherz=mean_full_fz,
+    median_cluster_parcel_full=median_full,
+    median_cluster_parcel_full_fisherz=median_full_fz,
+    mean_parcel_full=mean_parcel_full,
+    mean_parcel_full_fisherz=mean_parcel_full_fisherz,
+    median_parcel_full=median_parcel_full,
+    median_parcel_full_fisherz=median_parcel_full_fisherz,
+    subjects=np.array(subjects),
+    clusters=np.array(clusters),
+    parcels=np.array(parcels),
 )
 
 np.savez_compressed(
-    os.path.join(partial_output_folder,"group_partial_corr.npz"),
-    mean_partial=mean_partial,
-    mean_partial_fisherz=mean_partial_fz,
-    median_partial=median_partial,
-    median_partial_fisherz=median_partial_fz
+    os.path.join(partial_output_folder, "group_partial_corr.npz"),
+    mean_cluster_parcel_partial=mean_partial,
+    mean_cluster_parcel_partial_fisherz=mean_partial_fz,
+    median_cluster_parcel_partial=median_partial,
+    median_cluster_parcel_partial_fisherz=median_partial_fz,
+    subjects=np.array(subjects),
+    clusters=np.array(clusters),
+    parcels=np.array(parcels),
 )
+
 
 print("Done.")

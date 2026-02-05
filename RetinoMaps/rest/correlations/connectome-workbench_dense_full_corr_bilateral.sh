@@ -31,7 +31,7 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
             "$OUT_DIR/full_corr/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.nii" -roi-override \
             -left-roi "$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_lh_${ROI}.shape.gii" \
             -right-roi "$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_rh_${ROI}.shape.gii" \
-            -mem-limit 5;
+            -mem-limit 20;
 
         # Average correlation values within the seed ROI (both hemispheres)
         wb_command -cifti-average-dense-roi "$OUT_DIR/full_corr/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
