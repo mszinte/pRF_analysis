@@ -156,3 +156,4 @@ echo "Winner seed mapping:"
 for i in "${!ROIS[@]}"; do
     echo "  $((i+1)) = ${ROIS[$i]}"
 done
+echo ""
