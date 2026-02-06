@@ -16,13 +16,13 @@ None
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 python fsnative_mmp_rois.py [main directory] [project name] [subject name] [group]
 -----------------------------------------------------------------------------------------
 Executions:
 RUN LOCALY ! 
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python fsnative_mmp_rois.py ~/disks/meso_shared RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -45,10 +45,10 @@ import numpy as np
 import nibabel as nb
 
 # Personal imports
-sys.path.append("{}/../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from pycortex_rois_utils import *
 from settings_utils import load_settings
 from pycortex_utils import set_pycortex_config_file
-from pycortex_rois_utils import *
 
 # Inputs
 main_dir = sys.argv[1]
@@ -57,7 +57,7 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
@@ -73,7 +73,7 @@ mmp_fsnative_rois_fn = '{}/{}/derivatives/fmriprep/freesurfer/{}/label'.format(m
 labels_lh, ctab_lh, names_lh = nb.freesurfer.read_annot("{}/lh.HCPMMP1.annot".format(mmp_fsnative_rois_fn))
 labels_rh, ctab_rh, names_rh = nb.freesurfer.read_annot("{}/rh.HCPMMP1.annot".format(mmp_fsnative_rois_fn))
 
-atlas_fn = '{}/{}/derivatives/pp_data/{}/fsnative/rois/atlas'.format(main_dir, project_dir, subject)
+atlas_fn = '{}/db/{}/rois'.format(cortex_dir, subject)
 os.makedirs(atlas_fn, exist_ok=True)
 
 # left hemi
@@ -95,7 +95,7 @@ for label_id, roi_name in id_to_name_lh.items():
     rois_mmp_masks_lh[roi_clean] = rois_mmp_masks_lh[roi_clean].squeeze()
 
 # Export masks as npz
-rois_mmp_lh_fn = '{}/{}_rois-mmp_hemi-L.npz'.format(atlas_fn, subject)
+rois_mmp_lh_fn = '{}/{}_fsnative_rois-mmp_hemi-L.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_mmp_lh_fn))
 np.savez(rois_mmp_lh_fn, **rois_mmp_masks_lh)
 
@@ -118,7 +118,7 @@ for label_id, roi_name in id_to_name_rh.items():
     rois_mmp_masks_rh[roi_clean] = rois_mmp_masks_rh[roi_clean].squeeze()
 
 # Export masks as npz
-rois_mmp_rh_fn = '{}/{}_rois-mmp_hemi-R.npz'.format(atlas_fn, subject)
+rois_mmp_rh_fn = '{}/{}_fsnative_rois-mmp_hemi-R.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_mmp_rh_fn))
 np.savez(rois_mmp_rh_fn, **rois_mmp_masks_rh)
 
@@ -128,7 +128,7 @@ for key in rois_mmp_masks_lh.keys():
     rois_mmp_masks_brain[key] = np.concatenate([rois_mmp_masks_lh[key], rois_mmp_masks_rh[key]], axis=0).squeeze()
 
 # Export masks as npz
-rois_mmp_brain_fn = '{}/{}_rois-mmp.npz'.format(atlas_fn, subject)
+rois_mmp_brain_fn = '{}/{}_fsnative_rois-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_mmp_brain_fn))
 np.savez(rois_mmp_brain_fn, **rois_mmp_masks_brain)
 
@@ -152,15 +152,15 @@ for group_name, roi_list in rois_group_mmp.items():
         rois_group_mmp_masks_brain[group_name] = np.logical_or.reduce(masks_brain)
         
 # Export masks as npz
-rois_group_mmp_lh_fn = '{}/{}_rois-group-mmp_hemi-L.npz'.format(atlas_fn, subject)
+rois_group_mmp_lh_fn = '{}/{}_fsnative_rois-group-mmp_hemi-L.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_group_mmp_lh_fn))
 np.savez(rois_group_mmp_lh_fn, **rois_group_mmp_masks_lh)
 
-rois_group_mmp_rh_fn = '{}/{}_rois-group-mmp_hemi-R.npz'.format(atlas_fn, subject)
+rois_group_mmp_rh_fn = '{}/{}_fsnative_rois-group-mmp_hemi-R.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_group_mmp_rh_fn))
 np.savez(rois_group_mmp_rh_fn, **rois_group_mmp_masks_rh)
 
-rois_group_mmp_brain_fn = '{}/{}_rois-group-mmp.npz'.format(atlas_fn, subject)
+rois_group_mmp_brain_fn = '{}/{}_fsnative_rois-group-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_group_mmp_brain_fn))
 np.savez(rois_group_mmp_brain_fn, **rois_group_mmp_masks_brain)
 

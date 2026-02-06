@@ -83,6 +83,12 @@ extensions:
   description: "Data format extensions after preprocessing"
   value: ["func.gii", "dtseries.nii"]
 
+formats_conversion: 
+  description: "Correspondance between full brain format (e.g. 170k, 91k) and cortex only (e.g. 59k, 64k)"
+  value: 
+      "170k": "59k"
+      "91k": "32k"
+
 maps_names_corr: 
   description: "Inter-run correlation maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]

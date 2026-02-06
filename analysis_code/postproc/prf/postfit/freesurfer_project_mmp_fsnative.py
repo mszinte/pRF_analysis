@@ -16,12 +16,12 @@ None
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
+>> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 python freesurfer_project_mmp_fsnative.py [main directory] [project name] [subject name] [group]
 -----------------------------------------------------------------------------------------
 Executions:
-cd ~/projects/pRF_analysis/analysis_code/preproc/anatomical/
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python freesurfer_project_mmp_fsnative.py /scratch/mszinte/data RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
