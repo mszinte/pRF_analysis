@@ -49,6 +49,7 @@ import numpy as np
 # functions import
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file, setup_pycortex_dirs
+from settings_utils import load_settings
 
 # get inputs
 main_dir = sys.argv[1]
@@ -56,6 +57,17 @@ project_dir = sys.argv[2]
 fs_subject = sys.argv[3]
 cx_subject = sys.argv[4]
 group = sys.argv[5]
+
+# Load input
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
+flattening_method = analysis_info['flattening_method']
+if flattening_method == 'autoflatten':
+    patch_name = 'autoflatten'
+elif flattening_method == 'mrisflatten':
+    patch_name = 'full'
 
 # define directories and get fns
 fmriprep_dir = "{}/{}/derivatives/fmriprep".format(main_dir, project_dir)
@@ -78,7 +90,7 @@ cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'white')
 # add participant flat maps
 print('import subject flatmaps')
 try: cortex.freesurfer.import_flat(fs_subject=fs_subject, cx_subject=cx_subject, 
-                                  freesurfer_subject_dir=fs_dir, patch='full', auto_overwrite=True)
+                                  freesurfer_subject_dir=fs_dir, patch=patch_name, auto_overwrite=True)
 except: pass
 
 # create participant pycortex overlays

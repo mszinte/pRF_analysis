@@ -8,10 +8,6 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
-# TO DO 
----
-- [ ] make a github repo for sub-170k 
-
 # Data stucture and BIDS
 ---
 - [x] Copy relevant data from PredictEye [copy_data.py](preproc/bids_copy_data.sh) 
@@ -29,8 +25,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Manual edit of brain segmentation [pial_edits.sh](../analysis_code/preproc/anatomical/pial_edits.sh)
 - [x] FreeSurfer with new brainmask manually edited [freesurfer_pial.py](../analysis_code/preproc/anatomical/freesurfer_pial.py)
 - [x] Create sagittal view video after manual edit [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
-- [x] Make cut in the brains for flattening [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh)
-- [x] Flatten the cut brains [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py)
+- [x] Flattening of the cortex using [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py) (with or without manual cut [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh))
 
 # Functional preprocessing 
 ---
@@ -70,7 +65,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### PRF ROIs
 - [x] Create 170k MMP rois [create_hcp_rois.ipynb](../analysis_code/atlas/dev/create_hcp_rois.ipynb) or copy sub-170k in pycortex folder from Retinomaps. 
 - [x] Create 170k MMP rois masks [create_mmp_rois_atlas.py](../analysis_code/atlas/create_mmp_rois_atlas.py)
-- [x] Draw individual ROI on fsnative data using Inkscape (duplicate the overlays.svg and name the new overlays_rois-drawn.svg)
+- [x] Draw individual ROI on fsnative data using Inkscape
 - [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
 - [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py) or [pycortex_maps_rois.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.sh)
 
