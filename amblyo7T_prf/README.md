@@ -27,7 +27,7 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ```rsync -avuz --exclude='.git' --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
 - [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participant.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
-- [x] Create manualy event_files for concatenated runs pRFRightEye pRFLeftEye with screen settings
+- [x] Create manualy event_files for concatenated runswith screen settings
 
 ## MRI Data analysis
 ---
@@ -37,8 +37,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 #### Structural preprocessing
 - [x] Create sagittal video [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
-- [x] Make cut in the brains for flattening [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh)
-- [x] Flatten the cut brains [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py)
+- [x] Flattening of the cortex using [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py) (with or without manual cut [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh))
 
 #### Functional preprocessing
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
