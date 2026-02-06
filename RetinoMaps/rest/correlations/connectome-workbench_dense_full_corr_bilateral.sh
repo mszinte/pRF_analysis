@@ -92,4 +92,8 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
         
     done
 
+# Grant permissions to output files
+chmod -Rf 771 "$OUT_DIR"
+chgrp -Rf 771 "$OUT_DIR"
+
 done
