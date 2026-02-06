@@ -9,7 +9,7 @@
 
 # Define base paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-OUTPUT_PATH="$TASK_RESULTS/group/91k/rest/"
+OUTPUT_PATH="$TASK_RESULTS/group/91k/rest/full_corr"
 
 mkdir "$OUTPUT_PATH/stacked_full_corr"
 mkdir "$OUTPUT_PATH/stacked_fisher-z"
@@ -34,13 +34,13 @@ for ROI in "${ROIS[@]}"; do
     fi
 
     # Final output filename
-    OUTPUT_FILE="$OUTPUT_PATH/stacked_$SUBFOLDER/group_ses-01_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_stacked.dscalar.nii"
+    OUTPUT_FILE="$OUTPUT_PATH/stacked_$SUBFOLDER/group_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_stacked.dscalar.nii"
 
     # Build merge command
     MERGE_CMD=("wb_command" "-cifti-merge" "$OUTPUT_FILE")
 
     for SUB in "${SUBJECTS[@]}"; do
-      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/${SUBFOLDER}/sub-${SUB}_ses-01_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_masked.dscalar.nii"
+      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/${SUBFOLDER}/sub-${SUB}_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_masked.dscalar.nii"
       if [[ -f "$INPUT_FILE" ]]; then
         MERGE_CMD+=("-cifti" "$INPUT_FILE")
       else

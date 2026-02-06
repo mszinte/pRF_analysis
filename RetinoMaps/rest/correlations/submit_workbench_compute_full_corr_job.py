@@ -10,8 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: correlation type ('full' or 'fisher-z')
-sys.argv[6]: runtime (e.g. 1:00:00)
+sys.argv[5]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -19,8 +18,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 full 0:30:00
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 fisher-z 0:30:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 """
@@ -38,20 +36,16 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-corr_type = sys.argv[5] # 'full' or 'fisher-z'
-proc_time = sys.argv[6] # usually half an hour is enough
+proc_time = sys.argv[5] # usually an hour is enough
 
-memory_val = 10 # GB
+memory_val = 20 # GB
 nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
 
-# Define your actual command based on correlation type
-if corr_type == 'full':
-    script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
-    job_suffix = "full_corr"
-elif corr_type == 'fisher-z':
-    script_name = "connectome-workbench_dense_full_corr_fisher-z_bilateral.sh"
-    job_suffix = "fisher-z"
+# Define your command
+script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
+job_suffix = "workbench"
+corr_type = "full_corr"
 
 # Define permission commands
 chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)

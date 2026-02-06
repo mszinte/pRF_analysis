@@ -24,7 +24,7 @@ mkdir -p "$FISHER_DEST"
 echo "Processing full correlation files..."
 cd "$CORR_SOURCE"
 
-for stacked_file in group_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_*_stacked.dscalar.nii; do
+for stacked_file in group_task-rest_space-fsLR_den-91k_desc-full_corr_*_stacked.dscalar.nii; do
     if [[ -f "$stacked_file" ]]; then
         # Create name for median file by replacing "stacked" with "median"
         median_file="${stacked_file/stacked/median}"
@@ -38,7 +38,7 @@ done
 echo "Processing fisher-z files..."
 cd "$FISHER_SOURCE"
 
-for stacked_file in group_ses-01_task-rest_space-fsLR_den-91k_desc-fisher-z_*_stacked.dscalar.nii; do
+for stacked_file in group_task-rest_space-fsLR_den-91k_desc-fisher-z_*_stacked.dscalar.nii; do
     if [[ -f "$stacked_file" ]]; then
         # Create name for median file by replacing "stacked" with "median"
         median_file="${stacked_file/stacked/median}"

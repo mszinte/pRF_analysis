@@ -24,13 +24,15 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     
     echo "Processing sub-${sub}..."
     
-    FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr"
+    # Create separate output dir
+    mkdir -p "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
+    FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     
     ################# Developing this part ###############################################
     for roi in "${ROIS[@]}"; do
         
         # Get metric files for both hemi
-    	wb_command -cifti-separate "$FULL_CORR/sub-${sub}_ses-01_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
+    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
     	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
     	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii"
     
@@ -156,3 +158,4 @@ echo "Winner seed mapping:"
 for i in "${!ROIS[@]}"; do
     echo "  $((i+1)) = ${ROIS[$i]}"
 done
+echo ""
