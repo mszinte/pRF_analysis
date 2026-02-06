@@ -47,7 +47,7 @@ subject = sys.argv[3]
 sub_id = subject[4:]
 group = sys.argv[4]
 server_project = sys.argv[5]
-anat_only = sys.argv[6]
+anat_only = int(sys.argv[6])
 
 # File and folder
 log_dir = f"{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs"
