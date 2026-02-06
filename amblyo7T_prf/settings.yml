@@ -55,6 +55,14 @@ preproc_prep:
   description: "Name of the main preprocessing method"
   value: "fmriprep"
 
+flattening_method:
+  description: "Method use to obtain cortical flat maps"
+  value: "autoflatten"
+  levels: ["autoflatten", "mrisflatten"]
+  level-description: 
+    autoflatten: "Use autoflatten software for automatic flattening"
+    mris_flatten: "Use mrisflatten after cutting manually the cortex with freesurfer"
+
 normalization: 
   description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
   value: "z-score"
