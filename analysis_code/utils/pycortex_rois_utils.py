@@ -34,7 +34,7 @@ class ROIpack(object):
         else:
             raise ValueError("Only NPZ supported for this implementation")
 
-    def to_svg(self, filename=None):
+    def to_svg(self, res=2048, filename=None):
         if filename is None:
             filename = tempfile.mktemp(
                 suffix=".svg", prefix=self.subject + "-rois-"
@@ -70,8 +70,8 @@ class ROIpack(object):
         masks_lh = [self.rois[r].left for r in roi_names]
         masks_rh = [self.rois[r].right for r in roi_names]
 
-        label_lh, xgrid_lh, ygrid_lh = label_masks(masks_lh, coords_lh)
-        label_rh, xgrid_rh, ygrid_rh = label_masks(masks_rh, coords_rh)
+        label_lh, xgrid_lh, ygrid_lh = label_masks(masks_lh, coords_lh, res=res)
+        label_rh, xgrid_rh, ygrid_rh = label_masks(masks_rh, coords_rh, res=res)
 
         
         for idx, roi_name in enumerate(roi_names):

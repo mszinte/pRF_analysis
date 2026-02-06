@@ -63,9 +63,10 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make pRF maps with pycortex [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py) or [pycortex_maps_gauss.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.sh)
 
 #### PRF ROIs
-- [x] Create 170k MMP rois [create_hcp_rois.ipynb](../analysis_code/atlas/dev/create_hcp_rois.ipynb) or copy sub-170k in pycortex folder from Retinomaps. 
-- [x] Create 170k MMP rois masks [create_mmp_rois_atlas.py](../analysis_code/atlas/create_mmp_rois_atlas.py)
+- [x] Create 170k MMP rois masks [create_rois-mmp_npz.py](../analysis_code/atlas/create_rois-mmp_npz.py)
 - [x] Draw individual ROI on fsnative data using Inkscape
+- [ ] Project MMP atals on fsnative surface using freesurfer [freesurfer_project_mmp_fsnative.py](../analysis_code/postproc/prf/postfit/freesurfer_project_mmp_fsnative.py)
+- [ ] Make fsnative roi mmp npz and overlays [fsnative_mmp_rois.py](../analysis_code/postproc/prf/postfit/fsnative_mmp_rois.py)
 - [x] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
 - [x] Create flatmaps of ROIs [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py) or [pycortex_maps_rois.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.sh)
 
