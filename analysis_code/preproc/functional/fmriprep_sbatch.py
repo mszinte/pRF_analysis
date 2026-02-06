@@ -70,7 +70,7 @@ bold2anat_dof = analysis_info['bold2anat_dof']
 output_spaces = analysis_info['output-spaces']
 cifti_output = analysis_info['cifti-output']
 if cifti_output=='': cifti_output_in = ''
-else: cifti_output_in = f"cifti-output {cifti_output}"
+else: cifti_output_in = f"--cifti-output {cifti_output}"
 mem_limit = analysis_info['mem_limit']
 fs_no_resume = analysis_info['fs_no_resume']
 if fs_no_resume: fs_no_resume_in = '--fs-no-resume'
