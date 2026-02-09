@@ -80,12 +80,16 @@ if skip_bids_valid: skip_bids_valid_in = "--skip_bids_validation"
 else: skip_bids_valid_in = ''
 
 if anat_only:
-    nb_procs = 1
+    nb_procs = 8
+    nthreads = 8
+    omp_nthreads = 1
     anat_only_in = '--anat-only'
     anat_only_end = '_anat_only'
     procs_hours_in = procs_hours
 else: 
     nb_procs = 32
+    nthreads = 8
+    omp_nthreads = 4
     anat_only_in = ''
     anat_only_end = ''
     procs_hours_in = procs_hours_anat
@@ -110,7 +114,7 @@ slurm_cmd = f"\
 #SBATCH --mail-type=BEGIN,END\n\n"
 
 #define singularity cmd
-singularity_cmd = f"singularity run --cleanenv -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nb_procs:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
+singularity_cmd = f"singularity run --cleanenv -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nthreads:.0f} --omp-nthreads {omp_nthreads:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
 
 # define permission cmd
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir} \n"
