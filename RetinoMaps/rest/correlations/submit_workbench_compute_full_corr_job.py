@@ -10,7 +10,10 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: runtime (e.g. 1:00:00)
+sys.argv[5]: script name to run:
+              - connectome-workbench_dense_full_corr_bilateral.sh
+              - connectome-workbench_dense_full_corr_by_hemi.sh
+sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -18,7 +21,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 bilateral 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 """
@@ -36,14 +39,23 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-proc_time = sys.argv[5] # usually an hour is enough
+mode = sys.argv[5]   # "bilateral" or "by_hemi"
+proc_time = sys.argv[6] # usually an hour is enough
+
+# Define which way you want to run correlations
+if mode == "bilateral":
+    script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
+elif mode == "by_hemi":
+    script_name = "connectome-workbench_dense_full_corr_by_hemi.sh"
+else:
+    raise ValueError(
+        "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
+        f"Got: {mode}"
+    )
 
 memory_val = 20 # GB
 nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
-
-# Define your command
-script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
 job_suffix = "workbench"
 corr_type = "full_corr"
 

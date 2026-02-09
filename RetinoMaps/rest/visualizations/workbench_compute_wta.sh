@@ -33,22 +33,22 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         
         # Get metric files for both hemi
     	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
-    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
-    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii"
+    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
+    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
     
     	# Replace seed cluster so it doesn't show up in the wta (hollow seed)
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
+    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
     	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii"
+    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii"
 
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii" \
+    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii" \
     	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
+    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
     	
     	# Go back to the combined hemi version in cifti format
     	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
-    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii" \
-        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
+    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
+        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
     	
     	# Parcellate the full corr outputs
         wb_command -cifti-parcellate \
@@ -57,10 +57,14 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN; 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
         
+        # Double check this
+        # NOTE: the parcels in the output file are sorted by the numeric label keys, in ascending order.
+        
 	done
     #######################################################################################
     
     # Build the merge command - merge all ROI correlation maps
+    # Probably here the output has to be a .pconn not .pscalar file
     MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii -direction ROW"
     
     # Add each ROI in order (this creates rows 0-11 for mPCS-V1)
@@ -71,7 +75,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     # Execute merge
     eval $MERGE_CMD
     
-    # Transpose so clusters are columns and parcels are rows
+    # Transpose so parcels are rows and clusters are columns 
     wb_command -cifti-transpose \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii" \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii" \
