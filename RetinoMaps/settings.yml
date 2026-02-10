@@ -91,7 +91,7 @@ formats_conversion:
       "91k": "32k"
 
 pycortex_subject_template:
-  description: "HCP subject use as template for pycortex projection (e.g. sub-hcp32k or sub-hcp59k"
+  description: "HCP subject use as template for pycortex projection (e.g. sub-hcp1.6mm or sub-hcp2.0mm"
   value: "sub-hcp1.6mm"
 
 averaging_templates:
