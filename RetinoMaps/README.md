@@ -46,10 +46,10 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make maps with pycortex [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py) or [pycortex_maps_run_corr.sh](../analysis_code/preproc/functional/pycortex_maps_run_corr.sh)
 
 ### *Group-level analysis*
-Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+Analysis are run on the template of the HCP cifti format (**170k**) in which individual results are averaged.</br> 
 
-- [x] Compute inter-run correlation for **sub-170k** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
-- [x] Make maps with pycortex for **sub-170k** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
+- [x] Compute inter-run correlation for **template_avg** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
+- [x] Make maps with pycortex for **hcp1.6mm** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
 
 # pRF 
 ---
@@ -82,21 +82,21 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Merge all figures [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
 
 ### *Group-level analysis*
-Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+Analysis are run on the template of the HCP cifti format (**170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
 #### PRF Gaussian fit
-- [x] Compute pRF gaussian grid fit derivatives for **sub-170k** [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
-- [x] Make pRF maps with pycortex for **sub-170k**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
+- [x] Compute pRF gaussian grid fit derivatives for **template_avg** [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
+- [x] Make pRF maps with pycortex for **hcp1.6mm**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
 #### PRF ROIs
-- [x] Make ROIS files for **sub-170k** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
-- [x] Create flatmaps of ROIs for **sub-170k** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
+- [ ] Make ROIS files for **template_avg** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [ ] Create flatmaps of ROIs for **hcp1.6mm** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 #### PRF CSS fit
-- [x] Compute CSS statistics for **sub-170k** [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
-- [x] Compute CSS fit derivatives for **sub-170k** [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
-- [x] Compute CSS population cortical magnification (CM) for **sub-170k** [compute_css_pcm.py](../analysis_code/postproc/prf/postfit/compute_css_pcm.py)
-- [x] Make maps with pycortex for **sub-170k** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
+- [x] Compute CSS statistics for **template_avg** [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
+- [x] Compute CSS fit derivatives for **template_avg** [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
+- [x] Compute CSS population cortical magnification (CM) for **template_avg** [compute_css_pcm.py](../analysis_code/postproc/prf/postfit/compute_css_pcm.py)
+- [x] Make maps with pycortex for **hcp1.6mm** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
 - [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **sub-170k** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
