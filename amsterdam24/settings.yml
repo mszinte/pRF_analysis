@@ -1,7 +1,7 @@
 # Main configuration
 project_name:
   description: "Name of the project and of the dataset directory"
-  value: "RetinoMaps"
+  value: "amsterdam24"
 
 webapp_login: 
   description: "SSH login of the webapp server"
@@ -18,23 +18,23 @@ cluster_name:
 # Dataset description
 subjects:
   description: "Subjects of the dataset"
-  value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-11", "sub-12", "sub-13", "sub-14", "sub-17", "sub-20", "sub-21", "sub-22", "sub-23", "sub-24", "sub-25"]
+  value: ["sub-01", "sub-02", "sub-03"]
 
 sessions:
   description: "Sessions of the dataset"
-  value: ["ses-01", "ses-02", "ses-03"]
+  value: ["ses-01", "ses-02", "ses-03", "ses-04", "ses-05", "ses-06", "ses-07", "ses-08"]
 
 task_names: 
   description: "Names of the tasks of the dataset"
-  value: ["rest", "pMF", "pRF", "PurLoc", "SacLoc", "PurVELoc", "SacVELoc"]
+  value: ["pRF", "pRFoccl", "pRFaniso", "pRFstrab", "RSC", "RSR", "RSL", "CAL"]
 
 func_session:
   description: "Session containing the pRF tasks"
-  value: ["ses-02"]
+  value: ["ses-06"] #TODO
 
 prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["pRF"]
+  value: ["pRF", "pRFoccl", "pRFaniso", "pRFstrab"]
 
 partial_scan: 
   description: "Dataset including non whole-head recording"
@@ -44,11 +44,11 @@ partial_scan:
 TR: 
   description: "Time repetition of the pRF tasks"
   unit: "seconds"
-  value: 1.2
+  value: 1.6
 
 TRs: 
   description: "Number of TR of the pRF task"
-  value: 208
+  value: 188
   
 # Preprocessing
 preproc_prep: 
