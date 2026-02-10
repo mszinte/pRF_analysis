@@ -23,7 +23,7 @@ python compute_run_corr.py [main directory] [project name] [subject name] [group
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_run_corr.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python compute_run_corr.py /scratch/mszinte/data RetinoMaps template_avg 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -40,7 +40,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import glob
 import datetime
 import numpy as np
@@ -79,13 +78,14 @@ subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
+averaging_templates = analysis_info['averaging_templates']
 
 # Index
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
     trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 0, 1, 2, 3, 4, 5, 6, 7
         
-# sub-170k exception
-if subject != 'sub-170k':
+# template_avg exception
+if subject != 'template_avg':
     
     print('{}, computing inter-run correlation...'.format(subject))
     # make extension folders
@@ -215,46 +215,48 @@ if subject != 'sub-170k':
     print('Deleting temp directory: {}'.format(corr_temp_dir))
     os.system("rm -Rfd {}".format(corr_temp_dir))
 
-elif subject == 'sub-170k':
-    print('sub-170, Median corr across subject...')
-    # find all the subject correlations
-    for task in tasks:
-        subjects_task_corr = []
+elif subject == 'template_avg':
+    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+        print('{}, Median corr across subject...'. format(averaging_template_name))
         
-        for subject in subjects: 
-            corr_dir = '{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr'.format(
-                main_dir, project_dir, subject,
-                preproc_prep, filtering, normalization)
-            subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                corr_dir, subject, task, preproc_prep, filtering, normalization)]
-
-        
-        # median across subject
-        img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
-        
-        # Compute two sided corrected p-values
-        t_statistic = data_task_corr_median[slope_idx, :] / data_task_corr_median[stderr_idx, :]
-        degrees_of_freedom = data_task_corr_median[trs_idx, 0] - 2 
-        p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-        corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                   correction='fdr_tsbh', 
-                                                   alpha=fdr_alpha)
-        data_task_corr_median[pvalue_idx, :] = p_values
-        data_task_corr_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-        data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+        # find all the subject correlations
+        for task in tasks:
+            subjects_task_corr = []
             
-        # Export results
-        sub_170k_cor_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/corr/{}_{}_{}_corr".format(
-                main_dir, project_dir, preproc_prep, filtering, normalization)
-        os.makedirs(sub_170k_cor_dir, exist_ok=True)
-        
-        sub_170k_cor_fn = "{}/sub-170k_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-            sub_170k_cor_dir, task, preproc_prep, filtering, normalization)
-        
-        print("save: {}".format(sub_170k_cor_fn))
-        sub_170k_corr_img = make_surface_image(
-            data=data_task_corr_median, source_img=img, maps_names=maps_names)
-        nb.save(sub_170k_corr_img, sub_170k_cor_fn)
+            for subject in subjects: 
+                corr_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
+                    main_dir, project_dir, subject, averaging_template_format,
+                    preproc_prep, filtering, normalization)
+                subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                    corr_dir, subject, task, preproc_prep, filtering, normalization)]
+    
+            
+            # median across subject
+            img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
+            
+            # Compute two sided corrected p-values
+            t_statistic = data_task_corr_median[slope_idx, :] / data_task_corr_median[stderr_idx, :]
+            degrees_of_freedom = data_task_corr_median[trs_idx, 0] - 2 
+            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+            corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                       correction='fdr_tsbh', 
+                                                       alpha=fdr_alpha)
+            data_task_corr_median[pvalue_idx, :] = p_values
+            data_task_corr_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+            data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                
+            # Export results
+            template_cor_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
+                    main_dir, project_dir, preproc_prep, averaging_template_name, averaging_template_format, filtering, normalization)
+            os.makedirs(template_cor_dir, exist_ok=True)
+            
+            template_cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                averaging_template_name, template_cor_dir, task, preproc_prep, filtering, normalization)
+            
+            print("save: {}".format(template_cor_fn))
+            template_corr_img = make_surface_image(
+                data=data_task_corr_median, source_img=img, maps_names=maps_names)
+            nb.save(template_corr_img, template_cor_fn)
 
 # Time
 end_time = datetime.datetime.now()

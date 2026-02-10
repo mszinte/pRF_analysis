@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -40,10 +40,8 @@ deb = ipdb.set_trace
 
 # General imports
 import os
-import re
 import sys
 import glob
-import yaml
 import numpy as np
 import nibabel as nb
 
@@ -76,6 +74,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+averaging_templates = analysis_info['averaging_templates']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -84,8 +83,8 @@ set_pycortex_config_file(cortex_dir)
 # Define folders
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
-# sub-170k exception
-if subject != 'sub-170k':
+# template_avg exception
+if subject != 'template_avg':
     for avg_method in avg_methods:
         if 'loo' in avg_method:
             is_loo_r2 = True
@@ -165,44 +164,45 @@ if subject != 'sub-170k':
                             print(f"Saving median: {loo_prf_deriv_fn}")
 
 
-# Sub-170k computing median       
-elif subject == 'sub-170k':
-    print('sub-170, computing median prf deriv across subject...')
+# template_avg median          
+elif subject == 'template_avg':
+    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+        print('{}, Median corr across subject...'. format(averaging_template_name))
     
-    for prf_task_name in prf_task_names:
-        
-        for avg_method in avg_methods:
-            if 'loo' in avg_method:
-                maps_names = analysis_info['maps_names_css_loo']
-            else: 
-                maps_names = analysis_info['maps_names_css']
+        for prf_task_name in prf_task_names:
             
-            # find all the subject prf deriv
-            prf_deriv_fns = []
-            for subject in subjects:
-                prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir, subject)
-                prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
-                    prf_deriv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)]
-
-            # Computing median across subject
-            img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
-            
-            # Export results
-            sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-                main_dir, project_dir)
-            os.makedirs(sub_170k_deriv_dir, exist_ok=True)
-
-            sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
-                sub_170k_deriv_dir, prf_task_name, 
-                preproc_prep, filtering, normalization, avg_method)
-            
-            print("save: {}".format(sub_170k_deriv_fn))
-            sub_170k_deriv_img = make_surface_image(data=data_deriv_median, 
-                                                    source_img=img, 
-                                                    maps_names=maps_names)
-            nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
+            for avg_method in avg_methods:
+                if 'loo' in avg_method:
+                    maps_names = analysis_info['maps_names_css_loo']
+                else: 
+                    maps_names = analysis_info['maps_names_css']
+                
+                # find all the subject prf deriv
+                prf_deriv_fns = []
+                for subject in subjects:
+                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format)
+                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
+                        prf_deriv_dir, subject, prf_task_name,
+                        preproc_prep, filtering, normalization, avg_method)]
+    
+                # Computing median across subject
+                img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
+                
+                # Export results
+                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
+                    main_dir, project_dir, averaging_template_name, averaging_template_format)
+                os.makedirs(template_deriv_dir, exist_ok=True)
+    
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
+                    template_deriv_dir, averaging_template_name, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
+                
+                print("save: {}".format(template_deriv_fn))
+                template_deriv_img = make_surface_image(data=data_deriv_median, 
+                                                        source_img=img, 
+                                                        maps_names=maps_names)
+                nb.save(template_deriv_img, template_deriv_fn)
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

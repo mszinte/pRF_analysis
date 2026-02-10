@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -43,7 +43,6 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import yaml
 import nibabel as nb
 
 # personal imports
@@ -75,9 +74,10 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+averaging_templates = analysis_info['averaging_templates']
 
-# sub-170k exception
-if subject != 'sub-170k':
+# template_avg exception
+if subject != 'template_avg':
     for format_, extension in zip(formats, extensions):
         print(format_)
         # Define directories
@@ -110,41 +110,42 @@ if subject != 'sub-170k':
                                                maps_names=maps_names_gauss)
                 nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
 
-# Sub-170k median          
-elif subject == 'sub-170k':
-    print('sub-170, computing median derivatives across subject...')
-    
-    for prf_task_name in prf_task_names:
+# template_avg median          
+elif subject == 'template_avg':
+    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+        print('{}, Median corr across subject...'. format(averaging_template_name))
         
-        for avg_method in avg_methods:
-            if "loo" in avg_method:
-                continue  # Skip if it contains "loo"
+        for prf_task_name in prf_task_names:
             
-            # find all the subject prf derivatives
-            prf_deriv_fns = []
-            for subject in subjects: 
-                prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives'.format(
-                    main_dir, project_dir, subject)
-                prf_deriv_fns_subject = "{}/{}_task-{}*{}*prf-gauss_deriv.dtseries.nii".format(
-                     prf_deriv_dir, subject, prf_task_name, avg_method)
-                prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
-
-            # Median across subject
-            img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
-            
-            # Export results
-            sub_170k_deriv_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir)
-            os.makedirs(sub_170k_deriv_dir, exist_ok=True)
-            
-            sub_170k_deriv_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
-                sub_170k_deriv_dir, prf_task_name, preproc_prep, filtering, normalization, avg_method)
-            
-            print("saving: {}".format(sub_170k_deriv_fn))
-            sub_170k_deriv_img = make_surface_image(
-                data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
-            nb.save(sub_170k_deriv_img, sub_170k_deriv_fn)
+            for avg_method in avg_methods:
+                if "loo" in avg_method:
+                    continue  # Skip if it contains "loo"
+                
+                # find all the subject prf derivatives
+                prf_deriv_fns = []
+                for subject in subjects: 
+                    prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives'.format(
+                        main_dir, project_dir, subject, averaging_template_format)
+                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*prf-gauss_deriv.dtseries.nii".format(
+                         prf_deriv_dir, subject, prf_task_name, avg_method)
+                    prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
     
+                # Median across subject
+                img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
+                
+                # Export results
+                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
+                        main_dir, project_dir, averaging_template_name, averaging_template_format)
+                os.makedirs(template_deriv_dir, exist_ok=True)
+                
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii".format(
+                    template_deriv_dir, averaging_template_name, prf_task_name, preproc_prep, filtering, normalization, avg_method)
+                
+                print("saving: {}".format(template_deriv_fn))
+                template_deriv_img = make_surface_image(
+                    data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
+                nb.save(template_deriv_img, template_deriv_fn)
+        
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))

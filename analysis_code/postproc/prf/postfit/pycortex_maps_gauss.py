@@ -25,7 +25,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-170k n
+python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -58,19 +58,7 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg_in = sys.argv[4]
-
-try:
-    if save_svg_in == 'yes' or save_svg_in == 'y':
-        save_svg = True
-    elif save_svg_in == 'no' or save_svg_in == 'n':
-        save_svg = False
-    else:
-        raise ValueError
-except ValueError:
-    sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+save_svg = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -80,8 +68,7 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': formats = ['170k']
-else: formats = analysis_info['formats']
+formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 prf_task_names = analysis_info['prf_task_names']
 maps_names_gauss = analysis_info['maps_names_gauss']
@@ -130,6 +117,11 @@ for avg_method in avg_methods:
             # define directories and fn
             prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
                 main_dir, project_dir, subject, format_)
+            
+            if not os.path.isdir(prf_dir):
+                print(f"[SKIP] corr_dir not found for format={format_}: {prf_dir}")
+                continue
+            
             fit_dir = "{}/fit".format(prf_dir)
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
             flatmaps_dir = '{}/pycortex/flatmaps_gauss'.format(prf_dir)
@@ -158,8 +150,7 @@ for avg_method in avg_methods:
                         preproc_prep, filtering, normalization, avg_method)
                     results = load_surface_pycortex(brain_fn=deriv_avg_fn)
                     deriv_mat = results['data_concat']
-                    if subject == 'sub-170k': save_svg = save_svg
-                    else: save_svg = False
+
                 
                 # threshold data
                 deriv_mat_th = deriv_mat
