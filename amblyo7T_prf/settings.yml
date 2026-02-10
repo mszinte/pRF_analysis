@@ -88,6 +88,10 @@ formats_conversion:
   value: 
       "170k": "59k"
       "91k": "32k"
+      
+pycortex_subject_template:
+  description: "HCP subject use as template for pycortex projection (e.g. sub-hcp32k or sub-hcp59k"
+  value: "sub-hcp59k"
 
 maps_names_corr: 
   description: "Inter-run correlation maps names of gifti files"

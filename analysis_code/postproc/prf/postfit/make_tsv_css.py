@@ -75,6 +75,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -145,15 +146,12 @@ for avg_method in avg_methods:
                         # Combine all derivatives
                         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
             
-                        # Get roi masks
                         roi_verts = get_rois(subject=pycortex_subject, 
-                                              return_concat_hemis=False, 
-                                              return_hemi=hemi, 
-                                              rois=rois,
-                                              mask=True, 
-                                              atlas_name=None, 
-                                              surf_size=None,
-                                              overlay_fn=f"overlays_{rois_method_format}.svg")
+                                              surf_format=format_, 
+                                              atlas_name=rois_method_format, 
+                                              mask=True,
+                                              rois=rois, 
+                                              hemis=hemi)
                     
                         # Create and combine pandas df for each roi and brain hemisphere
                         print('Creating dataframe...')
@@ -166,7 +164,7 @@ for avg_method in avg_methods:
                             df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
                     
                 elif format_ == '170k':
-                    pycortex_subject = 'sub-170k'
+                    pycortex_subject = pycortex_subject_template
     
                     # Derivatives
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(

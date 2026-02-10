@@ -84,6 +84,7 @@ preproc_prep = analysis_info['preproc_prep']
 normalization = analysis_info['normalization']
 filtering = analysis_info['filtering']
 partial_scan = analysis_info['partial_scan']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
@@ -156,7 +157,7 @@ for format_, extension in zip(formats, extensions):
             nb.save(filtered_img, filtered_fn)
 
 # Anatomy
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
     # define folders
     pycortex_flat_dir = '{}/{}/derivatives/pp_data/cortex/db/{}/surfaces'.format(
         main_dir, project_dir, pycortex_subject)
