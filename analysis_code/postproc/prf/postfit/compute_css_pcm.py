@@ -82,6 +82,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -119,8 +120,8 @@ if subject != 'sub-170k':
                 if format_ == 'fsnative':
                     # initial settings
                     pycortex_subject = subject
-                    atlas_name = None 
-                    surf_size = None        
+                    atlas_name = 'drawn' 
+                    surf_format = 'fsnative'        
 
                     # Derivatives                    
                     deriv_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
@@ -151,9 +152,9 @@ if subject != 'sub-170k':
                     
                 elif format_ == '170k':
                     # initial settings
-                    pycortex_subject = 'sub-170k'
+                    pycortex_subject = pycortex_subject_template
                     atlas_name = 'mmp_group'
-                    surf_size = '59k'
+                    surf_format = '59k'
                     
                     # Derivatives
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
@@ -215,14 +216,16 @@ if subject != 'sub-170k':
                     elif rois_method_format == 'rois-group-mmp':
                         rois = list(analysis_info[rois_method_format].keys())
                     
+                    
+                    
                     # Get a dict with the surface vertices contained in each ROI
                     print('Get a dict with the surface vertices contained in each ROI...')
                     roi_verts_dict = get_rois(pycortex_subject, 
-                                              return_concat_hemis=True, 
-                                              rois=rois,
+                                              surf_format=surf_format, 
+                                              atlas_name=atlas_name,
                                               mask=False, 
-                                              atlas_name=atlas_name, 
-                                              surf_size=surf_size)
+                                              rois=rois, 
+                                              hemis=None)
                     
                     # Derivatives settings        
                     vert_rsq_data = deriv_mat[rsq_idx2use, ...]

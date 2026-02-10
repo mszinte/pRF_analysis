@@ -82,6 +82,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -98,7 +99,7 @@ create_colormap(cortex_dir=cortex_dir,
                )
 
 # Create flatmaps
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
     
     # Define directories and fn
     rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject, format_)

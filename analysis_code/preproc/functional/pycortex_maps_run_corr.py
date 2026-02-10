@@ -86,6 +86,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 corr_scale = analysis_info['flatmap_corr_scale']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -100,7 +101,7 @@ for idx, col_name in enumerate(maps_names_corr):
 
 # Plot scales
 
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
     corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
         main_dir, project_dir, subject, format_,
         preproc_prep, filtering, normalization)

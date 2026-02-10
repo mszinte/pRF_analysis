@@ -88,6 +88,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -182,7 +183,7 @@ for avg_method in avg_methods:
                     pcm_mat = pcm_results['data_concat']
                     
                 elif format_ == '170k':
-                    pycortex_subject = 'sub-170k'
+                    pycortex_subject = pycortex_subject_template
                     # Derivatives
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name,

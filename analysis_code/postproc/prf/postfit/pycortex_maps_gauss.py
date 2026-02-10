@@ -90,6 +90,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # plot scales
 rsq_scale = analysis_info['flatmap_rsq_scale']
@@ -151,7 +152,7 @@ for avg_method in avg_methods:
                     deriv_mat = results['data_concat']
                     
                 elif format_ == '170k':
-                    pycortex_subject = 'sub-170k'
+                    pycortex_subject = pycortex_subject_template
                     deriv_avg_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-gauss_deriv.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name, 
                         preproc_prep, filtering, normalization, avg_method)

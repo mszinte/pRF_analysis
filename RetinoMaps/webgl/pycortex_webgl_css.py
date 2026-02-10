@@ -66,12 +66,13 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 prf_task_name = analysis_info['prf_task_name']
 webapp_dir = analysis_info['webapp_dir']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
 
     # Define directory
     pp_dir = "{}/{}/derivatives/pp_data/{}/{}".format(main_dir, project_dir, subject, format_)
