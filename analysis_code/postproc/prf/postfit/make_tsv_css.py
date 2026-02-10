@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps template_avg 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,15 +41,14 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import numpy as np
 import pandas as pd
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from pycortex_utils import get_rois, set_pycortex_config_file
 from surface_utils import load_surface
 from settings_utils import load_settings
+from pycortex_utils import get_rois, set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]

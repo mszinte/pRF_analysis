@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
 python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-170k n
+python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,11 +41,9 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import copy
 import cortex
 import matplotlib.pyplot as plt
-import numpy as np
 
 # Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
@@ -56,19 +54,7 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg_in = sys.argv[4]
-
-try:
-    if save_svg_in == 'yes' or save_svg_in == 'y':
-        save_svg = True
-    elif save_svg_in == 'no' or save_svg_in == 'n':
-        save_svg = False
-    else:
-        raise ValueError
-except ValueError:
-    sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+save_svg = sys.argv[4]
 
 # Define analysis parameters
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -77,8 +63,7 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': formats = ['170k']
-else: formats = analysis_info['formats']
+formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 tasks = analysis_info['task_names']
 maps_names_corr = analysis_info['maps_names_corr']
@@ -105,6 +90,9 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
     corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
         main_dir, project_dir, subject, format_,
         preproc_prep, filtering, normalization)
+    if not os.path.isdir(corr_dir):
+        print(f"[SKIP] corr_dir not found for format={format_}: {corr_dir}")
+        continue
     flatmaps_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/flatmaps_corr'.format(
         main_dir, project_dir, subject, format_)
     datasets_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/datasets_corr'.format(
@@ -125,8 +113,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
             cor_fn = '{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii'.format(
                 corr_dir, subject, task, preproc_prep, filtering, normalization)
             results = load_surface_pycortex(brain_fn=cor_fn)
-            if subject == 'sub-170k': save_svg = save_svg
-            else: save_svg = False
+
         corr_mat = results['data_concat']
         maps_names = []
         
