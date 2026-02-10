@@ -16,6 +16,7 @@ After pRF analysis each project has its own analysis. The project's read me can 
 - Amblyo7T_prf [README.md](amblyo7T_prf/README.md)
 - centbids [README.md](centbids/README.md)
 - nCSF [README.md](nCSF/README.md)
+- amsterdam24 [README.md](amsterdam24/README.md)
 
 # Environment Set Up 
 ---
