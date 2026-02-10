@@ -28,7 +28,8 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     mkdir -p "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     
-    ################# Developing this part ###############################################
+    ################# Debugging this part ###############################################
+    ## add print statements with wb_command -file-information to inspect the outputs
     for roi in "${ROIS[@]}"; do
         
         # Get metric files for both hemi
@@ -37,6 +38,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
     
     	# Replace seed cluster so it doesn't show up in the wta (hollow seed)
+        # It's safer to use cifti-mask
     	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
     	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii" \
     	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii"

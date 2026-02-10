@@ -15,13 +15,13 @@ for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
 do
 
 SEED_DIR="$TASK_RESULTS/sub-${i}/91k/rest/seed"
-OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr"
+OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
 
 ## Make sure all files are accessible
 chmod -Rf 771 "$SEED_DIR"
 chgrp -Rf 771 "$SEED_DIR"
 
-mkdir -p "$OUT_DIR/full_corr"
+mkdir -p "$OUT_DIR"
 
 	for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1;
 	do
