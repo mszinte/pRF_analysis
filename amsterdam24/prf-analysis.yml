@@ -18,12 +18,12 @@ screen_size_pix:
 screen_size_cm: 
   description: "Horizontal and vertical size of the pRF tasks display"
   units: "cm"
-  value: [77.3, 43.5]
+  value: [69.84, 39.29]
 
 screen_distance_cm:
   description: "Distance between subject and display"
   units: "cm"
-  value: 120
+  value: 210
 
 vdm_size_pix:
   description: "Horizontal and vertical size of the pRF tasks visual design matrix"
@@ -42,7 +42,7 @@ css_grid_nr:
 max_ecc_size: 
   description: "Maximum eccentricity and size value"
   units: "dva"
-  value: 20
+  value: 10
   
 rsq_iterative_th: 
   description: "R-square minimum threshold for iterative fit"
@@ -52,12 +52,12 @@ rsq_iterative_th:
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20]
+  value: [0.05, 10]
 
 size_th:
   description: "Size range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20.0]
+  value: [0.05, 10.0]
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
