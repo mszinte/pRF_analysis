@@ -50,7 +50,7 @@ cluster_name  = 'skylake'
 nb_procs = 8
 memory_val = 48
 hour_proc = 20
-hemis = ['lh', 'rh']
+hemis = ['rh', 'lh']
 
 # Load input
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
