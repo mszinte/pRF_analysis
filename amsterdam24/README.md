@@ -7,12 +7,13 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
-preprocesssing overview see: [https://docs.google.com/spreadsheets/d/1yQR9NYtAlSiqjRlXezVrVn0zPcKVd6oCFOHrvTpO4X8/edit?gid=0#gid=0]
+preprocesssing overview see: [https://docs.google.com/spreadsheets/d/1yQR9NYtAlSiqjRlXezVrVn0zPcKVd6oCFOHrvTpO4X8/edit?gid=0#gid=0] </br>
 experiment overview see: [https://docs.google.com/spreadsheets/d/1Y0ZTe_oxl2hHWhh2eh3WTmuDQO_HNvoqlqjh2_CPUmM/edit?gid=1491380407#gid=1491380407]
 
 # Data stucture and BIDS
 ---
-- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](process.sh)
+- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](preproc/process.sh)
+- [x] Update metdadata [update_metadata.py] (preproc/update_metadata.py)
 - [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
@@ -32,7 +33,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
-- [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py) per task 
 - [ ] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
 - [ ] High-pass, z-score, anat [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
 - [ ] Averaging across runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
