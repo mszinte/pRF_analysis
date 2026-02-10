@@ -7,7 +7,7 @@
 ---
 Marco BEDINI, Sina KLING, Uriel LASCOMBES, Guillaume MASSON & Martin SZINTE
 
-preprocesssing overview see: [https://docs.google.com/spreadsheets/d/1yQR9NYtAlSiqjRlXezVrVn0zPcKVd6oCFOHrvTpO4X8/edit?gid=0#gid=0]
+preprocesssing overview see: [https://docs.google.com/spreadsheets/d/1yQR9NYtAlSiqjRlXezVrVn0zPcKVd6oCFOHrvTpO4X8/edit?gid=0#gid=0] </br>
 experiment overview see: [https://docs.google.com/spreadsheets/d/1Y0ZTe_oxl2hHWhh2eh3WTmuDQO_HNvoqlqjh2_CPUmM/edit?gid=1491380407#gid=1491380407]
 
 # Data stucture and BIDS
