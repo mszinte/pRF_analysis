@@ -31,34 +31,33 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     ################# Debugging this part ###############################################
     ## add print statements with wb_command -file-information to inspect the outputs
     for roi in "${ROIS[@]}"; do
+        
+        # Get metric files for both hemi (was used to remove medial wall but I'm not sure is neeeded)
+    	# wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
+    	# -metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
+    	# -metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
+    
+    	# Replace seed cluster so it doesn't show up in the wta (hollow seed)
+    	# wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
+    	# "$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii" \
+    	# "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii"
 
-        # Get metric files for both hemi (neede to remove everything that's not cortex)
-    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
-    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
-    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
+        # wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii" \
+    	# "$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii" \
+    	# "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
 
-        # It's safer to use cifti-math rather than masking with cifti-mask (this produces 0 that we don't want when parcellating the output)
-        wb_command -metric-math \
-        '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
-        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
-        -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
-        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii"
+        # It's safer to use cifti-mask
+        wb_command -cifti-math \
+    	'corr * (hollow_seed = 0)' \
+        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" \
+        -var corr "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" \
+        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${roi}_bin.dscalar.nii"
 
-        # Repeat for the right hemi
-        wb_command -metric-math \
-        '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
-        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii" \
-        -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii" \
-        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii"
-
-        # Go back to the combined hemi version in cifti format
-    	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
-    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
-        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
+    	# Go back to the combined hemi version in cifti format
+    	# wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
+    	# -left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
+        # -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
     	
-        # Check the output
-        wb_command -file-information "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii"
-
     	# Parcellate the full corr outputs
         wb_command -cifti-parcellate \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
