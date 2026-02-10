@@ -54,7 +54,7 @@ def generate_psir_images(dcm2niix_dir, prefix="PARREC_WIPPSIR1mm3SENSE"):
     
     # Extract the actual prefix from the first file
     actual_prefix = os.path.basename(psir_files[0]).replace('_t787.nii.gz', '')
-    
+    if '_ph' in actual_prefix: actual_prefix = actual_prefix.replace('_ph', '')
     print(f"  Loading PSIR data with prefix: {actual_prefix}")
     
     # Load magnitude images

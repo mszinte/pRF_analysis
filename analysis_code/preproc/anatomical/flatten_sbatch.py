@@ -58,6 +58,10 @@ settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 settings = load_settings([settings_path])
 analysis_info = settings[0]
 flattening_method = analysis_info['flattening_method']
+if flattening_method == 'autoflatten_freesurfer':
+    fs_option = '--backend freesurfer'
+else:
+    fs_option = ''
 
 # Define cluster/server specific parameters
 log_dir = "{}/{}/derivatives/flatten/log_outputs".format(main_dir,project_dir)
@@ -92,7 +96,7 @@ cd {fs_dir}/{subject}/surf\n"
     chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
     # Define autoflatten cmd
-    autoflatten_cmd = f"autoflatten {fs_dir}/{subject} --parallel --hemispheres {hemi} --overwrite"
+    autoflatten_cmd = f"autoflatten {fs_dir}/{subject} --parallel --hemispheres {hemi} --overwrite {fs_option}"
     
     # Define mris_flatten cmd
     mris_flatten_cmd = f"mris_flatten {hemi}.full.patch.3d {hemi}.full.flat.patch.3d"
@@ -102,7 +106,7 @@ cd {fs_dir}/{subject}/surf\n"
     
     # Write commands
     of = open(sh_fn, 'w')
-    if flattening_method == 'autoflatten':
+    if flattening_method == 'autoflatten' or flattening_method == 'autoflatten_freesurfer':
         of.write(f"{slurm_cmd}\n")
         of.write(f"{freesurfer_cmd}\n")
         of.write(f"{autoflatten_cmd}\n")
