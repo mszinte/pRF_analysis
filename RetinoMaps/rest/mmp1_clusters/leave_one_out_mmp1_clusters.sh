@@ -83,8 +83,14 @@ echo "💡 Creating binary masks..."
 for leave_out in "${CLUSTERS[@]}"; do
   DSCALAR_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dscalar.nii"
   BIN_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}_bin.dscalar.nii"
-  
+  METRIC_LH="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${leave_out}.shape.gii"
+  METRIC_RH="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${leave_out}.shape.gii"
+  BIN_METRIC_LH="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${leave_out}_bin.shape.gii"
+  BIN_METRIC_RH="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${leave_out}_bin.shape.gii"
+
   wb_command -cifti-reduce "$DSCALAR_FILE" COUNT_NONZERO "$BIN_FILE"
+  wb_command -metric-reduce "$METRIC_LH" COUNT_NONZERO "$BIN_METRIC_LH"
+  wb_command -metric-reduce "$METRIC_RH" COUNT_NONZERO "$BIN_METRIC_RH"
 done
 
 echo "✅ All label, metric, ROI, and binary mask files created!"

@@ -1,59 +1,51 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep 29 12:14:17 2025
+Created on Fri Feb  6 14:57:04 2026
 
----------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr)
----------------------------------------------------
+Compute PARTIAL correlations between clusters (seeds) and parcels (targets)
+using Nilearn partial correlation.
 
-Compute full and partial correlations between clusters (seeds) and parcels (targets)
-using Nilearn computing partial correlations per-seed while excluding
-parcels within the seed clusters from the conditioning set (those entries set to NaN)
-Full correlations are also computed as a sanity check
+For each cluster:
+  - parcels belonging to that cluster are EXCLUDED from conditioning set
+  - output shape = (n_clusters, n_parcels)
+
+Written by Marco Bedini: marco.bedini@univ-amu.fr
+Refactored for clarity and debugging
 """
 
 import os
 import sys
-import yaml
 import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
 
-USER = os.environ["USER"]
+# =========================
+# PATHS
+# =========================
 
-# Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-seed_folder = main_data
-
-# Output folders
 partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
-full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
-
 os.makedirs(partial_output_folder, exist_ok=True)
-os.makedirs(full_output_folder, exist_ok=True)
 
-# Custom utils
+USER = os.environ["USER"]
 main_codes = f"/home/{USER}/projects"
 utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
 sys.path.append(utils_path)
+
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
-#%% Temporary hardcoded settings to be replaced with yaml settings
+# =========================
+# SUBJECTS / ROIS
+# =========================
 
-""" 
-Example code
-settings_path = os.path.join(project_dir, 'settings', 'settings.yml')
-# Loading the YAML settings file
-with open(settings_path) as f:
-    settings_raw = yaml.safe_load(f)
-"""
-
-subjects = ['sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',
-            'sub-07','sub-08','sub-09','sub-11','sub-12','sub-13',
-            'sub-14','sub-17','sub-20','sub-21','sub-22','sub-23',
-            'sub-24','sub-25']
+subjects = [
+    'sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',
+    'sub-07','sub-08','sub-09','sub-11','sub-12','sub-13',
+    'sub-14','sub-17','sub-20','sub-21','sub-22','sub-23',
+    'sub-24','sub-25'
+]
 
 clusters = ['mPCS','sPCS','iPCS','sIPS','iIPS','hMT+','VO','LO','V3AB','V3','V2','V1']
 
@@ -63,8 +55,8 @@ seed_to_parcels = {
     'iPCS': ['PEF','IFJp','6v','6r','IFJa','55b'],
     'sIPS': ['VIP','LIPv','LIPd','IP2','7PC','AIP','7AL','7Am','7Pm'],
     'iIPS': ['IP0','IPS1','V7','MIP','IP1','V6A','7PL'],
-    'hMT+': ['V8','PIT','PH','FFC','VMV1','VMV2','VMV3','VVC'],
-    'VO': ['V4t','MST','MT','FST'],
+    'hMT+': ['V4t','MST','MT','FST'],
+    'VO': ['V8','PIT','PH','FFC','VMV1','VMV2','VMV3','VVC'],
     'LO': ['LO1','LO2','LO3'],
     'V3AB': ['V3CD','V3A','V3B'],
     'V3': ['V3','V4'],
@@ -78,255 +70,157 @@ for cl in clusters:
 
 exclude_parcels_per_cluster = seed_to_parcels
 
-#%% Initialize storage
+# =========================
+# STORAGE
+# =========================
 
-all_subject_full_matrices = []
-all_subject_full_matrices_fisherz = []
-all_subject_partial_matrices = []
-all_subject_partial_matrices_fisherz = []
-all_subject_parcel_full = []
-all_subject_parcel_full_fisherz = []
+all_subject_partial = []
+all_subject_partial_fz = []
 
-#%% Subject loop
+# =========================
+# SUBJECT LOOP
+# =========================
 
 for subject in subjects:
-    print(f"\nProcessing {subject}")
 
-    timeseries_fn = f'{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii'
+    print(f"\n=== Processing {subject} ===")
+
+    timeseries_fn = f"{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+    if not os.path.exists(timeseries_fn):
+        print(f"  ❌ Missing timeseries: {timeseries_fn}")
+        continue
+
     ts_img, ts_data_raw = load_surface(timeseries_fn)
-    res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True, return_32k_mask=True)
-    ts_data = res['data_concat']
+    res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True)
+    ts_data = res["data_concat"]
     n_time = ts_data.shape[0]
 
-    # --- clusters ---
+    print(f"  Loaded timeseries: {ts_data.shape}")
+
+    # =========================
+    # CLUSTER TIMESERIES
+    # =========================
+
     cluster_ts_list = []
     cluster_names_used = []
+
     for roi in clusters:
-        lh, rh = [load_surface(f'{seed_folder}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii')[1]
-                  for hemi in ('lh','rh')]
-        mask = np.hstack((lh,rh)).ravel()
+        lh, rh = [
+            load_surface(f"{main_data}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii")[1]
+            for hemi in ("lh", "rh")
+        ]
+        mask = np.hstack((lh, rh)).ravel()
         if np.any(mask):
             ts = ts_data[:, mask > 0]
-            ts_mean = ts.mean(axis=1) if ts.ndim > 1 else ts
-            cluster_ts_list.append(ts_mean)
+            cluster_ts_list.append(ts.mean(axis=1))
             cluster_names_used.append(roi)
 
-    cluster_ts = np.column_stack(cluster_ts_list) if cluster_ts_list else np.empty((n_time,0))
+    cluster_ts = np.column_stack(cluster_ts_list)
+    print(f"  Clusters used: {cluster_names_used}")
 
-    # --- parcels ---
+    # =========================
+    # PARCEL TIMESERIES
+    # =========================
+
     parcel_ts_list = []
     parcel_names_used = []
+
     for parcel in parcels:
-        lh, rh = [load_surface(f'{main_codes}/pRF_analysis/RetinoMaps/rest/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii')[1]
-                  for hemi in ('L','R')]
-        mask = np.hstack((lh,rh)).ravel()
+        lh, rh = [
+            load_surface(f"{main_codes}/pRF_analysis/RetinoMaps/rest/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii")[1]
+            for hemi in ("L", "R")
+        ]
+        mask = np.hstack((lh, rh)).ravel()
         if np.any(mask):
             ts = ts_data[:, mask > 0]
-            ts_mean = ts.mean(axis=1) if ts.ndim > 1 else ts
-            parcel_ts_list.append(ts_mean)
+            parcel_ts_list.append(ts.mean(axis=1))
             parcel_names_used.append(parcel)
 
-    parcel_ts = np.column_stack(parcel_ts_list) if parcel_ts_list else np.empty((n_time,0))
+    parcel_ts = np.column_stack(parcel_ts_list)
+    print(f"  Parcels used: {len(parcel_names_used)}/{len(parcels)}")
 
-    print(f"{subject}: using {len(parcel_names_used)}/{len(parcels)} parcels")
+    if cluster_ts.size == 0 or parcel_ts.size == 0:
+        print("  ⚠️ Empty cluster or parcel matrix — skipping subject")
+        continue
 
-    # --- parcel × parcel full ---
-    if parcel_ts.shape[1] > 1:
-        parcel_corr = ConnectivityMeasure(kind='correlation').fit_transform([parcel_ts])[0]
-        np.fill_diagonal(parcel_corr, np.nan)
-        parcel_corr_fisherz = np.arctanh(parcel_corr)
-    else:
-        parcel_corr = np.full((parcel_ts.shape[1],parcel_ts.shape[1]),np.nan)
-        parcel_corr_fisherz = parcel_corr.copy()
+    n_clusters = cluster_ts.shape[1]
 
-    n_clusters_present = cluster_ts.shape[1]
-    n_parcels_present = parcel_ts.shape[1]
+    partial_matrix = np.full((n_clusters, parcel_ts.shape[1]), np.nan)
+    partial_matrix_fz = np.full_like(partial_matrix, np.nan)
 
-    if n_clusters_present == 0 or n_parcels_present == 0:
-        full_matrix = np.empty((n_clusters_present,n_parcels_present))
-        full_matrix_fisherz = full_matrix.copy()
-        partial_matrix = full_matrix.copy()
-        partial_matrix_fisherz = full_matrix.copy()
-    else:
-        combined = np.hstack([cluster_ts,parcel_ts])
-        corr_all = ConnectivityMeasure(kind='correlation').fit_transform([combined])[0]
-        full_matrix = corr_all[:n_clusters_present, n_clusters_present:]
-        full_matrix_fisherz = np.arctanh(full_matrix)
+    # =========================
+    # PARTIAL CORRELATION
+    # =========================
 
-        partial_matrix = np.full_like(full_matrix,np.nan)
-        partial_matrix_fisherz = np.full_like(full_matrix,np.nan)
+    for i_cl, cl_name in enumerate(cluster_names_used):
 
-        for i_cl, cl_name in enumerate(cluster_names_used):
-            exclude = set(exclude_parcels_per_cluster.get(cl_name,[]))
-            included = [j for j,p in enumerate(parcel_names_used) if p not in exclude]
-            if not included:
-                continue
+        exclude = set(exclude_parcels_per_cluster.get(cl_name, []))
+        included_idx = [j for j,p in enumerate(parcel_names_used) if p not in exclude]
 
-            combined_seed = np.hstack([cluster_ts, parcel_ts[:,included]])
-            tmp = ConnectivityMeasure(kind='partial correlation').fit_transform([combined_seed])[0]
-            vals = tmp[i_cl, n_clusters_present:]
-            partial_matrix[i_cl, included] = vals
-            partial_matrix_fisherz[i_cl, included] = np.arctanh(vals)
+        if not included_idx:
+            print(f"  ⚠️ No parcels left after exclusion for {cl_name}")
+            continue
 
-    # --- fill global matrices ---
-    full_filled = np.full((len(clusters),len(parcels)),np.nan)
-    full_filled_fz = full_filled.copy()
-    partial_filled = full_filled.copy()
-    partial_filled_fz = full_filled.copy()
+        combined = np.hstack([cluster_ts, parcel_ts[:, included_idx]])
 
-    parcel_full_filled = np.full((len(parcels),len(parcels)),np.nan)
-    parcel_full_filled_fz = parcel_full_filled.copy()
+        try:
+            tmp = ConnectivityMeasure(kind="partial correlation").fit_transform([combined])[0]
+            vals = tmp[i_cl, n_clusters:]
+            partial_matrix[i_cl, included_idx] = vals
+            partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
 
-    for i,p_i in enumerate(parcel_names_used):
-        gi = parcels.index(p_i)
-        for j,p_j in enumerate(parcel_names_used):
-            gj = parcels.index(p_j)
-            parcel_full_filled[gi,gj] = parcel_corr[i,j]
-            parcel_full_filled_fz[gi,gj] = parcel_corr_fisherz[i,j]
+        except Exception as e:
+            print(f"  ❌ Partial corr failed for {cl_name}: {e}")
 
-    for i_cl,cl in enumerate(cluster_names_used):
+    # =========================
+    # GLOBAL MATRIX FILL
+    # =========================
+
+    filled = np.full((len(clusters), len(parcels)), np.nan)
+    filled_fz = filled.copy()
+
+    for i_cl, cl in enumerate(cluster_names_used):
         gr = clusters.index(cl)
-        for j_pa,pa in enumerate(parcel_names_used):
+        for j_pa, pa in enumerate(parcel_names_used):
             gc = parcels.index(pa)
-            full_filled[gr,gc] = full_matrix[i_cl,j_pa]
-            full_filled_fz[gr,gc] = full_matrix_fisherz[i_cl,j_pa]
-            partial_filled[gr,gc] = partial_matrix[i_cl,j_pa]
-            partial_filled_fz[gr,gc] = partial_matrix_fisherz[i_cl,j_pa]
+            filled[gr, gc] = partial_matrix[i_cl, j_pa]
+            filled_fz[gr, gc] = partial_matrix_fz[i_cl, j_pa]
 
-    # --- subject output dirs ---
-    sub_partial = f'{main_data}/{subject}/91k/rest/corr/partial_corr'
-    sub_full = f'{main_data}/{subject}/91k/rest/corr/full_corr/nilearn_full_corr'
-    os.makedirs(sub_partial,exist_ok=True)
-    os.makedirs(sub_full,exist_ok=True)
+    sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr"
+    os.makedirs(sub_out, exist_ok=True)
 
-    # =========================
-    # Save NUMPY arrays
-    # =========================
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.npy"), filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.npy"), filled_fz)
 
-    # FULL
-    np.save(os.path.join(sub_full, "cluster_by_mmp-parcel_full.npy"), full_filled)
-    np.save(os.path.join(sub_full, "cluster_by_mmp-parcel_full_fisherz.npy"), full_filled_fz)
-    np.save(os.path.join(sub_full, "parcel_by_mmp-parcel_full.npy"), parcel_full_filled)
-    np.save(os.path.join(sub_full, "parcel_by_mmp-parcel_full_fisherz.npy"), parcel_full_filled_fz)
+    df = pd.DataFrame(filled, index=clusters, columns=parcels)
+    df_fz = pd.DataFrame(filled_fz, index=clusters, columns=parcels)
 
-    # PARTIAL
-    np.save(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial.npy"), partial_filled)
-    np.save(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial_fisherz.npy"), partial_filled_fz)
+    df.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.csv"))
+    df_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.csv"))
 
-    # =========================
-    # Save as labeled DataFrames (CSV)
-    # =========================
-
-    df_full = pd.DataFrame(full_filled, index=clusters, columns=parcels)
-    df_full_fz = pd.DataFrame(full_filled_fz, index=clusters, columns=parcels)
-    df_partial = pd.DataFrame(partial_filled, index=clusters, columns=parcels)
-    df_partial_fz = pd.DataFrame(partial_filled_fz, index=clusters, columns=parcels)
-
-    df_parcel_full = pd.DataFrame(parcel_full_filled, index=parcels, columns=parcels)
-    df_parcel_full_fz = pd.DataFrame(parcel_full_filled_fz, index=parcels, columns=parcels)
-
-    # FULL CSVs
-    df_full.to_csv(os.path.join(sub_full, "cluster_by_mmp-parcel_full.csv"))
-    df_full_fz.to_csv(os.path.join(sub_full, "cluster_by_mmp-parcel_full_fisherz.csv"))
-    df_parcel_full.to_csv(os.path.join(sub_full, "parcel_by_mmp-parcel_full.csv"))
-    df_parcel_full_fz.to_csv(os.path.join(sub_full, "parcel_by_mmp-parcel_full_fisherz.csv"))
-
-    # PARTIAL CSVs
-    df_partial.to_csv(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial.csv"))
-    df_partial_fz.to_csv(os.path.join(sub_partial, "cluster_by_mmp-parcel_partial_fisherz.csv"))
-
-    # =========================
-    # Append for group stats
-    # =========================
-
-    all_subject_full_matrices.append(full_filled)
-    all_subject_full_matrices_fisherz.append(full_filled_fz)
-    all_subject_partial_matrices.append(partial_filled)
-    all_subject_partial_matrices_fisherz.append(partial_filled_fz)
-    all_subject_parcel_full.append(parcel_full_filled)
-    all_subject_parcel_full_fisherz.append(parcel_full_filled_fz)
-
-
-#%% Group stats (n_subjects, n_clusters, n_parcels)
-
-all_subject_full_matrices = np.stack(all_subject_full_matrices, axis=0)
-all_subject_full_matrices_fisherz = np.stack(all_subject_full_matrices_fisherz, axis=0)
-all_subject_partial_matrices = np.stack(all_subject_partial_matrices, axis=0)
-all_subject_partial_matrices_fisherz = np.stack(all_subject_partial_matrices_fisherz, axis=0)
-
-all_subject_parcel_full = np.stack(all_subject_parcel_full, axis=0)
-all_subject_parcel_full_fisherz = np.stack(all_subject_parcel_full_fisherz, axis=0)
+    all_subject_partial.append(filled)
+    all_subject_partial_fz.append(filled_fz)
 
 # =========================
-# Cluster × Parcel stats
+# GROUP STATS
 # =========================
 
-mean_full = np.nanmean(all_subject_full_matrices, axis=0)
-mean_full_fz = np.nanmean(all_subject_full_matrices_fisherz, axis=0)
+print("\n=== GROUP STATS ===")
 
-median_full = np.nanmedian(all_subject_full_matrices, axis=0)
-median_full_fz = np.nanmedian(all_subject_full_matrices_fisherz, axis=0)
+all_subject_partial = np.stack(all_subject_partial, axis=0)
+all_subject_partial_fz = np.stack(all_subject_partial_fz, axis=0)
 
-mean_partial = np.nanmean(all_subject_partial_matrices, axis=0)
-mean_partial_fz = np.nanmean(all_subject_partial_matrices_fisherz, axis=0)
+mean_partial = np.nanmean(all_subject_partial, axis=0)
+median_partial = np.nanmedian(all_subject_partial, axis=0)
 
-median_partial = np.nanmedian(all_subject_partial_matrices, axis=0)
-median_partial_fz = np.nanmedian(all_subject_partial_matrices_fisherz, axis=0)
+mean_partial_fz = np.nanmean(all_subject_partial_fz, axis=0)
+median_partial_fz = np.nanmedian(all_subject_partial_fz, axis=0)
 
-# =========================
-# Parcel × Parcel stats
-# =========================
+df_mean = pd.DataFrame(mean_partial, index=clusters, columns=parcels)
+df_median = pd.DataFrame(median_partial, index=clusters, columns=parcels)
 
-mean_parcel_full = np.nanmean(all_subject_parcel_full, axis=0)
-mean_parcel_full_fisherz = np.nanmean(all_subject_parcel_full_fisherz, axis=0)
-
-median_parcel_full = np.nanmedian(all_subject_parcel_full, axis=0)
-median_parcel_full_fisherz = np.nanmedian(all_subject_parcel_full_fisherz, axis=0)
-
-# =========================
-# Group-level DataFrames
-# =========================
-
-df_mean_full = pd.DataFrame(mean_full, index=clusters, columns=parcels)
-df_median_full = pd.DataFrame(median_full, index=clusters, columns=parcels)
-
-df_mean_partial = pd.DataFrame(mean_partial, index=clusters, columns=parcels)
-df_median_partial = pd.DataFrame(median_partial, index=clusters, columns=parcels)
-
-df_mean_parcel_full = pd.DataFrame(mean_parcel_full, index=parcels, columns=parcels)
-df_median_parcel_full = pd.DataFrame(median_parcel_full, index=parcels, columns=parcels)
-
-# =========================
-# Save CSVs
-# =========================
-
-df_mean_full.to_csv(os.path.join(full_output_folder, "group_mean_cluster_by_mmp-parcel_full.csv"))
-df_median_full.to_csv(os.path.join(full_output_folder, "group_median_cluster_by_mmp-parcel_full.csv"))
-
-df_mean_partial.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
-df_median_partial.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
-
-df_mean_parcel_full.to_csv(os.path.join(full_output_folder, "group_mean_parcel_by_mmp-parcel_full.csv"))
-df_median_parcel_full.to_csv(os.path.join(full_output_folder, "group_median_parcel_by_mmp-parcel_full.csv"))
-
-# =========================
-# Save NPZ bundles
-# =========================
-
-np.savez_compressed(
-    os.path.join(full_output_folder, "group_full_corr.npz"),
-    mean_cluster_parcel_full=mean_full,
-    mean_cluster_parcel_full_fisherz=mean_full_fz,
-    median_cluster_parcel_full=median_full,
-    median_cluster_parcel_full_fisherz=median_full_fz,
-    mean_parcel_full=mean_parcel_full,
-    mean_parcel_full_fisherz=mean_parcel_full_fisherz,
-    median_parcel_full=median_parcel_full,
-    median_parcel_full_fisherz=median_parcel_full_fisherz,
-    subjects=np.array(subjects),
-    clusters=np.array(clusters),
-    parcels=np.array(parcels),
-)
+df_mean.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
+df_median.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
 
 np.savez_compressed(
     os.path.join(partial_output_folder, "group_partial_corr.npz"),
@@ -339,5 +233,4 @@ np.savez_compressed(
     parcels=np.array(parcels),
 )
 
-
-print("Done.")
+print("\n✅ Done.")
