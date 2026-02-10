@@ -787,7 +787,7 @@ def setup_pycortex_dirs(cortex_dir):
         "HCP_pycortex_subjects/contents/data/cortex/db"
     )
 
-    for subject in ["sub-hcp32k", "sub-hcp59k"]:
+    for subject in ["sub-hcp1.6mm", "sub-hcp2.0mm"]:
         local_subject_dir = os.path.join(db_dir, subject)
 
         if not os.path.exists(local_subject_dir):
