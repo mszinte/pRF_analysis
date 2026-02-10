@@ -12,8 +12,8 @@ experiment overview see: [https://docs.google.com/spreadsheets/d/1Y0ZTe_oxl2hHWh
 
 # Data stucture and BIDS
 ---
-- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](preproc/process.sh)
-- [x] Update metdadata [update_metadata.py] (preproc/update_metadata.py)
+- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](process.sh)
+- [x] Copy events.tsv and matlab files from experients repo [copy_events_and_matfiles.py](preproc/copy_events_and_matfiles.py)
 - [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
@@ -33,9 +33,9 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
-- [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py) per task 
-- [ ] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
-- [ ] High-pass, z-score, anat [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
+- [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
+- [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
+- [x] High-pass, z-score, anat [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
 - [ ] Averaging across runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
 
 # Inter-run correlations 
