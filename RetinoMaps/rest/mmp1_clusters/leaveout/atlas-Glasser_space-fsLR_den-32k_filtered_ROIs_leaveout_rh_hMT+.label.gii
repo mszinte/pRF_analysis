@@ -11,7 +11,7 @@
       <MD>
          <Name><![CDATA[ParentProvenance]]></Name>
          <Value><![CDATA[leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_hMT+.dlabel.nii:
-/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii /tmp/tmp.AMOH559RV9 leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_hMT+.dlabel.nii -discard-others
+/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii /tmp/tmp.xVdR6W0QdB leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_hMT+.dlabel.nii -discard-others
 
 ]]></Value>
       </MD>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GIFTI xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://brainvis.wustl.edu/caret6/xml_schemas/GIFTI_Caret.xsd"
+       Version="1"
+       NumberOfDataArrays="1">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[AnatomicalStructurePrimary]]></Name>
+         <Value><![CDATA[CortexRight]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ParentProvenance]]></Name>
+         <Value><![CDATA[leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_V3AB.shape.gii:
+/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -cifti-separate leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_V3AB.dlabel.nii COLUMN -metric CORTEX_LEFT leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_V3AB.shape.gii -metric CORTEX_RIGHT leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_V3AB.shape.gii
+
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[ProgramProvenance]]></Name>
+         <Value><![CDATA[Connectome Workbench
+Type: Command Line Application
+Version: 2.1.0
+Qt Compiled Version: 5.7.0
+Qt Runtime Version: 5.7.0
+Commit: 99bf66b28572005f6419330d3f58b6262637412d
+Commit Date: 2025-05-29 13:57:32 -0500
+Compiler: g++ (/opt/rh/devtoolset-7/root/usr/bin)
+Compiler Version: 7.3.1
+Compiled Debug: NO
+Operating System: Linux
+Compiled with OpenMP: YES
+]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[Provenance]]></Name>
+         <Value><![CDATA[/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linux64-v2.1.0/bin_rh_linux64/../exe_rh_linux64/wb_command -metric-reduce leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_V3AB.shape.gii COUNT_NONZERO leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_V3AB_bin.shape.gii]]></Value>
+      </MD>
+      <MD>
+         <Name><![CDATA[WorkingDirectory]]></Name>
+         <Value><![CDATA[/home/mbedini/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters]]></Value>
+      </MD>
+   </MetaData>
+   <LabelTable>
+      <Label Key="0" Red="1" Green="1" Blue="1" Alpha="0"><![CDATA[???]]></Label>
+   </LabelTable>
+<DataArray Intent="NIFTI_INTENT_NORMAL"
+           DataType="NIFTI_TYPE_FLOAT32"
+           ArrayIndexingOrder="RowMajorOrder"
+           Dimensionality="1"
+           Dim0="32492"
+           Encoding="GZipBase64Binary"
+           Endian="LittleEndian"
+           ExternalFileName=""
+           ExternalFileOffset="0">
+   <MetaData>
+      <MD>
+         <Name><![CDATA[Name]]></Name>
+         <Value><![CDATA[COUNT_NONZERO]]></Value>
+      </MD>
+   </MetaData>
+   <Data>eJzt3FuO2zgQBdDe2WwtSx/4I0gQ+EFKZD3oc4D6SFsib0lqy6bT/vn57dd/P0+9+jn7PI75rjrJ6f0BAAAAAON2rQ/uGHf1eubK8VaNtWLd9u4Yd/a/uv58ZY1+5/aj267Y5t3jXT/v2Pl5jc819jr13J3Yl56+u58Mp/SxspdM395DBV2zd8v7W6e8p2XNdkLGbB2zZeuQKVuVHA9VcgAAUN/dtbRKr4MBAAAAVspa98iYN3qd5+58M+tUd9axItbLqs6RPfbqMVfnXDXWilx3r58716D6cyxnz92dc/zpWnr3+KvHmJN9zc1ca5x3bE47592u41N+L094jun+XNn5+b7r/arjvXZl5ojcq/PuzLwj6668HbLuyrgyZ+WMO7Pdybc715VsEZlmckXlGc1UJU9kjndZKuTIzpA5f9bcGfNGz6mUUqfXlefW2X1Gtx+9v4xs92mbU2ReNx1V7e8bzp/e+vW1uz/91O3nhD6yyJ+X/W7+jrmzdcv7cFrWKjpkfKieDwAAAAAAAAAAAAAAAAAAAKCS1d8LFFVdRfSSfW52ntPsjPo6s6eT+jmhl1Ez43XuIfq8zTgx+5VzVOF6ic69+jhHZN+RdVfmK/ONys6amfHV/FWO47v5s7OtUjHXyZmisnzabpUr/UYejwhV58+aO0rGnADwysg9KfOevVvk+5dome9Bdsp+f7XDST1lv+dc5U4fd3taOe6qPkYzrD5GO/P/Pf/qYxGRWymllFJKKaWUUmN15736lX2vrA/M7DOzBjG67ch2M9vMPPbs5//+7O9/v5J9nc2e6xnZmfV2Zl87e8o4Flf6uapiP1V76dpDNPlzcn/KP9pbtncZdmSO6n3VHFXO04guWTtkBAAA6KrSmgMA15zwXN69h875u2bvmLtT1odueQEAAPhu3f4fKQD7dH+e73y/6nq/7fhaodtrnDuvy6r+zdK7/SrlfJYn+lqZzRl9PV99LxGVsWq+Fbl2ZKuWS57aWVZluJMjM8MJc1eeM3K+qLki5jlhjspjR41babxVY+0YJ3P/q/vu3mdm+xXXWtUCAAAAAACATKd/huWzQAAAAIAc0eskGes00XNGzhcxV8T62u45doy/Y/1x9brm6rXSzPFWjbVinBG79h+1Yr/ZfVZu+2m7TzlfPf7quDz7+ez1/mnMU2pWdt4dvWXn3NFXdsbVPWXnW9lPdrZVvWTn+sY+TsufnecbsnfOnJ3jxGPcJWuHnNUzVs5X9fm0Yq5qmWR5nSM7Q/b5UEoppZTKrgqvy/T1nT2d1M8pvZzUR3aGb83fNXvX3EoppepVhXtK9mcAz2TPH5Xhk6x5d80/I2POu/MCwElOvs+d3tdJTusHAAAAAAAAAAAAAAAAAIBY1f5uutJ3llT4DpXs73Op8L0yXTKcNnfGvNFzRs5Xaa4Oc+wcf9fYGeNmjxcxVuQYo/uP/D4/2/fKfjP7qGsFAAAAAACc7n9TIofS</Data>
+</DataArray>
+</GIFTI>

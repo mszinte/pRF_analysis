@@ -28,28 +28,37 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     mkdir -p "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     
-    ################# Developing this part ###############################################
+    ################# Debugging this part ###############################################
+    ## add print statements with wb_command -file-information to inspect the outputs
     for roi in "${ROIS[@]}"; do
-        
-        # Get metric files for both hemi
-    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
-    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
-    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii"
-    
-    	# Replace seed cluster so it doesn't show up in the wta (hollow seed)
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.func.gii" \
-    	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii"
 
-    	wb_command -metric-mask "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.func.gii" \
-    	"$ATLAS_DIR/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}.shape.gii" \
-    	"$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
-    	
-    	# Go back to the combined hemi version in cifti format
+        # Get metric files for both hemi (neede to remove everything that's not cortex)
+    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
+    	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
+    	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
+
+        # It's safer to use cifti-math rather than masking with cifti-mask (this produces 0 that we don't want when parcellating the output)
+        wb_command -metric-math \
+        '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
+        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
+        -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
+        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}_bin.shape.gii"
+
+        # Repeat for the right hemi
+        wb_command -metric-math \
+        '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
+        "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii" \
+        -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii" \
+        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}_bin.shape.gii"
+
+        # Go back to the combined hemi version in cifti format
     	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
-    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.func.gii" \
-        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.func.gii"
+    	-left-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
+        -right-metric "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii"
     	
+        # Check the output
+        wb_command -file-information "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii"
+
     	# Parcellate the full corr outputs
         wb_command -cifti-parcellate \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
@@ -57,10 +66,14 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN; 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
         
+        # Double check this
+        # NOTE: the parcels in the output file are sorted by the numeric label keys, in ascending order.
+        
 	done
     #######################################################################################
     
     # Build the merge command - merge all ROI correlation maps
+    # Probably here the output has to be a .pconn not .pscalar file
     MERGE_CMD="wb_command -cifti-merge ${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii -direction ROW"
     
     # Add each ROI in order (this creates rows 0-11 for mPCS-V1)
@@ -71,7 +84,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     # Execute merge
     eval $MERGE_CMD
     
-    # Transpose so clusters are columns and parcels are rows
+    # Transpose so parcels are rows and clusters are columns 
     wb_command -cifti-transpose \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.pscalar.nii" \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_merged.transpose.nii" \
@@ -107,6 +120,9 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     MERGE_GROUP_CMD="${MERGE_GROUP_CMD} -cifti ${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii"
 done
 
+# Inspect the shape of the output
+wb_command -file-information ${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii
+
 # Execute group merge
 eval $MERGE_GROUP_CMD
 
@@ -138,7 +154,10 @@ wb_command -cifti-transpose \
 
 # Dump the main output into another format
 wb_command -cifti-convert -to-text "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" "${OUTPUT_PATH}/group_wta_full_corr.tsv"
-    
+
+# Verify that the label order matches the original key ascending order
+
+
 # Change file permissions
 chmod -Rf 771 ${BASE_PATH}
 chgrp -Rf 327 ${BASE_PATH}
