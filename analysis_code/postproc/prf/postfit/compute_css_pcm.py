@@ -83,6 +83,7 @@ avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 averaging_templates = analysis_info['averaging_templates']
+formats_conversion = analysis_info['formats_conversion'] 
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -121,8 +122,7 @@ if subject != 'template_avg':
                 if format_ == 'fsnative':
                     # initial settings
                     pycortex_subject = subject
-                    atlas_name = 'drawn' 
-                    surf_format = 'fsnative'        
+                    surf_format = format_
 
                     # Derivatives                    
                     deriv_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
@@ -154,8 +154,7 @@ if subject != 'template_avg':
                 elif format_ == '170k':
                     # initial settings
                     pycortex_subject = pycortex_subject_template
-                    atlas_name = 'mmp_group'
-                    surf_format = '59k'
+                    surf_format = formats_conversion[format_]
                     
                     # Derivatives
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
@@ -223,7 +222,7 @@ if subject != 'template_avg':
                     print('Get a dict with the surface vertices contained in each ROI...')
                     roi_verts_dict = get_rois(pycortex_subject, 
                                               surf_format=surf_format, 
-                                              atlas_name=atlas_name,
+                                              rois_type=rois_method_format,
                                               mask=False, 
                                               rois=rois, 
                                               hemis=None)

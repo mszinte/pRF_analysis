@@ -25,7 +25,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-170k n
+python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -42,7 +42,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import cortex
 import matplotlib.pyplot as plt
 
@@ -55,19 +54,7 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg_in = sys.argv[4]
-
-try:
-    if save_svg_in == 'yes' or save_svg_in == 'y':
-        save_svg = True
-    elif save_svg_in == 'no' or save_svg_in == 'n':
-        save_svg = False
-    else:
-        raise ValueError
-except ValueError:
-    sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+save_svg = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -103,6 +90,11 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
     
     # Define directories and fn
     rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject, format_)
+    
+    if not os.path.isdir(rois_dir):
+        print(f"[SKIP] corr_dir not found for format={format_}: {rois_dir}")
+        continue
+    
     flatmaps_dir = '{}/pycortex/flatmaps_rois'.format(rois_dir)
     datasets_dir = '{}/pycortex/datasets_rois'.format(rois_dir)
     
@@ -129,8 +121,6 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                                                       normalization, rois_method_format)
             results = load_surface_pycortex(brain_fn=roi_fn)
             roi_mat = results['data_concat']
-            if subject == 'sub-170k': save_svg = save_svg
-            else: save_svg = False
                 
         rois_opacity = 0.5
         alpha_mat = roi_mat*0+rois_opacity

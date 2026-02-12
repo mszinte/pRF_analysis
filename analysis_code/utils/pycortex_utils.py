@@ -1,4 +1,4 @@
-def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None):
+def get_rois(subject, surf_format, rois_type, mask=True, rois=None, hemis=None):
     """
     Load ROI masks stored as .npz files from a pycortex subject database.
 
@@ -25,10 +25,10 @@ def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None)
         Allowed values are:
             ['170k', '59k', '91k', '32k', 'fsnative']
 
-    atlas_name : str
+    rois_type : str
         Name of the atlas used to define the ROIs.
         Allowed values are:
-            ['mmp', 'group-mmp', 'drawn']
+            ['rois-mmp', 'rois-group-mmp', 'rois-drawn']
 
     mask : bool, optional (default=True)
         If True, return boolean masks.
@@ -57,11 +57,11 @@ def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None)
     Expected file naming conventions:
 
     - Full brain:
-        {subject}_{surf_format}_rois-{atlas_name}.npz
+        {subject}_{surf_format}_rois-{rois_type}.npz
 
     - Single hemisphere:
-        {subject}_{surf_format}_hemi-L_rois-{atlas_name}.npz
-        {subject}_{surf_format}_hemi-R_rois-{atlas_name}.npz
+        {subject}_{surf_format}_hemi-L_rois-{rois_type}.npz
+        {subject}_{surf_format}_hemi-R_rois-{rois_type}.npz
 
     All files must be located in:
         <pycortex_db>/<subject>/rois/
@@ -73,14 +73,14 @@ def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None)
     # --------------------------------------------------
     # Input checks
     # --------------------------------------------------
-    if surf_format not in ['170k', '59k', '91k', '32k', 'fsnative']:
-        raise ValueError("Invalid value for 'surf_format'.")
-    if atlas_name not in ['mmp', 'group-mmp', 'drawn']:
-        raise ValueError("Invalid value for 'atlas_name'.")
-    if surf_format in ['170k', '59k'] and subject != 'sub-hcp59k':
-        raise ValueError("For this format subject should be sub-hcp59k")
-    if surf_format in ['91k', '32k'] and subject != 'sub-hcp32k':
-        raise ValueError("For this format subject should be sub-hcp32k")
+    # if surf_format not in ['170k', '59k', '91k', '32k', 'fsnative']:
+    #     raise ValueError("Invalid value for 'surf_format'.")
+    # if rois_type not in ['roi-mmp', 'roi-group-mmp', 'roi-drawn']:
+    #     raise ValueError("Invalid value for 'rois_type'.")
+    # if surf_format in ['170k', '59k'] and subject != 'sub-hcp59k':
+    #     raise ValueError("For this format subject should be sub-hcp59k")
+    # if surf_format in ['91k', '32k'] and subject != 'sub-hcp32k':
+    #     raise ValueError("For this format subject should be sub-hcp32k")
 
     # --------------------------------------------------
     # Paths
@@ -94,8 +94,8 @@ def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None)
     if hemis is None:
         rois_dict_brain = dict(
             np.load(
-                '{}/{}_{}_rois-{}.npz'.format(
-                    rois_dir, subject, surf_format, atlas_name
+                '{}/{}_{}_{}.npz'.format(
+                    rois_dir, subject, surf_format, rois_type
                 )
             )
         )
@@ -137,8 +137,8 @@ def get_rois(subject, surf_format, atlas_name, mask=True, rois=None, hemis=None)
     for hemi in hemis:
         rois_dict_hemi = dict(
             np.load(
-                '{}/{}_{}_{}_rois-{}.npz'.format(
-                    rois_dir, subject, surf_format, hemi, atlas_name
+                '{}/{}_{}_{}_{}.npz'.format(
+                    rois_dir, subject, surf_format, hemi, rois_type
                 )
             )
         )
