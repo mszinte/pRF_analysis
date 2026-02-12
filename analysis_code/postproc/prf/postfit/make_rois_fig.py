@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import pandas as pd
 
 # Personal import
@@ -63,12 +62,9 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': 
-    formats = ['170k']
-    extensions = ['dtseries.nii']
-else: 
-    formats = analysis_info['formats']
-    extensions = analysis_info['extensions']
+
+formats = analysis_info['formats']
+extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
@@ -98,6 +94,12 @@ for avg_method in avg_methods:
                 # Define/create folders
                 tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                     main_dir, project_dir, subject, format_)
+                
+                # Exception if no data for one format (e.g template subject)
+                if not os.path.isdir(tsv_dir):
+                    print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                    continue
+                
                 fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
                     main_dir, project_dir, subject, format_)
                 os.makedirs(fig_dir, exist_ok=True)

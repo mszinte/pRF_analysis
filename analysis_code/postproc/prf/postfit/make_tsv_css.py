@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps template_avg 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -63,8 +63,7 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': formats = ['170k']
-else: formats = analysis_info['formats']
+formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
@@ -102,6 +101,11 @@ for avg_method in avg_methods:
 
             prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
                 main_dir, project_dir, subject, format_)
+            
+            if not os.path.isdir(prf_dir):
+                print(f"[SKIP] corr_dir not found for format={format_}: {prf_dir}")
+                continue
+            
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
     
             tsv_dir = "{}/tsv".format(prf_dir)
@@ -147,7 +151,7 @@ for avg_method in avg_methods:
             
                         roi_verts = get_rois(subject=pycortex_subject, 
                                               surf_format=format_, 
-                                              atlas_name=rois_method_format, 
+                                              rois_type=rois_method_format, 
                                               mask=True,
                                               rois=rois, 
                                               hemis=hemi)
@@ -189,16 +193,7 @@ for avg_method in avg_methods:
                     # Combine all derivatives
                     all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
                 
-                    # Get roi masks
-                    roi_verts_L, roi_verts_R = get_rois(subject=subject,
-                                                        return_concat_hemis=False,
-                                                        return_hemi=None,
-                                                        rois=rois,
-                                                        mask=True,
-                                                        atlas_name='mmp_group',
-                                                        surf_size='170k',
-                                                        overlay_fn=f"overlays_{rois_method_format}.svg"
-                                                       )
+
                     
                     # get MMP rois img
                     roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
@@ -207,7 +202,7 @@ for avg_method in avg_methods:
                     roi_img, roi_mat = load_surface(roi_fn)
                 
                     # get MMP rois numbers tsv
-                    mmp_rois_numbers_tsv_fn = '{}/db/sub-170k/mmp_rois_numbers.tsv'.format(cortex_dir)
+                    mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
                     mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
                     
                     # Replace rois nums by names
@@ -217,8 +212,13 @@ for avg_method in avg_methods:
                     # Create and combine pandas df for each roi and brain hemisphere
                     print('Creating dataframe...')
                     for hemi in ['hemi-L', 'hemi-R']:
-                        if hemi == 'hemi-L': roi_verts = roi_verts_L
-                        elif hemi == 'hemi-R': roi_verts = roi_verts_R
+                        # Get roi masks
+                        roi_verts = get_rois(subject=pycortex_subject, 
+                                              surf_format=format_, 
+                                              rois_type=rois_method_format, 
+                                              mask=True,
+                                              rois=rois, 
+                                              hemis=hemi)
             
                         for roi in roi_verts.keys():
                             data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
