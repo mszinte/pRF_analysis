@@ -56,7 +56,7 @@ group = sys.argv[4]
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-overlay_roi_drawn_fn = '{}/db/sub-01/overlays_rois-drawn.svg'.format(cortex_dir)
+overlay_roi_drawn_fn = '{}/db/{}/overlays_rois-drawn.svg'.format(cortex_dir, subject)
 
 rois_drawn_brain_dict = cortex.get_roi_verts(subject=subject, mask=True, overlay_file=overlay_roi_drawn_fn)
 
@@ -75,6 +75,7 @@ for roi in rois_drawn_brain_dict.keys():
 # Export masks as npz
 print('Saving ROIs mask npz ...')
 roi_dir = '{}/{}/derivatives/pp_data/cortex/db/{}/rois'.format(main_dir, project_dir, subject)
+os.makedirs(roi_dir, exist_ok=True)
 np.savez('{}/{}_fsnative_hemi-L_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_lh_dict)
 np.savez('{}/{}_fsnative_hemi-R_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_rh_dict)
 np.savez('{}/{}_fsnative_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_brain_dict)
