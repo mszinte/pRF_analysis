@@ -46,8 +46,6 @@ import datetime
 import numpy as np
 import nibabel as nb
 import itertools as it
-from nilearn import signal
-from nilearn.glm.first_level.design_matrix import _cosine_drift
 
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
@@ -64,7 +62,7 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")

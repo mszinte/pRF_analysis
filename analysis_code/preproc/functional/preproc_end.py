@@ -47,7 +47,7 @@ import numpy as np
 import nibabel as nb
 import itertools as it
 from nilearn import signal
-from nilearn.glm.first_level.design_matrix import _cosine_drift
+from nilearn.glm.first_level import make_first_level_design_matrix
 
 # Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
@@ -131,15 +131,20 @@ for format_, extension in zip(formats, extensions):
                 masks_dict['fsnative_hemi-R'].append(valid_mask)
             elif '170k' in func_fn:
                 masks_dict['170k'].append(valid_mask)
-           
+
+
             # High pass filtering 
+            # Create design matrix with cosine drift
             nb_tr = surf_data.shape[0]
-            ft = np.linspace(0.5 * TR, (nb_tr + 0.5) * TR, nb_tr, endpoint=False)
-            high_pass_set = _cosine_drift(high_pass_threshold, ft)
+            design_matrix = make_first_level_design_matrix(frame_times=np.arange(nb_tr) * TR,
+                                                           drift_model='cosine',
+                                                           high_pass=high_pass_threshold)
+            cosine_drift = design_matrix.values[:, :-1]
+
             surf_data = signal.clean(surf_data, 
-                                      detrend=False,
-                                      standardize=False, 
-                                      confounds=high_pass_set)
+                                     detrend=False,
+                                     standardize=False, 
+                                     confounds=cosine_drift)
            
             # Compute the Z-score only on valid vertices
             surf_data[:, valid_mask] = (surf_data[:, valid_mask] - np.mean(surf_data[:, valid_mask], axis=0)) / np.std(surf_data[:, valid_mask], axis=0)
