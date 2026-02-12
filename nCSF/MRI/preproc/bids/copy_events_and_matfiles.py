@@ -42,8 +42,11 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
 import subprocess
+
+# Personal imports
+sys.path.append("{}/../../../utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # Inputs
 ncsf_dir = sys.argv[1]
@@ -53,8 +56,10 @@ bids_dir = sys.argv[4]
 group = sys.argv[5]
 
 # Load settings
-with open('../../../settings.json') as f:
-    analysis_info = json.load(f)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, "nCSF", "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 
 subjects = analysis_info['subjects']
 sessions = analysis_info['sessions']

@@ -50,10 +50,11 @@ import nibabel as nb
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
+from settings_utils import load_settings
 from surface_utils import make_surface_image 
 from maths_utils import  median_subject_template, weighted_nan_median
 from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_rois, make_image_pycortex
-from settings_utils import load_settings
+
 
 # Inputs
 main_dir = sys.argv[1]
