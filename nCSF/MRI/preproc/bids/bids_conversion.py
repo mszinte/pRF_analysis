@@ -40,13 +40,14 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
 import subprocess
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from bids_utils import bidsify_fmap, bidsify_anat, bidsify_func, correct_task_columns_event
+from settings_utils import load_settings
 from json_task_utils import create_subject_task_events_json
+from bids_utils import bidsify_fmap, bidsify_anat, bidsify_func, correct_task_columns_event
+
 
 
 # Inputs
@@ -55,8 +56,10 @@ project_dir = sys.argv[2]
 group = sys.argv[3]
 
 # Load settings
-with open("../../../settings.json") as f:
-    analysis_info = json.load(f)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 
 subjects = analysis_info["subjects"]
 sessions = analysis_info["sessions"]

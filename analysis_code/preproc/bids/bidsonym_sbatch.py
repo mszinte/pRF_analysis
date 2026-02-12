@@ -44,7 +44,6 @@ deb = ipdb.set_trace
 # general imports
 import os
 import sys
-import yaml
 
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
@@ -105,4 +104,5 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-#os.system("sbatch {}".format(sh_fn))
+os.system("sbatch {}".format(sh_fn))
+

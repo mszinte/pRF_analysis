@@ -51,7 +51,7 @@ def clean_anat_mp2rage(anat_dir):
     print("Kept only UNIDEN T1w and removed other MP2RAGE files in {}".format(anat_dir))
 
 
-def update_mp2rage_json(anat_dir, tr_exc=0, tr_prep=5, nshots=1):
+def update_mp2rage_json(anat_dir, tr_exc=6.2, tr_prep=5, nshots=1):
     """
     Update MP2RAGE JSON files with required BIDS fields.
     tr_exc is intentionally left to 0 (temporary placeholder).

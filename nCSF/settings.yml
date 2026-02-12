@@ -1,0 +1,33 @@
+# Main configuration
+project_name:
+  description: "Name of the project and of the dataset directory"
+  value: "nCSF"
+
+cluster_name: 
+  description: "Name of the cluster to use in AMU mesocenter"
+  value: "skylake"
+
+# Dataset description
+"subject_names":
+  "description": "Correspondance between subjects names before and after renaming"
+  "value": 
+    "sub-ult084p1": "sub-01" 
+    "sub-smt083p1": "sub-02"
+
+"session_names":
+  "description": "Correspondance between sessions names before and after renaming"
+  "value": 
+    "ses-202511051352": "ses-01" 
+    "ses-202510241430": "ses-01"
+
+subjects:
+  description: "Subjects of the dataset"
+  value: ["sub-01", "sub-02"]
+
+sessions:
+  description: "Sessions of the dataset"
+  value: ["ses-01"]
+
+tasks: 
+  description: "Names of the tasks of the dataset"
+  value: ["DeepMReye", "nCSF", "pRF"]

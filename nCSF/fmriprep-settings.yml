@@ -1,0 +1,49 @@
+# SBATCH settings
+email_sbatch:
+  description: "Email adress to send queue start and end message"
+  value: "martin.szinte@univ-amu.fr"
+
+memory_sbatch:
+  description: "Memory allocated to the sbatch command in GB"
+  value: 100
+
+procs_hours:
+  description: "Number of hours to allocate to fmriprep"
+  value : '30:00:00'
+
+procs_hours_anat:
+  description: "Number of hours to allocate to fmriprep anat only steps"
+  value : '10:00:00'
+
+fmriprep_simg:
+  description: "Name and version of the the simg file of fmriprep"
+  value: "fmriprep-25.2.4.simg"
+  
+# FMRIPREP settings
+bold2anat_dof: 
+  description: "Degrees of freedom when registering BOLD to anatomical images."
+  value: 12
+  levels: [6, 9, 12]
+
+output-spaces: 
+  description: "Standard and non-standard spaces to resample anatomical and functional images to."
+  value: "T1w fsnative"
+
+cifti-output: 
+  description: "Output preprocessed BOLD as a CIFTI dense timeseries. Optionally, the number of grayordinate can be specified (default is 91k, which equates to 2mm resolution)"
+  value: "170k"
+  levels: ["91k", "170k", "91k 170k", ""]
+
+mem_limit:
+  description: "Upper bound memory limit for fMRIPrep processes in MB"
+  value: 100000
+
+fs_no_resume: 
+  description: "Import pre-computed FreeSurfer reconstruction without resuming. The user is responsible for ensuring that all necessary files are present."
+  value: True
+  levels: [True, False]
+
+skip_bids_valid:
+  description: "Assume the input dataset is BIDS compliant and skip the validation"
+  value: True
+  levels: [True, False]
