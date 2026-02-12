@@ -89,18 +89,18 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 - [x] Make pRF maps with pycortex for **hcp1.6mm**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
 #### PRF ROIs
-- [ ] Make ROIS files for **template_avg** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
-- [ ] Create flatmaps of ROIs for **hcp1.6mm** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
+- [x] Make ROIS files for **template_avg** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
+- [x] Create flatmaps of ROIs for **hcp1.6mm** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 #### PRF CSS fit
 - [x] Compute CSS statistics for **template_avg** [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
 - [x] Compute CSS fit derivatives for **template_avg** [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
 - [x] Compute CSS population cortical magnification (CM) for **template_avg** [compute_css_pcm.py](../analysis_code/postproc/prf/postfit/compute_css_pcm.py)
 - [x] Make maps with pycortex for **hcp1.6mm** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
-- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **sub-170k** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-170k** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
-- [x] Merge all figures for **sub-170k** and **group** [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
+- [x] Merge all figures for **hcp1.6mm** and **group** [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
 
 # GLM 
 --- 
