@@ -15,12 +15,12 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/atlas/
+>> cd ~/projects/pRF_analysis/analysis_code/atlas
 2. run python command
 python create_rois-mmp_npz.py [main directory] [project name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/atlas
+cd ~/projects/pRF_analysis/analysis_code/atlas
 python create_rois-mmp_npz.py /Users/uriel/disks/meso_shared RetinoMaps 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
