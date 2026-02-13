@@ -3,27 +3,30 @@
 fsnative_mmp_rois.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Load freesurfer and use it to project MMP from fsaverage to fsnative 
+Load MMP (multi-modal parcellation) labels in native FreeSurfer space and convert them 
+to ROI masks for use in pycortex
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: subject name
-sys.argv[4]: group of shared data (e.g. 327)
+sys.argv[3]: subject name (sub-01)
+sys.argv[4]: freesurfer subject name (sub-01_ses-01)
+sys.argv[5]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 None
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
-python fsnative_mmp_rois.py [main directory] [project name] [subject name] [group]
+python fsnative_mmp_rois.py [main directory] [project name] [subject] 
+                            [freesurfer_subject] [group]
 -----------------------------------------------------------------------------------------
 Executions:
-RUN LOCALY ! 
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python fsnative_mmp_rois.py ~/disks/meso_shared RetinoMaps sub-01 327
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+python fsnative_mmp_rois.py ~/disks/meso_shared RetinoMaps sub-01 sub-01 327
+python fsnative_mmp_rois.py /scratch/mszinte/data amblyo7T_prf sub-01 sub-01_ses-01 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
@@ -54,7 +57,8 @@ from pycortex_utils import set_pycortex_config_file
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
+freesurfer_subject = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -69,7 +73,7 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Load fsnative MMP labels
-mmp_fsnative_rois_fn = '{}/{}/derivatives/fmriprep/freesurfer/{}/label'.format(main_dir, project_dir, subject)
+mmp_fsnative_rois_fn = '{}/{}/derivatives/fmriprep/freesurfer/{}/label'.format(main_dir, project_dir, freesurfer_subject)
 labels_lh, ctab_lh, names_lh = nb.freesurfer.read_annot("{}/lh.HCPMMP1.annot".format(mmp_fsnative_rois_fn))
 labels_rh, ctab_rh, names_rh = nb.freesurfer.read_annot("{}/rh.HCPMMP1.annot".format(mmp_fsnative_rois_fn))
 
@@ -95,7 +99,7 @@ for label_id, roi_name in id_to_name_lh.items():
     rois_mmp_masks_lh[roi_clean] = rois_mmp_masks_lh[roi_clean].squeeze()
 
 # Export masks as npz
-rois_mmp_lh_fn = '{}/{}_fsnative_rois-mmp_hemi-L.npz'.format(atlas_fn, subject)
+rois_mmp_lh_fn = '{}/{}_hemi-L_fsnative_rois-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_mmp_lh_fn))
 np.savez(rois_mmp_lh_fn, **rois_mmp_masks_lh)
 
@@ -118,7 +122,7 @@ for label_id, roi_name in id_to_name_rh.items():
     rois_mmp_masks_rh[roi_clean] = rois_mmp_masks_rh[roi_clean].squeeze()
 
 # Export masks as npz
-rois_mmp_rh_fn = '{}/{}_fsnative_rois-mmp_hemi-R.npz'.format(atlas_fn, subject)
+rois_mmp_rh_fn = '{}/{}_hemi-R_fsnative_rois-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_mmp_rh_fn))
 np.savez(rois_mmp_rh_fn, **rois_mmp_masks_rh)
 
@@ -152,11 +156,11 @@ for group_name, roi_list in rois_group_mmp.items():
         rois_group_mmp_masks_brain[group_name] = np.logical_or.reduce(masks_brain)
         
 # Export masks as npz
-rois_group_mmp_lh_fn = '{}/{}_fsnative_rois-group-mmp_hemi-L.npz'.format(atlas_fn, subject)
+rois_group_mmp_lh_fn = '{}/{}_hemi-L_fsnative_rois-group-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_group_mmp_lh_fn))
 np.savez(rois_group_mmp_lh_fn, **rois_group_mmp_masks_lh)
 
-rois_group_mmp_rh_fn = '{}/{}_fsnative_rois-group-mmp_hemi-R.npz'.format(atlas_fn, subject)
+rois_group_mmp_rh_fn = '{}/{}_hemi-R_fsnative_rois-group-mmp.npz'.format(atlas_fn, subject)
 print('saving {}'.format(rois_group_mmp_rh_fn))
 np.savez(rois_group_mmp_rh_fn, **rois_group_mmp_masks_rh)
 
@@ -166,8 +170,8 @@ np.savez(rois_group_mmp_brain_fn, **rois_group_mmp_masks_brain)
 
 # Project borders of rois on overlays
 overlays_fn = '{}/db/{}/overlays.svg'.format(cortex_dir, subject)
-overlays_rois_mmp_fn = '{}/db/{}/overlays_roi-mmp.svg'.format(cortex_dir, subject)
-overlays_rois_group_mmp_fn = '{}/db/{}/overlays_roi-group-mmp.svg'.format(cortex_dir, subject)
+overlays_rois_mmp_fn = '{}/db/{}/overlays_rois-mmp.svg'.format(cortex_dir, subject)
+overlays_rois_group_mmp_fn = '{}/db/{}/overlays_rois-group-mmp.svg'.format(cortex_dir, subject)
 
 # Copy overlays 
 shutil.copy(overlays_fn, overlays_rois_mmp_fn)
@@ -181,7 +185,7 @@ rp.to_svg(filename=overlays_rois_mmp_fn)
 rp = ROIpack(subject, rois_group_mmp_brain_fn)
 rp.to_svg(filename=overlays_rois_group_mmp_fn)
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

@@ -24,6 +24,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_img.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -50,7 +51,6 @@ sys.path.append("{}/../../../utils".format(os.getcwd()))
 from settings_utils import load_settings
 from surface_utils import make_surface_image, load_surface
 from pycortex_utils import get_rois, set_pycortex_config_file
-
 
 # Inputs
 main_dir = sys.argv[1]
@@ -96,7 +96,7 @@ for format_, extension in zip(formats, extensions):
         elif rois_method_format == 'rois-group-mmp':
             rois = list(analysis_info[rois_method_format].keys())
 
-        if format_ == 'fsnative':                    
+        if format_ == 'fsnative':
             for hemi in ['hemi-L','hemi-R']:
                 
                 roi_verts_dict = get_rois(subject=subject, 
@@ -104,9 +104,9 @@ for format_, extension in zip(formats, extensions):
                                           rois_type=rois_method_format, 
                                           mask=True, 
                                           rois=rois, 
-                                          hemis=hemi) 
+                                          hemis=hemi)
 
-                array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
+                array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)
                 for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
                     array_rois[mask] = i
                     
@@ -122,7 +122,7 @@ for format_, extension in zip(formats, extensions):
                 img, data = load_surface(fn=data_fn)
                 
                 # Define filename
-                rois_fn = '{}_{}_{}_{}_{}_{}.{}'.format(subject, hemi,preproc_prep, filtering, 
+                rois_fn = '{}_{}_{}_{}_{}_{}.{}'.format(subject, hemi, preproc_prep, filtering, 
                                                         normalization, rois_method_format,
                                                         extension
                                                        )
