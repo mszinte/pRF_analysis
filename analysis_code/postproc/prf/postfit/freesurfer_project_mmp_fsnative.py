@@ -60,13 +60,12 @@ rh_mmp_fn = Path('{}/label/rh.HCPMMP1.annot'.format(fs_average_dir))
 if lh_mmp_fn.is_file() and rh_mmp_fn.is_file():
     print("Atlas found")
 else: 
-    print("Downloading atlas files...")
-    lh_url = "https://figshare.com/ndownloader/files/5528816"
-    rh_url = "https://figshare.com/ndownloader/files/5528819"
-    lh_mmp_fn.parent.mkdir(parents=True, exist_ok=True)
-    urllib.request.urlretrieve(lh_url, lh_mmp_fn)
-    urllib.request.urlretrieve(rh_url, rh_mmp_fn)
-    print("Download complete")
+    print('\n\nAtlas files not found. Please download manually:')
+    print('1. Go to: https://figshare.com/articles/dataset/HCP-MMP1_0_projected_on_fsaverage/3498446')
+    print('2. Download lh.HCPMMP1.annot and rh.HCPMMP1.annot')
+    print(f'3. Place them in: {lh_mmp_fn.parent}')
+    print('4. Rerun this script\n')
+    quit()
       
 # Createcommand and Sh file 
 jobs_dir = "{}/{}/derivatives/pp_data/jobs".format(main_dir, project_dir)
@@ -97,13 +96,15 @@ for hemi in hemis:
     """.format(subject=subject, hemi=hemi)
     of.write("\n{}".format(surf2surf))
 
-# Define permission cmd
-chmod_cmd = "chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir)
-chgrp_cmd = "chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
-
-of.write("\n{}\n{}".format(chmod_cmd, chgrp_cmd))
 of.close()
 
 # Run commands
 subprocess.run(["bash", sh_dir], check=True)
-    
+
+# Try to set permissions (may fail without sudo)
+try:
+    print('\nChanging files permissions...')
+    subprocess.run(["chmod", "-Rf", "771", f"{main_dir}/{project_dir}"])
+    subprocess.run(["chgrp", "-Rf", group, f"{main_dir}/{project_dir}"])
+except subprocess.CalledProcessError:
+    print("Warning: Could not set permissions/group (may require admin rights)")
