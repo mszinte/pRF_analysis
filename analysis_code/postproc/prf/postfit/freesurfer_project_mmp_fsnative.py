@@ -41,6 +41,7 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+import urllib.request
 
 # Inputs
 main_dir = sys.argv[1]
@@ -59,8 +60,15 @@ rh_mmp_fn = Path('{}/label/rh.HCPMMP1.annot'.format(fs_average_dir))
 if lh_mmp_fn.is_file() and rh_mmp_fn.is_file():
     print("Atlas found")
 else: 
-    raise FileNotFoundError('Please downolad lh.HCPMMP1.annot and rh.HCPMMP1.annot from https://figshare.com/articles/dataset/HCP-MMP1_0_projected_on_fsaverage/3498446 put them on {}/label/ and relunche code'.format(fs_average_dir))
-  
+
+    print("Downloading atlas files...")
+    lh_url = "https://figshare.com/ndownloader/files/5528816"
+    rh_url = "https://figshare.com/ndownloader/files/5528819"
+    lh_mmp_fn.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(lh_url, lh_mmp_fn)
+    urllib.request.urlretrieve(rh_url, rh_mmp_fn)
+    print("Download complete")
+      
 # Createcommand and Sh file 
 jobs_dir = "{}/{}/derivatives/pp_data/jobs".format(main_dir, project_dir)
 os.makedirs(jobs_dir, exist_ok=True)
