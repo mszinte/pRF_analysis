@@ -105,7 +105,7 @@ for format_, extension in zip(formats, extensions):
                                           mask=True, 
                                           rois=rois, 
                                           hemis=hemi) 
-  
+
                 array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
                 for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
                     array_rois[mask] = i
