@@ -36,7 +36,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
 - [x] High-pass, z-score, anat [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
-- [ ] Averaging across runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+- [x] Averaging across runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
 
 # Inter-run correlations 
 ---
