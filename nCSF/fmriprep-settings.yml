@@ -1,7 +1,7 @@
 # SBATCH settings
 email_sbatch:
   description: "Email adress to send queue start and end message"
-  value: "martin.szinte@univ-amu.fr"
+  value: "uriel.lascombes@univ-amu.fr"
 
 memory_sbatch:
   description: "Memory allocated to the sbatch command in GB"

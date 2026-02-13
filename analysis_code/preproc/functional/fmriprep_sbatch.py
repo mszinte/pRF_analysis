@@ -24,6 +24,7 @@ python fmriprep_sbatch.py [main] [project] [subject] [group] [server] [anat_only
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
+python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 1
 python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 1
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -94,8 +95,14 @@ else:
     anat_only_end = ''
     procs_hours_in = procs_hours_anat
 
+# Defind temp dir
 temp_dir = "{}/temp/{}/{}".format(main_dir, project_dir, subject)
 os.makedirs(temp_dir, exist_ok=True)
+
+# Defind template flow dir 
+template_flow_cmd = 'export SINGULARITYENV_TEMPLATEFLOW_HOME=/opt/templateflow \n'
+tf_bind = "-B {main_dir}/{project_dir}/code/singularity/fmriprep_tf/:/opt/templateflow".format(
+    main_dir=main_dir, project_dir=project_dir) 
 
 # define SLURM cmd
 slurm_cmd = f"\
@@ -114,7 +121,7 @@ slurm_cmd = f"\
 #SBATCH --mail-type=BEGIN,END\n\n"
 
 #define singularity cmd
-singularity_cmd = f"singularity run --cleanenv -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nthreads:.0f} --omp-nthreads {omp_nthreads:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
+singularity_cmd = f"singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nthreads:.0f} --omp-nthreads {omp_nthreads:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
 
 # define permission cmd
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir} \n"
@@ -128,7 +135,7 @@ os.makedirs(f"{main_dir}/{project_dir}/derivatives/fmriprep/jobs", exist_ok=True
 os.makedirs(f"{main_dir}/{project_dir}/derivatives/fmriprep/log_outputs", exist_ok=True)
 
 of = open(sh_fn, 'w')
-of.write(f"{slurm_cmd} {singularity_cmd} {chmod_cmd} {chgrp_cmd} {chmod_cmd_temp} {chgrp_cmd_temp}")
+of.write(f"{slurm_cmd}{template_flow_cmd}{singularity_cmd}{chmod_cmd}{chgrp_cmd}{chmod_cmd_temp}{chgrp_cmd_temp}")
 of.close()
 
 # Submit jobs
