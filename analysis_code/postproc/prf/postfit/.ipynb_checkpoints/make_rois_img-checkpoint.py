@@ -24,6 +24,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_img.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
