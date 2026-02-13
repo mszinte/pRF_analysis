@@ -92,26 +92,19 @@ def get_rois(subject, surf_format, rois_type, mask=True, rois=None, hemis=None):
     # Full brain
     # --------------------------------------------------
     if hemis is None:
-        rois_dict_brain = dict(
-            np.load(
-                '{}/{}_{}_{}.npz'.format(
-                    rois_dir, subject, surf_format, rois_type
-                )
-            )
-        )
+        rois_dict_brain = dict(np.load('{}/{}_{}_{}.npz'.format(
+            rois_dir, subject, surf_format, rois_type)))
 
         if rois is not None:
             rois_dict_brain = {
                 roi_name: roi_mask
                 for roi_name, roi_mask in rois_dict_brain.items()
-                if roi_name in rois
-            }
+                if roi_name in rois}
 
         if not mask:
             rois_dict_brain = {
                 roi_name: np.where(roi_mask)[0]
-                for roi_name, roi_mask in rois_dict_brain.items()
-            }
+                for roi_name, roi_mask in rois_dict_brain.items()}
 
         return rois_dict_brain
 
@@ -135,26 +128,19 @@ def get_rois(subject, surf_format, rois_type, mask=True, rois=None, hemis=None):
     rois_dict_by_hemi = {}
 
     for hemi in hemis:
-        rois_dict_hemi = dict(
-            np.load(
-                '{}/{}_{}_{}_{}.npz'.format(
-                    rois_dir, subject, surf_format, hemi, rois_type
-                )
-            )
-        )
+        rois_dict_hemi = dict(np.load('{}/{}_{}_{}_{}.npz'.format(
+            rois_dir, subject,  hemi, surf_format, rois_type)))
 
         if rois is not None:
             rois_dict_hemi = {
                 roi_name: roi_mask
                 for roi_name, roi_mask in rois_dict_hemi.items()
-                if roi_name in rois
-            }
+                if roi_name in rois}
 
         if not mask:
             rois_dict_hemi = {
                 roi_name: np.where(roi_mask)[0]
-                for roi_name, roi_mask in rois_dict_hemi.items()
-            }
+                for roi_name, roi_mask in rois_dict_hemi.items()}
 
         rois_dict_by_hemi[hemi] = rois_dict_hemi
 
@@ -162,7 +148,6 @@ def get_rois(subject, surf_format, rois_type, mask=True, rois=None, hemis=None):
         return rois_dict_by_hemi[hemis[0]]
 
     return rois_dict_by_hemi         
-
 
 
 # def data_from_rois(fn, subject, rois):

@@ -8,7 +8,7 @@ Load freesurfer and use it to project MMP from fsaverage to fsnative
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: subject name
+sys.argv[3]: freesurfer subject name (e.g. sub-01)
 sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -23,6 +23,7 @@ python freesurfer_project_mmp_fsnative.py [main directory] [project name] [subje
 Executions:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python freesurfer_project_mmp_fsnative.py /scratch/mszinte/data RetinoMaps sub-01 327
+python freesurfer_project_mmp_fsnative.py /scratch/mszinte/data amblyo7T_prf sub-01_ses-01 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
