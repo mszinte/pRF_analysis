@@ -60,7 +60,6 @@ rh_mmp_fn = Path('{}/label/rh.HCPMMP1.annot'.format(fs_average_dir))
 if lh_mmp_fn.is_file() and rh_mmp_fn.is_file():
     print("Atlas found")
 else: 
-
     print("Downloading atlas files...")
     lh_url = "https://figshare.com/ndownloader/files/5528816"
     rh_url = "https://figshare.com/ndownloader/files/5528819"
