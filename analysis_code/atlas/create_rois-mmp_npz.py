@@ -22,6 +22,7 @@ python create_rois-mmp_npz.py [main directory] [project name] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/atlas
 python create_rois-mmp_npz.py /Users/uriel/disks/meso_shared RetinoMaps 327
+python create_rois-mmp_npz.py /scratch/mszinte/data amblyo7T_prf 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
@@ -200,7 +201,7 @@ for full_brain_format, cortex_format in formats.items():
     
     # Project borders of rois on overlays
     overlays_fn = '{}/db/{}/overlays.svg'.format(cortex_dir, subject)
-    overlays_rois_group_mmp_fn = '{}/db/{}/overlays_roi-group-mmp.svg'.format(cortex_dir, subject)
+    overlays_rois_group_mmp_fn = '{}/db/{}/overlays_rois-group-mmp.svg'.format(cortex_dir, subject)
 
     # Copy overlays 
     shutil.copy(overlays_fn, overlays_rois_group_mmp_fn)
@@ -213,8 +214,4 @@ for full_brain_format, cortex_format in formats.items():
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))       
-    
-    
-    
-    
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)) 
