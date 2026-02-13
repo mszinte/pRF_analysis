@@ -1,0 +1,111 @@
+# Main configuration
+project_name:
+  description: "Name of the project and of the dataset directory"
+  value: "bio7"
+
+cluster_name: 
+  description: "Name of the cluster to use in AMU mesocenter"
+  value: "skylake"
+
+# Dataset description
+subjects:
+  description: "Subjects of the dataset"
+  value: ["sub-8761", "sub-8762"]
+
+sessions:
+  description: "Sessions of the dataset"
+  value: ["ses-01", "ses-02"]
+
+task_names: 
+  description: "Names of the tasks of the dataset"
+  value: ["faceloc", "faces", "resting", "retin"]
+
+func_session:
+  description: "Session containing the pRF tasks"
+  value: ["ses-02"]
+
+prf_task_names:
+  description: "Names of the tasks analysed with pRF methods"
+  value: ["retin"]
+
+partial_scan: 
+  description: "Dataset including non whole-head recording"
+  value: False
+  levels: [True, False]
+
+TR: 
+  description: "Time repetition of the pRF tasks"
+  unit: "seconds"
+  value: 1.6
+
+TRs: 
+  description: "Number of TR of the pRF task"
+  value: 156
+  
+# Preprocessing
+preproc_prep: 
+  description: "Name of the main preprocessing method"
+  value: "fmriprep"
+
+flattening_method:
+  description: "Method use to obtain cortical flat maps"
+  value: "autoflatten"
+  levels: ["autoflatten", "mrisflatten", "autoflatten_freesurfer"]
+  level-description: 
+    autoflatten: "Use autoflatten software for automatic flattening using pyflatten"
+    mris_flatten: "Use mrisflatten after cutting manually the cortex with freesurfer"
+    autoflatten_freesurfer: "Use autoflatten software for automatic flattening using freesurfer mrisflatten"
+
+normalization: 
+  description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
+  value: "z-score"
+
+filtering:
+  description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"
+  value: "dct"
+
+high_pass_threshold: 
+  description: "Frequency (in Hz) below which signals are attenuated or removed."
+  value: 0.01
+
+formats: 
+  description: "Data format label names after preprocessing"
+  value: ["fsnative", "170k"]
+
+extensions: 
+  description: "Data format extensions after preprocessing"
+  value: ["func.gii", "dtseries.nii"]
+
+formats_conversion: 
+  description: "Correspondance between full brain format (e.g. 170k, 91k) and cortex only (e.g. 59k, 64k)"
+  value: 
+      "170k": "59k"
+      "91k": "32k"
+
+pycortex_subject_formats:
+  description: "Correspondance between cortex format and pycortex subject"
+  value: 
+      "59k": "sub-hcp1.6mm"
+      "32k": "sub-hcp2.0mm"
+
+pycortex_subject_template:
+  description: "HCP subject use as template for pycortex projection (e.g. sub-hcp1.6mm or sub-hcp2.0mm"
+  value: "sub-hcp1.6mm"
+
+averaging_templates:
+  description: "Templates on whiche subject will be averaged. The key is the template name, the value is the format"
+  value: 
+    "hcp1.6mm" : "170k"
+
+maps_names_corr: 
+  description: "Inter-run correlation maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# Stats
+fdr_alpha: 
+  description: "P value level list for FDR corrected statistics"
+  value: [0.05, 0.01]
+
+corr_stats_th: 
+  description: "p value minimum threshold for inter-run correlation analysis"
+  value: 0.05
