@@ -88,14 +88,14 @@ slurm_cmd = """\
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-cd_cmd = "cd ../../../{}/preproc/functional/".format(project_dir)
-averaging_cmd = "python averaging.py {} {} {} {}".format(main_dir, project_dir, subject, group)
+averaging_script = os.path.join(base_dir, project_dir, "preproc", "functional", "averaging.py")
+averaging_cmd = f"python {averaging_script} {main_dir} {project_dir} {subject} {group}"
 
 # Create sh fn
 sh_fn = "{}/{}_averaging.sh".format(job_dir, subject)
 
 of = open(sh_fn, 'w')
-of.write("{} \n{} \n{}".format(slurm_cmd, cd_cmd, averaging_cmd))
+of.write("{} \n{}".format(slurm_cmd, averaging_cmd))
 of.close()
 
 # Submit jobs
