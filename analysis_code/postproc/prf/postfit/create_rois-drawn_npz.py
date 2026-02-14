@@ -76,8 +76,8 @@ for roi in rois_drawn_brain_dict.keys():
 print('Saving ROIs mask npz ...')
 roi_dir = '{}/{}/derivatives/pp_data/cortex/db/{}/rois'.format(main_dir, project_dir, subject)
 os.makedirs(roi_dir, exist_ok=True)
-np.savez('{}/{}_fsnative_hemi-L_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_lh_dict)
-np.savez('{}/{}_fsnative_hemi-R_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_rh_dict)
+np.savez('{}/{}_hemi-L_fsnative_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_lh_dict)
+np.savez('{}/{}_hemi-R_fsnative_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_rh_dict)
 np.savez('{}/{}_fsnative_rois-drawn.npz'.format(roi_dir, subject), **rois_drawn_brain_dict)
 
 # Define permission cmd
