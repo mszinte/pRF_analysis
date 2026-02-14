@@ -77,9 +77,9 @@ for full_brain_format, cortex_format in formats.items():
         main_dir, project_dir, subject)
     roi_mmp_brain_npz_fn = '{}/{}_{}_rois-mmp.npz'.format(
         roi_dir, subject, cortex_format)
-    roi_mmp_lh_npz_fn = '{}/{}_{}_hemi-L_rois-mmp.npz'.format(
+    roi_mmp_lh_npz_fn = '{}/{}_hemi-L_{}_rois-mmp.npz'.format(
         roi_dir, subject, cortex_format)
-    roi_mmp_rh_npz_fn = '{}/{}_{}_hemi-R_rois-mmp.npz'.format(
+    roi_mmp_rh_npz_fn = '{}/{}_hemi-R_{}_rois-mmp.npz'.format(
         roi_dir, subject, cortex_format)
     
     rois_mmp_masks_brain = dict(np.load(roi_mmp_brain_npz_fn))
@@ -127,9 +127,9 @@ for full_brain_format, cortex_format in formats.items():
 
     # Export masks as npz
     print('Saving roi mmp npz')
-    np.savez('{}/{}_{}_hemi-L_rois-mmp.npz'.format(
+    np.savez('{}/{}_hemi-L_{}_rois-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_mmp_masks_full_lh_dict)
-    np.savez('{}/{}_{}_hemi-R_rois-mmp.npz'.format(
+    np.savez('{}/{}_hemi-R_{}_rois-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_mmp_masks_full_rh_dict)
     np.savez('{}/{}_{}_rois-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_mmp_masks_full_brain_dict)
@@ -155,9 +155,9 @@ for full_brain_format, cortex_format in formats.items():
 
     # Export masks as npz
     print('Saving roi group mmp npz')
-    np.savez('{}/{}_{}_hemi-L_rois-group-mmp.npz'.format(
+    np.savez('{}/{}_hemi-L_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, cortex_format), **rois_group_mmp_masks_lh)
-    np.savez('{}/{}_{}_hemi-R_rois-group-mmp.npz'.format(
+    np.savez('{}/{}_hemi-R_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, cortex_format), **rois_group_mmp_masks_rh)
     np.savez('{}/{}_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, cortex_format), **rois_group_mmp_masks_brain)
@@ -192,9 +192,9 @@ for full_brain_format, cortex_format in formats.items():
     
     # Export masks as npz
     print('Saving roi group mmp npz')
-    np.savez('{}/{}_{}_hemi-L_rois-group-mmp.npz'.format(
+    np.savez('{}/{}_hemi-L_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_group_mmp_masks_full_lh_dict)
-    np.savez('{}/{}_{}_hemi-R_rois-group-mmp.npz'.format(
+    np.savez('{}/{}_hemi-R_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_group_mmp_masks_full_rh_dict)
     np.savez('{}/{}_{}_rois-group-mmp.npz'.format(
         roi_dir, subject, full_brain_format), **rois_group_mmp_masks_full_brain_dict)
