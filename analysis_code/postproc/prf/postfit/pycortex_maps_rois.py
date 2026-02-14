@@ -92,7 +92,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
     rois_dir = "{}/{}/derivatives/pp_data/{}/{}/rois".format(main_dir, project_dir, subject, format_)
     
     if not os.path.isdir(rois_dir):
-        print(f"[SKIP] corr_dir not found for format={format_}: {rois_dir}")
+        print(f"[SKIP] rois_dir not found for format={format_}: {rois_dir}")
         continue
     
     flatmaps_dir = '{}/pycortex/flatmaps_rois'.format(rois_dir)

@@ -42,7 +42,6 @@ import os
 import sys
 import subprocess
 from pathlib import Path
-import urllib.request
 
 # Inputs
 main_dir = sys.argv[1]
