@@ -73,6 +73,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 rois_methods = analysis_info['rois_methods']
+avg_methods = analysis_info['avg_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
@@ -111,21 +112,21 @@ for format_, extension in zip(formats, extensions):
                     array_rois[mask] = i
                     
                 # Load data to have source img
-                data_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives'.format(
-                    main_dir, project_dir, subject, format_)
-    
+                data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(
+                    main_dir, project_dir, subject, format_,
+                    preproc_prep, filtering, normalization, avg_methods[0])
+
                 # Find first file with prf-deriv in the name
-                data_files = glob.glob('{}/{}_*{}_*deriv*.{}'.format(data_dir, subject, hemi, extension))
+                data_files = glob.glob('{}/{}*{}*.{}'.format(data_dir, subject, hemi, extension))
                 if not data_files:
-                    raise FileNotFoundError(f"No prf-deriv file found for {subject} {hemi}")
+                    raise FileNotFoundError(f"No func file found for {subject} {hemi}")
                 data_fn = data_files[0]
                 img, data = load_surface(fn=data_fn)
                 
                 # Define filename
                 rois_fn = '{}_{}_{}_{}_{}_{}.{}'.format(subject, hemi, preproc_prep, filtering, 
                                                         normalization, rois_method_format,
-                                                        extension
-                                                       )
+                                                        extension)
     
                 # Saving file
                 array_rois = array_rois.reshape(1, -1)
@@ -136,13 +137,14 @@ for format_, extension in zip(formats, extensions):
                 
         elif format_ == '170k':
             # Load data to have source img
-            data_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives'.format(
-                main_dir, project_dir, subject, format_)
+            data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(
+                main_dir, project_dir, subject, format_,
+                preproc_prep, filtering, normalization, avg_methods[0])
             
             # Find first file with prf-deriv in the name
-            data_files = glob.glob('{}/{}_*deriv*.{}'.format(data_dir, subject, extension))
+            data_files = glob.glob('{}/{}*.{}'.format(data_dir, subject, extension))
             if not data_files:
-                raise FileNotFoundError(f"No prf-deriv file found for {subject}")
+                raise FileNotFoundError(f"No func file found for {subject}")
             data_fn = data_files[0]
             img, data = load_surface(fn=data_fn)
             
