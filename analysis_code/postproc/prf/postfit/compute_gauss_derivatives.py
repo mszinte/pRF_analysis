@@ -25,6 +25,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_gauss_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

@@ -1,290 +1,227 @@
-import numpy as np            
-def load_rois_atlas(atlas_name, surf_size, return_hemis=False, rois=None, mask=True, path_to_atlas=None):
+def get_rois(subject, surf_format, rois_type, mask=True, rois=None, hemis=None):
     """
-    Loads ROIs from an atlas.
+    Load ROI masks stored as .npz files from a pycortex subject database.
 
-    Parameters
-    ----------
-    atlas_name : str
-        The name of the atlas.
-    surf_size : str
-        Size of the surface, either '59k' or '170k'.
-    return_hemis : bool, optional
-        If True, returns ROIs for both hemispheres separately. If False, returns combined ROIs.
-        Default is False.
-    rois : list of str, optional
-        List of ROIs you want to extract. If None, all ROIs are returned. 
-        Default is None.
-    mask : bool, optional
-        If True, returns the ROI masks. If False, returns the indices where the masks are True.
-        Default is True.
-    path_to_atlas : str, optional
-        Path to the directory containing the atlas data. If not provided, the function looks for the atlas 
-        data in the default directory.
+    The ROI files are expected to be dictionaries where:
+        - keys are ROI names (str)
+        - values are boolean numpy arrays
+          (True = vertex belongs to the ROI, False otherwise)
 
-    Returns
-    -------
-    rois_masks : dict or tuple of dicts
-        A dictionary or tuple of dictionaries where the keys represent the ROIs and the values correspond 
-        to the respective masks for each hemisphere.
-
-    Raises
-    ------
-    ValueError
-        If 'surf_size' is not '59k' or '170k'.
-    """
-    import os
-    import numpy as np
-    
-    # Validating surf_size
-    if surf_size not in ['59k', '170k']:
-        raise ValueError("Invalid value for 'surf_size'. It should be either '59k' or '170k'.")
-    
-    # Loading data from the specified path or default directory
-    if path_to_atlas:
-        data_path = path_to_atlas
-    else:    
-        atlas_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../atlas/"))
-        data_path = atlas_dir
-    
-    if return_hemis:
-        filename_L = "{}_atlas_rois_{}_hemi-L.npz".format(atlas_name, surf_size)
-        data_L = np.load(os.path.join(data_path, filename_L))
-        rois_dict_L = dict(data_L)
-        
-        filename_R = "{}_atlas_rois_{}_hemi-R.npz".format(atlas_name, surf_size)
-        data_R = np.load(os.path.join(data_path, filename_R))
-        rois_dict_R = dict(data_R)
-        
-        # Handling the case where mask is False
-        if not mask:
-            rois_dict_L = {roi: np.where(rois_dict_L[roi])[0] for roi in rois_dict_L}
-            rois_dict_R = {roi: np.where(rois_dict_R[roi])[0] for roi in rois_dict_R}
-            
-        # Filtering ROIs if rois is provided
-        if rois is None:
-            return rois_dict_L, rois_dict_R
-        elif isinstance(rois, list):
-            filtered_rois_L = {roi: rois_dict_L[roi] for roi in rois if roi in rois_dict_L}
-            filtered_rois_R = {roi: rois_dict_R[roi] for roi in rois if roi in rois_dict_R}
-            return filtered_rois_L, filtered_rois_R
-        else:
-            raise ValueError("Invalid value for 'rois'. It should be either None or a list of ROI names.")
-    else: 
-        filename = "{}_atlas_rois_{}.npz".format(atlas_name, surf_size)
-        data = np.load(os.path.join(data_path, filename))
-        rois_dict = dict(data)
-        
-        # Handling the case where mask is False
-        if not mask:
-            rois_dict = {roi: np.where(rois_dict[roi])[0] for roi in rois_dict}
-            
-        # Filtering ROIs if rois is provided
-        if rois is None:
-            return rois_dict
-        elif isinstance(rois, list):
-            filtered_rois = {roi: rois_dict[roi] for roi in rois if roi in rois_dict}
-            return filtered_rois
-        else:
-            raise ValueError("Invalid value for 'rois'. It should be either None or a list of ROI names.")
-
-            
-def data_from_rois(fn, subject, rois):
-    """
-    Load a surface, and returne vertex only data from the specified ROIs
-    ----------
-    fn : surface filename
-    subject : subject 
-    rois : list of rois you want extract
-    filter_rois : bool, optional
-        If True (default), filters out NaN vertices from the ROI data.
-        If False, returns all vertices in the ROIs without NaN filtering.
-    
-    Returns
-    -------
-    img : the image load from fn   
-    data_roi : numpy rois data 
-              2 dim (time x vertices from all the rois)  
-              
-    roi_idx : indices of the rois vertices 
-    
-    
-    data_hemi : numpy stacked data
-                2 dim (time x vertices)    
-    """
-    import cortex
-    from surface_utils import load_surface
-
-    # Import data
-    img, data = load_surface(fn=fn)
-    len_data = data.shape[1]
-    
-    # Get regions of interest (ROIs) mask
-    if fn.endswith('.gii'):
-        roi_verts = cortex.get_roi_verts(subject=subject, roi=rois, mask=True)
-    elif fn.endswith('.nii'):
-        surf_size = '170k' if len_data > 60000 else '59k'
-        roi_verts = load_rois_atlas(atlas_name='mmp', 
-                                    surf_size=surf_size, 
-                                    return_hemis=False,
-                                    rois=rois, 
-                                    mask=True)
-
-    # Create a brain mask
-    # na_vertices = np.where(np.isnan(data).any(axis=0))[0]
-    brain_mask = np.any(list(roi_verts.values()), axis=0)
-    
-    # Filter out NaN vertices
-    na_vertices = np.isnan(data).any(axis=0)
-    
-    # create a hemi mask  
-    if 'hemi-L' in fn:
-        hemi_mask = brain_mask[:len_data]
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
-        
-    elif 'hemi-R' in fn: 
-        hemi_mask = brain_mask[-len_data:]
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
-    else: 
-        hemi_mask = brain_mask
-        for i, na_vertex in enumerate(na_vertices):
-            hemi_mask[i] = not na_vertex and hemi_mask[i]
-    
-    # Get indices of regions of interest (ROIs)
-    roi_idx = np.where(hemi_mask)[0]
-    
-    # Extract data corresponding to regions of interest (ROIs)
-    data_roi = data[:, hemi_mask]
-
-        
-    return img, data, data_roi, roi_idx
-
-
-
-def get_rois(subject, return_concat_hemis=False, return_hemi=None, rois=None, mask=True, atlas_name=None, surf_size=None, overlay_fn=None):
-    """
-    Accesses single hemisphere ROI masks for GIFTI and atlas ROI for CIFTI.
+    Depending on the arguments, the function can return:
+        - full-brain ROI masks
+        - left or right hemisphere ROI masks
+        - both hemispheres simultaneously
 
     Parameters
     ----------
     subject : str
-        Subject name in the pycortex database.
-    return_concat_hemis : bool, optional
-        Indicates whether to return concatenated hemisphere ROIs. Defaults to False.
-    return_hemi : str, optional
-        Indicates which hemisphere's ROI masks to return. Can be 'hemi-L' for the left hemisphere or 'hemi-R' for the right hemisphere.
-    rois : list of str, optional
-        List of ROIs you want to extract.
-    mask : bool, optional
-        Indicates whether to mask the ROIs. Defaults to True.
-    atlas_name : str, optional
-        If atlas_name is not None, subject has to be a template subject (i.e., sub-170k).
-        If provided, `surf_size` must also be specified.
-    surf_size : str, optional
-        The size in which you want the ROIs. It should be '59k' or '170k'. 
-        Required if `atlas_name` is provided.
-    overlay_fn : str, optional
-        File name of the overlay file (e.g. 'overlay_rois-drawn.svg')
+        Pycortex subject name.
+        Must be:
+            - 'sub-hcp59k' for surf_format in ['170k', '59k']
+            - 'sub-hcp32k' for surf_format in ['91k', '32k']
+
+    surf_format : str
+        Surface format of the ROI masks.
+        Allowed values are:
+            ['170k', '59k', '91k', '32k', 'fsnative']
+
+    rois_type : str
+        Name of the atlas used to define the ROIs.
+        Allowed values are:
+            ['rois-mmp', 'rois-group-mmp', 'rois-drawn']
+
+    mask : bool, optional (default=True)
+        If True, return boolean masks.
+        If False, return vertex indices (np.where(mask)[0]).
+        Indices are relative to the requested space
+        (full brain or hemisphere).
+
+    rois : list of str or None, optional (default=None)
+        List of ROI names to load.
+        If None, all ROIs found in the file are returned.
+
+    hemis : None, str, or list of str, optional (default=None)
+        Hemisphere selection:
+            - None : load full-brain ROIs
+            - 'hemi-L' : load left hemisphere ROIs
+            - 'hemi-R' : load right hemisphere ROIs
+            - ['hemi-L', 'hemi-R'] : load both hemispheres
 
     Returns
     -------
-    rois_masks : dict or tuple of dicts
-        A dictionary or tuple of dictionaries containing the ROI masks.
-        If `atlas_name` is provided, returns ROIs from the specified atlas.
-        If `atlas_name` is None, returns subject-specific ROIs from pycortex.
-        
-        If `atlas_name` is provided:
-        - If `return_concat_hemis` is True, returns a single dictionary with concatenated hemisphere ROIs.
-        - If `return_hemi` is specified, returns ROIs for the specified hemisphere.
-        - If neither `return_concat_hemis` nor `return_hemi` is specified, returns ROIs for both hemispheres in a tuple of dictionaries.
-        
-        If `atlas_name` is None:
-        - If `return_concat_hemis` is True, returns a single dictionary with concatenated hemisphere ROIs.
-        - If `return_hemi` is specified, returns ROIs for the specified hemisphere.
-        - If neither `return_concat_hemis` nor `return_hemi` is specified, returns ROIs for both hemispheres in a tuple of dictionaries.
+    dict
+        ROI masks or vertex indices, depending on input arguments.
 
     Notes
     -----
-    For both cases (`atlas_name` provided or not), ROI masks are represented as dictionaries where the keys represent the ROI names and 
-    the values correspond to the respective masks for each hemisphere. Each mask is an array of vertex indices indicating the locations of the ROI on the cortical surface.
-    """ 
+    Expected file naming conventions:
+
+    - Full brain:
+        {subject}_{surf_format}_rois-{rois_type}.npz
+
+    - Single hemisphere:
+        {subject}_{surf_format}_hemi-L_rois-{rois_type}.npz
+        {subject}_{surf_format}_hemi-R_rois-{rois_type}.npz
+
+    All files must be located in:
+        <pycortex_db>/<subject>/rois/
+    """
     import cortex
+    import numpy as np
+    import os
+
+    # --------------------------------------------------
+    # Input checks
+    # --------------------------------------------------
+    # if surf_format not in ['170k', '59k', '91k', '32k', 'fsnative']:
+    #     raise ValueError("Invalid value for 'surf_format'.")
+    # if rois_type not in ['roi-mmp', 'roi-group-mmp', 'roi-drawn']:
+    #     raise ValueError("Invalid value for 'rois_type'.")
+    # if surf_format in ['170k', '59k'] and subject != 'sub-hcp59k':
+    #     raise ValueError("For this format subject should be sub-hcp59k")
+    # if surf_format in ['91k', '32k'] and subject != 'sub-hcp32k':
+    #     raise ValueError("For this format subject should be sub-hcp32k")
+
+    # --------------------------------------------------
+    # Paths
+    # --------------------------------------------------
+    db_dir = cortex.database.default_filestore
+    rois_dir = os.path.join(db_dir, subject, 'rois')
+
+    # --------------------------------------------------
+    # Full brain
+    # --------------------------------------------------
+    if hemis is None:
+        rois_dict_brain = dict(np.load('{}/{}_{}_{}.npz'.format(
+            rois_dir, subject, surf_format, rois_type)))
+
+        if rois is not None:
+            rois_dict_brain = {
+                roi_name: roi_mask
+                for roi_name, roi_mask in rois_dict_brain.items()
+                if roi_name in rois}
+
+        if not mask:
+            rois_dict_brain = {
+                roi_name: np.where(roi_mask)[0]
+                for roi_name, roi_mask in rois_dict_brain.items()}
+
+        return rois_dict_brain
+
+    # --------------------------------------------------
+    # Hemispheres
+    # --------------------------------------------------
+    if isinstance(hemis, str):
+        hemis = [hemis]
+
+    if not isinstance(hemis, (list, tuple)):
+        raise ValueError(
+            "Invalid value for 'hemis'. It should be 'hemi-L', 'hemi-R' or ['hemi-L', 'hemi-R']."
+        )
+
+    for hemi in hemis:
+        if hemi not in ['hemi-L', 'hemi-R']:
+            raise ValueError(
+                "Invalid value for 'hemis'. It should be 'hemi-L', 'hemi-R' or ['hemi-L', 'hemi-R']."
+            )
+
+    rois_dict_by_hemi = {}
+
+    for hemi in hemis:
+        rois_dict_hemi = dict(np.load('{}/{}_{}_{}_{}.npz'.format(
+            rois_dir, subject,  hemi, surf_format, rois_type)))
+
+        if rois is not None:
+            rois_dict_hemi = {
+                roi_name: roi_mask
+                for roi_name, roi_mask in rois_dict_hemi.items()
+                if roi_name in rois}
+
+        if not mask:
+            rois_dict_hemi = {
+                roi_name: np.where(roi_mask)[0]
+                for roi_name, roi_mask in rois_dict_hemi.items()}
+
+        rois_dict_by_hemi[hemi] = rois_dict_hemi
+
+    if len(rois_dict_by_hemi) == 1:
+        return rois_dict_by_hemi[hemis[0]]
+
+    return rois_dict_by_hemi         
+
+
+# def data_from_rois(fn, subject, rois):
+#     """
+#     Load a surface, and returne vertex only data from the specified ROIs
+#     ----------
+#     fn : surface filename
+#     subject : subject 
+#     rois : list of rois you want extract
+#     filter_rois : bool, optional
+#         If True (default), filters out NaN vertices from the ROI data.
+#         If False, returns all vertices in the ROIs without NaN filtering.
     
-    surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(subject, "flat")]
-    surf_lh, surf_rh = surfs[0], surfs[1]
-    lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
-
-    # define overlay
-    if overlay_fn == 'None': 
-        overlay_file = None
-    else:
-        # define overlay path
-        pycortex_config_file  = cortex.options.usercfg
-        with open(pycortex_config_file, 'r') as fileIn:
-            for line in fileIn:
-                if 'filestore' in line:
-                    db_path=line[10:-2]
-        overlay_file = f"{db_path}/{subject}/{overlay_fn}"
+#     Returns
+#     -------
+#     img : the image load from fn   
+#     data_roi : numpy rois data 
+#               2 dim (time x vertices from all the rois)  
+              
+#     roi_idx : indices of the rois vertices 
     
-    # get rois 
-    if atlas_name :
-        roi_verts = load_rois_atlas(atlas_name=atlas_name, 
-                                    surf_size=surf_size,
-                                    return_hemis=False,
-                                    rois=rois, 
-                                    mask=mask)
-        
-        if return_concat_hemis :
-            return roi_verts
-        
-        
-        elif return_hemi == 'hemi-L':
-            roi_verts_L, roi_verts_R = load_rois_atlas(atlas_name=atlas_name, surf_size=surf_size, return_hemis=True, rois=rois, mask=mask)
-            return roi_verts_L
-        elif return_hemi == 'hemi-R':
-            roi_verts_L, roi_verts_R = load_rois_atlas(atlas_name=atlas_name, surf_size=surf_size, return_hemis=True, rois=rois, mask=mask)
-            return roi_verts_R
-        else:
-            roi_verts_L, roi_verts_R = load_rois_atlas(atlas_name=atlas_name, surf_size=surf_size, return_hemis=True, rois=rois, mask=mask)
-            return roi_verts_L, roi_verts_R
+    
+#     data_hemi : numpy stacked data
+#                 2 dim (time x vertices)    
+#     """
+#     import cortex
+#     import numpy as np
+#     from surface_utils import load_surface
 
-    else:
-        roi_verts = cortex.get_roi_verts(subject=subject, 
-                                          roi=rois, 
-                                          mask=True,
-                                          overlay_file=overlay_file)
-        rois_masks_L = {roi: data[:lh_vert_num] for roi, data in roi_verts.items()}
-        rois_masks_R = {roi: data[-rh_vert_num:] for roi, data in roi_verts.items()}
+#     # Import data
+#     img, data = load_surface(fn=fn)
+#     len_data = data.shape[1]
+    
+#     # Get regions of interest (ROIs) mask
+#     if fn.endswith('.gii'):
+#         roi_verts = cortex.get_roi_verts(subject=subject, roi=rois, mask=True)
+#     elif fn.endswith('.nii'):
+#         surf_size = '170k' if len_data > 60000 else '59k'
+#         roi_verts = load_rois_atlas(atlas_name='mmp', 
+#                                     surf_size=surf_size, 
+#                                     return_hemis=False,
+#                                     rois=rois, 
+#                                     mask=True)
+
+#     # Create a brain mask
+#     # na_vertices = np.where(np.isnan(data).any(axis=0))[0]
+#     brain_mask = np.any(list(roi_verts.values()), axis=0)
+    
+#     # Filter out NaN vertices
+#     na_vertices = np.isnan(data).any(axis=0)
+    
+#     # create a hemi mask  
+#     if 'hemi-L' in fn:
+#         hemi_mask = brain_mask[:len_data]
+#         for i, na_vertex in enumerate(na_vertices):
+#             hemi_mask[i] = not na_vertex and hemi_mask[i]
         
-        if mask==True:
-            if return_concat_hemis :
-                return roi_verts
-            elif return_hemi == 'hemi-L':
-                return rois_masks_L
-            elif return_hemi == 'hemi-R':
-                return rois_masks_R
-            else:
-                return rois_masks_L, rois_masks_R
+#     elif 'hemi-R' in fn: 
+#         hemi_mask = brain_mask[-len_data:]
+#         for i, na_vertex in enumerate(na_vertices):
+#             hemi_mask[i] = not na_vertex and hemi_mask[i]
+#     else: 
+#         hemi_mask = brain_mask
+#         for i, na_vertex in enumerate(na_vertices):
+#             hemi_mask[i] = not na_vertex and hemi_mask[i]
+    
+#     # Get indices of regions of interest (ROIs)
+#     roi_idx = np.where(hemi_mask)[0]
+    
+#     # Extract data corresponding to regions of interest (ROIs)
+#     data_roi = data[:, hemi_mask]
 
-        else:
-            rois_idx_L = {roi: np.where(rois_masks_L[roi])[0] for roi in rois_masks_L}
-            rois_idx_R = {roi: np.where(rois_masks_R[roi])[0] for roi in rois_masks_R}
-
-            if return_concat_hemis :
-                roi_verts = cortex.get_roi_verts(subject=subject, 
-                                                 roi=rois, 
-                                                 mask=False,
-                                                 overlay_file=overlay_file)
-                return roi_verts
-            elif return_hemi == 'hemi-L':
-                return rois_idx_L
-            elif return_hemi == 'hemi-R':
-                return rois_idx_R
-            else:
-                return rois_idx_L, rois_idx_R
-
+        
+#     return img, data, data_roi, roi_idx
 
 
 def load_surface_pycortex(L_fn=None, R_fn=None, brain_fn=None, return_img=False, 
@@ -319,7 +256,8 @@ def load_surface_pycortex(L_fn=None, R_fn=None, brain_fn=None, return_img=False,
         - 'source_data_R': optional numpy array, source data for the right hemisphere (only available if return_source_data is True).
         - 'source_data': optional numpy array, source data for the entire brain (only available if return_source_data is True).
     """
-
+    
+    import numpy as np
     from surface_utils import load_surface
     from cifti_utils import from_170k_to_59k
     
@@ -508,6 +446,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     """
     
     import cortex
+    import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
     from matplotlib import cm
@@ -770,36 +709,80 @@ def setup_pycortex_dirs(cortex_dir):
     import os
     import urllib.request
     import json
-    """Check for cortex/colormaps and cortex/db folders, create if missing and download colormaps"""
+
+    """
+    - Create cortex/colormaps and cortex/db directories if missing
+    - Download pycortex colormaps if not present
+    - Download HCP pycortex subjects (sub-hcp32k, sub-hcp59k) from GitHub if missing
+    """
+
     colormaps_dir = os.path.join(cortex_dir, "colormaps")
     db_dir = os.path.join(cortex_dir, "db")
-    
+
     # Create directories if they don't exist
     os.makedirs(colormaps_dir, exist_ok=True)
     os.makedirs(db_dir, exist_ok=True)
-    
-    # Check if colormaps directory is empty
+
+    # ------------------------------------------------------------------
+    # 1) Pycortex colormaps
+    # ------------------------------------------------------------------
     if not os.listdir(colormaps_dir):
-        print("Downloading colormaps from GitHub...")
-        # GitHub API URL to list files in the colormaps directory
+        print("Downloading colormaps from pycortex GitHub...")
         api_url = "https://api.github.com/repos/gallantlab/pycortex/contents/filestore/colormaps"
-        
+
         try:
             with urllib.request.urlopen(api_url) as response:
                 files = json.loads(response.read())
-            
+
             # Download each colormap file
             for file_info in files:
-                if file_info['type'] == 'file':
-                    file_url = file_info['download_url']
-                    file_name = file_info['name']
-                    file_path = os.path.join(colormaps_dir, file_name)
-                    
-                    print(f"  Downloading {file_name}...")
-                    urllib.request.urlretrieve(file_url, file_path)
-            
+                if file_info["type"] == "file":
+                    dst = os.path.join(colormaps_dir, file_info["name"])
+                    print(f"  Downloading {file_info['name']}...")
+                    urllib.request.urlretrieve(file_info["download_url"], dst)
+
             print("Colormaps downloaded successfully.")
         except Exception as e:
             print(f"Warning: Could not download colormaps: {e}")
     else:
         print("Colormaps directory already contains files.")
+
+    # ------------------------------------------------------------------
+    # 2) HCP pycortex subjects (sub-hcp32k / sub-hcp59k)
+    # ------------------------------------------------------------------
+    def download_github_dir(api_url, local_dir):
+        """Recursively download a GitHub directory using the GitHub API."""
+        os.makedirs(local_dir, exist_ok=True)
+
+        with urllib.request.urlopen(api_url) as response:
+            items = json.loads(response.read())
+
+        for item in items:
+            local_path = os.path.join(local_dir, item["name"])
+
+            if item["type"] == "file":
+                print(f"  Downloading {local_path}")
+                urllib.request.urlretrieve(item["download_url"], local_path)
+
+            elif item["type"] == "dir":
+                download_github_dir(item["url"], local_path)
+
+    github_base = (
+        "https://api.github.com/repos/ulascombes/"
+        "HCP_pycortex_subjects/contents/data/cortex/db"
+    )
+
+    for subject in ["sub-hcp1.6mm", "sub-hcp2.0mm"]:
+        local_subject_dir = os.path.join(db_dir, subject)
+
+        if not os.path.exists(local_subject_dir):
+            print(f"Downloading {subject} from GitHub...")
+            api_url = f"{github_base}/{subject}"
+
+            try:
+                download_github_dir(api_url, local_subject_dir)
+                print(f"{subject} downloaded successfully.")
+            except Exception as e:
+                print(f"Warning: Could not download {subject}: {e}")
+        else:
+            print(f"{subject} already exists.")
