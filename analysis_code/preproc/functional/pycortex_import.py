@@ -84,14 +84,15 @@ importlib.reload(cortex)
 
 # add participant to pycortex db
 print('import subject in pycortex')
-# cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'smoothwm')
-cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'white')
+cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'smoothwm')
+# cortex.freesurfer.import_subj(fs_subject, cx_subject, fs_dir, 'white')
 
 # add participant flat maps
 print('import subject flatmaps')
 try: cortex.freesurfer.import_flat(fs_subject=fs_subject, cx_subject=cx_subject, 
                                   freesurfer_subject_dir=fs_dir, patch=patch_name, auto_overwrite=True)
-except: pass
+except Exception as e:
+    print(f"Warning: Flatmap import failed → {e}")
 
 # create participant pycortex overlays
 print('create subject pycortex overlays to check')

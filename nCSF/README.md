@@ -24,4 +24,12 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Download BIDSonym singularity (singularity build /scratch/mszinte/data/nCSF/code/singularity/bidsonym-v0.0.4.simg docker://peerherholz/bidsonym:v0.0.4) 
 - [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py)
 - [x] Download fMRIprep singulatity (singularity build /scratch/mszinte/data/nCSF/code/singularity/fmriprep-25.2.3.simg docker://nipreps/fmriprep:25.2.3)
+- [x] Download [template flow](https://github.com/templateflow/templateflow) using [datalad](https://www.datalad.org/#install) and pute it in /code/singularity/fmriprep_tf 
+
+```bash
+datalad install -r ///templateflow
+cd templateflow
+datalad get *
+```
+
 - [x] fMRIprep with anat-only option [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)

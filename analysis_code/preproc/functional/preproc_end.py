@@ -101,7 +101,7 @@ for format_, extension in zip(formats, extensions):
         # Find outputs from fMRIprep
         fmriprep_func_fns = glob.glob("{}/{}/derivatives/fmriprep/fmriprep/{}/{}/func/*{}*.{}".format(
             main_dir, project_dir, subject, session, format_, extension)) 
-
+    
         if not fmriprep_func_fns:
             print('No files for {}'.format(session))
             continue
@@ -205,7 +205,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
             img.darrays[0].meta['GeometricType'] = geometric_type
             img.darrays[1].datatype = 'NIFTI_TYPE_FLOAT32'
             nb.save(img, '{}/{}_{}_{}.surf.gii'.format(
-                dest_dir_anat, subject, save_hemi, save_surf), mode="compat")
+                dest_dir_anat, subject, save_hemi, save_surf))
             
 # Time
 end_time = datetime.datetime.now()

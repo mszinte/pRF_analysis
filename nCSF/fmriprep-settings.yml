@@ -40,7 +40,7 @@ mem_limit:
 
 fs_no_resume: 
   description: "Import pre-computed FreeSurfer reconstruction without resuming. The user is responsible for ensuring that all necessary files are present."
-  value: True
+  value: False
   levels: [True, False]
 
 skip_bids_valid:
