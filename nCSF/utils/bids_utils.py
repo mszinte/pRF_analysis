@@ -19,9 +19,42 @@ import scipy.io
 import pandas as pd
 
 
+# def clean_anat_mp2rage(anat_dir):
+#     """
+#     Keep only MP2RAGE UNIDEN T1w image and remove all other MP2RAGE-related files.
+
+#     This function assumes that original files are safely stored in sourcedata.
+#     """
+#     if not os.path.isdir(anat_dir):
+#         return
+
+#     for fname in os.listdir(anat_dir):
+
+#         # Work only on MP2RAGE-related files
+#         if "MP2RAGE" not in fname and "UNIDEN" not in fname:
+#             continue
+
+#         fpath = os.path.join(anat_dir, fname)
+
+#         # Keep UNIDEN T1w (nii.gz and json)
+#         if (
+#             "UNIDEN" in fname
+#             and "_T1w" in fname
+#             and (fname.endswith(".nii.gz") or fname.endswith(".json"))
+#         ):
+#             continue
+
+#         # Remove everything else related to MP2RAGE
+#         if os.path.isfile(fpath):
+#             os.remove(fpath)
+
+#     print("Kept only UNIDEN T1w and removed other MP2RAGE files in {}".format(anat_dir))
+    
+    
 def clean_anat_mp2rage(anat_dir):
     """
-    Keep only MP2RAGE UNIDEN T1w image and remove all other MP2RAGE-related files.
+    Keep only MP2RAGE UNIDEN T1w image, rename it to remove _acq-UNIDEN,
+    and remove all other MP2RAGE-related files.
 
     This function assumes that original files are safely stored in sourcedata.
     """
@@ -29,26 +62,30 @@ def clean_anat_mp2rage(anat_dir):
         return
 
     for fname in os.listdir(anat_dir):
+        fpath = os.path.join(anat_dir, fname)
+
+        # Rename _acq-UNIDEN_T1w.* → _T1w.*
+        if "_acq-UNIDEN_T1w" in fname:
+            new_fname = fname.replace("_acq-UNIDEN_T1w", "_T1w")
+            new_fpath = os.path.join(anat_dir, new_fname)
+            os.rename(fpath, new_fpath)
+            fpath = new_fpath  # update path for further checks
+            fname = new_fname
 
         # Work only on MP2RAGE-related files
         if "MP2RAGE" not in fname and "UNIDEN" not in fname:
             continue
 
-        fpath = os.path.join(anat_dir, fname)
-
         # Keep UNIDEN T1w (nii.gz and json)
-        if (
-            "UNIDEN" in fname
-            and "_T1w" in fname
-            and (fname.endswith(".nii.gz") or fname.endswith(".json"))
-        ):
+        if "_T1w" in fname and (fname.endswith(".nii.gz") or fname.endswith(".json")):
             continue
 
         # Remove everything else related to MP2RAGE
         if os.path.isfile(fpath):
             os.remove(fpath)
 
-    print("Kept only UNIDEN T1w and removed other MP2RAGE files in {}".format(anat_dir))
+    print("Kept only UNIDEN T1w, renamed files, and removed other MP2RAGE files in {}".format(anat_dir))
+    
 
 
 def update_mp2rage_json(anat_dir, tr_exc=6.2, tr_prep=5, nshots=1):
