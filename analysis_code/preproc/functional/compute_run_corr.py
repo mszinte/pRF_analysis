@@ -123,8 +123,8 @@ if subject != 'template_avg':
 
             print(task, len(preproc_files_task), preproc_files_task)
 
-            if not preproc_files_task:
-                print('No files for {}'.format(task))
+            if not preproc_files_task or len(preproc_files_task) < 2:
+                print('No, or only onefiles for {}'.format(task))
                 continue
             
             if preproc_files_task[0].find('hemi-L') != -1: hemi = 'hemi-L'
