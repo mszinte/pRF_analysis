@@ -17,7 +17,7 @@ procs_hours_anat:
 
 fmriprep_simg:
   description: "Name and version of the the simg file of fmriprep"
-  value: "fmriprep-25.2.0.simg"
+  value: "fmriprep-22.1.1.simg"
   
 # FMRIPREP settings
 bold2anat_dof: 
@@ -40,7 +40,7 @@ mem_limit:
 
 fs_no_resume: 
   description: "Import pre-computed FreeSurfer reconstruction without resuming. The user is responsible for ensuring that all necessary files are present."
-  value: True
+  value: False
   levels: [True, False]
 
 skip_bids_valid:
