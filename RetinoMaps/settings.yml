@@ -66,8 +66,8 @@ flattening_method:
 
 normalization: 
   description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
-  value: "z-score"
-
+  value: "z-score" 
+ 
 filtering:
   description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"
   value: "dct"

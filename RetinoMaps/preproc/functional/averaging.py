@@ -96,9 +96,10 @@ for format_, extension in zip(formats, extensions):
 preproc_fns = []
 
 for format_, extension in zip(formats, extensions):
-    list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
+   list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
         main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, extension))
-    preproc_fns.extend(list_)
+   preproc_fns.extend(list_)
+   
 
 # Split filtered files  depending of their nature
 preproc_fsnative_hemi_L, preproc_fsnative_hemi_R, preproc_170k = [], [], []

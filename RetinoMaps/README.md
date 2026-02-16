@@ -189,4 +189,5 @@ https://invibe.nohost.me/predicteye/
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 #### PMF Gaussian fit
-- [ ] Create the visual matrix design with eye movements (retinal view vdm) [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
+- [x] Create the visual matrix design with eye movements (retinal view vdm) [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
+- [ ] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
