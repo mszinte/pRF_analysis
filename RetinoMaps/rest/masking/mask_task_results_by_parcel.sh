@@ -6,7 +6,7 @@
 
 # Get the paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/parcels"
+ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1_clusters/parcels"
 
 # Subjects
 SUBJECTS=(01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25 170k)
