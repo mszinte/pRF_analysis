@@ -55,7 +55,6 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 #### PRF ROIs
 - [ ] Create 170k MMP rois masks [create_rois-mmp_npz.py](../analysis_code/atlas/create_rois-mmp_npz.py)
-- [ ] Draw individual ROI on fsnative data using Inkscape and create masks rois mask [create_rois-drawn_npz.py](../analysis_code/postproc/prf/postfit/create_rois-drawn_npz.py)
 - [ ] Project MMP atals on fsnative surface using freesurfer [freesurfer_project_mmp_fsnative.py](../analysis_code/postproc/prf/postfit/freesurfer_project_mmp_fsnative.py)
 - [ ] Make fsnative roi mmp npz and overlays [fsnative_mmp_rois.py](../analysis_code/postproc/prf/postfit/fsnative_mmp_rois.py)
 - [ ] Make ROIS files [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)

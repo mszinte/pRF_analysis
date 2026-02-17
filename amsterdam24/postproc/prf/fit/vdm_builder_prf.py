@@ -24,7 +24,7 @@ To run:
 >> python vdm_builder_prf.py [main directory] [project name] [group] 
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/postproc/prf/fit
+cd ~/projects/pRF_analysis/amsterdam24/postproc/prf/fit
 python vdm_builder_prf.py /scratch/mszinte/data RetinoMaps 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -68,6 +68,8 @@ prf_task_names = analysis_info['prf_task_names']
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0]
 vdm_height = analysis_info['vdm_size_pix'][1]
+
+deb()
 
 for prf_task_name in prf_task_names:
     
