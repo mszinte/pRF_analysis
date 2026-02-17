@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import datetime
 import numpy as np
 
@@ -53,11 +52,12 @@ from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from surface_utils import load_surface ,make_surface_image
-from pycortex_utils import set_pycortex_config_file
 from maths_utils import r2_score_surf
-from screen_utils import get_screen_settings
 from settings_utils import load_settings
+from screen_utils import get_screen_settings
+from pycortex_utils import set_pycortex_config_file
+from surface_utils import load_surface ,make_surface_image
+
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -139,7 +139,6 @@ img, data = load_surface(fn=input_fn)
 # Exclude vertices with all-NaN timeseries to avoid errors during fitting
 valid_vertices = ~np.isnan(data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
-
 
 # Filter data to only include valid vertices
 data = data[:, valid_vertices]
