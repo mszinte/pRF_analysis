@@ -13,7 +13,7 @@ sys.argv[3]: group of shared data (e.g. 327)
 Output(s):
 .npz masks for roi-mmp and roi-group-mmp for both 91k and 170k template 
 -----------------------------------------------------------------------------------------
-To run:
+To run LOCALLY with Inkscape installed:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/atlas
 2. run python command
@@ -22,6 +22,7 @@ python create_rois-mmp_npz.py [main directory] [project name] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/atlas
 python create_rois-mmp_npz.py /Users/uriel/disks/meso_shared RetinoMaps 327
+python create_rois-mmp_npz.py /Users/sinakling/disks/meso_shared amsterdam24 327
 python create_rois-mmp_npz.py /scratch/mszinte/data amblyo7T_prf 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
