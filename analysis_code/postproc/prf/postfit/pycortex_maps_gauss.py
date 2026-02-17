@@ -43,7 +43,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import cortex
 import importlib
 import numpy as np
@@ -51,8 +50,9 @@ import matplotlib.pyplot as plt
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
 from settings_utils import load_settings
+from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
+
 
 # Inputs
 main_dir = sys.argv[1]

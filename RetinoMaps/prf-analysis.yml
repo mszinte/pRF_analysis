@@ -103,7 +103,7 @@ maps_names_css_stats:
 rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 
-    fsnative: ["rois-drawn"]
+    fsnative: ["rois-drawn", "rois-group-mmp"]
     170k: ["rois-group-mmp"]
   levels: ["rois-drawn", "rois-group-mmp"]
   level-description: 

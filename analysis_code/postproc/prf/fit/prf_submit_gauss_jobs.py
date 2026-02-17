@@ -43,7 +43,6 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import yaml
 
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))

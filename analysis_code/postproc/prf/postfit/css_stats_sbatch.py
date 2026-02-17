@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 
 # Inputs
 main_dir = sys.argv[1]
@@ -112,4 +111,4 @@ of.close()
 
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
-#os.system("sbatch {}".format(sh_fn))
+os.system("sbatch {}".format(sh_fn))

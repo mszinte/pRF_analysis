@@ -18,7 +18,7 @@ sessions:
 
 task_names: 
   description: "Names of the tasks of the dataset"
-  value: ["resting", "retin"]
+  value: ["retin"]
 
 func_session:
   description: "Session containing the pRF tasks"

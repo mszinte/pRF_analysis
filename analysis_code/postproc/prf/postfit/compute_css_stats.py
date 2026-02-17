@@ -113,7 +113,6 @@ if subject != 'template_avg':
                 # Find pRF func/pred files
                 prf_pred_fns = glob.glob('{}/*task-{}*_{}*_prf-css_pred.{}'.format(
                     prf_fit_dir, prf_task_name, avg_method, extension))
-    
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)

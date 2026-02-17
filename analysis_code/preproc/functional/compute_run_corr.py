@@ -222,7 +222,7 @@ elif subject == 'template_avg':
         # find all the subject correlations
         for task in tasks:
             subjects_task_corr = []
-            
+
             for subject in subjects: 
                 corr_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
                     main_dir, project_dir, subject, averaging_template_format,
@@ -246,12 +246,12 @@ elif subject == 'template_avg':
             data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                 
             # Export results
-            template_cor_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
-                    main_dir, project_dir, preproc_prep, averaging_template_name, averaging_template_format, filtering, normalization)
+            template_cor_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(main_dir, project_dir, averaging_template_name, averaging_template_format, preproc_prep, filtering, normalization)
+
             os.makedirs(template_cor_dir, exist_ok=True)
             
             template_cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                averaging_template_name, template_cor_dir, task, preproc_prep, filtering, normalization)
+                template_cor_dir, averaging_template_name, task, preproc_prep, filtering, normalization)
             
             print("save: {}".format(template_cor_fn))
             template_corr_img = make_surface_image(

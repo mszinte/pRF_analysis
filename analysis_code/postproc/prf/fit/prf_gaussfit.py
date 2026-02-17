@@ -23,6 +23,7 @@ python prf_gaussfit.py [main directory] [project name] [subject name]
                        [inout file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -41,7 +42,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
 import datetime
 import numpy as np
 

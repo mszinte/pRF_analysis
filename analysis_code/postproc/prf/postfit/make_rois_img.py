@@ -46,7 +46,6 @@ import glob
 import numpy as np
 import nibabel as nb
 
-
 # personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from settings_utils import load_settings
@@ -134,8 +133,7 @@ for format_, extension in zip(formats, extensions):
                 rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
                 nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
                 print('Saving {}/{}'.format(rois_dir, rois_fn))
-            
-                
+                          
         elif format_ == '170k':
             # Load data to have source img
             data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(

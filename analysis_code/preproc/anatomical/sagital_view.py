@@ -22,6 +22,7 @@ To run:
 python sagital_view.py [main directory] [project name] [subject num] [video name]
 -----------------------------------------------------------------------------------------
 Exemple:
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/anatomical/
 python sagital_view.py ~/disks/meso_S/data/ RetinoMaps sub-01 before_edit
 python sagital_view.py ~/disks/meso_S/data/ amblyo7T_prf sub-01 published
 -----------------------------------------------------------------------------------------
