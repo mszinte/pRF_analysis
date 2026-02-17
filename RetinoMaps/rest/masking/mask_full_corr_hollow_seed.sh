@@ -8,7 +8,7 @@
 
 # Define paths
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS_PATH="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters/leaveout"
+ATLAS_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1_clusters/leaveout"
 
 # Define ROIs (bilateral)
 CLUSTERS=(mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1)

@@ -67,7 +67,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
         
         # Double check this
-        # NOTE: the parcels in the output file are sorted by the numeric label keys, in ascending order.
+        # NOTE: the parcels in the output file are sorted by the numeric label keys, in ascending order
         
 	done
     #######################################################################################
@@ -151,12 +151,12 @@ wb_command -cifti-transpose \
     "${OUTPUT_PATH}/group_wta_full_corr_mode.raw.nii" \
     "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" \
     -mem-limit 20
+    
+# Verify that the label order matches the original key ascending order
+wb_command -file-information "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii"
 
 # Dump the main output into another format
 wb_command -cifti-convert -to-text "${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii" "${OUTPUT_PATH}/group_wta_full_corr.tsv"
-
-# Verify that the label order matches the original key ascending order
-
 
 # Change file permissions
 chmod -Rf 771 ${BASE_PATH}
