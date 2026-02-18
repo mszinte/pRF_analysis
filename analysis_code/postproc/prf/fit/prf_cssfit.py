@@ -141,9 +141,9 @@ valid_vertices = ~np.isnan(data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 
 # Filter data to only include valid vertices
-data = data[:, valid_vertices]
+data_clean = data[:, valid_vertices]
 
-n_excluded = len(valid_vertices_idx) - valid_vertices.sum()
+n_excluded = data.shape[1] - data_clean.shape[1]
 if n_excluded > 0:
     print(f"Excluded {n_excluded} vertices with all-NaN values")
 print(f"Fitting {valid_vertices.sum()} valid vertices")
@@ -209,7 +209,7 @@ print("==========================\n")
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit gauss model
-gauss_fitter = Iso2DGaussianFitter(data=data.T, 
+gauss_fitter = Iso2DGaussianFitter(data=data_clean.T, 
                                    model=gauss_model, 
                                    n_jobs=n_jobs)
 
@@ -229,7 +229,7 @@ gauss_fit = gauss_fitter.iterative_search_params
 css_model = CSS_Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit CSS model
-css_fitter = CSS_Iso2DGaussianFitter(data=data.T, 
+css_fitter = CSS_Iso2DGaussianFitter(data=data_clean.T, 
                                      model=css_model, 
                                      n_jobs=n_jobs,
                                      use_previous_gaussian_fitter_hrf=False,
