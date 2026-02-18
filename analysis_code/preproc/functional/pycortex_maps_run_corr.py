@@ -47,8 +47,8 @@ import matplotlib.pyplot as plt
 
 # Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
-from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
 from settings_utils import load_settings
+from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
 
 # Inputs
 main_dir = sys.argv[1]
@@ -85,7 +85,6 @@ for idx, col_name in enumerate(maps_names_corr):
     exec("{}_idx = idx".format(col_name))
 
 # Plot scales
-
 for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
     corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
         main_dir, project_dir, subject, format_,
@@ -134,7 +133,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                       'add_roi': save_svg, 
                       'cbar_label': 'Pearson coefficient',
                       'with_labels': True,
-                      'overlay_fn': 'overlay.svg'
+                      'overlay_fn': 'overlays.svg'
                      }
         maps_names.append('corr')
 

@@ -40,14 +40,11 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import json
 import shutil
 import datetime
 import numpy as np
 import nibabel as nb
 import itertools as it
-from nilearn import signal
-from nilearn.glm.first_level.design_matrix import _cosine_drift
 
 # Personal imports
 sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
