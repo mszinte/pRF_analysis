@@ -217,6 +217,8 @@ if subject != 'template_avg':
                     elif rois_method_format == 'rois-group-mmp':
                         rois = list(analysis_info[rois_method_format].keys())
                     
+                    
+                    
                     # Get a dict with the surface vertices contained in each ROI
                     print('Get a dict with the surface vertices contained in each ROI...')
                     roi_verts_dict = get_rois(pycortex_subject, 
@@ -243,6 +245,14 @@ if subject != 'template_avg':
                     # Get the vertices number per hemisphere
                     lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
                     vert_num = lh_vert_num + rh_vert_num
+                    
+                    # Get a dict with the surface vertices contained in each ROI
+                    roi_verts_dict = get_rois(pycortex_subject, 
+                                              return_concat_hemis=True, 
+                                              rois=rois,
+                                              mask=False, 
+                                              atlas_name=atlas_name, 
+                                              surf_size=surf_size)
                     
                     # Derivatives settings        
                     vert_rsq_data = deriv_mat[rsq_idx2use, ...]
