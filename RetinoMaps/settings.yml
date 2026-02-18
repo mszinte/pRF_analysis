@@ -57,7 +57,7 @@ preproc_prep:
 
 flattening_method:
   description: "Method use to obtain cortical flat maps"
-  value: "autoflatten"
+  value: "mrisflatten"
   levels: ["autoflatten", "mrisflatten", "autoflatten_freesurfer"]
   level-description: 
     autoflatten: "Use autoflatten software for automatic flattening using pyflatten"
