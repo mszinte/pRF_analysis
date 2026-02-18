@@ -48,7 +48,7 @@ import numpy as np
 import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel, CSS_Iso2DGaussianModel
-from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
+# from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -57,7 +57,7 @@ from settings_utils import load_settings
 from screen_utils import get_screen_settings
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import load_surface ,make_surface_image
-
+from prfpy_utils import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 
 # Get inputs
 start_time = datetime.datetime.now()
