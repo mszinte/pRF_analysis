@@ -86,14 +86,14 @@ if anat_only:
     omp_nthreads = 1
     anat_only_in = '--anat-only'
     anat_only_end = '_anat_only'
-    procs_hours_in = procs_hours
+    procs_hours_in = procs_hours_anat
 else: 
     nb_procs = 32
     nthreads = 8
     omp_nthreads = 4
     anat_only_in = ''
     anat_only_end = ''
-    procs_hours_in = procs_hours_anat
+    procs_hours_in = procs_hours
 
 # Defind temp dir
 temp_dir = "{}/temp/{}/{}".format(main_dir, project_dir, subject)

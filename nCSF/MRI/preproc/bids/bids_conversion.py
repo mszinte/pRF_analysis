@@ -63,7 +63,7 @@ analysis_info = settings[0]
 
 subjects = analysis_info["subjects"]
 sessions = analysis_info["sessions"]
-tasks = analysis_info["tasks"]
+tasks = analysis_info["task_names"]
 
 base_dir = "{}/{}".format(main_dir, project_dir)
 

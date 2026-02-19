@@ -47,10 +47,11 @@ project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
 
-# Load settings and analysis parameters
-with open('../../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, "nCSF", "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
 
 nb_procs = 1
