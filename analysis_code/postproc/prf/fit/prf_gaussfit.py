@@ -115,11 +115,24 @@ gauss_fit_fn = gauss_fit_fn.replace('bold', 'prf-gauss_fit')
 gauss_pred_fn = input_fn.split('/')[-1]
 gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
 
-# Get task specific visual design matrix
-# TODO add option to have run specific vdm
-# if vdm per run setting is true, check for different path
-vdm_fn = '{}/{}/derivatives/vdm/task-{}_vdm.npy'.format(
-    main_dir, project_dir, prf_task_name)
+
+# Find vdm: check subject-specific directory first, then general vdm directory
+vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
+vdm_fn_subject = '{}/sub-{}/task-{}_vdm.npy'.format(vdm_base_dir, sub_num, prf_task_name)
+vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
+
+if os.path.isfile(vdm_fn_subject):
+    vdm_fn = vdm_fn_subject
+elif os.path.isfile(vdm_fn_general):
+    vdm_fn = vdm_fn_general
+else:
+    raise FileNotFoundError(
+        f"No VDM found for task '{prf_task_name}'.\n"
+        f"  Checked: {vdm_fn_subject}\n"
+        f"  Checked: {vdm_fn_general}"
+    )
+
+print(f"Loading VDM from: {vdm_fn}")
 vdm = np.load(vdm_fn)
 
 # define model parameter grid range
