@@ -363,7 +363,7 @@ if subject != 'template_avg':
                                               img=img, 
                                               brain_mask_59k=mask_59k)
                 
-                        deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
+                        deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii'.format(
                             prf_deriv_dir, subject, prf_task_name,
                             preproc_prep, filtering, normalization, avg_method, rois_method_format)
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))

@@ -54,5 +54,5 @@ with open('$settings_file', 'r') as file:
 for subject in $subjects
 do
     echo "Processing pycortex_maps_gauss.py for: $subject"
-    #python pycortex_maps_gauss.py "$data_path" "$project_name" "$subject" "$save_in_overlay" 
+    python pycortex_maps_gauss.py "$data_path" "$project_name" "$subject" "$save_in_overlay" 
 done
