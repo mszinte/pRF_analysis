@@ -18,7 +18,13 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from nilearn.connectome import ConnectivityMeasure
+
+# ============================================================
+# Paths
+# ============================================================
+USER = os.environ["USER"]
 
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
@@ -28,49 +34,39 @@ seed_folder = main_data
 partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(partial_output_folder, exist_ok=True)
 
+# Custom utils
+base_dir = f"/home/{USER}/GitHub_projects"
+utils_path = os.path.join(base_dir, "pRF_analysis/RetinoMaps")
+sys.path.append(utils_path)
+
 # Personal imports
 sys.path.append("{}/../../../../utils".format(os.getcwd()))
 from settings_utils import load_settings
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-prf_settings = load_settings([settings_path, prf_settings_path])
+settings_path = os.path.join(base_dir, utils_path, "settings.yml")
+prf_settings_path = os.path.join(base_dir, utils_path, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
-subjects = settings [0]
+subjects = analysis_info['subjects']
 
-#%% ROIs
+# ============================================================
+# ROIs
+# ============================================================
 
-subjects = [
-    'sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',
-    'sub-07','sub-08','sub-09','sub-11','sub-12','sub-13',
-    'sub-14','sub-17','sub-20','sub-21','sub-22','sub-23',
-    'sub-24','sub-25'
-]
+# Load seed clusters and parcel to cluster assignments
+clusters = analysis_info['rois-drawn']
+seed_to_parcels = analysis_info['rois-group-mmp']
 
-clusters = ['mPCS','sPCS','iPCS','sIPS','iIPS','hMT+','VO','LO','V3AB','V3','V2','V1']
-
-seed_to_parcels = {
-    'mPCS': ['SCEF','p32pr','24dv'],
-    'sPCS': ['FEF','i6-8','6a','6d','6mp','6ma'],
-    'iPCS': ['PEF','IFJp','6v','6r','IFJa','55b'],
-    'sIPS': ['VIP','LIPv','LIPd','IP2','7PC','AIP','7AL','7Am','7Pm'],
-    'iIPS': ['IP0','IPS1','V7','MIP','IP1','V6A','7PL'],
-    'hMT+': ['V4t','MST','MT','FST'],
-    'VO': ['V8','PIT','PH','FFC','VMV1','VMV2','VMV3','VVC'],
-    'LO': ['LO1','LO2','LO3'],
-    'V3AB': ['V3CD','V3A','V3B'],
-    'V3': ['V3','V4'],
-    'V2': ['V2'],
-    'V1': ['V1']
-}
+# Have mPCS as the first cluster instead of V1
+clusters.reverse()
 
 parcels = []
 for cl in clusters:
     parcels.extend(seed_to_parcels[cl])
 
-exclude_parcels_per_cluster = seed_to_parcels
+seed_to_number = {s: i+1 for i,s in enumerate(clusters)}
 
 # =========================
 # STORAGE
@@ -236,3 +232,4 @@ np.savez_compressed(
 )
 
 print("\n✅ Done.")
+# ============================================================
