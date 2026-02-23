@@ -44,6 +44,7 @@ import os
 import sys
 import glob
 import numpy as np
+import pandas as pd
 import nibabel as nb
 
 # personal imports
@@ -82,7 +83,10 @@ set_pycortex_config_file(cortex_dir)
 
 # Create roi image files
 for format_, extension in zip(formats, extensions): 
-    
+
+    if format_ == '170k':
+        rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
+
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
     for rois_method_format in rois_methods_format:
@@ -96,6 +100,10 @@ for format_, extension in zip(formats, extensions):
             rois = analysis_info[rois_method_format]
         elif rois_method_format == 'rois-group-mmp':
             rois = list(analysis_info[rois_method_format].keys())
+        elif rois_method_format == 'rois-mmp':
+            mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+            rois = mmp_rois_numbers_df['roi_name'].tolist()
 
         if format_ == 'fsnative':
             for hemi in ['hemi-L','hemi-R']:
