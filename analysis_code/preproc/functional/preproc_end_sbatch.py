@@ -55,7 +55,7 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 memory_val = 48
 nb_procs = 8
-hour_proc = 10
+hour_proc = 4
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
