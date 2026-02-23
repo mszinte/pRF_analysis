@@ -42,14 +42,14 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}_hollow_seed.shape.gii" \
         -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
-        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}_bin.shape.gii"
+        -var hollow_seed "${ATLAS_DIR}/mmp1_clusters/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_lh_${roi}_bin.shape.gii"
 
         # Repeat for the right hemi
         wb_command -metric-math \
         '(corr * (hollow_seed > 0)) + ((hollow_seed == 0) * -1)' \
         "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}_hollow_seed.shape.gii" \
         -var corr "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii" \
-        -var hollow_seed "${ATLAS_DIR}/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}_bin.shape.gii"
+        -var hollow_seed "${ATLAS_DIR}/mmp1_clusters/leaveout/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_rh_${roi}_bin.shape.gii"
 
         # Go back to the combined hemi version in cifti format
     	wb_command -cifti-create-dense-scalar "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
@@ -171,7 +171,7 @@ echo "=========================================="
 echo ""
 echo "Output files:"
 echo "  Individual subjects: ${OUTPUT_PATH}/sub-*_indexmax_wta.pscalar.nii"
-echo "  Group MODE:          ${OUTPUT_PATH}/group_wta_mode.pscalar.nii"
+echo "  Group MODE:          ${OUTPUT_PATH}/group_wta_full_corr.pscalar.nii"
 echo ""
 echo "Winner seed mapping:"
 for i in "${!ROIS[@]}"; do

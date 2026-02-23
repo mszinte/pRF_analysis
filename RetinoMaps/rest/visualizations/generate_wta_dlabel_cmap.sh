@@ -5,7 +5,7 @@
 #####################################################
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS_DIR="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
+ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta"
 TSV_FILE="${OUTPUT_PATH}/group_wta_full_corr.tsv"
 OUTPUT_FILE="${OUTPUT_PATH}/wta_full_corr_labels.txt"
