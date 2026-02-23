@@ -6,7 +6,7 @@
 #####################################################
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS_DIR="/home/${USER}/projects/pRF_analysis/RetinoMaps/rest/mmp1_clusters"
+ATLAS_DIR="${BASE_PATH}/atlas"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta"
 mkdir -p "${OUTPUT_PATH}"
 
@@ -32,7 +32,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     ## add print statements with wb_command -file-information to inspect the outputs
     for roi in "${ROIS[@]}"; do
 
-        # Get metric files for both hemi (neede to remove everything that's not cortex)
+        # Get metric files for both hemi (needed to remove everything that's not cortex)
     	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
     	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
     	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
