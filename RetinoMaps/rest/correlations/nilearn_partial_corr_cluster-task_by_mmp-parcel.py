@@ -20,25 +20,27 @@ import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
 
-# =========================
-# PATHS
-# =========================
-
+# Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+seed_folder = main_data
+
+# Output folders
 partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(partial_output_folder, exist_ok=True)
 
-USER = os.environ["USER"]
-main_codes = f"/home/{USER}/projects"
-utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
-sys.path.append(utils_path)
+# Personal imports
+sys.path.append("{}/../../../../utils".format(os.getcwd()))
+from settings_utils import load_settings
 
-from surface_utils import load_surface
-from cifti_utils import from_91k_to_32k
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+prf_settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
+subjects = settings [0]
 
-# =========================
-# SUBJECTS / ROIS
-# =========================
+#%% ROIs
 
 subjects = [
     'sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',

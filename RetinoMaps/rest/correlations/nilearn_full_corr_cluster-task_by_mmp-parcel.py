@@ -36,7 +36,19 @@ sys.path.append(utils_path)
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
-#%% Subjects / ROIs
+# Personal imports
+sys.path.append("{}/../../../../utils".format(os.getcwd()))
+from settings_utils import load_settings
+
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
+subjects = settings [0]
+
+#%% ROIs
 
 subjects = ['sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',
             'sub-07','sub-08','sub-09','sub-11','sub-12','sub-13',

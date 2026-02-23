@@ -98,6 +98,10 @@ mkdir -p "$OUT_DIR"
 	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_masked.dscalar.nii" \
 	    	-left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
 	    	-right-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii";
+
+		# Remove files that occupy excessive memory space
+        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
+        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
 		
 	  done
 	done
