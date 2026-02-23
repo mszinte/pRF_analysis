@@ -14,9 +14,9 @@ Results obtained using Workbench
 
 import os
 import sys
-import yaml
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from nilearn.connectome import ConnectivityMeasure
 
 USER = os.environ["USER"]
@@ -29,40 +29,45 @@ seed_folder = main_data
 full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
-# Custom utils
-main_codes = f"/home/{USER}/projects"
-utils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
-sys.path.append(utils_path)
+# General utils
+gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
+sys.path.append(gutils_path)
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
-#%% Subjects / ROIs
+# Custom utils
+base_dir = f"/home/{USER}/GitHub_projects"
+utils_path = os.path.join(base_dir, "pRF_analysis/RetinoMaps")
+sys.path.append(utils_path)
 
-subjects = ['sub-01','sub-02','sub-03','sub-04','sub-05','sub-06',
-            'sub-07','sub-08','sub-09','sub-11','sub-12','sub-13',
-            'sub-14','sub-17','sub-20','sub-21','sub-22','sub-23',
-            'sub-24','sub-25']
+# Personal imports
+sys.path.append("{}/../../../../utils".format(os.getcwd()))
+from settings_utils import load_settings
 
-clusters = ['mPCS','sPCS','iPCS','sIPS','iIPS','hMT+','VO','LO','V3AB','V3','V2','V1']
+# Load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, utils_path, "settings.yml")
+prf_settings_path = os.path.join(base_dir, utils_path, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
+subjects = analysis_info['subjects']
 
-seed_to_parcels = {
-    'mPCS': ['SCEF','p32pr','24dv'],
-    'sPCS': ['FEF','i6-8','6a','6d','6mp','6ma'],
-    'iPCS': ['PEF','IFJp','6v','6r','IFJa','55b'],
-    'sIPS': ['VIP','LIPv','LIPd','IP2','7PC','AIP','7AL','7Am','7Pm'],
-    'iIPS': ['IP0','IPS1','V7','MIP','IP1','V6A','7PL'],
-    'hMT+': ['V4t','MST','MT','FST'],
-    'VO': ['V8','PIT','PH','FFC','VMV1','VMV2','VMV3','VVC'],
-    'LO': ['LO1','LO2','LO3'],
-    'V3AB': ['V3CD','V3A','V3B'],
-    'V3': ['V3','V4'],
-    'V2': ['V2'],
-    'V1': ['V1']
-}
+# ============================================================
+# ROIs
+# ============================================================
+
+# Load seed clusters and parcel to cluster assignments
+clusters = analysis_info['rois-drawn']
+seed_to_parcels = analysis_info['rois-group-mmp']
+
+# Have mPCS as the first cluster instead of V1
+clusters.reverse()
 
 parcels = []
 for cl in clusters:
     parcels.extend(seed_to_parcels[cl])
+
+seed_to_number = {s: i+1 for i,s in enumerate(clusters)}
 
 #%% Initialize storage
 

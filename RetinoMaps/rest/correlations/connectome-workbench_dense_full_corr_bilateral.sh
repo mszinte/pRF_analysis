@@ -89,6 +89,10 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
         # Optional: Export to text for Python/Pandas use
         # wb_command -cifti-convert -to-text "$OUTPUT_PATH/sub-${i}/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.nii" \
         # "$OUTPUT_PATH/sub-${i}/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.txt"
+
+        # Remove files that occupy excessive memory space
+        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.nii"
+        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dconn.nii"
         
     done
 
