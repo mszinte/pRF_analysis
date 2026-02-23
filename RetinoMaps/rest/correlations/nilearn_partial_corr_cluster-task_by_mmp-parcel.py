@@ -34,6 +34,12 @@ seed_folder = main_data
 partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(partial_output_folder, exist_ok=True)
 
+# General utils
+gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
+sys.path.append(gutils_path)
+from surface_utils import load_surface
+from cifti_utils import from_91k_to_32k
+
 # Custom utils
 base_dir = f"/home/{USER}/GitHub_projects"
 utils_path = os.path.join(base_dir, "pRF_analysis/RetinoMaps")
