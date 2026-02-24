@@ -10,10 +10,8 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: script names to run:
-              - workbench_compute_wta.sh
-              - generate_wta_dlabel_cmap.sh
-sys.argv[6]: runtime (e.g. 0:15:00)
+sys.argv[5]: script name to run
+sys.argv[6]: runtime (e.g. 0:30:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -22,7 +20,7 @@ Example:
 source .bashrc
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/visualizations
-python submit_workbench_wta_job.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta 1:00:00
+python submit_workbench_wta_job.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta.sh 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -40,7 +38,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-script = sys.argv[5]   #
+script_name = sys.argv[5]   #
 proc_time = sys.argv[6] #
 
 memory_val = 20 # GB
@@ -91,6 +89,6 @@ with open(sh_fn, 'w') as of:
     of.write(f"{slurm_cmd}\n{main_cmd}\n{chmod_cmd}\n{chgrp_cmd}\n")
 
 # Submit job
-print("Submitting {} ({}) to queue".format(sh_fn))
+print("Submitting ({}) to queue".format(sh_fn))
 os.system("sbatch {}".format(sh_fn))
 
