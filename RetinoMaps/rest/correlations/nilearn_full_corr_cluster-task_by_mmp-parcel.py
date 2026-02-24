@@ -27,28 +27,22 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
-main_codes = "/home/marc_be/disks/meso_H/projects"
 
 # Output folders
 full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
 # General utils
-utils_path = os.path.join(project_root, "analysis_code", "utils")
-print("utils_path =", utils_path)
-sys.path.append(utils_path)
-
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 from settings_utils import load_settings
 
 # Load settings
-settings_path = os.path.join(project_root, "RetinoMaps", "settings.yml")
-prf_settings_path = os.path.join(project_root, "RetinoMaps", "prf-analysis.yml")
-
-print("settings_path =", settings_path)
-print("prf_settings_path =", prf_settings_path)
-
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+project_dir = 'RetinoMaps'
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 subjects = analysis_info["subjects"]
