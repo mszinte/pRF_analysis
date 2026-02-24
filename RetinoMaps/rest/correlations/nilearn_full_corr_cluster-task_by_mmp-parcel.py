@@ -21,16 +21,21 @@ from nilearn.connectome import ConnectivityMeasure
 
 USER = os.environ["USER"]
 
+# ============================================================
+# Paths
+# ============================================================
+USER = os.environ["USER"]
+
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 
 # Output folders
-full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
+full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
 # General utils
-main_codes = f"/home/{USER}/GitHub_projects"
+main_codes = f"/home/{USER}/meso_H/projects"
 gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
 sys.path.append(gutils_path)
 from surface_utils import load_surface
