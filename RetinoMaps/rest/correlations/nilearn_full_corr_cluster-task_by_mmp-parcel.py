@@ -19,8 +19,6 @@ import pandas as pd
 from pathlib import Path
 from nilearn.connectome import ConnectivityMeasure
 
-USER = os.environ["USER"]
-
 # ============================================================
 # Paths
 # ============================================================
@@ -29,33 +27,31 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
+main_codes = "/home/marc_be/disks/meso_H/projects"
 
 # Output folders
 full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
 # General utils
-main_codes = f"/home/{USER}/meso_H/projects"
-gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
-sys.path.append(gutils_path)
-from surface_utils import load_surface
-from cifti_utils import from_91k_to_32k
-
-# Custom utils
-utils_path = os.path.join(main_codes, "pRF_analysis/RetinoMaps")
+utils_path = os.path.join(project_root, "analysis_code", "utils")
+print("utils_path =", utils_path)
 sys.path.append(utils_path)
 
-# Personal imports
-sys.path.append("{}/../../../../utils".format(os.getcwd()))
+from surface_utils import load_surface
+from cifti_utils import from_91k_to_32k
 from settings_utils import load_settings
 
 # Load settings
-main_codes = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(main_codes, utils_path, "settings.yml")
-prf_settings_path = os.path.join(main_codes, utils_path, "prf-analysis.yml")
+settings_path = os.path.join(project_root, "RetinoMaps", "settings.yml")
+prf_settings_path = os.path.join(project_root, "RetinoMaps", "prf-analysis.yml")
+
+print("settings_path =", settings_path)
+print("prf_settings_path =", prf_settings_path)
+
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
-subjects = analysis_info['subjects']
+subjects = analysis_info["subjects"]
 
 # ============================================================
 # ROIs
