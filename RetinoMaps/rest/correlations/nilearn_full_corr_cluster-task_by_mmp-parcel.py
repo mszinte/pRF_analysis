@@ -32,14 +32,14 @@ seed_folder = main_data
 full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
-# General utils
-sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
+# Personal imports
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
+from settings_utils import load_settings
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
-from settings_utils import load_settings
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 project_dir = 'RetinoMaps'
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
