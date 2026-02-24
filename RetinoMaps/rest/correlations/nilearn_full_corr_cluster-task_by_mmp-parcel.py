@@ -30,14 +30,14 @@ full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group
 os.makedirs(full_output_folder, exist_ok=True)
 
 # General utils
+main_codes = f"/home/{USER}/GitHub_projects"
 gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
 sys.path.append(gutils_path)
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
 # Custom utils
-base_dir = f"/home/{USER}/GitHub_projects"
-utils_path = os.path.join(base_dir, "pRF_analysis/RetinoMaps")
+utils_path = os.path.join(main_codes, "pRF_analysis/RetinoMaps")
 sys.path.append(utils_path)
 
 # Personal imports
@@ -45,9 +45,9 @@ sys.path.append("{}/../../../../utils".format(os.getcwd()))
 from settings_utils import load_settings
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, utils_path, "settings.yml")
-prf_settings_path = os.path.join(base_dir, utils_path, "prf-analysis.yml")
+main_codes = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(main_codes, utils_path, "settings.yml")
+prf_settings_path = os.path.join(main_codes, utils_path, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 subjects = analysis_info['subjects']
