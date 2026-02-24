@@ -1,6 +1,7 @@
 #!/bin/bash
 #####################################################
 # Winner-Take-All analysis using Connectome-Workbench
+# Outputs are computed for Fisher-z results (and full corr just for comparison)
 # Note: INDEXMAX returns winning COLUMN (seed cluster, e.g. sPCS) by ROW (MMP  label) 
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
@@ -28,8 +29,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     mkdir -p "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     
-    ################# Debugging this part ###############################################
-    ## add print statements with wb_command -file-information to inspect the outputs
+    ################# Debugging this part ##########################
     for roi in "${ROIS[@]}"; do
 
         # Get metric files for both hemi (needed to remove everything that's not cortex)
@@ -63,7 +63,8 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         wb_command -cifti-parcellate \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN; 
+        "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN
+        -only-numeric; # this should prevent bugs resulting from a few empty vertices (only one case found, sub-25 left hemi parcel 6mp) 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3
         
         # Double check this
