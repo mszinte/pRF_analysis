@@ -19,6 +19,9 @@ import pandas as pd
 from pathlib import Path
 from nilearn.connectome import ConnectivityMeasure
 
+# ============================================================
+# Paths
+# ============================================================
 USER = os.environ["USER"]
 
 # Main folders
@@ -26,31 +29,23 @@ main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 
 # Output folders
-full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
+full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
 # General utils
-gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
-sys.path.append(gutils_path)
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
-
-# Custom utils
-base_dir = f"/home/{USER}/GitHub_projects"
-utils_path = os.path.join(base_dir, "pRF_analysis/RetinoMaps")
-sys.path.append(utils_path)
-
-# Personal imports
-sys.path.append("{}/../../../../utils".format(os.getcwd()))
 from settings_utils import load_settings
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, utils_path, "settings.yml")
-prf_settings_path = os.path.join(base_dir, utils_path, "prf-analysis.yml")
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+project_dir = 'RetinoMaps'
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
-subjects = analysis_info['subjects']
+subjects = analysis_info["subjects"]
 
 # ============================================================
 # ROIs
