@@ -11,8 +11,8 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: script names to run:
-              - 
-              - 
+              - workbench_compute_wta.sh
+              - generate_wta_dlabel_cmap.sh
 sys.argv[6]: runtime (e.g. 0:15:00)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -22,7 +22,7 @@ Example:
 source .bashrc
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/visualizations
-python submit_workbench_wta_job.py /scratch/mszinte/data RetinoMaps 327 b327 bilateral 1:00:00
+python submit_workbench_wta_job.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -40,14 +40,13 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-mode = sys.argv[5]   #
+script = sys.argv[5]   #
 proc_time = sys.argv[6] #
 
 memory_val = 20 # GB
 nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
-job_suffix = "workbench"
-corr_type = "full_corr"
+job_suffix = "wta_workbench"
 
 # Define permission commands
 chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
@@ -70,7 +69,7 @@ slurm_cmd = f"""#!/bin/bash
 #SBATCH --time={proc_time}
 #SBATCH -e {logs_dir}/job_%N_%j_%a.err
 #SBATCH -o {logs_dir}/job_%N_%j_%a.out
-#SBATCH -J all_{job_suffix}
+#SBATCH -J {job_suffix}
 """
 
 # Assuming scripts are in the same directory as this Python script
@@ -87,11 +86,11 @@ chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
 # Create job script
-sh_fn = f"{job_dir}/all_{job_suffix}.sh"
+sh_fn = f"{job_dir}/{job_suffix}.sh"
 with open(sh_fn, 'w') as of:
     of.write(f"{slurm_cmd}\n{main_cmd}\n{chmod_cmd}\n{chgrp_cmd}\n")
 
 # Submit job
-print("Submitting {} ({}) to queue".format(sh_fn, corr_type))
+print("Submitting {} ({}) to queue".format(sh_fn))
 os.system("sbatch {}".format(sh_fn))
 
