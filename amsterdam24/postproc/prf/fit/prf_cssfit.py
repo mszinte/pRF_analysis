@@ -17,16 +17,16 @@ fit tester numpy arrays
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/amsterdam24/postproc/prf/fit/
 2. run python command
 python prf_cssfit.py [main directory] [project name] [subject name] 
                      [input file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_cssfit.py /scratch/mszinte/data amsterdam24 sub-03 [file path] 32  
+python prf_cssfit.py /scratch/mszinte/data amsterdam_24 sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
-and Uriel Lascombes (uriel.lascombes@laposte.net) 
+and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
@@ -48,7 +48,7 @@ import numpy as np
 import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel, CSS_Iso2DGaussianModel
-from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
+# from prfpy.fit import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 
 # Personal imports
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +58,7 @@ from settings_utils import load_settings
 from screen_utils import get_screen_settings
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import load_surface ,make_surface_image
-
+from prfpy_utils import Iso2DGaussianFitter, CSS_Iso2DGaussianFitter
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -142,9 +142,9 @@ valid_vertices = ~np.isnan(data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 
 # Filter data to only include valid vertices
-data = data[3:, valid_vertices] # not take into account first 3 TRs because of amsterdam scanner 
+data_clean = data[3:, valid_vertices] # not take into account first 3 TRs because of amsterdam scanner 
 
-n_excluded = len(valid_vertices_idx) - valid_vertices.sum()
+n_excluded = data.shape[1] - data_clean.shape[1]
 if n_excluded > 0:
     print(f"Excluded {n_excluded} vertices with all-NaN values")
 print(f"Fitting {valid_vertices.sum()} valid vertices")
@@ -210,7 +210,7 @@ print("==========================\n")
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit gauss model
-gauss_fitter = Iso2DGaussianFitter(data=data.T, 
+gauss_fitter = Iso2DGaussianFitter(data=data_clean.T, 
                                    model=gauss_model, 
                                    n_jobs=n_jobs)
 
@@ -230,7 +230,7 @@ gauss_fit = gauss_fitter.iterative_search_params
 css_model = CSS_Iso2DGaussianModel(stimulus=stimulus)
 
 # Grid fit CSS model
-css_fitter = CSS_Iso2DGaussianFitter(data=data.T, 
+css_fitter = CSS_Iso2DGaussianFitter(data=data_clean.T, 
                                      model=css_model, 
                                      n_jobs=n_jobs,
                                      use_previous_gaussian_fitter_hrf=False,
