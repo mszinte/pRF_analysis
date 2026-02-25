@@ -141,20 +141,9 @@ if subject != 'template_avg':
                     # Compute linear regression 
                     results = linear_regression_surf(bold_signal=bold_data, 
                                                      model_prediction=pred_data, 
+                                                     alternative='two-sided',
                                                      correction='fdr_tsbh', 
                                                      alpha=fdr_alpha)
-
-                    
-                    # Compute two-sided corrected p-values
-                    t_statistic = results[slope_idx, :] / results[stderr_idx, :]
-                    degrees_of_freedom = np.nanmax(results[trs_idx, :]) - 2
-                    p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-                    corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                               correction='fdr_tsbh', 
-                                                               alpha=fdr_alpha)
-                    results[pvalue_idx, :] = p_values
-                    results[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-                    results[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                     
                     # Save results
                     prf_stats_fn = prf_pred_fn.split('/')[-1].replace('prf-css_pred', 'prf-css_stats')

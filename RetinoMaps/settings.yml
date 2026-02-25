@@ -28,9 +28,16 @@ task_names:
   description: "Names of the tasks of the dataset"
   value: ["rest", "pMF", "pRF", "PurLoc", "SacLoc", "PurVELoc", "SacVELoc"]
 
-func_session:
-  description: "Session containing the pRF tasks"
-  value: ["ses-02"]
+tasks_session: 
+  description: "Organisation of the tasks in the differents sessions"
+  value:
+    "rest": "ses-01"
+    "pMF": "ses-02"
+    "pRF": "ses-01"
+    "PurLoc": "ses-02"
+    "SacLoc": "ses-02"
+    "PurVELoc": "ses-02"
+    "SacVELoc": "ses-02"
 
 prf_task_names:
   description: "Names of the tasks analysed with pRF methods"

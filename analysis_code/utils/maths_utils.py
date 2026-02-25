@@ -331,13 +331,15 @@ def r2_score_surf(bold_signal, model_prediction):
     
     return r2_scores
 
-def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha=None, use_fisher=False):
+def linear_regression_surf(bold_signal, model_prediction, alternative='two-sided', correction=None, alpha=None, use_fisher=False):
     """
     Perform linear regression analysis between model predictions and BOLD signals across vertices.
 
     Parameters:
     bold_signal (numpy.ndarray): Array of BOLD signal data with shape (time_points, vertices).
     model_prediction (numpy.ndarray): Array of model prediction data with shape (time_points, vertices).
+    Defines the alternative hypothesis. Default is ‘two-sided’. The following options are available: {‘two-sided’, ‘less’, ‘greater’},
+    
     correction (str, optional): Type of multiple testing correction.
                                 Supported methods: 'bonferroni', 'sidak', 'holm-sidak',
                                 'holm', 'simes-hochberg', 'hommel', 'fdr_bh', 'fdr_by', 'fdr_tsbh', 'fdr_tsbky'.
@@ -405,7 +407,7 @@ def linear_regression_surf(bold_signal, model_prediction, correction=None, alpha
         # Perform linear regression
         result = stats.linregress(x=model_prediction[:, vert],
                                   y=bold_signal[:, vert],
-                                  alternative='two-sided')
+                                  alternative=alternative)
         
         # If using Fisher's z-score
         if use_fisher:
