@@ -351,25 +351,25 @@ for avg_method in avg_methods:
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                     
-                    # Spatial distribution hot zone barycentre
-                    # ----------------------------------------
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                    # # Spatial distribution hot zone barycentre
+                    # # ----------------------------------------
+                    # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                     
-                    for i, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                        df_barycentre_hemi = make_prf_barycentre_df(
-                            df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                    # for i, hemi in enumerate(hemis):
+                    #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                    #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+                    #     df_barycentre_hemi = make_prf_barycentre_df(
+                    #         df_distribution_hemi, rois, distribution_max_ecc, 
+                    #         distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
                         
-                        df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                        if i == 0: df_barycentre = df_barycentre_hemi
-                        else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+                    #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+                    #     if i == 0: df_barycentre = df_barycentre_hemi
+                    #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                     
-                    tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
-                        tsv_dir, subject, fn_spec)
-                    print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                    df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+                    # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
+                    #     tsv_dir, subject, fn_spec)
+                    # print('Saving tsv: {}'.format(tsv_barycentre_fn))
+                    # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                     
                 # Group Analysis    
                 else :

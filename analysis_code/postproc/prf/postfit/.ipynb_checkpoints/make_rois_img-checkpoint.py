@@ -24,6 +24,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_img.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+
 python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -43,8 +44,8 @@ import os
 import sys
 import glob
 import numpy as np
+import pandas as pd
 import nibabel as nb
-
 
 # personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -82,11 +83,14 @@ set_pycortex_config_file(cortex_dir)
 
 # Create roi image files
 for format_, extension in zip(formats, extensions): 
-    
+
+    if format_ == '170k':
+        rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
+
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
     for rois_method_format in rois_methods_format:
-
+        deb()
         print(format_)
         rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
             main_dir, project_dir, subject, format_)
@@ -96,6 +100,10 @@ for format_, extension in zip(formats, extensions):
             rois = analysis_info[rois_method_format]
         elif rois_method_format == 'rois-group-mmp':
             rois = list(analysis_info[rois_method_format].keys())
+        elif rois_method_format == 'rois-mmp':
+            mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+            rois = mmp_rois_numbers_df['roi_name'].tolist()
 
         if format_ == 'fsnative':
             for hemi in ['hemi-L','hemi-R']:
@@ -133,8 +141,7 @@ for format_, extension in zip(formats, extensions):
                 rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
                 nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
                 print('Saving {}/{}'.format(rois_dir, rois_fn))
-            
-                
+                          
         elif format_ == '170k':
             # Load data to have source img
             data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(

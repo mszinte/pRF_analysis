@@ -119,15 +119,24 @@ ecc_size_num_bins:
 
 ecc_size_max: 
   description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
-  value: [15, 15]
+  value: [ 12, 12]
   
+ecc_size_axis: 
+  description: "Eccentricity and pCM bounds in the violin plot axis"
+  value: [0, 15]
+
 ecc_pcm_num_bins: 
   description: "Number of bins for eccentricity vs pcm plot"
   value: 6
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
-  value: [15, 15]
+  value: [12, 12]
+
+ecc_pcm_axis: 
+  description: "Eccentricity and pCM bounds in the violin plot axis"
+  value: [0, 15]
+
 
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
@@ -147,15 +156,15 @@ violin_rsq_range:
   
 violin_size_range: 
   description: "Size range in the violin plot"
-  value: [0, 20]
+  value: [0, 15]
   
 violin_ecc_range: 
   description: "Eccentricity range in the violin plot"
-  value: [0, 20]
+  value: [0, 15]
   
 violin_pcm_range: 
   description: "pRF CM range in the violin plot"
-  value: [0, 20]
+  value: [0, 15]
   
 params_median_rsq_range:
   description: "R-square range in the median parameters plot"
@@ -163,19 +172,19 @@ params_median_rsq_range:
   
 params_median_size_range: 
   description: "Size range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 15]
 
 params_median_ecc_range: 
   description: "Eccentricity range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 15]
   
 params_median_pcm_range: 
   description: "PRF CM range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 15]
   
 distribution_max_ecc: 
   description: "Maximum eccentricity in the pRF spatial distribution plot"
-  value: 30
+  value: 20
   
 distribution_mesh_grain: 
   description: "Mesh grain of the pRF spatial distribution plot"
@@ -183,7 +192,7 @@ distribution_mesh_grain:
   
 distribution_screen_side: 
   description: "Side of the screen in dva of the pRF spatial distribution plot"
-  value: 20
+  value: 12
 
 hot_zone_percent: 
   description: "Hot zone percent in the barycentre plot"
