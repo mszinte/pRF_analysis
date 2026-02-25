@@ -1,0 +1,3 @@
+task_glm: 
+  description: "Task to analyse in the GLM analysis"
+  value: ["PurLoc", "SacLoc", "PurVELoc", "SacVELoc"]

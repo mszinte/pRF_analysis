@@ -40,12 +40,9 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import yaml
-import shutil
 import datetime
 import numpy as np
 import nibabel as nb
-import itertools as it
 from nilearn import signal
 from nilearn.glm.first_level import make_first_level_design_matrix
 

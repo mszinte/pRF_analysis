@@ -45,7 +45,6 @@ deb = ipdb.set_trace
 import os
 import sys
 import cv2
-import yaml
 import numpy as np
 
 # Personal imports
@@ -125,13 +124,13 @@ for prf_task_name in prf_task_names:
     
     # save VDM as numpy matrix
     vdm_numpy_fn = '{}/{}/derivatives/vdm/task-{}_vdm.npy'.format(
-        main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+        main_dir, project_dir, prf_task_name)
     print('Saving {}'.format(vdm_numpy_fn))
     np.save(vdm_numpy_fn, vdm_mat)
     
     # save VDM as video
     vdm_video_fn = '{}/{}/derivatives/vdm/task-{}_vdm.mp4'.format(
-        main_dir, project_dir, prf_task_name, vdm_width, vdm_height)
+        main_dir, project_dir, prf_task_name)
     print('Saving {}'.format(vdm_video_fn))
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(vdm_video_fn, fourcc, 1/TR, (vdm_width, vdm_height), False)
