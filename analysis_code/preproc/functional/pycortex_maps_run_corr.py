@@ -159,7 +159,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                             'add_roi': save_svg, 
                             'cbar_label': 'Pearson coefficient',
                             'with_labels': True,
-                            'overlay_fn': 'overlay.svg'
+                            'overlay_fn': 'overlays.svg'
                            }
         maps_names.append('corr_stats')
 

@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import numpy as np
 import pandas as pd
 
@@ -64,12 +63,9 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': 
-    formats = ['170k']
-    extensions = ['dtseries.nii']
-else: 
-    formats = analysis_info['formats']
-    extensions = analysis_info['extensions']
+
+formats = analysis_info['formats']
+extensions = analysis_info['extensions']
 rois_methods = analysis_info['rois_methods']
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
@@ -118,6 +114,12 @@ for avg_method in avg_methods:
                 if 'group' not in subject:
                     tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                         main_dir, project_dir, subject, format_)
+                    
+                    # Exception if no data for one format (e.g template subject)
+                    if not os.path.isdir(tsv_dir):
+                        print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                        continue
+                    
                     fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                         prf_task_name, preproc_prep, filtering,
                         normalization, avg_method, rois_method_format)
@@ -349,25 +351,25 @@ for avg_method in avg_methods:
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                     
-                    # Spatial distribution hot zone barycentre
-                    # ----------------------------------------
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                    # # Spatial distribution hot zone barycentre
+                    # # ----------------------------------------
+                    # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                     
-                    for i, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                        df_barycentre_hemi = make_prf_barycentre_df(
-                            df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                    # for i, hemi in enumerate(hemis):
+                    #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                    #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+                    #     df_barycentre_hemi = make_prf_barycentre_df(
+                    #         df_distribution_hemi, rois, distribution_max_ecc, 
+                    #         distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
                         
-                        df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                        if i == 0: df_barycentre = df_barycentre_hemi
-                        else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+                    #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+                    #     if i == 0: df_barycentre = df_barycentre_hemi
+                    #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                     
-                    tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
-                        tsv_dir, subject, fn_spec)
-                    print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                    df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+                    # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
+                    #     tsv_dir, subject, fn_spec)
+                    # print('Saving tsv: {}'.format(tsv_barycentre_fn))
+                    # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                     
                 # Group Analysis    
                 else :

@@ -15,12 +15,12 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run LOCALLY with Inkscape installed:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/atlas
+>> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/atlas
 2. run python command
 python create_rois-mmp_npz.py [main directory] [project name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/atlas
+cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/atlas
 python create_rois-mmp_npz.py /Users/uriel/disks/meso_shared RetinoMaps 327
 python create_rois-mmp_npz.py /Users/sinakling/disks/meso_shared amsterdam24 327
 python create_rois-mmp_npz.py /scratch/mszinte/data amblyo7T_prf 327

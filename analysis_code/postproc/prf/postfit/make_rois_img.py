@@ -90,7 +90,6 @@ for format_, extension in zip(formats, extensions):
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
     for rois_method_format in rois_methods_format:
-
         print(format_)
         rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
             main_dir, project_dir, subject, format_)
