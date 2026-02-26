@@ -45,7 +45,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] High-pass, z-score, mask (partial recording)  [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
 - [x] Concatenation/Averaging of runs  [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
 
-##### ROIs
+#### ROIs
 - [x] Create 170k MMP rois masks [create_rois-mmp_npz.py](../analysis_code/atlas/create_rois-mmp_npz.py)
 - [x] Project MMP atlas on fsnative surface using freesurfer [freesurfer_project_mmp_fsnative.py](../analysis_code/postproc/prf/postfit/freesurfer_project_mmp_fsnative.py)
 - [x] Make fsnative roi mmp npz and overlays [fsnative_mmp_rois.py](../analysis_code/postproc/prf/postfit/fsnative_mmp_rois.py)

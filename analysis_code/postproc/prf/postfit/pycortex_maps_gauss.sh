@@ -25,6 +25,7 @@
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # sh pycortex_maps_gauss.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_S/data n
+# sh pycortex_maps_gauss.sh ~/disks/meso_H/projects amblyo ~/disks/meso_S/data n
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -54,5 +55,5 @@ with open('$settings_file', 'r') as file:
 for subject in $subjects
 do
     echo "Processing pycortex_maps_gauss.py for: $subject"
-    #python pycortex_maps_gauss.py "$data_path" "$project_name" "$subject" "$save_in_overlay" 
+    python pycortex_maps_gauss.py "$data_path" "$project_name" "$subject" "$save_in_overlay" 
 done
