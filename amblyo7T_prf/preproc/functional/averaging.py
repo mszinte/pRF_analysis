@@ -106,80 +106,120 @@ preproc_files_list = [preproc_fsnative_hemi_L,
                       preproc_fsnative_hemi_R,
                       preproc_170k]
 
-# Concatenate files by eye condition
-print("\nConcatenating runs by eye condition")
-for prf_task_name in prf_task_names:
-    for preproc_files in preproc_files_list:
-    
-        if not preproc_files:
-            continue
-    
-        if preproc_files[0].find('hemi-L') != -1:
-            hemi = 'hemi-L'
-            mask_key = 'fsnative_hemi-L'
-        elif preproc_files[0].find('hemi-R') != -1:
-            hemi = 'hemi-R'
-            mask_key = 'fsnative_hemi-R'
-        else:
-            hemi = None
-            mask_key = '170k'
+for avg_method in avg_methods:
+    if avg_method == "concat":
         
-        if prf_task_name.endswith('RightEye'): eye_label = 'RightEye'
-        elif prf_task_name.endswith('LeftEye'): eye_label = 'LeftEye'
+        # Concatenate files by eye condition
+        print("\nConcatenating runs by eye condition")
+        for prf_task_name in prf_task_names:
+            for preproc_files in preproc_files_list:
+            
+                if not preproc_files:
+                    continue
+            
+                if preproc_files[0].find('hemi-L') != -1:
+                    hemi = 'hemi-L'
+                    mask_key = 'fsnative_hemi-L'
+                elif preproc_files[0].find('hemi-R') != -1:
+                    hemi = 'hemi-R'
+                    mask_key = 'fsnative_hemi-R'
+                else:
+                    hemi = None
+                    mask_key = '170k'
+                
+                if prf_task_name.endswith('RightEye'): eye_label = 'RightEye'
+                elif prf_task_name.endswith('LeftEye'): eye_label = 'LeftEye'
+                
+                if 'BarsBarsRingsWedges' in prf_task_name:
+                    bold_fns = sorted(
+                        [f for f in preproc_files if eye_label in f and ('Bars' in f or 'Rings' in f or 'Wedges' in f)],
+                        key=lambda x: (
+                            0 if 'Bars' in x else 1 if 'Rings' in x else 2,
+                            0 if 'run-01' in x else 1 if 'run-02' in x else 2))
+                elif 'BarsBars' in prf_task_name:
+                    bold_fns = sorted(
+                        [f for f in preproc_files if eye_label in f and 'Bars' in f],
+                        key=lambda x: (0 if 'run-01' in x else 1 if 'run-02' in x else 2))
+                elif 'RingsWedges' in prf_task_name:
+                    bold_fns = sorted(
+                        [f for f in preproc_files if eye_label in f and ('Rings' in f or 'Wedges' in f)],
+                        key=lambda x: (0 if 'Rings' in x else 1))
+            
+                print(f"  Concatenating {len(bold_fns)} files for {prf_task_name} ({mask_key})")
+            
+                # Load all files and concatenate along time axis
+                all_data = []
         
-        if 'BarsBarsRingsWedges' in prf_task_name:
-            bold_fns = sorted(
-                [f for f in preproc_files if eye_label in f and ('Bars' in f or 'Rings' in f or 'Wedges' in f)],
-                key=lambda x: (
-                    0 if 'Bars' in x else 1 if 'Rings' in x else 2,
-                    0 if 'run-01' in x else 1 if 'run-02' in x else 2))
-        elif 'BarsBars' in prf_task_name:
-            bold_fns = sorted(
-                [f for f in preproc_files if eye_label in f and 'Bars' in f],
-                key=lambda x: (0 if 'run-01' in x else 1 if 'run-02' in x else 2))
-        elif 'RingsWedges' in prf_task_name:
-            bold_fns = sorted(
-                [f for f in preproc_files if eye_label in f and ('Rings' in f or 'Wedges' in f)],
-                key=lambda x: (0 if 'Rings' in x else 1))
-    
-        print(f"  Concatenating {len(bold_fns)} files for {prf_task_name} ({mask_key})")
-    
-        # Load all files and concatenate along time axis
-        all_data = []
+                for fn in bold_fns:
+                    print(f"    Loading: {fn}")
+                    img, data = load_surface(fn=fn)
+                    all_data.append(data)
+                    concat_img = img
+        
+                # Concatenate along time (axis 0)
+                concat_data = np.concatenate(all_data, axis=0)
+        
+                # Check for vertices with all NaN values in the concatenated data
+                nan_vertices = np.all(np.isnan(concat_data), axis=0)
+        
+                # If any vertex is all NaN, set the entire time series for that vertex to NaN
+                if np.any(nan_vertices):
+                    concat_data[:, nan_vertices] = np.nan
+        
+                # Create output directory and filename based on hemi
+                if hemi:
+                    output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                    os.makedirs(output_dir, exist_ok=True)
+                    concat_fn = "{}/{}_task-{}_{}_{}_{}_{}_concat_bold.func.gii".format(
+                        output_dir, subject, prf_task_name, hemi, preproc_prep, filtering, normalization)
+                else:
+                    output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                    os.makedirs(output_dir, exist_ok=True)
+                    concat_fn = "{}/{}_task-{}_{}_{}_{}_concat_bold.dtseries.nii".format(
+                        output_dir, subject, prf_task_name, preproc_prep, filtering, normalization)
+        
+                print(f"    Saved: {concat_fn}")
+                concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)<
+                nb.save(concat_img_final, concat_fn)
+        
+    elif avg_method == "single-run":
+        # Just copy the files in single-run
+        # Here to debug and find back task of each run
+        print("\nSingle runs by eye condition")
+        
+        for preproc_files in preproc_files_list:
+        
+            if preproc_files[0].find('hemi-L') != -1: hemi = 'hemi-L'
+            elif preproc_files[0].find('hemi-R') != -1: hemi = 'hemi-R'
+            else: hemi = None
+            
 
-        for fn in bold_fns:
-            print(f"    Loading: {fn}")
-            img, data = load_surface(fn=fn)
-            all_data.append(data)
-            concat_img = img
+            for preproc_file in preproc_files:
+                print(f"    Loading: {preproc_file}")
+                img, data = load_surface(fn=preproc_file)
 
-        # Concatenate along time (axis 0)
-        concat_data = np.concatenate(all_data, axis=0)
+                task = preproc_file.split('task-')[1].split('_')[0]
+                run_ = preproc_file.split('run-')[1].split('_')[0]
 
-        # Check for vertices with all NaN values in the concatenated data
-        nan_vertices = np.all(np.isnan(concat_data), axis=0)
-
-        # If any vertex is all NaN, set the entire time series for that vertex to NaN
-        if np.any(nan_vertices):
-            concat_data[:, nan_vertices] = np.nan
-
-        # Create output directory and filename based on hemi
-        if hemi:
-            output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat".format(
-                main_dir, project_dir, subject, preproc_prep, filtering, normalization)
-            os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-{}_{}_{}_{}_{}_concat_bold.func.gii".format(
-                output_dir, subject, prf_task_name, hemi, preproc_prep, filtering, normalization)
-        else:
-            output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat".format(
-                main_dir, project_dir, subject, preproc_prep, filtering, normalization)
-            os.makedirs(output_dir, exist_ok=True)
-            concat_fn = "{}/{}_task-{}_{}_{}_{}_concat_bold.dtseries.nii".format(
-                output_dir, subject, prf_task_name, preproc_prep, filtering, normalization)
-
-        print(f"    Saved: {concat_fn}")
-        concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
-        nb.save(concat_img_final, concat_fn)
+                # Create output directory and filename based on hemi
+                if hemi:
+                    output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_single-run".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                    os.makedirs(output_dir, exist_ok=True)
+                    single_run_fn = "{}/{}_task-{}_run-{}_{}_{}_{}_{}_single-run_bold.func.gii".format(
+                        output_dir, subject, task, run_, hemi, preproc_prep, filtering, normalization)
+                else:
+                    output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_single-run".format(
+                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                    os.makedirs(output_dir, exist_ok=True)
+                    single_run_fn = "{}/{}_task-{}_run-{}_{}_{}_{}_single-run_bold.dtseries.nii".format(
+                        output_dir, subject, task, run_, preproc_prep, filtering, normalization)
+        
+                print(f"    Saved: {single_run_fn}")
+                single_run_fn_img = make_surface_image(data=data, source_img=img)
+                nb.save(single_run_fn_img, single_run_fn)
 
 # Time
 end_time = datetime.datetime.now()

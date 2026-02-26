@@ -25,6 +25,7 @@ python prf_submit_css_jobs.py [main directory] [project name] [subject]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -57,8 +58,8 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 memory_val = 30
-nb_procs = 32
-hour_proc = 4
+nb_procs = 8
+hour_proc = 10
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
