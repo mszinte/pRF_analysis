@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-prf_gaussfit.py
+pmf_gaussfit.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Prf fit using gaussian model
@@ -23,11 +23,12 @@ python prf_gaussfit.py [main directory] [project name] [subject name]
                        [inout file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
+python pmf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
+edited by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
 
@@ -52,7 +53,8 @@ from prfpy.model import Iso2DGaussianModel
 from prfpy.fit import Iso2DGaussianFitter 
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.abspath(os.path.join(script_dir, "../../../../analysis_code/utils")))
 from surface_utils import make_surface_image , load_surface
 from screen_utils import get_screen_settings
 from settings_utils import load_settings
@@ -72,8 +74,8 @@ verbose = True
 gauss_params_num = 8
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "pmf-settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
@@ -100,20 +102,20 @@ print("==============================\n")
 
 # Define directories
 if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/pmf/fit".format(
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/pmf/fit".format(
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', 'prf-gauss_fit')
+gauss_fit_fn = gauss_fit_fn.replace('bold', 'pmf-gauss_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
+gauss_pred_fn = gauss_pred_fn.replace('bold', 'pmf-gauss_pred')
 
 
 # Find vdm: check subject-specific directory first, then general vdm directory
