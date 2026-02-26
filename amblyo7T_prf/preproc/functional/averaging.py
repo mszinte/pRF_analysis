@@ -181,7 +181,7 @@ for avg_method in avg_methods:
                         output_dir, subject, prf_task_name, preproc_prep, filtering, normalization)
         
                 print(f"    Saved: {concat_fn}")
-                concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)<
+                concat_img_final = make_surface_image(data=concat_data, source_img=concat_img)
                 nb.save(concat_img_final, concat_fn)
         
     elif avg_method == "single-run":
