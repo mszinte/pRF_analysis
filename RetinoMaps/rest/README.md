@@ -71,7 +71,6 @@ $ ./mask_task_results_by_parcel.sh
 Here we have two scripts, one for the full correlation and the other to compute the Fisher-Z transformed values of the full correlation:
 ```bash
 $ ./compute_dtseries_corr_bilateral.sh
-
 $ ./compute_dtseries_corr_fisher-z_bilateral.sh
 ```
 Computing the partial correlations using Nilearn (importantly, the targets are defined by the MMP parcellation and not the task-defined vertices):

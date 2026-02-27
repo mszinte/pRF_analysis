@@ -3,13 +3,13 @@
 """
 Created on Feb 6, 2025
 
----------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr)
----------------------------------------------------
-
 Compute full correlations between clusters (seeds) and parcels (targets)
 These full correlations are computed with Nilearn as a sanity check wrt to
 Results obtained using Workbench
+
+---------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
+---------------------------------------------------
 """
 
 import os
