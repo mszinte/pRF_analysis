@@ -104,7 +104,7 @@ pycortex_subject_template:
 averaging_templates:
   description: "Templates on whiche subject will be averaged. The key is the template name, the value is the format"
   value: 
-    "hcp1.6mm" : "170k"
+    "sub-hcp1.6mm" : "170k"
 
 maps_names_corr: 
   description: "Inter-run correlation maps names of gifti files"
