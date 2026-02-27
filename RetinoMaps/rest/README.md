@@ -7,6 +7,7 @@ echo 'export PATH="$PATH:/scratch/mszinte/data/RetinoMaps/code/workbench-rh_linu
 Every time you log into the meso source the file (source .bashrc), if any script doesn't run correctly.
 
 The rest of the pipeline uses bash scripts and Nilearn to compute the partial correlations on the surface.
+Please don't forget to activate your environment with conda activate pRF_env.
 
 The primary steps of the pipeline are:
 
@@ -77,11 +78,15 @@ Computing the partial correlations using Nilearn (importantly, the targets are d
 
 nilearn_partial_corr_cluster-task_by_mmp-parcel.py
 
-### 5. Averaging the connectivity matrices across subjects
+We also have a script for full correlations using Nilearn as a sanity check
+
+nilearn_full_corr_cluster-task_by_mmp-parcel.py
+
+### 5. Averaging the connectivity matrices across subjects in the case of the Workbench outputs
 
 First, we need to stack all individual outputs:
 ```bash
-$ ./cifti_stack.sh
+$ ./cifti_stack_and_stats.sh
 ```
 Then, we can average across subjects using the median method:
 ```bash
@@ -93,14 +98,18 @@ We focus on two main plots: the winner-take-all flatmaps for full and partial co
 
 Some examples are below, divided by the type of plot.
 
-Winner-take-all - These files are generated from these two scripts:
+Winner-take-all files for dense vertex-wise full correlation results - These files are generated from these two scripts that only use Workbench commands:
 ```bash
-$ ./cifti_mask_hollow_seed_viz_winner-take-all.sh
+$ ./workbench_compute_wta_full_corr.sh
+$ ./workbench_compute_wta_fisher-z.sh
 ```
 
-Some examples are saved in this wb_view scene file for now: retinomaps_group.scene
+You can submit each job and then use the following script to remap the output to our color code convention:
+```bash
+$ ./generate_wta_dlabel_cmap.sh
+```
 
-After the data manipulation continues in this folder: meso_shared/RetinoMaps/derivatives/pp_data/group/91k/visualizations
+Some example visualizations are saved in this wb_view scene file for now: retinomaps_group.scene
 
 
 
