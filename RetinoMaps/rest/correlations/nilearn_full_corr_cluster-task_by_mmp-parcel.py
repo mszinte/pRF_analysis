@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Feb 6, 2025
+Created on Feb 6, 2026
 
 Compute full correlations between clusters (seeds) and parcels (targets)
 These full correlations are computed with Nilearn as a sanity check wrt to
@@ -28,8 +28,6 @@ USER = os.environ["USER"]
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
-
-# Output folders
 full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
