@@ -4,14 +4,15 @@
 Created on Fri Feb  6 14:57:04 2026
 
 Compute PARTIAL correlations between clusters (seeds) and parcels (targets)
-using Nilearn partial correlation.
+using Nilearn partial correlation
 
 For each cluster:
   - parcels belonging to that cluster are EXCLUDED from conditioning set
   - output shape = (n_clusters, n_parcels)
 
-Written by Marco Bedini: marco.bedini@univ-amu.fr
-Refactored for clarity and debugging
+---------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
+---------------------------------------------------
 """
 
 import os
@@ -29,33 +30,26 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 # Output folders
-partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
-os.makedirs(partial_output_folder, exist_ok=True)
+full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
+os.makedirs(full_output_folder, exist_ok=True)
 
-# General utils
-main_codes = f"/home/{USER}/GitHub_projects"
-gutils_path = os.path.join(main_codes, "pRF_analysis/analysis_code/utils")
-sys.path.append(gutils_path)
+# Personal imports
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
+from settings_utils import load_settings
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
-# Custom utils
-utils_path = os.path.join(main_codes, "pRF_analysis/RetinoMaps")
-sys.path.append(utils_path)
-
-# Personal imports
-sys.path.append("{}/../../../../utils".format(os.getcwd()))
-from settings_utils import load_settings
-
 # Load settings
-main_codes = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(main_codes, utils_path, "settings.yml")
-prf_settings_path = os.path.join(main_codes, utils_path, "prf-analysis.yml")
+project_dir = 'RetinoMaps'
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
-subjects = analysis_info['subjects']
+subjects = analysis_info["subjects"]
 
 # ============================================================
 # ROIs
@@ -90,9 +84,6 @@ for subject in subjects:
     print(f"\n=== Processing {subject} ===")
 
     timeseries_fn = f"{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
-    if not os.path.exists(timeseries_fn):
-        print(f"  ❌ Missing timeseries: {timeseries_fn}")
-        continue
 
     ts_img, ts_data_raw = load_surface(timeseries_fn)
     res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True)
@@ -130,8 +121,7 @@ for subject in subjects:
     parcel_names_used = []
 
     for parcel in parcels:
-        lh, rh = [
-            load_surface(f"{main_codes}/pRF_analysis/RetinoMaps/rest/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii")[1]
+        lh, rh = [load_surface(f'{atlas_folder}/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii')[1]
             for hemi in ("L", "R")
         ]
         mask = np.hstack((lh, rh)).ravel()

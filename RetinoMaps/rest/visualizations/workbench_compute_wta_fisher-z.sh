@@ -8,7 +8,7 @@
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas"
-OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta"
+OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
 mkdir -p "${OUTPUT_PATH}"
 
 # Define ROI order for merging (determines map index)

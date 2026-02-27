@@ -7,7 +7,7 @@
 #####################################################
 
 # Define base paths
-BASE_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest"
+BASE_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr"
 
 # Define source and destination directories
 CORR_SOURCE="${BASE_DIR}/stacked_full_corr"

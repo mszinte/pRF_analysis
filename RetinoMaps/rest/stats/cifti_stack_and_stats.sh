@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## H Stack subject-specific correlation matrices into one group file (rows = subjects)
+## Stack subject-level correlation matrices into one group file (rows = subjects)
 ## Useful so we can use -cifti-reduce later to compute the median values
 
 #####################################################
@@ -40,7 +40,7 @@ for ROI in "${ROIS[@]}"; do
     MERGE_CMD=("wb_command" "-cifti-merge" "$OUTPUT_FILE")
 
     for SUB in "${SUBJECTS[@]}"; do
-      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/${SUBFOLDER}/sub-${SUB}_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_masked.dscalar.nii"
+      INPUT_FILE="$TASK_RESULTS/sub-${SUB}/91k/rest/corr/full_corr/sub-${SUB}_task-rest_space-fsLR_den-91k_${DESC}_${ROI}_masked.dscalar.nii"
       if [[ -f "$INPUT_FILE" ]]; then
         MERGE_CMD+=("-cifti" "$INPUT_FILE")
       else

@@ -3,13 +3,13 @@
 """
 Created on Feb 6, 2025
 
----------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr)
----------------------------------------------------
-
 Compute full correlations between clusters (seeds) and parcels (targets)
 These full correlations are computed with Nilearn as a sanity check wrt to
 Results obtained using Workbench
+
+---------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
+---------------------------------------------------
 """
 
 import os
@@ -27,9 +27,10 @@ USER = os.environ["USER"]
 # Main folders
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 # Output folders
-full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
+full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_full_corr"
 os.makedirs(full_output_folder, exist_ok=True)
 
 # Personal imports
@@ -64,14 +65,14 @@ for cl in clusters:
 
 seed_to_number = {s: i+1 for i,s in enumerate(clusters)}
 
-#%% Initialize storage
+# Initialize storage
 
 all_subject_full_matrices = []
 all_subject_full_matrices_fisherz = []
 all_subject_parcel_full = []
 all_subject_parcel_full_fisherz = []
 
-#%% Subject loop
+# Subject loop
 
 for subject in subjects:
     print(f"\nProcessing {subject}")
@@ -101,7 +102,7 @@ for subject in subjects:
     parcel_ts_list = []
     parcel_names_used = []
     for parcel in parcels:
-        lh, rh = [load_surface(f'{main_codes}/pRF_analysis/RetinoMaps/rest/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii')[1]
+        lh, rh = [load_surface(f'{atlas_folder}/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii')[1]
                   for hemi in ('L','R')]
         mask = np.hstack((lh,rh)).ravel()
         if np.any(mask):
