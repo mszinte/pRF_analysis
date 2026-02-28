@@ -202,7 +202,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
             img.darrays[0].meta['GeometricType'] = geometric_type
             img.darrays[1].datatype = 'NIFTI_TYPE_FLOAT32'
             nb.save(img, '{}/{}_{}_{}.surf.gii'.format(
-                dest_dir_anat, subject, save_hemi, save_surf))
+                dest_dir_anat, subject, save_hemi, save_surf), mode='compat')
             
 # Time
 end_time = datetime.datetime.now()
