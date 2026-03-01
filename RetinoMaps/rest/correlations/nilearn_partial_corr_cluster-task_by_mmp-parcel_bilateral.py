@@ -32,7 +32,7 @@ main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
-os.makedirs(full_output_folder, exist_ok=True)
+os.makedirs(partial_output_folder, exist_ok=True)
 
 # Personal imports
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))

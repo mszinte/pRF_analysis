@@ -106,7 +106,7 @@ print("Processing subjects...")
 
 for subject in subjects:
 
-    subj_dir = main_data / Path(subject) / "91k/rest/corr/full_corr/nilearn_partial_corr"
+    subj_dir = main_data / Path(subject) / "91k/rest/corr/partial_corr"
     subj_dir.mkdir(parents=True, exist_ok=True)
 
     csv_file = subj_dir / "cluster_by_mmp-parcel_partial.csv"
@@ -124,7 +124,7 @@ for subject in subjects:
 # Group-level results
 # =============================================================================
 
-group_result_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/full_corr/nilearn_partial_corr"
+group_result_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
 group_csv = os.path.join(group_result_path, "group_median_cluster_by_mmp-parcel_partial.csv")
 df_group = pd.read_csv(group_csv, index_col=0)
 group_winners = compute_winners(df_group, seed_to_parcels, seed_to_number)
