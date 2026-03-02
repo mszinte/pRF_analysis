@@ -629,7 +629,6 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
     fig_template = plotly_template(template_specs)
     max_ecc = figure_info['ecc_size_max'][0]
     max_size = figure_info['ecc_size_max'][1]
-    ecc_size_axis = figure_info['ecc_size_axis']
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
@@ -721,8 +720,8 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
-        fig.update_yaxes(title_text='pRF size (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
+        fig.update_yaxes(title_text='pRF size (dva)', range=[0, max_size], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 
@@ -767,7 +766,6 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     fig_template = plotly_template(template_specs)
     max_ecc = figure_info['ecc_pcm_max'][0]
     max_pcm = figure_info['ecc_pcm_max'][1]
-    ecc_pcm_axis = figure_info['ecc_pcm_axis']
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
@@ -866,8 +864,8 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis 
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
-        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
+        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[0, max_pcm], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 

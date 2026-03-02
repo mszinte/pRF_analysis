@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_fig.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -183,14 +183,14 @@ for avg_method in avg_methods:
                         fig.write_image(fig_fn)
                         remove_second_page(fig_fn)
                 
-                # # Spatial distibution barycentre plot
-                # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
-                # df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-                # fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
-                # fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
-                # print('Saving pdf: {}'.format(fig_fn))
-                # fig.write_image(fig_fn)
-                # remove_second_page(fig_fn)
+                # Spatial distibution barycentre plot
+                tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
+                df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
+                fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
+                print('Saving pdf: {}'.format(fig_fn))
+                fig.write_image(fig_fn)
+                remove_second_page(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

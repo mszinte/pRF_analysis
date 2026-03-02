@@ -528,16 +528,18 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
     import pandas as pd
     import numpy as np
     df_distribution = pd.DataFrame()
-    for j, roi in enumerate(rois) :
+    
+    for roi_num, roi in enumerate(rois) :
         # Make df_distribution
         #-------------------
         # Roi data frame
         df_roi = data.loc[data.roi == roi].reset_index()
+        
         if df_roi.empty:
             print(f"[WARNING] No data for ROI: {roi}")
             continue  # skip this ROI
-        
-        css_z_tot = np.zeros((grain,grain)) 
+
+        css_z_tot = np.zeros((grain, grain)) 
         for vert in range(len(df_roi)):
             # compute the gaussian mesh            
             x, y, css_z = css_2d(css_x=df_roi.prf_x[vert],  
@@ -552,7 +554,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
             
         # Normalisation 
         css_z_tot = (css_z_tot-css_z_tot.min())/(css_z_tot.max()-css_z_tot.min())
-        
+
         # create the df
         df_distribution_roi = pd.DataFrame()
         df_distribution_roi['roi'] = [roi] * grain
@@ -562,7 +564,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
         css_z_tot_df = pd.DataFrame(css_z_tot)
         df_distribution_roi = pd.concat([df_distribution_roi, css_z_tot_df], axis=1)
         
-        if j == 0: df_distribution = df_distribution_roi
+        if roi_num == 0: df_distribution = df_distribution_roi
         else: df_distribution = pd.concat([df_distribution, df_distribution_roi])
         
     return df_distribution
