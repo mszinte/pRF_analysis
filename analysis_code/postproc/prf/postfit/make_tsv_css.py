@@ -170,8 +170,6 @@ for avg_method in avg_methods:
                                               rois=rois, 
                                               hemis=hemi)
                         
-                        
-                    
                         # Create and combine pandas df for each roi and brain hemisphere
                         print('Creating dataframe...')
                         for roi in roi_verts.keys():
