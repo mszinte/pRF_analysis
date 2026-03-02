@@ -83,9 +83,8 @@ set_pycortex_config_file(cortex_dir)
 
 # Create roi image files
 for format_, extension in zip(formats, extensions): 
-
-    if format_ == '170k':
-        rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
+    # add roi img for mmp
+    rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
 
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
