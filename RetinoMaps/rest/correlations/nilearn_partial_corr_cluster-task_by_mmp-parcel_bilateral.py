@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb  6 14:57:04 2026
+Created on Feb 6, 2026
 
 Compute PARTIAL correlations between clusters (seeds) and parcels (targets)
 using Nilearn partial correlation
@@ -31,10 +31,8 @@ USER = os.environ["USER"]
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
-
-# Output folders
-full_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
-os.makedirs(full_output_folder, exist_ok=True)
+partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
+os.makedirs(partial_output_folder, exist_ok=True)
 
 # Personal imports
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -148,23 +146,31 @@ for subject in subjects:
 
     for i_cl, cl_name in enumerate(cluster_names_used):
 
-        exclude = set(exclude_parcels_per_cluster.get(cl_name, []))
-        included_idx = [j for j,p in enumerate(parcel_names_used) if p not in exclude]
+        # parcels belonging to this cluster must be excluded
+        exclude = set(seed_to_parcels.get(cl_name, []))
 
-        if not included_idx:
+        included_idx = [
+            j for j, p in enumerate(parcel_names_used)
+            if p not in exclude
+        ]
+
+        if len(included_idx) == 0:
             print(f"  ⚠️ No parcels left after exclusion for {cl_name}")
             continue
 
-        combined = np.hstack([cluster_ts, parcel_ts[:, included_idx]])
+        X = np.column_stack([
+            cluster_ts[:, i_cl],
+            parcel_ts[:, included_idx]
+        ])
 
-        try:
-            tmp = ConnectivityMeasure(kind="partial correlation").fit_transform([combined])[0]
-            vals = tmp[i_cl, n_clusters:]
-            partial_matrix[i_cl, included_idx] = vals
-            partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
+        conn = ConnectivityMeasure(kind="partial correlation")
+        C = conn.fit_transform([X])[0]
 
-        except Exception as e:
-            print(f"  ❌ Partial corr failed for {cl_name}: {e}")
+        # first row = seed vs parcels
+        vals = C[0, 1:]
+
+        partial_matrix[i_cl, included_idx] = vals
+        partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
 
     # =========================
     # GLOBAL MATRIX FILL
@@ -173,7 +179,7 @@ for subject in subjects:
     filled = np.full((len(clusters), len(parcels)), np.nan)
     filled_fz = filled.copy()
 
-    for i_cl, cl in enumerate(cluster_names_used):
+    for i_cl, cl in enumerate(clusters):
         gr = clusters.index(cl)
         for j_pa, pa in enumerate(parcel_names_used):
             gc = parcels.index(pa)
@@ -227,5 +233,5 @@ np.savez_compressed(
     parcels=np.array(parcels),
 )
 
-print("\n✅ Done.")
+print("Done.")
 # ============================================================

@@ -2,13 +2,44 @@
 #####################################################
 # Generate label file with winner-take-all colors from TSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
+# Example usage for main output of interest
+# $ ./generate_workbench_wta_dlabel_cmap.sh fisher_z by_hemi
 #####################################################
+
+# Parse command-line arguments
+CORR_TYPE="${1:-full_corr}"      # full_corr or fisher_z
+HEMI_TYPE="${2:-bilateral}"      # bilateral or by_hemi
+
+# Validate inputs
+if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher_z" ]]; then
+    echo "Error: CORR_TYPE must be 'full_corr' or 'fisher_z'"
+    echo "Usage: $0 [full_corr|fisher_z] [bilateral|by_hemi]"
+    exit 1
+fi
+
+if [[ "$HEMI_TYPE" != "bilateral" ]] && [[ "$HEMI_TYPE" != "by_hemi" ]]; then
+    echo "Error: HEMI_TYPE must be 'bilateral' or 'by_hemi'"
+    echo "Usage: $0 [full_corr|fisher_z] [bilateral|by_hemi]"
+    exit 1
+fi
+
+echo "============================================"
+echo "WTA LABEL GENERATION"
+echo "============================================"
+echo "Correlation type: ${CORR_TYPE}"
+echo "Hemisphere type: ${HEMI_TYPE}"
+echo "============================================"
+echo ""
+
+# Construct file suffix based on options
+FILE_SUFFIX="${CORR_TYPE}"
+[[ "$HEMI_TYPE" == "by_hemi" ]] && FILE_SUFFIX="${FILE_SUFFIX}_by_hemi"
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
-TSV_FILE="${OUTPUT_PATH}/group_wta_full_corr.tsv"
-OUTPUT_FILE="${OUTPUT_PATH}/wta_full_corr_labels.txt"
+TSV_FILE="${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.tsv"
+OUTPUT_FILE="${OUTPUT_PATH}/wta_${FILE_SUFFIX}_labels.txt"
 
 # Winner colors (seed number -> RGB + alpha)
 declare -A WINNER_COLORS
@@ -96,7 +127,10 @@ L_KEYS["PH"]=318; L_KEYS["IP2"]=324; L_KEYS["IP1"]=325; L_KEYS["IP0"]=326; L_KEY
 L_KEYS["VMV1"]=333; L_KEYS["VMV3"]=334; L_KEYS["V4t"]=336; L_KEYS["FST"]=337; L_KEYS["V3CD"]=338
 L_KEYS["LO3"]=339; L_KEYS["VMV2"]=340; L_KEYS["VVC"]=343
 
-# Read TSV file
+# ============================================
+# GROUP-LEVEL PROCESSING
+# ============================================
+
 echo "Reading TSV file: ${TSV_FILE}"
 mapfile -t WINNERS < "${TSV_FILE}"
 
@@ -116,20 +150,12 @@ for i in "${!PARCELS[@]}"; do
     parcel="${PARCELS[$i]}"
     winner="${WINNERS[$i]}"
     
-    # Skip if no winner
-    if [[ -z "$winner" ]] || [[ "$winner" == "nan" ]]; then
-        echo "Warning: No winner for ${parcel} (row $((i+1)))"
-        continue
-    fi
+    [[ -z "$winner" ]] || [[ "$winner" == "nan" ]] && continue
     
-    # Clean and validate winner value
     winner=$(echo "$winner" | tr -d '[:space:]')
     winner=$(printf "%.0f" "$winner" 2>/dev/null)
     
-    if [[ ! "$winner" =~ ^[0-9]+$ ]] || [[ "$winner" -lt 1 ]] || [[ "$winner" -gt 12 ]]; then
-        echo "Warning: Invalid winner value '$winner' for ${parcel} (row $((i+1)))"
-        continue
-    fi
+    [[ ! "$winner" =~ ^[0-9]+$ ]] || [[ "$winner" -lt 1 ]] || [[ "$winner" -gt 12 ]] && continue
     
     # Validate: check if parcel won its own cluster
     for cluster in mPCS sPCS iPCS sIPS iIPS "hMT+" VO LO V3AB V3 V2 V1; do
@@ -137,143 +163,106 @@ for i in "${!PARCELS[@]}"; do
             expected="${CLUSTER_TO_WINNER[$cluster]}"
             if [[ "$winner" -eq "$expected" ]]; then
                 echo "WARNING: Parcel '$parcel' won its own cluster '$cluster' (winner=$winner)!"
-                echo "         This should have been excluded by masking in the WTA analysis."
                 ((warning_count++))
             fi
             break
         fi
     done
     
-    # Get color and atlas keys
     color="${WINNER_COLORS[$winner]}"
     r_key="${R_KEYS[$parcel]}"
     l_key="${L_KEYS[$parcel]}"
     
-    # Write hemisphere entries
-    if [[ -n "$r_key" ]]; then
-        echo "R_${parcel}_ROI" >> "${OUTPUT_FILE}"
-        echo "$r_key $color" >> "${OUTPUT_FILE}"
-        ((parcel_count++))
-    fi
-    
-    if [[ -n "$l_key" ]]; then
-        echo "L_${parcel}_ROI" >> "${OUTPUT_FILE}"
-        echo "$l_key $color" >> "${OUTPUT_FILE}"
-        ((parcel_count++))
-    fi
+    [[ -n "$r_key" ]] && echo -e "R_${parcel}_ROI\n$r_key $color" >> "${OUTPUT_FILE}"
+    [[ -n "$l_key" ]] && echo -e "L_${parcel}_ROI\n$l_key $color" >> "${OUTPUT_FILE}"
+    ((parcel_count++))
 done
 
 # Summary
 echo ""
 echo "============================================"
-echo "SUMMARY"
+echo "GROUP-LEVEL SUMMARY"
 echo "============================================"
-echo "Label file created: ${OUTPUT_FILE}"
-echo "Total label entries: $parcel_count"
-echo "Self-cluster warnings: $warning_count"
+echo "Label file: ${OUTPUT_FILE}"
+echo "Total labels: $parcel_count"
+echo "Warnings: $warning_count"
 echo ""
 
-if [[ $warning_count -gt 0 ]]; then
-    echo "⚠️  Found $warning_count parcels that won their own cluster!"
-    echo "   This indicates the WTA masking may not be working correctly."
-    echo ""
-fi
-
-echo "First 20 lines of output:"
-head -n 20 "${OUTPUT_FILE}"
-echo ""
-
-# Import labels into CIFTI file
-echo "Importing labels into CIFTI format..."
+# Import to CIFTI
 wb_command -cifti-label-import \
     "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
     "${OUTPUT_FILE}" \
-    "${OUTPUT_PATH}/group_wta_full_corr.dlabel.nii" \
+    "${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii" \
     -discard-others
 
-echo ""
-echo "CIFTI label file created: ${OUTPUT_PATH}/group_wta_full_corr.dlabel.nii"
-echo ""
-
-# Process subject-level WTA files
-echo "============================================"
-echo "PROCESSING SUBJECT-LEVEL WTA FILES"
-echo "============================================"
+echo "CIFTI file: ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii"
 echo ""
 
-# Subject list
+# ============================================
+# SUBJECT-LEVEL PROCESSING
+# ============================================
+
+echo "============================================"
+echo "SUBJECT-LEVEL PROCESSING"
+echo "============================================"
+echo ""
+
 subjects=("01" "02" "03" "04" "05" "06" "07" "08" "09" "11" "12" "13" "14" "17" "20" "21" "22" "23" "24" "25")
 
 for sub in "${subjects[@]}"; do
     echo "Processing sub-${sub}..."
     
-    # Convert pscalar to TSV
-    SUB_PSCALAR="${OUTPUT_PATH}/sub-${sub}_indexmax_wta_full_corr.pscalar.nii"
-    SUB_TSV="${OUTPUT_PATH}/sub-${sub}_wta_full_corr.tsv"
-    SUB_LABELS="${OUTPUT_PATH}/sub-${sub}_wta_full_corr_labels.txt"
+    # Construct subject filename based on options
+    SUB_PSCALAR="${OUTPUT_PATH}/sub-${sub}_indexmax_wta_${FILE_SUFFIX}.pscalar.nii"
+    SUB_TSV="${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}.tsv"
+    SUB_LABELS="${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}_labels.txt"
     
-    # Extract values to TSV
-    wb_command -cifti-convert -to-text \
-        "${SUB_PSCALAR}" \
-        "${SUB_TSV}"
-    
-    # Read subject winners
+    # Extract to TSV
+    wb_command -cifti-convert -to-text "${SUB_PSCALAR}" "${SUB_TSV}"
     mapfile -t SUB_WINNERS < "${SUB_TSV}"
     
-    # Clear subject label file
     > "${SUB_LABELS}"
-    
     sub_parcel_count=0
     sub_warning_count=0
     
-    # Generate labels for this subject
     for i in "${!PARCELS[@]}"; do
         parcel="${PARCELS[$i]}"
         winner="${SUB_WINNERS[$i]}"
         
-        # Skip invalid winners
         [[ -z "$winner" ]] || [[ "$winner" == "nan" ]] && continue
-        
         winner=$(echo "$winner" | tr -d '[:space:]')
         winner=$(printf "%.0f" "$winner" 2>/dev/null)
-        
         [[ ! "$winner" =~ ^[0-9]+$ ]] || [[ "$winner" -lt 1 ]] || [[ "$winner" -gt 12 ]] && continue
         
-        # Validate: check if parcel won its own cluster
+        # Validate
         for cluster in mPCS sPCS iPCS sIPS iIPS "hMT+" VO LO V3AB V3 V2 V1; do
             if echo "${CLUSTER_PARCELS[$cluster]}" | grep -wq "$parcel"; then
                 expected="${CLUSTER_TO_WINNER[$cluster]}"
-                if [[ "$winner" -eq "$expected" ]]; then
-                    echo "  WARNING: sub-${sub} - Parcel '$parcel' won its own cluster '$cluster' (winner=$winner)!"
-                    ((sub_warning_count++))
-                fi
+                [[ "$winner" -eq "$expected" ]] && ((sub_warning_count++))
                 break
             fi
         done
         
-        # Get color and keys
         color="${WINNER_COLORS[$winner]}"
         r_key="${R_KEYS[$parcel]}"
         l_key="${L_KEYS[$parcel]}"
         
-        # Write entries
         [[ -n "$r_key" ]] && echo -e "R_${parcel}_ROI\n$r_key $color" >> "${SUB_LABELS}"
         [[ -n "$l_key" ]] && echo -e "L_${parcel}_ROI\n$l_key $color" >> "${SUB_LABELS}"
         ((sub_parcel_count++))
     done
     
-    # Generate subject dlabel file
+    # Output filename includes file suffix
     wb_command -cifti-label-import \
         "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
         "${SUB_LABELS}" \
-        "${OUTPUT_PATH}/sub-${sub}_wta_full_corr.dlabel.nii" \
+        "${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}.dlabel.nii" \
         -discard-others
     
-    # Report
     if [[ $sub_warning_count -gt 0 ]]; then
         echo "  ⚠️  Labels: $sub_parcel_count | Warnings: $sub_warning_count"
     else
-        echo "  ✓ Labels: $sub_parcel_count | No warnings"
+        echo "  ✓ Labels: $sub_parcel_count"
     fi
 done
 
@@ -281,7 +270,6 @@ echo ""
 echo "============================================"
 echo "ALL PROCESSING COMPLETE"
 echo "============================================"
-echo "Group-level: ${OUTPUT_PATH}/group_wta_full_corr.dlabel.nii"
-echo "Subject-level: ${OUTPUT_PATH}/sub-*_wta_full_corr.dlabel.nii"
+echo "Group: ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii"
+echo "Subjects: ${OUTPUT_PATH}/sub-*_wta_${FILE_SUFFIX}.dlabel.nii"
 echo ""
-echo "Done!"

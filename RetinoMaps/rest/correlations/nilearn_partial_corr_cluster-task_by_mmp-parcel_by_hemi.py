@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Feb 6, 2026
+
+Compute PARTIAL correlations between clusters (seeds) and parcels (targets)
+using Nilearn partial correlation
+
+For each cluster:
+  - parcels belonging to that cluster are EXCLUDED from conditioning set
+  - output shape = (n_clusters, n_parcels)
+
+---------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
+---------------------------------------------------
+"""
+
+import os
+import sys
+import numpy as np
+import pandas as pd
+from pathlib import Path
+from nilearn.connectome import ConnectivityMeasure
+
+# ============================================================
+# Paths
+# ============================================================
+USER = os.environ["USER"]
+
+# Main folders
+main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+seed_folder = main_data
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
+partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
+os.makedirs(partial_output_folder, exist_ok=True)
+
+# Personal imports
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
+from settings_utils import load_settings
+from surface_utils import load_surface
+from cifti_utils import from_91k_to_32k
+
+# Load settings
+project_dir = 'RetinoMaps'
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
+analysis_info = settings[0]
+subjects = analysis_info["subjects"]
+
+# ============================================================
+# ROIs
+# ============================================================
+
+# Load seed clusters and parcel to cluster assignments
+clusters = analysis_info['rois-drawn']
+seed_to_parcels = analysis_info['rois-group-mmp']
+
+# Have mPCS as the first cluster instead of V1
+clusters.reverse()
+
+parcels = []
+for cl in clusters:
+    parcels.extend(seed_to_parcels[cl])
+
+seed_to_number = {s: i+1 for i,s in enumerate(clusters)}
+
+# =========================
+# STORAGE
+# =========================
+
+all_subject_partial = []
+all_subject_partial_fz = []
+
+# =========================
+# SUBJECT LOOP
+# =========================
+
+for subject in subjects:
+
+    print(f"\n=== Processing {subject} ===")
+
+    timeseries_fn = f"{main_data}/{subject}/91k/rest/timeseries/{subject}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+
+    ts_img, ts_data_raw = load_surface(timeseries_fn)
+    res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=True)
+    ts_data = res["data_concat"]
+    n_time = ts_data.shape[0]
+
+    print(f"  Loaded timeseries: {ts_data.shape}")
+
+    # =========================
+    # CLUSTER TIMESERIES
+    # =========================
+
+    cluster_ts_list = []
+    cluster_names_used = []
+
+    for roi in clusters:
+        lh, rh = [
+            load_surface(f"{main_data}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii")[1]
+            for hemi in ("lh", "rh")
+        ]
+        mask = np.hstack((lh, rh)).ravel()
+        if np.any(mask):
+            ts = ts_data[:, mask > 0]
+            cluster_ts_list.append(ts.mean(axis=1))
+            cluster_names_used.append(roi)
+
+    cluster_ts = np.column_stack(cluster_ts_list)
+    print(f"  Clusters used: {cluster_names_used}")
+
+    # =========================
+    # PARCEL TIMESERIES
+    # =========================
+
+    parcel_ts_list = []
+    parcel_names_used = []
+
+    for parcel in parcels:
+        lh, rh = [load_surface(f'{atlas_folder}/mmp1_clusters/parcels/{hemi}_{parcel}_ROI.shape.gii')[1]
+            for hemi in ("L", "R")
+        ]
+        mask = np.hstack((lh, rh)).ravel()
+        if np.any(mask):
+            ts = ts_data[:, mask > 0]
+            parcel_ts_list.append(ts.mean(axis=1))
+            parcel_names_used.append(parcel)
+
+    parcel_ts = np.column_stack(parcel_ts_list)
+    print(f"  Parcels used: {len(parcel_names_used)}/{len(parcels)}")
+
+    if cluster_ts.size == 0 or parcel_ts.size == 0:
+        print("  ⚠️ Empty cluster or parcel matrix — skipping subject")
+        continue
+
+    n_clusters = cluster_ts.shape[1]
+
+    partial_matrix = np.full((n_clusters, parcel_ts.shape[1]), np.nan)
+    partial_matrix_fz = np.full_like(partial_matrix, np.nan)
+
+    # =========================
+    # PARTIAL CORRELATION
+    # =========================
+
+    for i_cl, cl_name in enumerate(cluster_names_used):
+
+        # parcels belonging to this cluster must be excluded
+        exclude = set(seed_to_parcels.get(cl_name, []))
+
+        included_idx = [
+            j for j, p in enumerate(parcel_names_used)
+            if p not in exclude
+        ]
+
+        if len(included_idx) == 0:
+            print(f"  ⚠️ No parcels left after exclusion for {cl_name}")
+            continue
+
+        X = np.column_stack([
+            cluster_ts[:, i_cl],
+            parcel_ts[:, included_idx]
+        ])
+
+        conn = ConnectivityMeasure(kind="partial correlation")
+        C = conn.fit_transform([X])[0]
+
+        # first row = seed vs parcels
+        vals = C[0, 1:]
+
+        partial_matrix[i_cl, included_idx] = vals
+        partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
+
+    # =========================
+    # GLOBAL MATRIX FILL
+    # =========================
+
+    filled = np.full((len(clusters), len(parcels)), np.nan)
+    filled_fz = filled.copy()
+
+    for i_cl, cl in enumerate(clusters):
+        gr = clusters.index(cl)
+        for j_pa, pa in enumerate(parcel_names_used):
+            gc = parcels.index(pa)
+            filled[gr, gc] = partial_matrix[i_cl, j_pa]
+            filled_fz[gr, gc] = partial_matrix_fz[i_cl, j_pa]
+
+    sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr"
+    os.makedirs(sub_out, exist_ok=True)
+
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.npy"), filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.npy"), filled_fz)
+
+    df = pd.DataFrame(filled, index=clusters, columns=parcels)
+    df_fz = pd.DataFrame(filled_fz, index=clusters, columns=parcels)
+
+    df.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.csv"))
+    df_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.csv"))
+
+    all_subject_partial.append(filled)
+    all_subject_partial_fz.append(filled_fz)
+
+# =========================
+# GROUP STATS
+# =========================
+
+print("\n=== GROUP STATS ===")
+
+all_subject_partial = np.stack(all_subject_partial, axis=0)
+all_subject_partial_fz = np.stack(all_subject_partial_fz, axis=0)
+
+mean_partial = np.nanmean(all_subject_partial, axis=0)
+median_partial = np.nanmedian(all_subject_partial, axis=0)
+
+mean_partial_fz = np.nanmean(all_subject_partial_fz, axis=0)
+median_partial_fz = np.nanmedian(all_subject_partial_fz, axis=0)
+
+df_mean = pd.DataFrame(mean_partial, index=clusters, columns=parcels)
+df_median = pd.DataFrame(median_partial, index=clusters, columns=parcels)
+
+df_mean.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
+df_median.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
+
+np.savez_compressed(
+    os.path.join(partial_output_folder, "group_partial_corr.npz"),
+    mean_cluster_parcel_partial=mean_partial,
+    mean_cluster_parcel_partial_fisherz=mean_partial_fz,
+    median_cluster_parcel_partial=median_partial,
+    median_cluster_parcel_partial_fisherz=median_partial_fz,
+    subjects=np.array(subjects),
+    clusters=np.array(clusters),
+    parcels=np.array(parcels),
+)
+
+print("Done.")
+# ============================================================
