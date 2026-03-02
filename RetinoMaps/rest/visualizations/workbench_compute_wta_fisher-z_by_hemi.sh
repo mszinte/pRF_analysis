@@ -59,7 +59,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         # Check the output
         wb_command -file-information "${FULL_CORR}/sub-${sub}_task-rest_space-fsLR_den-91k_desc-fisher-z_${roi}_hollow_seed.dscalar.nii"
 
-    	# Parcellate the full corr outputs
+    	# Parcellate the fisher-z outputs
         wb_command -cifti-parcellate \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-fisher-z_${roi}_hollow_seed.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
