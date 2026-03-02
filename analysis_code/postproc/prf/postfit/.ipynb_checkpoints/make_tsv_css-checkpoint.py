@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -148,6 +148,20 @@ for avg_method in avg_methods:
     
                         # Combine all derivatives
                         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
+                        
+                        # get MMP rois img
+                        roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+                        roi_fn = '{}/{}_{}_{}_{}_{}_rois-mmp.func.gii'.format(roi_dir, subject, hemi,
+                                                                               preproc_prep, filtering, normalization)
+                        roi_img, roi_mat = load_surface(roi_fn)
+                    
+                        # get MMP rois numbers tsv
+                        mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+                        mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+                        
+                        # Replace rois nums by names
+                        roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
+                                                                        mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
             
                         roi_verts = get_rois(subject=pycortex_subject, 
                                               surf_format=format_, 
@@ -155,12 +169,13 @@ for avg_method in avg_methods:
                                               mask=True,
                                               rois=rois, 
                                               hemis=hemi)
-                    
+                        
                         # Create and combine pandas df for each roi and brain hemisphere
                         print('Creating dataframe...')
                         for roi in roi_verts.keys():
                             data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
                             data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
                             data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                             data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
                             data_dict['num_vert'] = np.where(roi_verts[roi])[0]

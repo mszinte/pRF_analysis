@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -139,8 +139,10 @@ for avg_method in avg_methods:
                              (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
                              (data[rsq2use] < rsqr_threshold) |
                              (data[stats_col] > stats_threshold)] = np.nan
+
+                    data.loc[(data.amplitude < amplitude_threshold[0])] = np.nan
                     data = data.dropna()
-                    
+
                     # ROI active proportion
                     # ---------------------
                     
@@ -148,6 +150,8 @@ for avg_method in avg_methods:
                     n_vert_tot_roi = (data_raw.groupby('roi', sort=False)
                                       .size()
                                       .reset_index(name='n_vert_tot'))
+
+                    
                     
                     # Number of significant vert for 0.05 p vale correction
                     n_vert_corr_5pt = (data_raw[data_raw['corr_pvalue_5pt'] < 0.05]
@@ -179,7 +183,9 @@ for avg_method in avg_methods:
                                           .merge(ratio_5pt, on='roi', how='left'))
                     
                     df_roi_active_vert = df_roi_active_vert.fillna(0)
-                       
+
+                    
+                    
                     # Export tsv
                     tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
                         tsv_dir, subject, fn_spec)
@@ -253,7 +259,7 @@ for avg_method in avg_methods:
                         tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_ecc_size_fn))
                     df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
-                    
+
                     # Ecc.pCM
                     # --------
                     data_pcm = data
@@ -332,9 +338,10 @@ for avg_method in avg_methods:
                     tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
                         tsv_dir, subject, fn_spec)
                     df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
-                        
+
                     # Spatial distribution 
                     # --------------------  
+                    
                     hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                     for i, hemi in enumerate(hemis):
                         hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
@@ -351,25 +358,25 @@ for avg_method in avg_methods:
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                     
-                    # # Spatial distribution hot zone barycentre
-                    # # ----------------------------------------
-                    # hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                    # Spatial distribution hot zone barycentre
+                    # ----------------------------------------
+                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                     
-                    # for i, hemi in enumerate(hemis):
-                    #     hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                    #     df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                    #     df_barycentre_hemi = make_prf_barycentre_df(
-                    #         df_distribution_hemi, rois, distribution_max_ecc, 
-                    #         distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                    for i, hemi in enumerate(hemis):
+                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                        df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+                        df_barycentre_hemi = make_prf_barycentre_df(
+                            df_distribution_hemi, rois, distribution_max_ecc, 
+                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
                         
-                    #     df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                    #     if i == 0: df_barycentre = df_barycentre_hemi
-                    #     else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+                        df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+                        if i == 0: df_barycentre = df_barycentre_hemi
+                        else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                     
-                    # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
-                    #     tsv_dir, subject, fn_spec)
-                    # print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                    # df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+                    tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
+                        tsv_dir, subject, fn_spec)
+                    print('Saving tsv: {}'.format(tsv_barycentre_fn))
+                    df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                     
                 # Group Analysis    
                 else :
@@ -536,7 +543,7 @@ for avg_method in avg_methods:
                     # Concatenating non-numeric columns back to the dataframe
                     df_distribution = pd.concat([others_columns, df_distribution], axis=1)
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
-    
+
                     # Spatial distribution hot zone barycentre 
                     # ----------------------------------------
                     hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
