@@ -94,7 +94,8 @@ hot_zone_percent = analysis_info['hot_zone_percent']
 for avg_method in avg_methods:
     if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
     else: rsq2use = 'prf_rsq'
-        
+
+    formats = ['170k']
     for format_, extension in zip(formats, extensions):
         
         # define list of rois for each format
@@ -139,8 +140,7 @@ for avg_method in avg_methods:
                              (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
                              (data[rsq2use] < rsqr_threshold) |
                              (data[stats_col] > stats_threshold)] = np.nan
-
-                    data.loc[(data.amplitude < amplitude_threshold[0])] = np.nan
+                    
                     data = data.dropna()
 
                     # ROI active proportion
