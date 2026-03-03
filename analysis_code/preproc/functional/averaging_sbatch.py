@@ -44,6 +44,7 @@ import sys
 # Personal imports
 sys.path.append("{}/../../utils".format(os.getcwd()))
 from settings_utils import load_settings
+from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
@@ -51,6 +52,10 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
+
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
