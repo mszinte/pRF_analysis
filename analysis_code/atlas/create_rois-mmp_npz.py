@@ -69,7 +69,6 @@ pycortex_subject_formats = analysis_info['pycortex_subject_formats']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-
 for full_brain_format, cortex_format in formats.items():
     subject = pycortex_subject_formats[cortex_format]
     
@@ -103,7 +102,6 @@ for full_brain_format, cortex_format in formats.items():
     
     n_vert_lh = next(iter(rois_mmp_masks_lh.values())).shape[0]
     n_vert_rh = next(iter(rois_mmp_masks_rh.values())).shape[0]
-    
     n_vert_full = full_brain_to_cortex_mask.shape[0]
     
     # --- Left hemisphere ---
@@ -117,8 +115,8 @@ for full_brain_format, cortex_format in formats.items():
     for roi_name, roi_mask in rois_mmp_masks_rh.items():
         cortex_plus_to_cortex_mask_rh = cortex_plus_to_cortex_mask[n_vert_lh:]
         roi_mask_cortex_rh = roi_mask[cortex_plus_to_cortex_mask_rh]
-        vertex_to_add_rh = np.full(n_vert_full - roi_mask_cortex_rh.shape[0], False)
-        rois_mmp_masks_full_rh_dict[roi_name] = np.concatenate([vertex_to_add_rh, roi_mask_cortex_rh])
+        vertex_to_add_rh = np.full(n_vert_full - (roi_mask_cortex_rh.shape[0] + roi_mask_cortex_lh.shape[0]), False)
+        rois_mmp_masks_full_rh_dict[roi_name] = np.concatenate([np.full(roi_mask_cortex_lh.shape[0], False), roi_mask_cortex_rh, vertex_to_add_rh])
     
     # --- Full brain ROIs ---
     for roi_name, roi_mask in rois_mmp_masks_brain.items():
@@ -182,9 +180,9 @@ for full_brain_format, cortex_format in formats.items():
     for roi_name, roi_mask in rois_group_mmp_masks_rh.items():
         cortex_plus_to_cortex_mask_rh = cortex_plus_to_cortex_mask[n_vert_lh:]
         roi_mask_cortex_rh = roi_mask[cortex_plus_to_cortex_mask_rh]
-        vertex_to_add_rh = np.full(n_vert_full - roi_mask_cortex_rh.shape[0], False)
-        rois_group_mmp_masks_full_rh_dict[roi_name] = np.concatenate([vertex_to_add_rh, roi_mask_cortex_rh])
-    
+        vertex_to_add_rh = np.full(n_vert_full - (roi_mask_cortex_rh.shape[0] + roi_mask_cortex_lh.shape[0]), False)
+        rois_group_mmp_masks_full_rh_dict[roi_name] = np.concatenate([np.full(roi_mask_cortex_lh.shape[0], False), roi_mask_cortex_rh, vertex_to_add_rh])
+        
     # --- Full brain ROIs ---
     for roi_name, roi_mask in rois_group_mmp_masks_brain.items():        
         roi_mask_cortex_brain = roi_mask[cortex_plus_to_cortex_mask]        

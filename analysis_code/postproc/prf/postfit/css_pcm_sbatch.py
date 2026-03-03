@@ -44,8 +44,8 @@ import sys
 
 # Personal iports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from pycortex_utils import set_pycortex_config_file
 from settings_utils import load_settings
+from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
