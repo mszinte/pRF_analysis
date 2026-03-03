@@ -63,7 +63,6 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois_methods = analysis_info['rois_methods']
@@ -95,9 +94,7 @@ for avg_method in avg_methods:
     if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
     else: rsq2use = 'prf_rsq'
 
-    formats = ['170k']
-    for format_, extension in zip(formats, extensions):
-        
+    for format_, extension in zip(formats, extensions):        
         # define list of rois for each format
         rois_methods_format = rois_methods[format_]
         for rois_method_format in rois_methods_format:

@@ -69,7 +69,6 @@ pycortex_subject_formats = analysis_info['pycortex_subject_formats']
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-
 for full_brain_format, cortex_format in formats.items():
     subject = pycortex_subject_formats[cortex_format]
     

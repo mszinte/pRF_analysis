@@ -62,7 +62,6 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
