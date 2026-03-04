@@ -95,6 +95,7 @@ prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
 screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
 
 print("\n===== PRF FIT PARAMETERS =====")
+print(f"fit : {input_fn}")
 print(f"Screen Size (cm): {screen_size_cm}")
 print(f"Screen Distance (cm): {screen_distance_cm}")
 print(f"TR: {TR}")

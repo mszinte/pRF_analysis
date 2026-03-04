@@ -91,9 +91,6 @@ for format_, extension in zip(formats, extensions):
         main_dir, project_dir, subject, format_)
     os.makedirs(glm_dir, exist_ok=True)
     
-    # if format_ == 'fsnative': rois = analysis_info['rois']
-    # elif format_ == '170k': rois = analysis_info['mmp_rois']
-
     for task in tasks:
         print(task)
         func_session = tasks_session[task]
@@ -104,7 +101,7 @@ for format_, extension in zip(formats, extensions):
         # prepoc files name
         preproc_fns = glob.glob('{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_z-score_loo-avg/*task-{}*loo-*.{}'.format(
             main_dir, project_dir, subject, format_, task, extension))
-
+        
         for preproc_fn in preproc_fns :        
             # find the events and confounds files 
             event_dir = '{}/{}/{}/{}/func/'.format(

@@ -16,12 +16,12 @@ results of linear regression
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
+>> cd ~/projects/pRF_analysis/RetinoMaps/postproc/glm/postfit
 2. run python command
 >> python compute_glm_stats.py [main directory] [project name] [subject num] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
+cd ~/projects/pRF_analysis/RetinoMaps/postproc/glm/postfit
 python compute_glm_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_glm_stats.py /scratch/mszinte/data RetinoMaps template_avg 327
 -----------------------------------------------------------------------------------------
@@ -94,22 +94,24 @@ if subject != 'template_avg':
                 main_dir, project_dir, subject, format_)
             glm_bold_dir = '{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_z-score_loo-avg'.format(
                 main_dir, project_dir, subject, format_)
-            glm_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-*_glm-pred.{}'.format(
+            glm_pred_loo_fns_list = glob.glob('{}/*task-{}*loo-avg*_glm-pred.{}'.format(
                 glm_fit_dir, task, extension))
-            
+
             for glm_pred_loo_fn in glm_pred_loo_fns_list : 
                 # Find the correponding bold signal to the loo prediction
-                loo_number = re.search(r'loo-(\d+)', glm_pred_loo_fn).group(1)
+                loo_number = re.search(r'loo-avg-(\d+)', glm_pred_loo_fn).group(1)
                 if format_ == 'fsnative': 
                     hemi = re.search(r'hemi-(\w)', glm_pred_loo_fn).group(1)
-                    glm_bold_fn = '{}/*task-{}_hemi-{}*_loo-{}_bold.{}'.format(
-                        glm_bold_dir, task, hemi, loo_number, extension)
+                    glm_bold_fn = glob.glob('{}/*task-{}*_hemi-{}*_loo-{}_bold.{}'.format(
+                        glm_bold_dir, task, hemi, loo_number, extension))[0]
                 elif format_ == '170k':
-                    glm_bold_fn = '{}/*task-{}*_loo-{}_bold.{}'.format(
-                        glm_bold_dir, task, loo_number, extension)
-                
+                    glm_bold_fn = glob.glob('{}/*task-{}*_loo-{}_bold.{}'.format(
+                        glm_bold_dir, task, loo_number, extension))[0]
+
                 # load data  
+                print(f'Loading pred: {glm_pred_loo_fn}') 
                 pred_img, pred_data = load_surface(glm_pred_loo_fn)
+                print(f'Loading bold: {glm_bold_fn}')
                 bold_img, bold_data = load_surface(glm_bold_fn)
                 
                 # Compute linear regression 
@@ -134,7 +136,7 @@ if subject != 'template_avg':
     # Get files
     glm_stats_loo_fns_list = []
     for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-*_glm-stats.{}".format(
+        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/derivatives/*loo-*_glm-stats.{}".format(
             main_dir, project_dir, subject, format_, extension))
         list_ = [item for item in list_ if "loo-median" not in item]
         glm_stats_loo_fns_list.extend(list_)
@@ -169,8 +171,8 @@ if subject != 'template_avg':
             
             for n_run, loo_stats_fn in enumerate(loo_stats_fns_task):
                 loo_stats_median_fn = loo_stats_fn.split('/')[-1]
-                loo_stats_median_fn = re.sub(r'loo-\d+', 'loo-avg', loo_stats_median_fn)
-                deb()
+                loo_stats_median_fn = re.sub(r'loo-avg-\d+', 'loo-avg', loo_stats_median_fn)
+  
                 # load data 
                 print('adding {} to averaging'.format(loo_stats_fn))
                 loo_stats_img, loo_stats_data = load_surface(fn=loo_stats_fn)
@@ -203,6 +205,7 @@ if subject != 'template_avg':
             loo_stats_img = make_surface_image(data=loo_stats_data_median, 
                                                source_img=loo_stats_img, 
                                                maps_names=maps_names)
+            print('Saving {}'.format(median_fn))
             nb.save(loo_stats_img, median_fn)
             
 # template_avg median
@@ -214,7 +217,7 @@ elif subject == 'template_avg':
             # find all the subject prf derivatives
             subjects_stats_task = []
             for subject in subjects:
-                subjects_stats_task += ["{}/{}/derivatives/pp_data/{}/170k/glm/glm/{}_task-{}_fmriprep_dct_avg_glm-stats_loo-median.dtseries.nii".format(
+                subjects_stats_task += ["{}/{}/derivatives/pp_data/{}/170k/glm/glm/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(
                         main_dir, project_dir, subject, subject, task)]
         
             # Computing median across subject
@@ -232,16 +235,16 @@ elif subject == 'template_avg':
             data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                 
             # Export results
-            sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/glm/glm_derivatives/".format(
-                    main_dir, project_dir)
-            os.makedirs(sub_170k_stats_dir, exist_ok=True)
-            
-            sub_170k_stat_fn = "{}/sub-170k_task-{}_fmriprep_dct_avg_glm-stats_loo-median.dtseries.nii".format(sub_170k_stats_dir, task)
-            print("save: {}".format(sub_170k_stat_fn))
-            sub_170k_stat_img = make_surface_image(data=data_stat_median, 
+            template_stats_dir = "{}/{}/derivatives/pp_data/{}/170k/glm/glm_derivatives/".format(
+                    main_dir, project_dir, averaging_template_format)
+            os.makedirs(template_stats_dir, exist_ok=True)
+    
+            template_stat_fn = "{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(template_stats_dir, averaging_template_format, task)
+            print("save: {}".format(template_stat_fn))
+            template_stat_img = make_surface_image(data=data_stat_median, 
                                                    source_img=img, 
                                                    maps_names=maps_names)
-            nb.save(sub_170k_stat_img, sub_170k_stat_fn)
+            nb.save(template_stat_img, template_stat_fn)
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

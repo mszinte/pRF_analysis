@@ -17,12 +17,12 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
+>> cd ~/projects/pRF_analysis/RetinoMaps/postproc/glm/postfit
 2. run python command
 >> python css_stats_sbatch.py [main directory] [project] [subject] [group] [server]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/glm/postfit
+cd ~/projects/pRF_analysis/RetinoMaps/postproc/glm/postfit
 python glm_stats_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -41,7 +41,10 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
+
+# personal imports
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -51,9 +54,12 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 
 # load settings
-with open('../../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+glm_settings_path = os.path.join(base_dir, project_dir, "glm-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path, glm_settings_path])
+analysis_info = settings[0]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
