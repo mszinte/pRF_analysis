@@ -251,11 +251,11 @@ css_fit = css_fitter.iterative_search_params
 
 # Rearrange result of CSS model
 css_fit_mat = np.full((data.shape[1], css_params_num), np.nan, dtype=float)
-css_pred_mat = np.full_like(data, np.nan, dtype=float) 
+css_pred_mat = np.full_like(data[:3,], np.nan, dtype=float) 
 
 for est, vert in enumerate(valid_vertices_idx):
     css_fit_mat[vert] = css_fit[est]
-    css_pred_mat[:,vert] = css_model.return_prediction(mu_x=css_fit[est][0],
+    css_pred_mat[3:,vert] = css_model.return_prediction(mu_x=css_fit[est][0],
                                                       mu_y=css_fit[est][1], 
                                                       size=css_fit[est][2], 
                                                       beta=css_fit[est][3], 
