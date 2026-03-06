@@ -23,8 +23,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_css.py ~/disks/meso_S/data RetinoMaps sub-170k n
+python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-01 n
+python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import yaml
 import cortex
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,19 +54,7 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg_in = sys.argv[4]
-
-try:
-    if save_svg_in == 'yes' or save_svg_in == 'y':
-        save_svg = True
-    elif save_svg_in == 'no' or save_svg_in == 'n':
-        save_svg = False
-    else:
-        raise ValueError
-except ValueError:
-    sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-if subject == 'sub-170k': save_svg = False
-else: save_svg = save_svg
+save_svg = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -77,8 +64,7 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-if subject == 'sub-170k': formats = ['170k']
-else: formats = analysis_info['formats']
+formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 prf_task_names = analysis_info['prf_task_names']
 maps_names_pcm = analysis_info['maps_names_pcm']
@@ -88,6 +74,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -134,6 +121,11 @@ for avg_method in avg_methods:
             # Define directories and fn
             prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
                 main_dir, project_dir, subject, format_)
+            
+            if not os.path.isdir(prf_dir):
+                print(f"[SKIP] corr_dir not found for format={format_}: {prf_dir}")
+                continue
+            
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
             flatmaps_dir = '{}/pycortex/flatmaps_css'.format(prf_dir)
             datasets_dir = '{}/pycortex/datasets_css'.format(prf_dir)
@@ -182,7 +174,7 @@ for avg_method in avg_methods:
                     pcm_mat = pcm_results['data_concat']
                     
                 elif format_ == '170k':
-                    pycortex_subject = 'sub-170k'
+                    pycortex_subject = pycortex_subject_template
                     # Derivatives
                     deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name,

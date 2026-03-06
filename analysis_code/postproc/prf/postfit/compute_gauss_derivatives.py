@@ -119,6 +119,7 @@ elif subject == 'template_avg':
         for prf_task_name in prf_task_names:
             
             for avg_method in avg_methods:
+                print('{}'.format(avg_method))
                 if "loo" in avg_method:
                     continue  # Skip if it contains "loo"
                 
@@ -130,10 +131,10 @@ elif subject == 'template_avg':
                     prf_deriv_fns_subject = "{}/{}_task-{}*{}*prf-gauss_deriv.dtseries.nii".format(
                          prf_deriv_dir, subject, prf_task_name, avg_method)
                     prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
-    
+                
                 # Median across subject
                 img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
-                
+    
                 # Export results
                 template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
                         main_dir, project_dir, averaging_template_name, averaging_template_format)

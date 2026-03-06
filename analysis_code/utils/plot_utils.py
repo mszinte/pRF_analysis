@@ -627,18 +627,16 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    max_ecc = figure_info['ecc_size_max'][0]
     max_size = figure_info['ecc_size_max'][1]
-    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
     rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois_groups)
     rois_hor_spacing = figure_info['rois_hor_spacing']
     rois_ver_spacing = figure_info['rois_ver_spacing']
-    # bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
+    ecc_size_axis = figure_info['ecc_size_axis']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -720,8 +718,8 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
-        fig.update_yaxes(title_text='pRF size (dva)', range=[0, max_size], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
+        fig.update_yaxes(title_text='pRF size (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 
@@ -766,7 +764,6 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     fig_template = plotly_template(template_specs)
     max_ecc = figure_info['ecc_pcm_max'][0]
     max_pcm = figure_info['ecc_pcm_max'][1]
-    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
     rois_groups = figure_info['rois_groups_plot']
@@ -776,6 +773,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     # bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
+    ecc_pcm_axis = figure_info['ecc_size_axis']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -864,8 +862,8 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis 
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
-        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[0, max_pcm], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
+        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 

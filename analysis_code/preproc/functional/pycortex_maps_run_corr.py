@@ -24,7 +24,7 @@ To run:
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/preproc/functional/
 python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps sub-01 n
-python pycortex_maps_run_corr.py ~/disks/meso_S/data RetinoMaps hcp1.6mm n
+python pycortex_maps_run_corr.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

@@ -23,7 +23,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_img.py /scratch/mszinte/data RetinoMaps hcp1.6mm 327
+python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 
 python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
 -----------------------------------------------------------------------------------------
@@ -83,19 +83,23 @@ set_pycortex_config_file(cortex_dir)
 
 # Create roi image files
 for format_, extension in zip(formats, extensions): 
-
-    if format_ == '170k':
-        rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
+    # add roi img for mmp
+    rois_methods[format_] = rois_methods[format_] + ['rois-mmp']
 
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
     for rois_method_format in rois_methods_format:
-        deb()
         print(format_)
         rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
             main_dir, project_dir, subject, format_)
         os.makedirs(rois_dir, exist_ok=True)
-
+        
+        if subject == pycortex_subject_template:
+            if format_ == 'fsnative':
+                continue
+            if rois_method_format == 'rois-drawn':
+                continue
+    
         if rois_method_format == 'rois-drawn':
             rois = analysis_info[rois_method_format]
         elif rois_method_format == 'rois-group-mmp':
@@ -144,9 +148,9 @@ for format_, extension in zip(formats, extensions):
                           
         elif format_ == '170k':
             # Load data to have source img
-            data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(
+            data_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
                 main_dir, project_dir, subject, format_,
-                preproc_prep, filtering, normalization, avg_methods[0])
+                preproc_prep, filtering, normalization)
             
             # Find first file with prf-deriv in the name
             data_files = glob.glob('{}/{}*.{}'.format(data_dir, subject, extension))

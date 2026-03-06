@@ -137,7 +137,6 @@ ecc_pcm_axis:
   description: "Eccentricity and pCM bounds in the violin plot axis"
   value: [0, 15]
 
-
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
   value: 9
