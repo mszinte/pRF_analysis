@@ -381,9 +381,9 @@ for avg_method in avg_methods:
                     for i, subject_to_group in enumerate(subjects_to_group):
                         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                             main_dir, project_dir, subject_to_group, format_)
-    
-                        fn_spec = "task-{}_{}_{}_{}_{}".format(
-                            prf_task_name, preproc_prep, filtering, normalization, avg_method)
+
+                        fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                            prf_task_name, preproc_prep, filtering, normalization, avg_method, rois_method_format)
                 
                         # ROI surface areas 
                         # -----------------

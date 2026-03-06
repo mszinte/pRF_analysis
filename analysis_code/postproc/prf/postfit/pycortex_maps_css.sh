@@ -26,7 +26,7 @@
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # sh pycortex_maps_css.sh ~/disks/meso_H/projects MotConf ~/disks/meso_S/data n
-# sh pycortex_maps_css.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_S/data n
+# sh pycortex_maps_css.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_shared n
 # sh pycortex_maps_css.sh ~/disks/meso_H/projects amblyo_prf ~/disks/meso_S/data n
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)

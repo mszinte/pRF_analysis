@@ -500,13 +500,13 @@ def median_subject_template(fns):
         print('adding {}'.format(fn))
         # Load data
         img, data = load_surface(fn=fn)
-    
+        
         # Average without nan
         if n_file == 0:
             data_med = np.copy(data)
         else:
             data_med = np.nanmedian(np.array([data_med, data]), axis=0)
-            
+         
     return img, data_med
 
 def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):

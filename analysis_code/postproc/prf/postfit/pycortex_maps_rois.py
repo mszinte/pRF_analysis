@@ -24,7 +24,7 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps sub-01 n
+python pycortex_maps_rois.py ~/disks/meso_shared RetinoMaps sub-01 n
 python pycortex_maps_rois.py ~/disks/meso_S/data RetinoMaps hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)

@@ -49,7 +49,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 Analysis are run on the template of the HCP cifti format (**170k**) in which individual results are averaged.</br> 
 
 - [x] Compute inter-run correlation for **template_avg** [compute_run_corr.py](../analysis_code/preproc/functional/compute_run_corr.py)
-- [x] Make maps with pycortex for **hcp1.6mm** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
+- [x] Make maps with pycortex for **sub-hcp1.6mm** [pycortex_maps_run_corr.py](../analysis_code/preproc/functional/pycortex_maps_run_corr.py)
 
 # pRF 
 ---
@@ -86,21 +86,21 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 
 #### PRF Gaussian fit
 - [x] Compute pRF gaussian grid fit derivatives for **template_avg** [compute_gauss_derivatives.py](../analysis_code/postproc/prf/postfit/compute_gauss_derivatives.py)
-- [x] Make pRF maps with pycortex for **hcp1.6mm**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
+- [x] Make pRF maps with pycortex for **sub-hcp1.6mm**  [pycortex_maps_gauss.py](../analysis_code/postproc/prf/postfit/pycortex_maps_gauss.py)
 
 #### PRF ROIs
 - [x] Make ROIS files for **template_avg** [make_rois_img.py](../analysis_code/postproc/prf/postfit/make_rois_img.py)
-- [x] Create flatmaps of ROIs for **hcp1.6mm** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
+- [x] Create flatmaps of ROIs for **sub-hcp1.6mm** [pycortex_maps_rois.py](../analysis_code/postproc/prf/postfit/pycortex_maps_rois.py)
 
 #### PRF CSS fit
 - [x] Compute CSS statistics for **template_avg** [compute_css_stats.py](../analysis_code/postproc/prf/postfit/compute_css_stats.py)
 - [x] Compute CSS fit derivatives for **template_avg** [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
 - [x] Compute CSS population cortical magnification (CM) for **template_avg** [compute_css_pcm.py](../analysis_code/postproc/prf/postfit/compute_css_pcm.py)
-- [x] Make maps with pycortex for **hcp1.6mm** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
-- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **hcp1.6mm** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
-- [x] Merge all figures for **hcp1.6mm** and **group** [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
+- [x] Make maps with pycortex for **sub-hcp1.6mm** [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics and CM for **sub-hcp1.6mm** [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-hcp1.6mm** and **group** [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM for **sub-hcp1.6mm** and **group** [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py)
+- [x] Merge all figures for **sub-hcp1.6mm** and **group** [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
 
 # GLM 
 --- 
@@ -190,4 +190,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 
 #### PMF Gaussian fit
 - [x] Create the visual matrix design with eye movements (retinal view vdm) [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
-- [ ] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+- [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+- [ ] Run pMF gaussian fit [prf_submit_gaussfit_jobs.py](postproc/pmf/fit/pmf_submit_gauss_jobs.py)
+- [ ] Compute pMF gaussian fit derivatives [compute_gauss_derivatives.py](postproc/pmf/postfit/compute_gauss_derivatives.py)
+- [ ] Make pRF maps with pycortex [pycortex_maps_gauss.py](postproc/pmf/postfit/pycortex_maps_gauss.py) 
