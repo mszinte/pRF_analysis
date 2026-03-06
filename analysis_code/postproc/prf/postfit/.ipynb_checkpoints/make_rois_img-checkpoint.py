@@ -90,16 +90,15 @@ for format_, extension in zip(formats, extensions):
     rois_methods_format = rois_methods[format_]
     for rois_method_format in rois_methods_format:
         print(format_)
-        rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
-            main_dir, project_dir, subject, format_)
-        os.makedirs(rois_dir, exist_ok=True)
-        
         if subject == pycortex_subject_template:
             if format_ == 'fsnative':
                 continue
             if rois_method_format == 'rois-drawn':
                 continue
-    
+                
+        rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
+            main_dir, project_dir, subject, format_)
+        os.makedirs(rois_dir, exist_ok=True)
         if rois_method_format == 'rois-drawn':
             rois = analysis_info[rois_method_format]
         elif rois_method_format == 'rois-group-mmp':
@@ -124,12 +123,13 @@ for format_, extension in zip(formats, extensions):
                     array_rois[mask] = i
                     
                 # Load data to have source img
-                data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}_{}'.format(
+                data_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
                     main_dir, project_dir, subject, format_,
-                    preproc_prep, filtering, normalization, avg_methods[0])
+                    preproc_prep, filtering, normalization)
 
                 # Find first file with prf-deriv in the name
                 data_files = glob.glob('{}/{}*{}*.{}'.format(data_dir, subject, hemi, extension))
+                
                 if not data_files:
                     raise FileNotFoundError(f"No func file found for {subject} {hemi}")
                 data_fn = data_files[0]
