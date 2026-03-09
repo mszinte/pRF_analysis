@@ -251,7 +251,7 @@ css_fit = css_fitter.iterative_search_params
 
 # Rearrange result of CSS model
 css_fit_mat = np.full((data.shape[1], css_params_num), np.nan, dtype=float)
-css_pred_mat = np.full_like(data[:3,], np.nan, dtype=float) 
+css_pred_mat = np.full_like(data, np.nan, dtype=float) 
 
 for est, vert in enumerate(valid_vertices_idx):
     css_fit_mat[vert] = css_fit[est]
