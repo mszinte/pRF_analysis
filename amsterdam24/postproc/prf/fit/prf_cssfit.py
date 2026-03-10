@@ -72,7 +72,7 @@ input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 
 n_batches = n_jobs
-verbose = True
+verbose = False
 css_params_num = 9
 
 # Load settings
@@ -267,7 +267,7 @@ if 'loo-avg' in input_fn:
     # Compute loo r2
     loo_bold_fn = input_fn.replace('loo-avg-', 'loo-')
     loo_img, loo_bold = load_surface(fn=loo_bold_fn)
-    loo_r2 = r2_score_surf(bold_signal=loo_bold, model_prediction=css_pred_mat)
+    loo_r2 = r2_score_surf(bold_signal=loo_bold[3:,], model_prediction=css_pred_mat[3:,])
     
     # Add loo r2 css_fit_mat
     css_fit_mat = np.column_stack((css_fit_mat, loo_r2))
