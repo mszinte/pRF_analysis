@@ -1,3 +1,23 @@
 task_glm: 
   description: "Task to analyse in the GLM analysis"
   value: ["PurLoc", "SacLoc", "PurVELoc", "SacVELoc"]
+
+"task_intertask": 
+  description: "Task to group to do intertask images"
+  value: [["PurLoc", "SacLoc", "pRF"], ["PurVELoc", "SacVELoc", "pRF"]]
+
+"maps_names_intertask": 
+  description: "intertask maps names on gifti files" 
+  value: ["all", "pursuit", "saccade", "pursuit_and_saccade", "vision", "vision_and_pursuit", "vision_and_saccade", "vision_and_pursuit_and_saccade"]
+
+"intertask_code_names":
+  description: "Correspondance between intertask numbers and signification"
+  value: 
+    "non_responding": 0 
+    "pursuit": 1 
+    "saccade": 2 
+    "pursuit_and_saccade": 3
+    "vision": 4 
+    "vision_and_pursuit": 5 
+    "vision_and_saccade": 6 
+    "vision_and_pursuit_and_saccade" : 7

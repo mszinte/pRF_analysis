@@ -121,7 +121,6 @@ for avg_method in avg_methods:
                 df_rois = pd.DataFrame()
                 if format_ == 'fsnative':
                     pycortex_subject = subject
-                    
                     for hemi in ['hemi-L', 'hemi-R']:
     
                         # Derivatives
@@ -145,7 +144,6 @@ for avg_method in avg_methods:
                         print(f'loading {pcm_fn}')
                         pcm_img, pcm_mat = load_surface(pcm_fn)
                         
-    
                         # Combine all derivatives
                         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
                         

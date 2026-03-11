@@ -122,7 +122,7 @@ if subject != 'template_avg':
                                                  alpha=fdr_alpha)
     
                 # Save results 
-                glm_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/glm/derivatives'.format(
+                glm_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives'.format(
                     main_dir, project_dir, subject, format_)
                 os.makedirs(glm_deriv_dir, exist_ok=True)
                 stat_glm_loo_fn = glm_pred_loo_fn.split('/')[-1].replace('pred', 'stats')
@@ -136,7 +136,7 @@ if subject != 'template_avg':
     # Get files
     glm_stats_loo_fns_list = []
     for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/derivatives/*loo-*_glm-stats.{}".format(
+        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-*_glm-stats.{}".format(
             main_dir, project_dir, subject, format_, extension))
         list_ = [item for item in list_ if "loo-median" not in item]
         glm_stats_loo_fns_list.extend(list_)
@@ -193,11 +193,11 @@ if subject != 'template_avg':
             loo_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                 
             if hemi:
-                median_fn = '{}/{}/derivatives/pp_data/{}/fsnative/glm/derivatives/{}'.format(
+                median_fn = '{}/{}/derivatives/pp_data/{}/fsnative/glm/glm_derivatives/{}'.format(
                     main_dir, project_dir, subject, loo_stats_median_fn)
                 hemi_data_median[hemi] = loo_stats_data_median
             else:
-                median_fn = '{}/{}/derivatives/pp_data/{}/170k/glm/derivatives/{}'.format(
+                median_fn = '{}/{}/derivatives/pp_data/{}/170k/glm/glm_derivatives/{}'.format(
                     main_dir, project_dir, subject, loo_stats_median_fn)
                 hemi_data_median['170k'] = loo_stats_data_median
             
@@ -217,7 +217,7 @@ elif subject == 'template_avg':
             # find all the subject prf derivatives
             subjects_stats_task = []
             for subject in subjects:
-                subjects_stats_task += ["{}/{}/derivatives/pp_data/{}/170k/glm/glm/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(
+                subjects_stats_task += ["{}/{}/derivatives/pp_data/{}/170k/glm/glm_derivatives/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(
                         main_dir, project_dir, subject, subject, task)]
         
             # Computing median across subject
