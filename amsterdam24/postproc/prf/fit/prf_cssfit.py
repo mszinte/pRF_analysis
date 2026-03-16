@@ -250,12 +250,12 @@ css_fitter.iterative_fit(rsq_threshold=rsq_iterative_th,
 css_fit = css_fitter.iterative_search_params
 
 # Rearrange result of CSS model
-css_fit_mat = np.full((data.shape[1], css_params_num), np.nan, dtype=float)
-css_pred_mat = np.full_like(data, np.nan, dtype=float) 
+css_fit_mat = np.full((data_clean.shape[1], css_params_num), np.nan, dtype=float)
+css_pred_mat = np.full_like(data_clean, np.nan, dtype=float) 
 
 for est, vert in enumerate(valid_vertices_idx):
     css_fit_mat[vert] = css_fit[est]
-    css_pred_mat[3:,vert] = css_model.return_prediction(mu_x=css_fit[est][0],
+    css_pred_mat[:,vert] = css_model.return_prediction(mu_x=css_fit[est][0],
                                                       mu_y=css_fit[est][1], 
                                                       size=css_fit[est][2], 
                                                       beta=css_fit[est][3], 
@@ -267,7 +267,7 @@ if 'loo-avg' in input_fn:
     # Compute loo r2
     loo_bold_fn = input_fn.replace('loo-avg-', 'loo-')
     loo_img, loo_bold = load_surface(fn=loo_bold_fn)
-    loo_r2 = r2_score_surf(bold_signal=loo_bold[3:,], model_prediction=css_pred_mat[3:,])
+    loo_r2 = r2_score_surf(bold_signal=loo_bold[:,], model_prediction=css_pred_mat[:,])
     
     # Add loo r2 css_fit_mat
     css_fit_mat = np.column_stack((css_fit_mat, loo_r2))
