@@ -91,14 +91,16 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 pp_fns = []
 for avg_method in avg_methods:
     for prf_task_name in prf_task_names:
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*{}*.func.gii".format(
+        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*{}*.dtseries.nii".format(
+        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
 
         # Accumulate the results
         pp_fns.extend(glob.glob(dct_avg_gii_fns))
         pp_fns.extend(glob.glob(dct_avg_nii_fns))
+
+deb()
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
