@@ -100,8 +100,6 @@ for avg_method in avg_methods:
         pp_fns.extend(glob.glob(dct_avg_gii_fns))
         pp_fns.extend(glob.glob(dct_avg_nii_fns))
 
-deb()
-
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
         prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
