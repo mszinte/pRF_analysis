@@ -131,7 +131,7 @@ if subject != 'template_avg':
                     print('Compute median across LOO')                
                     
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*_loo-avg-*_prf-css_deriv.{extension}")
+                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}_*loo-avg-*_prf-css_deriv.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
