@@ -190,8 +190,19 @@ if subject != 'template_avg':
                             # Recalculate p-values for median data
                             t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
                             degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
+
+                            # Recalculate p-values for median data
+                            print(f"slope - nan: {np.isnan(loo_prf_stats[slope_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[slope_idx,:]).sum()}")
+                            print(f"stderr - nan: {np.isnan(loo_prf_stats[stderr_idx,:]).sum()}, zeros: {(loo_prf_stats[stderr_idx,:]==0).sum()}, finite: {np.isfinite(loo_prf_stats[stderr_idx,:]).sum()}")
+                            print(f"trs - nan: {np.isnan(loo_prf_stats[trs_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[trs_idx,:]).sum()}")
+                            print(f"degrees_of_freedom: {degrees_of_freedom}")
+                            print(f"t_statistic - nan: {np.isnan(t_statistic).sum()}, inf: {np.isinf(t_statistic).sum()}, finite: {np.isfinite(t_statistic).sum()}")
+
                             p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                            print(f"p_values - nan: {np.isnan(p_values).sum()}, finite: {np.isfinite(p_values).sum()}")
                             corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
+
+                            deb()
                             
                             # Update median data with recalculated p-values
                             loo_prf_stats[pvalue_idx, :] = p_values

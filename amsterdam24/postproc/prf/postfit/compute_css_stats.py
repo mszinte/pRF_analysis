@@ -112,7 +112,7 @@ if subject != 'template_avg':
                 print(f'{avg_method} - {format_} - {prf_task_name}')
                 
                 # Find pRF func/pred files
-                prf_pred_fns = glob.glob('{}/*task-{}*_{}*_prf-css_pred.{}'.format(
+                prf_pred_fns = glob.glob('{}/*task-{}_*_{}*_prf-css_pred.{}'.format(
                     prf_fit_dir, prf_task_name, avg_method, extension))
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
@@ -122,7 +122,7 @@ if subject != 'template_avg':
                             prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, loo_number, extension))[0]
                         elif format_ == '170k':
-                            prf_bold_fn = glob.glob('{}/*task-{}*_loo-{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, loo_number, extension))[0]
                     else:
                         if format_ == 'fsnative': 
@@ -130,7 +130,7 @@ if subject != 'template_avg':
                             prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, avg_method, extension))[0]
                         elif format_ == '170k':
-                            prf_bold_fn = glob.glob('{}/*task-{}*_{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
                         
                     # load data  
@@ -139,6 +139,8 @@ if subject != 'template_avg':
                     bold_data = bold_data[3:,:] #exclude first 3 TRs because of scanner in amsterdam 
                     print(f'Loading bold: {prf_bold_fn}')
                     pred_img, pred_data = load_surface(prf_pred_fn)
+
+                    deb()
                     
                     # Compute linear regression 
                     results = linear_regression_surf(bold_signal=bold_data, 
@@ -172,7 +174,7 @@ if subject != 'template_avg':
                     print('Computing median across LOO')
 
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*loo-avg-*_prf-css_stats.{extension}")
+                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}_*loo-avg-*_prf-css_stats.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
