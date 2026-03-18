@@ -41,6 +41,10 @@ tasks_session:
 
 prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
+  value: ["pRF"]
+
+pmf_task_names: 
+  description: "Names of the tasks used for pMF analysis"
   value: ["SacLoc"]
 
 partial_scan: 

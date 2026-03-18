@@ -21,7 +21,7 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python pmf_pred_from_prf.py [main directory] [project name] [subject name] 
-                       [inout file name] [number of jobs]
+                       [inout file name] [prf fit file] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
@@ -51,7 +51,7 @@ import numpy as np
 import nibabel as nb
 from prfpy.stimulus import PRFStimulus2D
 from prfpy.model import Iso2DGaussianModel 
-from prfpy.fit import Iso2DGaussianFitter 
+
 
 # Personal imports
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -83,15 +83,9 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
-vdm_width = analysis_info['vdm_size_pix'][0] 
-vdm_height = analysis_info['vdm_size_pix'][1]
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
-rsq_iterative_th = analysis_info['rsq_iterative_th']
-size_th = analysis_info['size_th']
 prf_amp_th = analysis_info['prf_amp_th']
-formats = analysis_info['formats']
-extensions = analysis_info['extensions']
 
 # Load screen settings from subject dependend task-events.json
 prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
@@ -114,9 +108,6 @@ elif input_fn.endswith('.gii'):
     prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/pmf/fit".format(
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
-
-gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', 'pmf-gauss_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
 gauss_pred_fn = gauss_pred_fn.replace('bold', 'pmf-gauss_pred')
@@ -141,6 +132,7 @@ else:
 print(f"Loading VDM from: {vdm_fn}")
 vdm = np.load(vdm_fn)
 
+
 # define model parameter grid range
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
@@ -163,12 +155,17 @@ prev_gridsearch_params = np.column_stack([prf_fit_data[0, :], prf_fit_data[1, :]
 
 # Build a param mask
 params_valid = (
-    np.isfinite(mu_x) & 
-    np.isfinite(mu_y) & 
-    np.isfinite(prf_size) &
-    (prf_size > 0) &
-    (rsq > 0.1)  # + only fit voxels with decent pRF quality
+    np.isfinite(prf_fit_data[0, :]) &                          # mu_x
+    np.isfinite(prf_fit_data[1, :]) &                          # mu_y
+    np.isfinite(prf_fit_data[2, :]) &                          # size
+    (prf_fit_data[3, :] >= prf_amp_th[0]) &                    # amplitude lower bound
+    (prf_fit_data[3, :] <= prf_amp_th[1]) &                    # amplitude upper bound
+    np.isfinite(prf_fit_data[4, :]) &                          # baseline
+    np.isfinite(prf_fit_data[5, :]) &                          # hrf_1
+    (prf_fit_data[2, :] > 0)        &                          # size > 0
+    (prf_fit_data[7, :] > 0.1)                                 # r²
 )
+
 
 # Intersect with existing valid_vertices_idx
 valid_vertices_idx_prf = np.array([
@@ -189,44 +186,33 @@ print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
 # determine gaussian model
-gauss_model = Iso2DGaussianModel(stimulus=stimulus)
-
-# grid fit gauss model with SacLoc vdm 
-gauss_fitter_sacloc = Iso2DGaussianFitter(data=data.T, model=gauss_model, n_jobs=n_jobs)
+gauss_model = Iso2DGaussianModel(stimulus=stimulus) # make model with SacLoc vdm 
 
 
-# Assign to new fitter
-gauss_fitter = Iso2DGaussianFitter(data=data.T,model=gauss_model_sacloc, n_jobs=n_jobs)
+# prediction step (no fitter needed)
+gauss_pred_mat = np.full(raw_data.shape, np.nan, dtype=np.float32)
+
+for vert in valid_vertices_idx_prf:
+    params = prf_fit_data[:, vert]  # shape (8,) — index by voxel directly
+    gauss_pred_mat[:, vert] = gauss_model.return_prediction(
+        mu_x=params[0],
+        mu_y=params[1],
+        size=params[2],
+        beta=params[3],
+        baseline=params[4]
+    ).squeeze()
 
 
-# rearange result of Gauss model 
-gauss_fit = gauss_fitter.gridsearch_params #this contains the prf parameters fitted before
-gauss_fit_mat = np.zeros((raw_data.shape[1],gauss_params_num))
-gauss_pred_mat = np.zeros_like(raw_data) 
+#only NaN-out voxels that were never predicted
+predicted_mask = np.zeros(raw_data.shape[1], dtype=bool)
+predicted_mask[valid_vertices_idx_prf] = True
+gauss_pred_mat[:, ~predicted_mask] = np.nan
 
-for est,vert in enumerate(valid_vertices_idx_prf):
-    gauss_fit_mat[vert] = gauss_fit[est]
-    gauss_pred_mat[:,vert] = gauss_model.return_prediction(mu_x=gauss_fit[est][0], 
-                                                          mu_y=gauss_fit[est][1], 
-                                                          size=gauss_fit[est][2], 
-                                                          beta=gauss_fit[est][3], 
-                                                          baseline=gauss_fit[est][4],
-                                                          hrf_1=gauss_fit[est][5],
-                                                          hrf_2=gauss_fit[est][6])
-
-gauss_fit_mat = np.where(gauss_fit_mat == 0, np.nan, gauss_fit_mat)
-gauss_pred_mat = np.where(gauss_pred_mat == 0, np.nan, gauss_pred_mat)
-
-#export data from gauss model fit
-maps_names = ['mu_x', 'mu_y', 'prf_size', 'prf_amplitude', 'bold_baseline', 'hrf_1','hrf_2', 'r_squared']
               
-# export fit
-img_gauss_fit_mat = make_surface_image(data=gauss_fit_mat.T, source_img=img, maps_names=maps_names)
-nb.save(img_gauss_fit_mat,'{}/{}'.format(prf_fit_dir, gauss_fit_fn)) 
-
 # export pred
 img_gauss_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
 nb.save(img_gauss_pred_mat,'{}/{}'.format(prf_fit_dir, gauss_pred_fn)) 
+print(f"Saved: {prf_fit_dir}/{gauss_pred_fn}")
 
 # Print duration
 end_time = datetime.datetime.now()
