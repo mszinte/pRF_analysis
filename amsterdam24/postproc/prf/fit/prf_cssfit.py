@@ -267,6 +267,7 @@ if 'loo-avg' in input_fn:
     # Compute loo r2
     loo_bold_fn = input_fn.replace('loo-avg-', 'loo-')
     loo_img, loo_bold = load_surface(fn=loo_bold_fn)
+    loo_bold = loo_bold[3:, :]                       # skip first 3 TRs 
     loo_r2 = r2_score_surf(bold_signal=loo_bold[:,], model_prediction=css_pred_mat[:,])
     
     # Add loo r2 css_fit_mat

@@ -31,6 +31,8 @@ and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 
+#TODO: find a a way to find the prf fit for the right format and extension & load them for the subject 
+
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")

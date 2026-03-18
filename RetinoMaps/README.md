@@ -191,6 +191,4 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 #### PMF Gaussian fit
 - [x] Create the visual matrix design with eye movements (retinal view vdm) [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
 - [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
-- [ ] Run pMF gaussian fit [prf_submit_gaussfit_jobs.py](postproc/pmf/fit/pmf_submit_gauss_jobs.py)
-- [ ] Compute pMF gaussian fit derivatives [compute_gauss_derivatives.py](postproc/pmf/postfit/compute_gauss_derivatives.py)
-- [ ] Make pRF maps with pycortex [pycortex_maps_gauss.py](postproc/pmf/postfit/pycortex_maps_gauss.py) 
+- [ ] Run pMF prediction [pmf_submit_pred_jobs.py](postproc/pmf/fit/pmf_submit_pred_jobs.py)
