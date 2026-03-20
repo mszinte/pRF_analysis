@@ -49,6 +49,10 @@ TR:
 TRs: 
   description: "Number of TR of the pRF task"
   value: 188
+
+starting_TR: 
+  description: "TR in which aquisition started"
+  value: 3
   
 # Preprocessing
 preproc_prep: 
