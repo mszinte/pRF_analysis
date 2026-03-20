@@ -82,6 +82,7 @@ normalization = analysis_info['normalization']
 filtering = analysis_info['filtering']
 partial_scan = analysis_info['partial_scan']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+starting_TR = analysis_info['starting_TR']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
@@ -111,6 +112,12 @@ for format_, extension in zip(formats, extensions):
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
+
+            # Cut TRs before starting_TR
+            print('Cutting first {} TRs (keeping TRs {}:{})'.format(
+                starting_TR, starting_TR, surf_data.shape[0]))
+            
+            surf_data = surf_data[starting_TR:, :]
             
             # Identify valid vertices (exclude non-covered areas)
             if partial_scan:
