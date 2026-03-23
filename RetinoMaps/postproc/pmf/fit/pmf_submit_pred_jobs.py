@@ -24,7 +24,7 @@ python pmf_submit_pred_jobs.py [main directory] [project name] [subject]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
-python pmf_submit_pred_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python pmf_submit_pred_jobs.py /scratch/mszinte/data RetinoMaps sub-02 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
