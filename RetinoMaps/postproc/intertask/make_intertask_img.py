@@ -138,7 +138,7 @@ for tasks in group_tasks:
             fdr_p_map = stats_data_task[fdr_p_map_idx, :]
             for vert, fdr_value in enumerate(fdr_p_map):
                 if fdr_value < fdr_alpha:
-                    final_map[task_idx,vert] += task_idx
+                    final_map[task_idx, vert] += task_idx
                         
         final_map[0,:] = np.sum(final_map, axis=0)                
         #  Make specifique maps 
