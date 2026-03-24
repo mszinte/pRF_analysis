@@ -201,8 +201,6 @@ if subject != 'template_avg':
                             p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
                             print(f"p_values - nan: {np.isnan(p_values).sum()}, finite: {np.isfinite(p_values).sum()}")
                             corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
-
-                            deb()
                             
                             # Update median data with recalculated p-values
                             loo_prf_stats[pvalue_idx, :] = p_values

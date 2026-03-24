@@ -46,7 +46,8 @@ import sys
 import glob
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.abspath(os.path.join(script_dir, "../../../../analysis_code/utils")))
 from settings_utils import load_settings
 from pycortex_utils import set_pycortex_config_file
 
@@ -61,7 +62,7 @@ nb_procs = 8
 hour_proc = 10
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])

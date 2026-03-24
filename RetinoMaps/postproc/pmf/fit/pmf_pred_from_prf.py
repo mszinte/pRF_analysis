@@ -27,9 +27,7 @@ Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
 python pmf_pred_from_prf.py /scratch/mszinte/data RetinoMaps sub-03 [file path] [file_path] 32  
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (martin.szinte@gmail.com)
-and Uriel Lascombes (uriel.lascombes@laposte.net)
-edited by Sina Kling (sina.kling@outlook.de)
+Written by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
 
@@ -113,6 +111,9 @@ elif input_fn.endswith('.gii'):
 gauss_pred_fn = input_fn.split('/')[-1]
 gauss_pred_fn = gauss_pred_fn.replace('bold', 'pmf-gauss_pred')
 
+gauss_fit_fn = input_fn.split('/')[-1]
+gauss_fit_fn = gauss_fit_fn.replace('bold', 'pmf-gauss_fit')
+
 
 # Find vdm: check subject-specific directory first, then general vdm directory
 vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
@@ -132,14 +133,6 @@ else:
 
 print(f"Loading VDM from: {vdm_fn}")
 vdm = np.load(vdm_fn)
-vdm_norm = vdm * (1.0 / (vdm.max() + 1e-8))     # normalize to [0,1] first
-vdm = vdm_norm * 100                            # then scale up
-
-
-# define model parameter grid range
-sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
-eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
-polars = np.linspace(0, 2*np.pi, gauss_grid_nr)
 
 
 # load data
@@ -171,9 +164,7 @@ params_valid = (
 
 
 # Intersect with existing valid_vertices_idx
-valid_vertices_idx_prf = np.array([
-    v for v in valid_vertices_idx if params_valid[v]
-])
+valid_vertices_idx_prf = np.array([v for v in valid_vertices_idx if params_valid[v]])
 
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
@@ -196,84 +187,79 @@ gauss_pred_mat = np.full(raw_data.shape, np.nan, dtype=np.float32)
 
 eps = 1e-6
 
-for vert in valid_vertices_idx_prf:
-    params = prf_fit_data[:, vert]
-    bold_tc = raw_data[:, vert]  # (TRs,)
-
-    # one voxel at a time
-    fitter = Iso2DGaussianFitter(
-        data=bold_tc[np.newaxis, :],   # (1, TRs)
-        model=gauss_model,
-        n_jobs=1
-    )
-
-    # inject this voxel's pRF params as the grid result
-    fitter.gridsearch_params = np.array([[
-        params[0],  # mu_x
-        params[1],  # mu_y
-        params[2],  # size
-        params[3],  # beta     — starting point
-        params[4],  # baseline — starting point
-        params[5],  # hrf_1
-        0.0,        # hrf_2
-        params[7],  # rsq
-    ]])
-
-    # freeze everything except beta and baseline
-    gauss_bounds = [
-        (params[0] - eps, params[0] + eps),  # mu_x     frozen
-        (params[1] - eps, params[1] + eps),  # mu_y     frozen
-        (params[2] - eps, params[2] + eps),  # size     frozen
-        (prf_amp_th[0], prf_amp_th[1]),       # beta     free
-        (-2, 2),                              # baseline free
-        (params[5] - eps, params[5] + eps),  # hrf_1    frozen
-        (0, 0),                               # hrf_2    frozen
-    ]
-
-    fitter.iterative_fit(
-        rsq_threshold=0.1,   
-        bounds=gauss_bounds,
-        verbose=False
-    )
-
-    fit = fitter.iterative_search_params[0]  # (8,)
-    gauss_fit_mat[vert] = fit
-    gauss_pred_mat[:, vert] = gauss_model.return_prediction(
-        mu_x=fit[0], mu_y=fit[1], size=fit[2],
-        beta=fit[3], baseline=fit[4]
-    ).squeeze()
 
 for i, vert in enumerate(valid_vertices_idx_prf):
     if i % 1000 == 0:
         print(f"  {i} / {len(valid_vertices_idx_prf)} voxels done...")
 
+    params = prf_fit_data[:, vert]
+    bold_tc = raw_data[:, vert]
 
-# prediction step (no fitter needed)
-# gauss_pred_mat = np.full(raw_data.shape, np.nan, dtype=np.float32)
+    # compute unit prediction
+    tc = gauss_model.return_prediction(
+    mu_x=params[0], mu_y=params[1], size=params[2],
+    beta=np.float32(1.0),
+    baseline=np.float32(0.0)
+    ).squeeze()
 
-# for vert in valid_vertices_idx_prf:
-#     params = prf_fit_data[:, vert]  # shape (8,) — index by voxel directly
-#     gauss_pred_mat[:, vert] = gauss_model.return_prediction(
-#         mu_x=params[0],
-#         mu_y=params[1],
-#         size=params[2],
-#         beta=params[3],
-#         baseline=params[4]
-#     ).squeeze()
+    fitter = Iso2DGaussianFitter(
+        data=bold_tc[np.newaxis, :],  # (1, TRs)
+        model=gauss_model,
+        n_jobs=1
+    )
+
+    # bypass grid_fit entirely, inject what grid_fit would have computed
+    fitter.mu_x     = np.array([params[0]])
+    fitter.mu_y     = np.array([params[1]])
+    fitter.sizes    = np.array([params[2]])
+    fitter.hrf_1    = None
+    fitter.hrf_2    = None
+    fitter.n_predictions = 1
+    fitter.grid_predictions = tc[np.newaxis, :]  # (1, TRs)
+    
+    # run the bookkeeping that grid_fit does after create_grid_predictions
+    n_timepoints = fitter.n_timepoints
+    data_var     = fitter.data_var
+    sum_preds         = np.sum(fitter.grid_predictions, axis=-1)
+    square_norm_preds = np.linalg.norm(fitter.grid_predictions, axis=-1, ord=2)**2
+
+    sumd     = np.sum(bold_tc)
+    slope    = (n_timepoints * np.dot(bold_tc, fitter.grid_predictions.T) - sumd * sum_preds) / \
+               (n_timepoints * square_norm_preds - sum_preds**2)
+    baseline = (sumd - slope * sum_preds) / n_timepoints
+
+    resid = np.linalg.norm(bold_tc - slope * tc - baseline, ord=2)
+    rsq   = 1 - resid**2 / (n_timepoints * data_var[0])
+
+    fitter.gridsearch_params = np.array([[
+        params[0], params[1], params[2],
+        slope[0], baseline[0],
+        params[5], 0.0,
+        rsq
+    ]])
+
+    fit = fitter.gridsearch_params[0]
+    gauss_fit_mat[vert]      = fit
+    gauss_pred_mat[:, vert]  = baseline[0] + slope[0] * tc
 
 
-# #only NaN-out voxels that were never predicted
-# predicted_mask = np.zeros(raw_data.shape[1], dtype=bool)
-# predicted_mask[valid_vertices_idx_prf] = True
-# gauss_pred_mat[:, ~predicted_mask] = np.nan
+#only NaN-out voxels that were never predicted
+predicted_mask = np.zeros(raw_data.shape[1], dtype=bool)
+predicted_mask[valid_vertices_idx_prf] = True
+gauss_pred_mat[:, ~predicted_mask] = np.nan
 
+# export pred
+img_gauss_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
+nb.save(img_gauss_pred_mat, '{}/{}'.format(prf_fit_dir, gauss_pred_fn))
+print(f"Saved: {prf_fit_dir}/{gauss_pred_fn}")
+
+# export fit
+img_gauss_fit_mat = make_surface_image(data=gauss_fit_mat.T, source_img=img, 
+                                        maps_names=['mu_x', 'mu_y', 'prf_size','prf_amplitude', 'bold_baseline','hrf_1', 'hrf_2', 'r_squared'])
+nb.save(img_gauss_fit_mat, '{}/{}'.format(prf_fit_dir, gauss_fit_fn))
+print(f"Saved: {prf_fit_dir}/{gauss_fit_fn}")
+
+# print duration
+end_time = datetime.datetime.now()
+print("\nStart time:\t{}\nEnd time:\t{}\nDuration:\t{}".format(start_time, end_time, end_time - start_time))
               
-# # export pred
-# img_gauss_pred_mat = make_surface_image(data=gauss_pred_mat, source_img=img)
-# nb.save(img_gauss_pred_mat,'{}/{}'.format(prf_fit_dir, gauss_pred_fn)) 
-# print(f"Saved: {prf_fit_dir}/{gauss_pred_fn}")
-
-# # Print duration
-# end_time = datetime.datetime.now()
-# print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
-# start_time=start_time, end_time=end_time, dur=end_time - start_time))
