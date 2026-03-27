@@ -10,7 +10,10 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: runtime (e.g. 2:00:00)
+sys.argv[5]: script name to run:
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.py
+sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -37,7 +40,7 @@ project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
 mode = sys.argv[5]   # "bilateral" or "by_hemi"
-proc_time = sys.argv[6] # usually an hour is enough
+proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
 if mode == "bilateral":

@@ -3,11 +3,11 @@
 """
 Created on Mar 27, 2026
 
-Compute INTRA-HEMISPHERIC PARTIAL correlations between clusters (seeds)
-and parcels (targets) using Nilearn partial correlation.
+Compute INTRA-HEMISPHERIC* PARTIAL correlations between clusters (seeds)
+and parcels (targets) using Nilearn partial correlation
 
-Left-hemisphere seeds are correlated only with left-hemisphere parcels,
-and right-hemisphere seeds with right-hemisphere parcels.
+* i.e., Left-hemisphere seeds are correlated only with left-hemisphere parcels,
+and right-hemisphere seeds with right-hemisphere parcels
 
 For each cluster:
   - parcels belonging to that cluster are EXCLUDED from the conditioning set
@@ -79,8 +79,8 @@ for cl in clusters:
 # ============================================================
 
 HEMIS = [
-    {"label": "LH", "seed_key": "lh", "atlas_key": "L", "ts_key": "data_lh"},
-    {"label": "RH", "seed_key": "rh", "atlas_key": "R", "ts_key": "data_rh"},
+    {"label": "LH", "seed_key": "lh", "atlas_key": "L", "ts_key": "data_L"},
+    {"label": "RH", "seed_key": "rh", "atlas_key": "R", "ts_key": "data_R"},
 ]
 
 # =========================
@@ -105,11 +105,7 @@ for subject in subjects:
 
     ts_img, ts_data_raw = load_surface(timeseries_fn)
 
-    # Request separate hemisphere arrays from the helper.
-    # from_91k_to_32k must return a dict containing 'data_lh' and 'data_rh'
-    # alongside the optional 'data_concat'.  If your current version only
-    # returns 'data_concat', set return_concat_hemis=False (or adjust the
-    # call below) so that the individual hemisphere arrays are included.
+    # Request separate hemisphere arrays from the utils
     res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=False, return_32k_mask=True) # sanity check for medial wall vertices
 
     for h in HEMIS:
@@ -263,7 +259,7 @@ for subject in subjects:
         all_subject_partial_fz[label].append(filled_fz)
 
 # =========================
-# GROUP STATS  (per hemisphere)
+# GROUP STATS (per hemisphere)
 # =========================
 
 print("\n=== GROUP STATS ===")
