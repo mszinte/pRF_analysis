@@ -43,7 +43,7 @@ proc_time = sys.argv[6] # usually an hour is enough
 if mode == "bilateral":
     script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py"
 elif mode == "by_hemi":
-    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.sh"
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.sh"
 else:
     raise ValueError(
         "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
