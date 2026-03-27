@@ -64,7 +64,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN \
-        -only-numeric; 
+        -only-numeric -legacy-mode; # this prevents bugs resulting from a few empty vertices (only one case found, sub-25 left hemi parcel 6mp) 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3 (these are the standard deviations)
         
         # Double check this
