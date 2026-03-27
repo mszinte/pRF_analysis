@@ -36,7 +36,19 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-proc_time = sys.argv[5] # takes very little time 15 mins is more than enough
+mode = sys.argv[5]   # "bilateral" or "by_hemi"
+proc_time = sys.argv[6] # usually an hour is enough
+
+# Define which way you want to run correlations
+if mode == "bilateral":
+    script_name = "nilearn_full_corr_cluster-task_by_mmp-parcel_bilateral.py"
+elif mode == "by_hemi":
+    script_name = "nilearn_full_corr_cluster-task_by_mmp-parcel_by_hemi.sh"
+else:
+    raise ValueError(
+        "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
+        f"Got: {mode}"
+    )
 
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs

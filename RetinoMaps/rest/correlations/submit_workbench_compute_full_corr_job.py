@@ -21,7 +21,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 bilateral 1:00:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 bilateral 2:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
 """
@@ -40,7 +40,7 @@ project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
 mode = sys.argv[5]   # "bilateral" or "by_hemi"
-proc_time = sys.argv[6] # usually an hour is enough
+proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
 if mode == "bilateral":

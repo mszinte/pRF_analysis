@@ -10,7 +10,10 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: runtime (e.g. 2:00:00)
+sys.argv[5]: script name to run:
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.py
+sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
 .sh file to execute in server
@@ -18,7 +21,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 1:00:00
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 1:00:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -36,7 +39,19 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-proc_time = sys.argv[5] # 1 hour is usually enough
+mode = sys.argv[5]   # "bilateral" or "by_hemi"
+proc_time = sys.argv[6] #
+
+# Define which way you want to run correlations
+if mode == "bilateral":
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py"
+elif mode == "by_hemi":
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.sh"
+else:
+    raise ValueError(
+        "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
+        f"Got: {mode}"
+    )
 
 memory_val = 10 # GB
 nb_procs = 16 # number of CPUs

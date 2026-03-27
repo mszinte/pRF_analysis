@@ -109,6 +109,3 @@ $ ./generate_wta_dlabel_cmap.sh
 ```
 
 Some example visualizations are saved in this wb_view scene file for now: retinomaps_group.scene
-
-
-
