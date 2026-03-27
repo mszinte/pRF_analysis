@@ -70,8 +70,6 @@ sub_num = subject[4:]
 input_fn = sys.argv[4]
 prf_fit_fn = sys.argv[5]
 n_jobs = int(sys.argv[6])
-n_batches = n_jobs
-verbose = True
 gauss_params_num = 8
 
 # Load settings
@@ -82,7 +80,6 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
-gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
 prf_amp_th = analysis_info['prf_amp_th']
 
@@ -146,8 +143,6 @@ data = raw_data[:,valid_vertices]
 
 # load prf fit 
 prf_fit_img, prf_fit_data = load_surface(fn=prf_fit_fn)
-# extract params from fit data corresponding to: mu_x, mu_Y, prf_size, amplidue, baseline, hrf_1, hrf_2, rsq
-prev_gridsearch_params = np.column_stack([prf_fit_data[0, :], prf_fit_data[1, :], prf_fit_data[2, :], prf_fit_data[3, :], prf_fit_data[4, :], prf_fit_data[5, :], prf_fit_data[6, :], prf_fit_data[7, :]])
 
 # Build a param mask
 params_valid = (
@@ -172,11 +167,10 @@ stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          design_matrix=vdm, 
                          TR=TR)
 
+
 print("\n===== PRF MODEL PARAMETERS =====")
 print("Stimulus x min/max (deg):", np.nanmin(stimulus.x_coordinates ), np.nanmax(stimulus.x_coordinates))
 print("Stimulus y min/max (deg) :", np.nanmin(stimulus.y_coordinates), np.nanmax(stimulus.y_coordinates))
-print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
-print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
 # determine gaussian model
@@ -185,63 +179,41 @@ gauss_model = Iso2DGaussianModel(stimulus=stimulus) # make model with SacLoc vdm
 gauss_fit_mat  = np.full((raw_data.shape[1], gauss_params_num), np.nan, dtype=np.float32)
 gauss_pred_mat = np.full(raw_data.shape, np.nan, dtype=np.float32)
 
-eps = 1e-6
 
+n_timepoints = raw_data.shape[0]
 
 for i, vert in enumerate(valid_vertices_idx_prf):
     if i % 1000 == 0:
         print(f"  {i} / {len(valid_vertices_idx_prf)} voxels done...")
 
-    params = prf_fit_data[:, vert]
-    bold_tc = raw_data[:, vert]
+    params   = prf_fit_data[:, vert]
+    bold_tc  = raw_data[:, vert]
 
-    # compute unit prediction
     tc = gauss_model.return_prediction(
-    mu_x=params[0], mu_y=params[1], size=params[2],
-    beta=np.float32(1.0),
-    baseline=np.float32(0.0)
+        mu_x=params[0], mu_y=params[1], size=params[2],
+        beta=np.float32(1.0),
+        baseline=np.float32(0.0),
+        hrf_1=params[5],
+        hrf_2=0.0
     ).squeeze()
 
-    fitter = Iso2DGaussianFitter(
-        data=bold_tc[np.newaxis, :],  # (1, TRs)
-        model=gauss_model,
-        n_jobs=1
-    )
+    # OLS for slope and baseline
+    sum_preds         = np.sum(tc)
+    square_norm_preds = np.linalg.norm(tc, ord=2) ** 2
+    sumd              = np.sum(bold_tc)
 
-    # bypass grid_fit entirely, inject what grid_fit would have computed
-    fitter.mu_x     = np.array([params[0]])
-    fitter.mu_y     = np.array([params[1]])
-    fitter.sizes    = np.array([params[2]])
-    fitter.hrf_1    = None
-    fitter.hrf_2    = None
-    fitter.n_predictions = 1
-    fitter.grid_predictions = tc[np.newaxis, :]  # (1, TRs)
-    
-    # run the bookkeeping that grid_fit does after create_grid_predictions
-    n_timepoints = fitter.n_timepoints
-    data_var     = fitter.data_var
-    sum_preds         = np.sum(fitter.grid_predictions, axis=-1)
-    square_norm_preds = np.linalg.norm(fitter.grid_predictions, axis=-1, ord=2)**2
-
-    sumd     = np.sum(bold_tc)
-    slope    = (n_timepoints * np.dot(bold_tc, fitter.grid_predictions.T) - sumd * sum_preds) / \
-               (n_timepoints * square_norm_preds - sum_preds**2)
+    slope    = (n_timepoints * np.dot(bold_tc, tc) - sumd * sum_preds) / \
+               (n_timepoints * square_norm_preds - sum_preds ** 2)
     baseline = (sumd - slope * sum_preds) / n_timepoints
 
-    resid = np.linalg.norm(bold_tc - slope * tc - baseline, ord=2)
-    rsq   = 1 - resid**2 / (n_timepoints * data_var[0])
+    resid    = np.linalg.norm(bold_tc - slope * tc - baseline, ord=2)
+    rsq      = 1 - resid ** 2 / (n_timepoints * np.var(bold_tc))
 
-    fitter.gridsearch_params = np.array([[
-        params[0], params[1], params[2],
-        slope[0], baseline[0],
-        params[5], 0.0,
-        rsq
-    ]])
+    gauss_fit_mat[vert, :]  = [params[0], params[1], params[2],
+                                slope, baseline, params[5], 0.0, rsq]
+    gauss_pred_mat[:, vert] = baseline + slope * tc
 
-    fit = fitter.gridsearch_params[0]
-    gauss_fit_mat[vert]      = fit
-    gauss_pred_mat[:, vert]  = baseline[0] + slope[0] * tc
-
+    
 
 #only NaN-out voxels that were never predicted
 predicted_mask = np.zeros(raw_data.shape[1], dtype=bool)

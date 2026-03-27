@@ -17,16 +17,17 @@ Per run:
 - target + gaze vdm_target_gaze.mp4 in eyetracking frequency
 - retinal vdm_preview.mp4 in eyetracking frequency 
 - retinal vdm_run.npy and vdm.mp4 downsampled to TR 
+- target-only vdm_target_run.npy downsampled to TR (black and white)
 
 Concatenated:
 - vdm.npy downsampled to TR (concatenated across all runs)
+- vdm_target.npy downsampled to TR (concatenated across all runs)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
 python vdm_builder_sacloc.py /scratch/mszinte/data RetinoMaps sub-02 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
-Modified to process all runs and concatenate outputs
 -----------------------------------------------------------------------------------------
 """
 import pandas as pd
@@ -54,7 +55,7 @@ from sac_utils import predicted_saccade
 
 from settings_utils import load_settings
 
-##################################### CONFIGURATION ##########################################
+# CONFIGURATION 
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
@@ -109,10 +110,11 @@ with h5py.File(h5_filename, "r") as f:
     time_start = np.array(f["time_start_trial"])  # (max_trials, n_sequences, n_runs)
     time_end   = np.array(f["time_end_trial"])
 
-# Storage for concatenated VDM
+# Storage for concatenated VDMs
 all_vdm_downsampled = []
+all_vdm_target_downsampled = []
 
-##################################### MAIN LOOP OVER RUNS ####################################
+# MAIN LOOP OVER RUNS 
 for run in range(1, len(event_runs) + 1):
     print(f"\n{'='*70}")
     print(f"PROCESSING RUN {run}")
@@ -165,10 +167,35 @@ for run in range(1, len(event_runs) + 1):
     # save retino y
     np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_retino_Y"), retino_y)
 
+    n_timepoints = len(gaze_x)
+
+    # ------------
+    # CREATE TARGET-ONLY VDM (black and white, no gaze)
+    print(f"Creating target-only VDM for run {run}...")
+
+    vdm_target_only = np.zeros((n_timepoints, n_pixels, n_pixels), dtype=np.float32)
+
+    for t in range(n_timepoints):
+        vdm_target_only[t] = create_visual_frame(
+            target_x_expanded[t],
+            target_y_expanded[t],
+            n_pixels=n_pixels,
+            visual_field_size=visual_field_size,
+            target_radius=target_radius
+        )
+
+    # Downsample to TR
+    vdm_target_only_downsampled = downsample_vdm_to_tr(vdm_target_only, TR=TR, original_sampling_rate=1000)
+    vdm_target_only_downsampled = np.transpose(vdm_target_only_downsampled, (1, 2, 0))  # (H, W, T_TR)
+
+    np.save(os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target.npy"), vdm_target_only_downsampled)
+    print(f"Target-only VDM downsampled shape: {vdm_target_only_downsampled.shape}")
+
+    # Store for concatenation
+    all_vdm_target_downsampled.append(vdm_target_only_downsampled)
+
     # ------------ 
     print(f"Creating target + gaze design matrix for run {run}...")
-
-    n_timepoints = len(gaze_x)
 
     # Create vdm_target with shape (2, n_pixels, n_pixels, n_timepoints)
     vdm_target = np.zeros((2, n_pixels, n_pixels, n_timepoints), dtype=np.float32)
@@ -286,21 +313,30 @@ for run in range(1, len(event_runs) + 1):
     print(f"  Preview videos: {len(preview_indices)} frames at {preview_fps} fps")
     print(f"  Downsampled video: {n_TRs * frames_per_tr} frames at {preview_fps} fps")
 
-##################################### CONCATENATE ALL RUNS ##################################
+# CONCATENATE ALL RUNS 
 print(f"\n{'='*70}")
 print("CONCATENATING ALL RUNS")
 print(f"{'='*70}")
 
-# Concatenate along time dimension (last axis)
+# Concatenate retinal VDM along time dimension (last axis)
 vdm_all_runs = np.concatenate(all_vdm_downsampled, axis=-1)
 concatenated_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm.npy")
 np.save(concatenated_fn, vdm_all_runs)
 
-print(f"✓ Concatenated VDM shape: {vdm_all_runs.shape}")
+print(f"  Concatenated retinal VDM shape: {vdm_all_runs.shape}")
 print(f"  Individual run shapes: {[vdm.shape for vdm in all_vdm_downsampled]}")
 print(f"  Total TRs: {vdm_all_runs.shape[-1]}")
 print(f"  Expected: ~{n_TRs * len(event_runs)} TRs")
 print(f"  Saved to: {concatenated_fn}")
+
+# Concatenate target-only VDM along time dimension (last axis)
+vdm_target_all_runs = np.concatenate(all_vdm_target_downsampled, axis=-1)
+concatenated_target_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm_target.npy")
+np.save(concatenated_target_fn, vdm_target_all_runs)
+
+print(f"  Concatenated target VDM shape: {vdm_target_all_runs.shape}")
+print(f"  Total TRs: {vdm_target_all_runs.shape[-1]}")
+print(f"  Saved to: {concatenated_target_fn}")
 
 # Define permission cmd
 print(f'\nChanging files permissions in {main_dir}/{project_dir}')

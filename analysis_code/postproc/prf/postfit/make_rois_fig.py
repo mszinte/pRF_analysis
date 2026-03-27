@@ -191,7 +191,11 @@ for avg_method in avg_methods:
                 
                 # Spatial distibution barycentre plot
                 tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
-                df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                try:
+                    df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                except FileNotFoundError:
+                    print(f"File not found: {tsv_barycentre_fn}, skipping...")
+                    continue
                 fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
                 fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
                 print('Saving pdf: {}'.format(fig_fn))
