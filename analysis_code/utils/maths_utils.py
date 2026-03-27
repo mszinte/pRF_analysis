@@ -617,6 +617,9 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
         # lower_ci_x, upper_ci_x = bootstrap_ci_mean(hot_zone_idx[1], n_bootstrap=1000, ci_level=ci_confidence_level)
         # lower_ci_y, upper_ci_y = bootstrap_ci_mean(hot_zone_idx[0], n_bootstrap=1000, ci_level=ci_confidence_level)
 
+        if len(hot_zone_idx[1]) == 0 or len(hot_zone_idx[0]) == 0:
+            continue
+
         lower_ci_x, upper_ci_x = np.percentile(hot_zone_idx[1], [2.5]), np.percentile(hot_zone_idx[1], [97.5])
         lower_ci_y, upper_ci_y = np.percentile(hot_zone_idx[0], [2.5]), np.percentile(hot_zone_idx[0], [97.5])
 
