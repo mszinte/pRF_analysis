@@ -88,6 +88,8 @@ for subject in subjects:
         lh, rh = [load_surface(f'{seed_folder}/{subject}/91k/rest/seed/{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade_{hemi}_{roi}.shape.gii')[1]
                   for hemi in ('lh','rh')]
         mask = np.hstack((lh,rh)).ravel()
+
+    ## NO NEED TO AVERAGE TIMESERIES FOR FULL CORRELATION JUST STACK
         if np.any(mask):
             ts = ts_data[:, mask > 0]
             ts_mean = ts.mean(axis=1) if ts.ndim > 1 else ts

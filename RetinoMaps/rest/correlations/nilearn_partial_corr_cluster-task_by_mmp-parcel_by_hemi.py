@@ -34,8 +34,7 @@ main_data        = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder      = main_data
 atlas_folder     = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 partial_output_folder = (
-    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-    "/group/91k/rest/partial_corr_by_hemi"
+    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr/by_hemi"
 )
 os.makedirs(partial_output_folder, exist_ok=True)
 
@@ -112,13 +111,7 @@ for subject in subjects:
         label     = h["label"]          # "LH" or "RH"
         seed_key  = h["seed_key"]       # "lh" or "rh"
         atlas_key = h["atlas_key"]      # "L"  or "R"
-        ts_key    = h["ts_key"]         # "data_lh" or "data_rh"
-
-        if ts_key not in res:
-            raise KeyError(
-                f"from_91k_to_32k result is missing key '{ts_key}'. "
-                "Ensure the function returns per-hemisphere arrays."
-            )
+        ts_key    = h["ts_key"]         # "data_L" or "data_R"
 
         ts_data = res[ts_key]           # shape: (n_time, n_vertices_hemi)
 
@@ -139,16 +132,8 @@ for subject in subjects:
             )
             mask = mask_data.ravel()
 
-            if not np.any(mask):
-                print(f"  [{label}] ⚠️  Empty seed mask for {roi} — skipping")
-                continue
-
             cluster_ts_list.append(ts_data[:, mask > 0].mean(axis=1))
             cluster_names_used.append(roi)
-
-        if not cluster_ts_list:
-            print(f"  [{label}] ⚠️  No valid cluster timeseries — skipping hemisphere")
-            continue
 
         cluster_ts = np.column_stack(cluster_ts_list)
         print(f"  [{label}] Clusters used: {cluster_names_used}")
@@ -167,15 +152,8 @@ for subject in subjects:
             )
             mask = mask_data.ravel()
 
-            if not np.any(mask):
-                continue
-
             parcel_ts_list.append(ts_data[:, mask > 0].mean(axis=1))
             parcel_names_used.append(parcel)
-
-        if not parcel_ts_list:
-            print(f"  [{label}] ⚠️  No valid parcel timeseries — skipping hemisphere")
-            continue
 
         parcel_ts = np.column_stack(parcel_ts_list)
         print(f"  [{label}] Parcels used: {len(parcel_names_used)}/{len(parcels)}")
@@ -198,10 +176,6 @@ for subject in subjects:
                 j for j, p in enumerate(parcel_names_used)
                 if p not in exclude
             ]
-
-            if not included_idx:
-                print(f"  [{label}] ⚠️  No parcels left after exclusion for {cl_name}")
-                continue
 
             X = np.column_stack([
                 cluster_ts[:, i_cl],
@@ -234,7 +208,7 @@ for subject in subjects:
         # Save subject-level results
         # -------------------------
 
-        sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr_by_hemi"
+        sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi"
         os.makedirs(sub_out, exist_ok=True)
 
         tag = label.lower()   # "lh" or "rh"
@@ -270,10 +244,6 @@ for h in HEMIS:
     sub_list    = all_subject_partial[label]
     sub_list_fz = all_subject_partial_fz[label]
 
-    if not sub_list:
-        print(f"  [{label}] ⚠️  No subject data collected — skipping group stats")
-        continue
-
     stacked    = np.stack(sub_list,    axis=0)   # (n_subjects, n_clusters, n_parcels)
     stacked_fz = np.stack(sub_list_fz, axis=0)
 
@@ -286,15 +256,15 @@ for h in HEMIS:
 
     pd.DataFrame(mean_partial,   index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}.csv")
+                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
     )
     pd.DataFrame(median_partial, index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_median_cluster_by_mmp-parcel_partial_{tag}.csv")
+                     f"group_median_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
     )
 
     np.savez_compressed(
-        os.path.join(partial_output_folder, f"group_partial_corr_{tag}.npz"),
+        os.path.join(partial_output_folder, f"group_partial_corr_{tag}_by_hemi.npz"),
         mean_cluster_parcel_partial         = mean_partial,
         mean_cluster_parcel_partial_fisherz = mean_partial_fz,
         median_cluster_parcel_partial       = median_partial,

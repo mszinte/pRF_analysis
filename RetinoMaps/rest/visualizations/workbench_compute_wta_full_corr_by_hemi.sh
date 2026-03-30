@@ -29,7 +29,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     mkdir -p "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/wta"
     
-    ################# Debugging this part ##########################
+    ## Need to loop over hemi here ##
     for roi in "${ROIS[@]}"; do
 
         # Get metric files for both hemi (needed to remove everything that's not cortex)

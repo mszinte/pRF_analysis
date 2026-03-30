@@ -31,7 +31,7 @@ USER = os.environ["USER"]
 main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder = main_data
 atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
-partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
+partial_output_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr/bilateral"
 os.makedirs(partial_output_folder, exist_ok=True)
 
 # Personal imports
@@ -131,10 +131,6 @@ for subject in subjects:
     parcel_ts = np.column_stack(parcel_ts_list)
     print(f"  Parcels used: {len(parcel_names_used)}/{len(parcels)}")
 
-    if cluster_ts.size == 0 or parcel_ts.size == 0:
-        print("  ⚠️ Empty cluster or parcel matrix — skipping subject")
-        continue
-
     n_clusters = cluster_ts.shape[1]
 
     partial_matrix = np.full((n_clusters, parcel_ts.shape[1]), np.nan)
@@ -186,17 +182,17 @@ for subject in subjects:
             filled[gr, gc] = partial_matrix[i_cl, j_pa]
             filled_fz[gr, gc] = partial_matrix_fz[i_cl, j_pa]
 
-    sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr"
+    sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/bilateral"
     os.makedirs(sub_out, exist_ok=True)
 
-    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.npy"), filled)
-    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.npy"), filled_fz)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_bilateral.npy"), filled)
+    np.save(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz_bilateral.npy"), filled_fz)
 
     df = pd.DataFrame(filled, index=clusters, columns=parcels)
     df_fz = pd.DataFrame(filled_fz, index=clusters, columns=parcels)
 
-    df.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial.csv"))
-    df_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz.csv"))
+    df.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_bilateral.csv"))
+    df_fz.to_csv(os.path.join(sub_out, "cluster_by_mmp-parcel_partial_fisherz_bilateral.csv"))
 
     all_subject_partial.append(filled)
     all_subject_partial_fz.append(filled_fz)
@@ -219,11 +215,11 @@ median_partial_fz = np.nanmedian(all_subject_partial_fz, axis=0)
 df_mean = pd.DataFrame(mean_partial, index=clusters, columns=parcels)
 df_median = pd.DataFrame(median_partial, index=clusters, columns=parcels)
 
-df_mean.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial.csv"))
-df_median.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial.csv"))
+df_mean.to_csv(os.path.join(partial_output_folder, "group_mean_cluster_by_mmp-parcel_partial_bilateral.csv"))
+df_median.to_csv(os.path.join(partial_output_folder, "group_median_cluster_by_mmp-parcel_partial_bilateral.csv"))
 
 np.savez_compressed(
-    os.path.join(partial_output_folder, "group_partial_corr.npz"),
+    os.path.join(partial_output_folder, "group_partial_corr_bilateral.npz"),
     mean_cluster_parcel_partial=mean_partial,
     mean_cluster_parcel_partial_fisherz=mean_partial_fz,
     median_cluster_parcel_partial=median_partial,
