@@ -131,10 +131,6 @@ for subject in subjects:
     parcel_ts = np.column_stack(parcel_ts_list)
     print(f"  Parcels used: {len(parcel_names_used)}/{len(parcels)}")
 
-    if cluster_ts.size == 0 or parcel_ts.size == 0:
-        print("  ⚠️ Empty cluster or parcel matrix — skipping subject")
-        continue
-
     n_clusters = cluster_ts.shape[1]
 
     partial_matrix = np.full((n_clusters, parcel_ts.shape[1]), np.nan)
