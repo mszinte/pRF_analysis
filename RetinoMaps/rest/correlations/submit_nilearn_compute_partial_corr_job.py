@@ -12,7 +12,7 @@ sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: script name to run:
               - nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py
-              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.py
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py
 sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -21,7 +21,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 1:00:00
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -46,7 +46,7 @@ proc_time = sys.argv[6] #
 if mode == "bilateral":
     script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py"
 elif mode == "by_hemi":
-    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi_dev.sh"
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py"
 else:
     raise ValueError(
         "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
@@ -81,7 +81,6 @@ slurm_cmd = f"""#!/bin/bash
 """
 
 # Assuming scripts are in the same directory as this Python script
-script_name = 'nilearn_partial_corr_cluster-task_by_mmp-parcel.py'
 script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 

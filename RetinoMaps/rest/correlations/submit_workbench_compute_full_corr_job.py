@@ -87,11 +87,6 @@ slurm_cmd = f"""#!/bin/bash
 script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 
-# Check if script exists
-if not os.path.exists(your_script_path):
-    print(f"Error: Script {your_script_path} not found!")
-    sys.exit(1)
-
 main_cmd = "bash {}".format(your_script_path)
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"

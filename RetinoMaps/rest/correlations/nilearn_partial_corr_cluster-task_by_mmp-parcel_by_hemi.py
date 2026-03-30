@@ -34,8 +34,7 @@ main_data        = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder      = main_data
 atlas_folder     = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 partial_output_folder = (
-    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-    "/group/91k/rest/partial_corr_by_hemi"
+    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr/by_hemi"
 )
 os.makedirs(partial_output_folder, exist_ok=True)
 
@@ -234,7 +233,7 @@ for subject in subjects:
         # Save subject-level results
         # -------------------------
 
-        sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr_by_hemi"
+        sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi"
         os.makedirs(sub_out, exist_ok=True)
 
         tag = label.lower()   # "lh" or "rh"
@@ -286,15 +285,15 @@ for h in HEMIS:
 
     pd.DataFrame(mean_partial,   index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}.csv")
+                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
     )
     pd.DataFrame(median_partial, index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_median_cluster_by_mmp-parcel_partial_{tag}.csv")
+                     f"group_median_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
     )
 
     np.savez_compressed(
-        os.path.join(partial_output_folder, f"group_partial_corr_{tag}.npz"),
+        os.path.join(partial_output_folder, f"group_partial_corr_{tag}_by_hemi.npz"),
         mean_cluster_parcel_partial         = mean_partial,
         mean_cluster_parcel_partial_fisherz = mean_partial_fz,
         median_cluster_parcel_partial       = median_partial,
