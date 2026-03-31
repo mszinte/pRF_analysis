@@ -2,7 +2,7 @@
 #####################################################
 # Generate label file with winner-take-all colors from TSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
-# Example usage for main output of interest
+# Example use for main output of interest
 # $ ./generate_workbench_wta_dlabel_cmap.sh fisher_z by_hemi
 #####################################################
 
@@ -150,8 +150,10 @@ for i in "${!PARCELS[@]}"; do
     parcel="${PARCELS[$i]}"
     winner="${WINNERS[$i]}"
     
+    # Skip if no winner
     [[ -z "$winner" ]] || [[ "$winner" == "nan" ]] && continue
     
+    # Clean and validate winner value
     winner=$(echo "$winner" | tr -d '[:space:]')
     winner=$(printf "%.0f" "$winner" 2>/dev/null)
     
@@ -169,10 +171,12 @@ for i in "${!PARCELS[@]}"; do
         fi
     done
     
+    # Get color and atlas keys
     color="${WINNER_COLORS[$winner]}"
     r_key="${R_KEYS[$parcel]}"
     l_key="${L_KEYS[$parcel]}"
     
+    # Write hemisphere entries
     [[ -n "$r_key" ]] && echo -e "R_${parcel}_ROI\n$r_key $color" >> "${OUTPUT_FILE}"
     [[ -n "$l_key" ]] && echo -e "L_${parcel}_ROI\n$l_key $color" >> "${OUTPUT_FILE}"
     ((parcel_count++))
@@ -188,7 +192,7 @@ echo "Total labels: $parcel_count"
 echo "Warnings: $warning_count"
 echo ""
 
-# Import to CIFTI
+# Import labels to CIFTI file
 wb_command -cifti-label-import \
     "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
     "${OUTPUT_FILE}" \
