@@ -4,8 +4,16 @@
 # Outputs are computed for Fisher-z results (and full corr just for comparison)
 # Note: INDEXMAX returns winning COLUMN (seed cluster, e.g. sPCS) by ROW (MMP  label) 
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
+# Example use for main output of interest
+# $ ./workbench_compute_wta_full_corr.sh fisher-z by_hemi legacy
 #####################################################
 
+# Parse command-line arguments
+CORR_TYPE="${1:-full_corr}"      # 'full_corr' or 'fisher-z'
+HEMI_TYPE="${2:-bilateral}"      # 'bilateral' (skips the hemi specification) or 'by_hemi'
+LEGACY_MODE="${3:-default}"      # 'default' (skips the argument) or '-legacy-mode'
+
+# Main folders
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
@@ -33,7 +41,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     for roi in "${ROIS[@]}"; do
 
         # Get metric files for both hemi (needed to remove everything that's not cortex)
-    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.dscalar.nii" COLUMN \
+    	wb_command -cifti-separate "${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/sub-${sub}_task-rest_space-fsLR_den-91k_desc-$CORR_TYPE_$HEMI_${roi}.dscalar.nii" COLUMN \
     	-metric CORTEX_LEFT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_lh_${roi}.shape.gii" \
     	-metric CORTEX_RIGHT "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_rh_${roi}.shape.gii"
 
@@ -64,7 +72,7 @@ for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}_hollow_seed.dscalar.nii" \
         "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
         "$FULL_CORR/sub-${sub}_task-rest_space-fsLR_den-91k_desc-full_corr_${roi}.pscalar.nii" -method MEAN \
-        -only-numeric -legacy-mode; # this prevents bugs resulting from a few empty vertices (only one case found, sub-25 left hemi parcel 6mp) 
+        -only-numeric $LEGACY_MODE; # this prevents bugs resulting from a few empty vertices (only one case found, sub-25 left hemi parcel 6mp) 
         ## to exclude outliers, add this flag at the end -exclude-outliers 3 3 (these are the standard deviations)
         
         # Double check this

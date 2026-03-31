@@ -20,8 +20,7 @@ Example:
 source .bashrc
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/visualizations
-python submit_workbench_wta_jobs.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta_full_corr_by_hemi.sh 0:30:00
-python submit_workbench_wta_jobs.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta_fisher-z_by_hemi.sh 0:30:00
+python submit_workbench_wta_jobs.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta_full_corr_dev.sh 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -39,8 +38,8 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-script_name = sys.argv[5]   #
-proc_time = sys.argv[6] #
+script_name = sys.argv[5]
+proc_time = sys.argv[6]
 
 memory_val = 20 # GB
 nb_procs = 16 # number of CPUs
