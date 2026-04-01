@@ -68,7 +68,7 @@ sub_num = subject[4:]
 input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 n_batches = n_jobs
-verbose = True
+verbose = False
 gauss_params_num = 8
 
 # Load settings
@@ -180,10 +180,12 @@ gauss_bounds = [(-max_ecc_size, max_ecc_size), # x
                 (-max_ecc_size, max_ecc_size), # y
                 (size_th[0], size_th[1]), # prf size
                 (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
-                (-2, 2), # bold baseline
+                (0, 0), #(-2, 2), # bold baseline
                 (0, 10), # hrf1
-                (0, 0) # hrf2
+                (0, 0)  # hrf2
                 ]
+
+# one idea: grid fit more loose, limit with bounds afterwards 
 
 print("\n===== PRF FIT BOUNDS =====")
 print("Gauss bounds:")
@@ -201,7 +203,7 @@ gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th,
 gauss_fit = gauss_fitter.iterative_search_params
 
 # rearange result of Gauss model 
-gauss_fit = gauss_fitter.gridsearch_params
+#gauss_fit = gauss_fitter.gridsearch_params
 gauss_fit_mat = np.zeros((raw_data.shape[1],gauss_params_num))
 gauss_pred_mat = np.zeros_like(raw_data) 
 
