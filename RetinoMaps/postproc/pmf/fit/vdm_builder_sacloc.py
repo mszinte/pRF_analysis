@@ -30,316 +30,216 @@ python vdm_builder_sacloc.py /scratch/mszinte/data RetinoMaps sub-02 327
 Written by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
+
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import h5py
-import os
-import cv2
-import json
-import sys 
-import yaml 
-
-# Debug
-import ipdb
-deb = ipdb.set_trace
-
+import os, sys, cv2, ipdb
 
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from eyetrack_utils import (
     load_eye_data, load_event_files,
-    flatten_time_start_trial, create_visual_frame_target_gaze, 
-    create_visual_frame, downsample_vdm_to_tr
+    flatten_time_start_trial,
+    create_visual_frame_target_gaze,
+    create_visual_frame,
 )
 from sac_utils import predicted_saccade
-
 from settings_utils import load_settings
+import h5py
 
-# CONFIGURATION 
-main_dir = sys.argv[1]
+deb = ipdb.set_trace
+
+# ── Config ────────────────────────────────────────────────────────────────────
+main_dir    = sys.argv[1]
 project_dir = sys.argv[2]
-subject = sys.argv[3]
-group = sys.argv[4]
+subject     = sys.argv[3]
+group       = sys.argv[4]
 
-# general settings for vdm 
-n_pixels = 100
-visual_field_size = 40  # degrees 
-pixel_size = visual_field_size / n_pixels  # degrees per pixel
-# Define target/stimulus size
-target_radius = 0.5  
-n_TRs = 208
+TASK               = "SacLoc"
+TR                 = 1.2
+TIME_SCALE         = 1e-3          # ms → seconds
+SAMPLES_PER_TR     = int(TR * 1000)  # 1200 samples at 1 kHz
+N_PIXELS           = 100
+VISUAL_FIELD_SIZE  = 40            # degrees
+TARGET_RADIUS      = 0.5           # degrees
+CHUNK_SIZE         = 10_000        # timepoints per chunk (controls RAM use)
+PREVIEW_FPS        = 60
 
-eye_tracking_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking" 
-gaze_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking/timeseries'
+ses = 'ses-01' if subject == 'sub-01' else 'ses-02'
+sub_num = subject[4:]
+
+# ── Directories 
+gaze_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking/timeseries"
+vdm_dir  = f"{main_dir}/{project_dir}/derivatives/vdm/{subject}"
 os.makedirs(gaze_dir, exist_ok=True)
-vdm_dir = f'{main_dir}/{project_dir}/derivatives/vdm/{subject}'
-os.makedirs(vdm_dir, exist_ok=True)
+os.makedirs(vdm_dir,  exist_ok=True)
 
-if subject == 'sub-01':
-    ses = 'ses-01'
-else: 
-    ses = 'ses-02'
-
-TASK = "SacLoc"
-TIME_SCALE = 1e-3  # Convert ms to seconds
-TR = 1.2
-
-# LOAD DATA
-event_files = load_event_files(main_dir, project_dir, subject, ses, TASK)
-event_runs = []
-for filepath in event_files:
-    df = pd.read_csv(filepath, sep='\t')
-    event_runs.append(df)
-
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+# ── Load settings + events 
+base_dir      = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, 'eyetracking', 'eye-tracking.yml')
-settings = load_settings([settings_path])
-analysis_info = settings[0]
+analysis_info = load_settings([settings_path])[0]
 
-print(f"Loading data from subject {subject}")
-print(f"Found {len(event_runs)} runs")
+event_files = load_event_files(main_dir, project_dir, subject, ses, TASK)
+event_runs  = [pd.read_csv(fp, sep='\t') for fp in event_files]
 
-# Load all eye data
 eye_data_runs = load_eye_data(main_dir, project_dir, subject, TASK)
 
-# LOAD HDF5 FILES TO GET TRIAL ONSET TIMES
-h5_filename = f"{eye_tracking_dir}/stats/{subject}_task-{TASK}_eyedata_sac_stats.h5"
+h5_fn = (f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking"
+         f"/stats/{subject}_task-{TASK}_eyedata_sac_stats.h5")
+with h5py.File(h5_fn, "r") as f:
+    time_start = np.array(f["time_start_trial"])
 
-print("Loading h5")
-with h5py.File(h5_filename, "r") as f:
-    time_start = np.array(f["time_start_trial"])  # (max_trials, n_sequences, n_runs)
-    time_end   = np.array(f["time_end_trial"])
+print(f"Subject: {subject}  |  Runs found: {len(event_runs)}")
 
-# Storage for concatenated VDMs
-all_vdm_downsampled = []
+
+def build_vdm_chunked(frame_fn, n_timepoints):
+    """
+    Uses the last sample of each TR window instead of mean,
+    avoiding carryover blending from position transitions.
+    """
+    n_trs = int(np.floor(n_timepoints / SAMPLES_PER_TR))
+    out   = np.zeros((n_trs, N_PIXELS, N_PIXELS), dtype=np.float32)
+
+    for tr_idx in range(n_trs):
+        # Take the middle sample of the TR window
+        t = tr_idx * SAMPLES_PER_TR + SAMPLES_PER_TR // 2
+        out[tr_idx] = frame_fn(t)
+
+        if tr_idx % 50 == 0:
+            print(f"    TR {tr_idx}/{n_trs}", end='\r')
+
+    print(f"    {n_trs}/{n_trs} TRs processed")
+    return np.transpose(out, (1, 2, 0))  # → (H, W, T_TR)
+
+
+
+
+# ── Per-run processing 
+all_vdm_downsampled        = []
 all_vdm_target_downsampled = []
 
-# MAIN LOOP OVER RUNS 
 for run in range(1, len(event_runs) + 1):
-    print(f"\n{'='*70}")
-    print(f"PROCESSING RUN {run}")
-    print(f"{'='*70}")
-    
-    eye_data = eye_data_runs[run-1] 
-    gaze_x = eye_data[:,1]
-    gaze_y = eye_data[:,2]
+    print(f"\n{'='*60}\nRUN {run}\n{'='*60}")
 
-    trial_onsets_ms = flatten_time_start_trial(time_start, run_idx=run-1)
+    eye_data = eye_data_runs[run - 1]
+    gaze_x   = eye_data[:, 1]
+    gaze_y   = eye_data[:, 2]
     eye_times = (eye_data[:, 0] - eye_data[0, 0]) * TIME_SCALE
-
-    # Trial onsets (seconds since first eye sample)
-    trial_onsets_sec = (trial_onsets_ms - eye_data[0, 0]) * TIME_SCALE
-
-    # COMPUTE EXPECTED TARGET POSITIONS
-    target_x, target_y = predicted_saccade(main_dir, project_dir, event_runs[run-1], analysis_info)
-
-    target_x_expanded = np.full(len(eye_times), np.nan)
-    target_y_expanded = np.full(len(eye_times), np.nan)
-
-    # For each trial, fill from its onset to the next trial's onset
-    for i in range(len(trial_onsets_sec) - 1):
-        # Find start index
-        start_idx = np.argmin(np.abs(eye_times - trial_onsets_sec[i]))
-        
-        # Find end index (next trial)
-        end_idx = np.argmin(np.abs(eye_times - trial_onsets_sec[i+1]))
-        
-        # Fill with NEXT trial's target value
-        target_x_expanded[start_idx:end_idx] = target_x[i+1]
-        target_y_expanded[start_idx:end_idx] = target_y[i+1]
-
-    # Handle last trial
-    start_idx = np.argmin(np.abs(eye_times - trial_onsets_sec[-1]))
-    target_x_expanded[start_idx:] = target_x[0]  
-    target_y_expanded[start_idx:] = target_y[0]
-
-    # save target X
-    np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_expected_target_X"), target_x_expanded)
-    # save target y
-    np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_expected_target_Y"), target_y_expanded)
-    
-    # CALCULATE RETINAL POSITION 
-    retino_x = target_x_expanded - gaze_x
-    retino_y = target_y_expanded - gaze_y
-
-    # save retino X
-    np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_retino_X"), retino_x)
-    # save retino y
-    np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_retino_Y"), retino_y)
-
     n_timepoints = len(gaze_x)
 
-    # ------------
-    # CREATE TARGET-ONLY VDM (black and white, no gaze)
-    print(f"Creating target-only VDM for run {run}...")
+    # Trial onsets
+    trial_onsets_ms  = flatten_time_start_trial(time_start, run_idx=run - 1)
+    trial_onsets_sec = (trial_onsets_ms - eye_data[0, 0]) * TIME_SCALE
 
-    vdm_target_only = np.zeros((n_timepoints, n_pixels, n_pixels), dtype=np.float32)
+    # Expected target positions
+    target_x, target_y = predicted_saccade(main_dir, project_dir,
+                                           event_runs[run - 1], analysis_info)
+    target_x_exp = np.full(n_timepoints, np.nan)
+    target_y_exp = np.full(n_timepoints, np.nan)
 
-    for t in range(n_timepoints):
-        vdm_target_only[t] = create_visual_frame(
-            target_x_expanded[t],
-            target_y_expanded[t],
-            n_pixels=n_pixels,
-            visual_field_size=visual_field_size,
-            target_radius=target_radius
-        )
+    for i in range(len(trial_onsets_sec) - 1):
+        s = np.argmin(np.abs(eye_times - trial_onsets_sec[i]))
+        e = np.argmin(np.abs(eye_times - trial_onsets_sec[i + 1]))
+        target_x_exp[s:e] = target_x[i + 1]
+        target_y_exp[s:e] = target_y[i + 1]
+    s = np.argmin(np.abs(eye_times - trial_onsets_sec[-1]))
+    target_x_exp[s:] = target_x[0]
+    target_y_exp[s:] = target_y[0]
 
-    # Downsample to TR
-    vdm_target_only_downsampled = downsample_vdm_to_tr(vdm_target_only, TR=TR, original_sampling_rate=1000)
-    vdm_target_only_downsampled = np.transpose(vdm_target_only_downsampled, (1, 2, 0))  # (H, W, T_TR)
+    # Retinal position
+    retino_x = target_x_exp - gaze_x
+    retino_y = target_y_exp - gaze_y
 
-    np.save(os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target.npy"), vdm_target_only_downsampled)
-    print(f"Target-only VDM downsampled shape: {vdm_target_only_downsampled.shape}")
+    # Save gaze timeseries
+    for tag, arr in [("expected_target_X", target_x_exp),
+                     ("expected_target_Y", target_y_exp),
+                     ("retino_X", retino_x),
+                     ("retino_Y", retino_y)]:
+        np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_{tag}"), arr)
 
-    # Store for concatenation
-    all_vdm_target_downsampled.append(vdm_target_only_downsampled)
+    # ── 1. Retinal VDM (chunked, saved as npy) 
+    print("Building retinal VDM...")
+    vdm_down = build_vdm_chunked(
+        lambda t: create_visual_frame(
+            retino_x[t], retino_y[t],
+            n_pixels=N_PIXELS,
+            visual_field_size=VISUAL_FIELD_SIZE,
+            target_radius=TARGET_RADIUS,
+        ),
+        n_timepoints,
+    )
+    np.save(os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.npy"), vdm_down)
+    print(f"  Retinal VDM shape: {vdm_down.shape}")
+    all_vdm_downsampled.append(vdm_down)
 
-    # ------------ 
-    print(f"Creating target + gaze design matrix for run {run}...")
+    # ── 2. Target-only VDM (chunked, accumulated for concat) ─────────────────
+    print("Building target-only VDM...")
+    vdm_target_down = build_vdm_chunked(
+        lambda t: create_visual_frame(
+            target_x_exp[t], target_y_exp[t],
+            n_pixels=N_PIXELS,
+            visual_field_size=VISUAL_FIELD_SIZE,
+            target_radius=TARGET_RADIUS,
+        ),
+        n_timepoints,
+    )
+    print(f"  Target VDM shape: {vdm_target_down.shape}")
+    all_vdm_target_downsampled.append(vdm_target_down)   # no per-run save
 
-    # Create vdm_target with shape (2, n_pixels, n_pixels, n_timepoints)
-    vdm_target = np.zeros((2, n_pixels, n_pixels, n_timepoints), dtype=np.float32)
+    # ── 3. Target + gaze video
+    print("Writing target+gaze video...")
+    n_trs_run = vdm_down.shape[-1]
+    frames_per_tr    = int(PREVIEW_FPS * TR)
+    total_frames     = n_trs_run * frames_per_tr
+    # one eye sample per preview frame (at 60 fps ≈ every 16.7 ms → every 17th sample)
+    step = max(1, n_timepoints // total_frames)
+    preview_indices  = np.arange(0, n_timepoints, step)[:total_frames]
 
-    for t in range(n_timepoints):
-        result = create_visual_frame_target_gaze(
-            target_x_expanded[t], target_y_expanded[t],
-            gaze_x[t], gaze_y[t],
-            n_pixels=n_pixels,
-            visual_field_size=visual_field_size,
-            target_radius=target_radius,
-            gaze_radius=0.5 
-        )
-        if result.shape[0] == 2:
-            vdm_target[:, :, :, t] = result
-        else:
-            raise ValueError(f"Unexpected shape from create_visual_frame_target_gaze: {result.shape}")
-
-    print(f"VDM target shape: {vdm_target.shape}")  # (2, H, W, T)
-
-    # ------------ 
-    # Create visual design matrix for all timepoints
-    print(f"Creating visual design matrix for run {run}...")
-    vdm = np.zeros((n_timepoints, n_pixels, n_pixels), dtype=np.float32)
-
-    for t in range(n_timepoints):
-        vdm[t] = create_visual_frame(
-            retino_x[t], 
-            retino_y[t],
-            n_pixels=n_pixels,
-            visual_field_size=visual_field_size,
-            target_radius=target_radius
-        )
-
-    vdm = np.transpose(vdm, (1, 2, 0))
-    print(f"Visual design matrix shape: {vdm.shape}") # (H, W, T)
-
-    vdm_for_downsampling = np.transpose(vdm, (2, 0, 1))  # (T, H, W)
-
-    # Downsample original to TR 
-    print(f"Downsampling visual design matrix for run {run}...")
-    vdm_downsampled = downsample_vdm_to_tr(vdm_for_downsampling, TR=TR, original_sampling_rate=1000)
-    vdm_downsampled = np.transpose(vdm_downsampled, (1, 2, 0))  # back to (H, W, T_TR)
-    
-    np.save(os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.npy"), vdm_downsampled)
-    print(f"VDM downsampled shape: {vdm_downsampled.shape}")
-    
-    # Store for concatenation
-    all_vdm_downsampled.append(vdm_downsampled)
-
-    ############################# MAKE VIDEOS #################################################
-    target_duration_seconds = n_TRs * TR  # Total scan duration
-    preview_fps = 60
-    total_frames_needed = int(target_duration_seconds * preview_fps)
-    downsample_factor_preview = max(1, n_timepoints // total_frames_needed)
-    preview_indices = np.arange(0, n_timepoints, downsample_factor_preview)[:total_frames_needed]
-    frames_per_tr = int(preview_fps * TR)
-
-    print(f"Target duration: {target_duration_seconds:.1f} seconds")
-    print(f"Preview FPS: {preview_fps}")
-    print(f"Total frames needed: {total_frames_needed}")
-
-    # 1. VIDEO FOR TARGET + GAZE (original resolution, synced to downsampled)
-    print(f"Creating target + gaze video for run {run} (synced)...")
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    vdm_target_video_fn = f'{vdm_dir}/{subject}_run_0{run}_task-{TASK}_vdm_target_gaze.mp4'
-    out_target = cv2.VideoWriter(vdm_target_video_fn, fourcc, preview_fps, (n_pixels, n_pixels), True)
+    video_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target_gaze.mp4")
+    fourcc   = cv2.VideoWriter_fourcc(*'mp4v')
+    writer   = cv2.VideoWriter(video_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), True)
 
     for idx in preview_indices:
-        target_frame = vdm_target[0, :, :, idx]
-        gaze_frame = vdm_target[1, :, :, idx]
-        rgb = np.zeros((n_pixels, n_pixels, 3), dtype=np.uint8)
-        rgb[..., 0] = np.uint8(np.clip(target_frame, 0, 1) * 255)  # Red channel
-        rgb[..., 2] = np.uint8(np.clip(gaze_frame, 0, 1) * 255)    # Blue channel
-        out_target.write(rgb)
+        frame = create_visual_frame_target_gaze(
+            target_x_exp[idx], target_y_exp[idx],
+            gaze_x[idx], gaze_y[idx],
+            n_pixels=N_PIXELS,
+            visual_field_size=VISUAL_FIELD_SIZE,
+            target_radius=TARGET_RADIUS,
+            gaze_radius=0.5,
+        )
+        rgb = np.zeros((N_PIXELS, N_PIXELS, 3), dtype=np.uint8)
+        rgb[..., 0] = np.uint8(np.clip(frame[0], 0, 1) * 255)  # red  = target
+        rgb[..., 2] = np.uint8(np.clip(frame[1], 0, 1) * 255)  # blue = gaze
+        writer.write(rgb)
 
-    out_target.release()
-    print(f'✓ Saved target+gaze video: {os.path.getsize(vdm_target_video_fn) / 1e6:.1f} MB')
-    print(f'  Duration: {len(preview_indices) / preview_fps:.1f} seconds at {preview_fps} fps')
+    writer.release()
+    size_mb = os.path.getsize(video_fn) / 1e6
+    print(f"  Saved {video_fn}  ({size_mb:.1f} MB, {len(preview_indices)/PREVIEW_FPS:.1f}s)")
 
-    # 2. ORIGINAL VDM VIDEO (original resolution, synced to downsampled)
-    print(f"Creating original VDM preview video for run {run} (synced)...")
-    vdm_video_fn = f'{vdm_dir}/{subject}_run_0{run}_task-{TASK}_vdm_preview.mp4'
-    out_vdm = cv2.VideoWriter(vdm_video_fn, fourcc, preview_fps, (n_pixels, n_pixels), False)
 
-    for idx in preview_indices:
-        frame = vdm[:, :, idx]
-        out_vdm.write(np.uint8(frame * 255))
+# ── Concatenate retinal VDMs across all runs
+print(f"\n{'='*60}\nConcatenating retinal VDMs\n{'='*60}")
+vdm_all = np.concatenate(all_vdm_downsampled, axis=-1)  # (H, W, T_total)
+concat_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm.npy")
+np.save(concat_fn, vdm_all)
 
-    out_vdm.release()
-    print(f'✓ Saved preview video: {os.path.getsize(vdm_video_fn) / 1e6:.1f} MB')
-    print(f'  Duration: {len(preview_indices) / preview_fps:.1f} seconds at {preview_fps} fps')
+# Concatenate target-only VDMs across all runs
+vdm_target_all = np.concatenate(all_vdm_target_downsampled, axis=-1)  # (H, W, T_total)
+concat_target_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm_target.npy")
+np.save(concat_target_fn, vdm_target_all)
 
-    # 3. DOWNSAMPLED VDM VIDEO (TR resolution)
-    print(f"Creating downsampled VDM video for run {run} (TR resolution)...")
-    vdm_downsampled_video_fn = f'{vdm_dir}/{subject}_run_0{run}_task-{TASK}_vdm_downsampled.mp4'
-    out_downsampled = cv2.VideoWriter(vdm_downsampled_video_fn, fourcc, preview_fps, 
-                                       (n_pixels, n_pixels), False)
+print(f"  Target per-run shapes : {[v.shape for v in all_vdm_target_downsampled]}")
+print(f"  Target concatenated   : {vdm_target_all.shape}  →  {concat_target_fn}")
+assert vdm_target_all.shape == vdm_all.shape, \
+    f"Shape mismatch between retinal {vdm_all.shape} and target {vdm_target_all.shape} VDMs!"
 
-    # Normalize to 0-255 range
-    vdm_down_normalized = (vdm_downsampled - vdm_downsampled.min()) / (vdm_downsampled.max() - vdm_downsampled.min() + 1e-8)
+print(f"  Per-run shapes : {[v.shape for v in all_vdm_downsampled]}")
+print(f"  Concatenated   : {vdm_all.shape}  →  {concat_fn}")
+assert vdm_all.shape[-1] == sum(v.shape[-1] for v in all_vdm_downsampled), \
+    "Concatenation length mismatch!"
 
-    for i in range(n_TRs):
-        frame = vdm_down_normalized[:, :, i]
-        for _ in range(frames_per_tr):
-            out_downsampled.write(np.uint8(frame * 255))
 
-    out_downsampled.release()
-    print(f'✓ Saved downsampled video: {os.path.getsize(vdm_downsampled_video_fn) / 1e6:.1f} MB')
-    print(f'  Duration: {n_TRs * frames_per_tr / preview_fps:.1f} seconds at {preview_fps} fps')
-
-    # Final summary
-    print(f"\nVIDEO SUMMARY FOR RUN {run}:")
-    print(f"  All videos should be ~{target_duration_seconds:.1f} seconds")
-    print(f"  Preview videos: {len(preview_indices)} frames at {preview_fps} fps")
-    print(f"  Downsampled video: {n_TRs * frames_per_tr} frames at {preview_fps} fps")
-
-# CONCATENATE ALL RUNS 
-print(f"\n{'='*70}")
-print("CONCATENATING ALL RUNS")
-print(f"{'='*70}")
-
-# Concatenate retinal VDM along time dimension (last axis)
-vdm_all_runs = np.concatenate(all_vdm_downsampled, axis=-1)
-concatenated_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm.npy")
-np.save(concatenated_fn, vdm_all_runs)
-
-print(f"  Concatenated retinal VDM shape: {vdm_all_runs.shape}")
-print(f"  Individual run shapes: {[vdm.shape for vdm in all_vdm_downsampled]}")
-print(f"  Total TRs: {vdm_all_runs.shape[-1]}")
-print(f"  Expected: ~{n_TRs * len(event_runs)} TRs")
-print(f"  Saved to: {concatenated_fn}")
-
-# Concatenate target-only VDM along time dimension (last axis)
-vdm_target_all_runs = np.concatenate(all_vdm_target_downsampled, axis=-1)
-concatenated_target_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm_target.npy")
-np.save(concatenated_target_fn, vdm_target_all_runs)
-
-print(f"  Concatenated target VDM shape: {vdm_target_all_runs.shape}")
-print(f"  Total TRs: {vdm_target_all_runs.shape[-1]}")
-print(f"  Saved to: {concatenated_target_fn}")
-
-# Define permission cmd
-print(f'\nChanging files permissions in {main_dir}/{project_dir}')
+print(f"\nSetting permissions in {main_dir}/{project_dir}")
 os.system(f"chmod -Rf 771 {main_dir}/{project_dir}")
 os.system(f"chgrp -Rf {group} {main_dir}/{project_dir}")
-print("PROCESSING COMPLETE")
+print("Done.")

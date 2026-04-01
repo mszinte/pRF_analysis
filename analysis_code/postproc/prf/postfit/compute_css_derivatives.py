@@ -105,7 +105,7 @@ if subject != 'template_avg':
                 print(f'{avg_method} - {format_} - {prf_task_name}')
 
                 # Find pRF func/pred files
-                fit_fns = glob.glob('{}/*task-{}*_{}*_prf-css_fit.{}'.format(
+                fit_fns = glob.glob('{}/*task-{}_*_{}*_prf-css_fit.{}'.format(
                         prf_fit_dir, prf_task_name, avg_method, extension))
     
                 # Compute derivatives
