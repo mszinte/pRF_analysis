@@ -1,0 +1,36 @@
+nCSF_session: 
+  description: "session of nCSF task"
+  value: "ses-01"
+ 
+ncsf_n_runs:
+  description: "number of run for nCSF task"
+  value: 10
+
+sf_minFreq:
+  description: "lowest spatial frequency"
+  value: 0.05
+
+sf_maxFreq:
+  description: "highest spatial frequency"
+  value: 16
+
+sf_filtNum:
+  description: "number of spatial frequency"
+  value: 6
+
+sf_filtOverlap:
+  description: "proportion of overlap between gaussian filter"
+  value: 0.6
+
+minCont:
+  description: "lowest contrast"
+  value: 0.0025
+
+maxCont:
+  description: "highest contrast"
+  value: 0.8
+
+contNum:
+  description: "number of contrast steps"
+  value: 12
+
