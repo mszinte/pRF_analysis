@@ -69,7 +69,7 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 cluster_name  = analysis_info['cluster_name']
-prf_task_names = analysis_info['prf_task_names']
+prf_task_names = "SacLoc"
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']

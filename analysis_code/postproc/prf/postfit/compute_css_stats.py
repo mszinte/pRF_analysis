@@ -118,7 +118,7 @@ if subject != 'template_avg':
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
                         if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold*.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, loo_number, extension))[0]
                         elif format_ == '170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
@@ -126,10 +126,10 @@ if subject != 'template_avg':
                     else:
                         if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_hemi-{}*_{}_bold*.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, avg_method, extension))[0]
                         elif format_ == '170k':
-                            prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
                         
                     # load data  
