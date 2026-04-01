@@ -121,8 +121,8 @@ for fit_num, residual_fn in enumerate(residual_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {logs_dir}/{subject}_gauss_%N_%j_%a.err
-#SBATCH -o {logs_dir}/{subject}_gauss_%N_%j_%a.out
+#SBATCH -e {logs_dir}/{subject}_residuals_gauss_%N_%j_%a.err
+#SBATCH -o {logs_dir}/{subject}_residuals_gauss_%N_%j_%a.out
 #SBATCH -J {subject}_gaussfit
 """.format(cluster_name=cluster_name, server_project=server_project,
            nb_procs=nb_procs, hour_proc=hour_proc,

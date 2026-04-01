@@ -173,6 +173,7 @@ gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
                 (0, 10),  # hrf1
                 (0, 0) # hrf2
                 ]  
+
 print("\n===== PRF FIT BOUNDS =====")
 print("Gauss bounds:")
 print("  x range:", gauss_bounds[0])
