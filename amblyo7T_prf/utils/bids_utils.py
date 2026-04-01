@@ -328,7 +328,8 @@ def copy_functional_runs(scans, dcm2niix_dir, session_dir, subject, copy_command
     # Find all dcm2niix functional files
     dcm2niix_files = {}
     for filename in os.listdir(dcm2niix_dir):
-        if filename.endswith('.nii.gz') and 'fMRI' in filename:
+        #if filename.endswith('.nii.gz') and 'fMRI' in filename:
+        if filename.endswith('.nii.gz'):
             # Extract the file number from the end of filename
             parts = filename.replace('.nii.gz', '').split('_')
             if parts[-1].isdigit():
