@@ -23,7 +23,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 python make_intertask_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_intertask_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_intertask_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net) 
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -66,6 +66,10 @@ analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalization = analysis_info['normalization']
+avg_methods = analysis_info['avg_methods']
 prf_task_name = analysis_info['prf_task_names'][0]
 maps_names_css = analysis_info['maps_names_css_loo']
 maps_names_pcm = analysis_info['maps_names_pcm']
@@ -75,6 +79,7 @@ glm_code_names = analysis_info['intertask_code_names']
 group_tasks = analysis_info['task_intertask']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+avg_method = 'loo-avg'
 
 maps_names = maps_names_css + maps_names_pcm + maps_names_css_stats + maps_names_intertask
 
@@ -83,8 +88,8 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 for tasks in group_tasks : 
-    if 'SacVELoc' in tasks: suffix = 'SacVE-PurVE-pRF'
-    else : suffix = 'Sac-Pur-pRF'
+    if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
+    else : intertask_group = 'Sac-Pur-pRF'
     # Loop over format
     for format_ in formats:
         
@@ -106,10 +111,16 @@ for tasks in group_tasks :
                 print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
                 continue
             
-            tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
+            tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(
+                main_dir, project_dir, subject, format_)
             os.makedirs(tsv_dir, exist_ok=True)
-            tsv_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_{}_deriv.tsv'.format(tsv_dir, subject, suffix, rois_method_format)
-        
+            
+            fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                intertask_group, preproc_prep, filtering,
+                normalization, avg_method, rois_method_format)
+            tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
+                tsv_dir, subject, fn_spec)
+
             # Load all data
             df_rois = pd.DataFrame()
             if format_ == 'fsnative':
@@ -132,7 +143,7 @@ for tasks in group_tasks :
                     stats_img, stats_mat = load_surface(stats_median_fn)
                                     
                     # Inter task
-                    intertask_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(intertask_dir, subject, suffix, hemi)
+                    intertask_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(intertask_dir, subject, intertask_group, hemi)
                     intertask_img, intertask_mat = load_surface(intertask_fn)
         
                     # Combine all derivatives
@@ -189,7 +200,7 @@ for tasks in group_tasks :
                 stats_img, stats_mat = load_surface(stats_median_fn)
                 
                 # Inter task
-                intertask_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(intertask_dir, subject, suffix)
+                intertask_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(intertask_dir, subject, intertask_group)
                 intertask_img, intertask_mat = load_surface(intertask_fn)
         
                 # Combine all derivatives

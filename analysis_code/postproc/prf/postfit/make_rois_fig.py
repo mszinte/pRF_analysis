@@ -103,16 +103,10 @@ for avg_method in avg_methods:
                     main_dir, project_dir, subject, format_)
                 os.makedirs(fig_dir, exist_ok=True)
 
-                if 'group' not in subject:
-                    fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                        prf_task_name, preproc_prep, filtering, 
-                        normalization, avg_method, rois_method_format)
-                else:
-                    fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                            prf_task_name, preproc_prep, filtering, 
-                            normalization, avg_method, rois_method_format)
-                    
-                    
+                fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                    prf_task_name, preproc_prep, filtering, 
+                    normalization, avg_method, rois_method_format)
+
                 # Roi active vertex
                 tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(tsv_dir, subject, fn_spec)
                 df_roi_active_vert = pd.read_table(tsv_roi_active_vert_fn, sep="\t")
