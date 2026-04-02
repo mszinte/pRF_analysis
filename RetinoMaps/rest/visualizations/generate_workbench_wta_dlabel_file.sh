@@ -3,23 +3,23 @@
 # Generate label file with winner-take-all colors from TSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 # Example use for main output of interest
-# $ ./generate_workbench_wta_dlabel_cmap.sh fisher_z by_hemi
+# $ ./generate_workbench_wta_dlabel_cmap.sh fisher-z by_hemi
 #####################################################
 
 # Parse command-line arguments
-CORR_TYPE="${1:-full_corr}"      # full_corr or fisher_z
+CORR_TYPE="${1:-full_corr}"      # full_corr or fisher-z
 HEMI_TYPE="${2:-bilateral}"      # bilateral or by_hemi
 
 # Validate inputs
-if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher_z" ]]; then
-    echo "Error: CORR_TYPE must be 'full_corr' or 'fisher_z'"
-    echo "Usage: $0 [full_corr|fisher_z] [bilateral|by_hemi]"
+if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher-z" ]]; then
+    echo "Error: CORR_TYPE must be 'full_corr' or 'fisher-z'"
+    echo "Usage: $0 [full_corr|fisher-z] [bilateral|by_hemi]"
     exit 1
 fi
 
 if [[ "$HEMI_TYPE" != "bilateral" ]] && [[ "$HEMI_TYPE" != "by_hemi" ]]; then
     echo "Error: HEMI_TYPE must be 'bilateral' or 'by_hemi'"
-    echo "Usage: $0 [full_corr|fisher_z] [bilateral|by_hemi]"
+    echo "Usage: $0 [full_corr|fisher-z] [bilateral|by_hemi]"
     exit 1
 fi
 
@@ -39,7 +39,7 @@ BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
 TSV_FILE="${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.tsv"
-OUTPUT_FILE="${OUTPUT_PATH}/wta_${FILE_SUFFIX}_labels.txt"
+OUTPUT_FILE="${ATLAS_DIR}/wta_mmp1_labels.txt"
 
 # Winner colors (seed number -> RGB + alpha)
 declare -A WINNER_COLORS
@@ -151,13 +151,13 @@ for i in "${!PARCELS[@]}"; do
     winner="${WINNERS[$i]}"
     
     # Skip if no winner
-    [[ -z "$winner" ]] || [[ "$winner" == "nan" ]] && continue
+    if [[ -z "$winner" || "$winner" == "nan" ]]; then
+        continue
+    fi
     
     # Clean and validate winner value
     winner=$(echo "$winner" | tr -d '[:space:]')
     winner=$(printf "%.0f" "$winner" 2>/dev/null)
-    
-    [[ ! "$winner" =~ ^[0-9]+$ ]] || [[ "$winner" -lt 1 ]] || [[ "$winner" -gt 12 ]] && continue
     
     # Validate: check if parcel won its own cluster
     for cluster in mPCS sPCS iPCS sIPS iIPS "hMT+" VO LO V3AB V3 V2 V1; do
