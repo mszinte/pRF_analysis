@@ -139,10 +139,8 @@ for tasks in group_tasks :
                     if rois_type == 'roi':
                         rois = analysis_info[rois_method_format]
                     elif rois_type == 'roi_mmp':
-                        mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
-                        mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
-                        rois = mmp_rois_numbers_df['roi_name'].tolist()
-                    
+                        rois = [item for sublist in analysis_info['rois-group-mmp'].values() for item in sublist]
+
                     # Active vertex ROI 
                     subject_rois_area_categorie_df = pd.DataFrame()
                     for roi in rois : 
@@ -171,15 +169,27 @@ for tasks in group_tasks :
                                                                        'vision': [percent_vision], 
                                                                        'all': [percent_vision_and_pursuit_and_saccade]})
                 
-                
+
                         subject_rois_area_categorie_df = pd.concat([subject_rois_area_categorie_df, active_vertex_roi_categorie_df], ignore_index=True)
-                      
-                      
-                    subject_rois_area_categorie_melt_df = subject_rois_area_categorie_df.melt(id_vars=['subject', rois_type], 
+                        
+                    
+                    subject_rois_area_categorie_melt_df = subject_rois_area_categorie_df.melt(id_vars=['subject',rois_type], 
                                                                                               value_vars=['saccade', 'pursuit', 'vision', 'all'], 
                                                                                               var_name='categorie', 
                                                                                               value_name='percentage_active')
-        
+                    
+                    # Add roi column for roi_mmp table
+                    roi_to_group = {
+                        roi: key
+                        for key, values in analysis_info['rois-group-mmp'].items()
+                        for roi in values
+                    }
+                    
+                    if 'roi' not in subject_rois_area_categorie_melt_df.columns and 'roi_mmp' in subject_rois_area_categorie_melt_df.columns:
+                        subject_rois_area_categorie_melt_df['roi'] = (
+                            subject_rois_area_categorie_melt_df['roi_mmp']
+                            .map(roi_to_group))
+                    
                     # Export subject DF 
                     tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
                         tsv_dir, subject, fn_spec, rois_type)

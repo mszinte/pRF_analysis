@@ -63,33 +63,6 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, prf_settings_path, glm_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-# formats = analysis_info['formats']
-# extensions = analysis_info['extensions']
-# subjects = analysis_info['subjects']
-# preproc_prep = analysis_info['preproc_prep']
-# filtering = analysis_info['filtering']
-# normalization = analysis_info['normalization']
-# avg_methods = analysis_info['avg_methods']
-# prf_task_names = analysis_info['prf_task_names']
-# rois_methods = analysis_info['rois_methods']
-
-
-
-
-
-# num_ecc_size_bins = figure_info['num_ecc_size_bins']
-# num_ecc_pcm_bins = figure_info['num_ecc_pcm_bins']
-# num_polar_angle_bins = figure_info['num_polar_angle_bins']
-# max_ecc = figure_info['max_ecc']
-# screen_side = figure_info['screen_side']
-# gaussian_mesh_grain = figure_info['gaussian_mesh_grain']
-# hot_zone_percent = figure_info['hot_zone_percent']
-# plot_groups = figure_info['plot_groups']
-# fig_width = figure_info['fig_width']
-# categories_to_plot = figure_info['categories_to_plot']
-# categories_active_vertex_plot = figure_info['categories_active_vertex_plot']
-
-
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
@@ -111,7 +84,7 @@ for tasks in group_tasks :
     else : intertask_group = 'Sac-Pur-pRF'
     # Format loop
     for format_, extension in zip(formats, extensions):
-        
+        print(format_)
         # define list of rois for each format
         rois_methods_format = rois_methods[format_]
         for rois_method_format in rois_methods_format:
@@ -138,31 +111,7 @@ for tasks in group_tasks :
             fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                 prf_task_name, preproc_prep, filtering, 
                 normalization, avg_method, rois_method_format)
-            
-            # # Roi active vertex
-            # tsv_roi_active_vert_fn = "{}/{}_{}_intertask_active-vert.tsv".format(tsv_dir, subject, fn_spec)
-            # df_roi_active_vert = pd.read_table(tsv_roi_active_vert_fn, sep="\t")
-            # fig = prf_roi_active_vert_plot(df=df_roi_active_vert, figure_info=analysis_info, format=format_, )
-            # fig_fn = "{}/{}_{}_intertask_active-vert.pdf".format(fig_dir, subject, fn_spec)
-            # print('Saving pdf: {}'.format(fig_fn))
-            # fig.write_image(fig_fn)
-            # remove_second_page(fig_fn)
-            
-            # # Active vertex roi mmp plot
-            # if format_ == '170k':
-            #     for categorie_active_vertex in categories_active_vertex_plot: 
-            #         figures_dict[categorie_active_vertex] = []
-            #         active_vertex_roi_mmp_tsv_fn = '{}/{}_active_vertex_roi_mmp_{}.tsv'.format(tsv_dir, subject, intertask_group)
-            #         df_active_vertex_roi_mmp = pd.read_table(active_vertex_roi_mmp_tsv_fn)
-            #         fig = active_vertex_roi_mmp_plot(
-            #             df_active_vertex_roi_mmp=df_active_vertex_roi_mmp, fig_height=1080, 
-            #             fig_width=1080, roi_colors=roi_colors, plot_groups=plot_groups, categorie=categorie_active_vertex)
-            #         fig_fn = "{}/{}_active_vertex_{}_roi_mmp_{}.pdf".format(fig_dir, subject, categorie_active_vertex, intertask_group)
-            #         print('Saving pdf: {}'.format(fig_fn))
-            #         fig.write_image(fig_fn)
-            #         figures_dict[categorie_active_vertex].append(fig)
-            #         figures_titles.append('Active vertex roi mmp plot')
-            
+                        
             # loop over categories
             for categorie_to_plot in categories_to_plot : 
                 print(categorie_to_plot)
@@ -176,13 +125,14 @@ for tasks in group_tasks :
                     normalization, avg_method, rois_method_format, categorie_to_plot)
                                 
                 # Violins plot
-                tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(tsv_dir_categorie, subject, fn_spec_cate)
-                df_violins = pd.read_table(tsv_violins_fn, sep="\t")
-                fig = prf_violins_plot(df=df_violins, figure_info=analysis_info, rsq2use=rsq2use)
-                fig_fn = "{}/{}_{}_intertask_violins.pdf".format(fig_dir_categorie, subject, fn_spec_cate)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
-                remove_second_page(fig_fn)
+                if 'vision' in categorie_to_plot:
+                    tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(tsv_dir_categorie, subject, fn_spec_cate)
+                    df_violins = pd.read_table(tsv_violins_fn, sep="\t")
+                    fig = prf_violins_plot(df=df_violins, figure_info=analysis_info, rsq2use=rsq2use)
+                    fig_fn = "{}/{}_{}_intertask_violins.pdf".format(fig_dir_categorie, subject, fn_spec_cate)
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
+                    remove_second_page(fig_fn)
                 
                 # Parameters median plot
                 tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(tsv_dir_categorie, subject, fn_spec_cate)
@@ -255,8 +205,6 @@ for tasks in group_tasks :
                 fig.write_image(fig_fn)
                 remove_second_page(fig_fn)
             
-
-                
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 # os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
