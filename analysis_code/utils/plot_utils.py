@@ -801,39 +801,42 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             pcm_upper_bound = np.array(df_roi.prf_pcm_bins_ci_upper_bound)
             pcm_lower_bound = np.array(df_roi.prf_pcm_bins_ci_lower_bound)
             
-            # Linear regression
-            slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
-            
-            slope_upper, intercept_upper = weighted_regression(ecc_median[~np.isnan(pcm_upper_bound)], 
-                                                               pcm_upper_bound[~np.isnan(pcm_upper_bound)], 
-                                                               r2_median[~np.isnan(pcm_upper_bound)], 
-                                                               model='pcm')
-            
-            slope_lower, intercept_lower = weighted_regression(ecc_median[~np.isnan(pcm_lower_bound)], 
-                                                               pcm_lower_bound[~np.isnan(pcm_lower_bound)], 
-                                                               r2_median[~np.isnan(pcm_lower_bound)], 
-                                                               model='pcm')
-
-            line_x = np.linspace(ecc_median[0], ecc_median[-1], 50)
-            line = 1 / (slope * line_x + intercept)
-            line_upper = 1 / (slope_upper * line_x + intercept_upper)
-            line_lower = 1 / (slope_lower * line_x + intercept_lower)
-
-            fig.add_trace(go.Scatter(x=line_x, 
-                                     y=line, 
-                                     mode='lines', 
-                                     name=roi, 
-                                     legendgroup=roi, 
-                                     line=dict(color=roi_color, width=3), 
-                                     showlegend=False), 
-                          row=1, col=l+1)
-
-            # Error area
-            fig.add_trace(go.Scatter(x=np.concatenate([line_x, line_x[::-1]]),
-                                      y=np.concatenate([list(line_upper), list(line_lower[::-1])]), 
-                                      mode='lines', fill='toself', fillcolor=roi_color_opac, 
-                                      line=dict(color=roi_color_opac, width=0), showlegend=False), 
-                          row=1, col=l+1)
+            try:
+                # Linear regression
+                slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
+                
+                slope_upper, intercept_upper = weighted_regression(ecc_median[~np.isnan(pcm_upper_bound)], 
+                                                                   pcm_upper_bound[~np.isnan(pcm_upper_bound)], 
+                                                                   r2_median[~np.isnan(pcm_upper_bound)], 
+                                                                   model='pcm')
+                
+                slope_lower, intercept_lower = weighted_regression(ecc_median[~np.isnan(pcm_lower_bound)], 
+                                                                   pcm_lower_bound[~np.isnan(pcm_lower_bound)], 
+                                                                   r2_median[~np.isnan(pcm_lower_bound)], 
+                                                                   model='pcm')
+    
+                line_x = np.linspace(ecc_median[0], ecc_median[-1], 50)
+                line = 1 / (slope * line_x + intercept)
+                line_upper = 1 / (slope_upper * line_x + intercept_upper)
+                line_lower = 1 / (slope_lower * line_x + intercept_lower)
+    
+                fig.add_trace(go.Scatter(x=line_x, 
+                                         y=line, 
+                                         mode='lines', 
+                                         name=roi, 
+                                         legendgroup=roi, 
+                                         line=dict(color=roi_color, width=3), 
+                                         showlegend=False), 
+                              row=1, col=l+1)
+    
+                # Error area
+                fig.add_trace(go.Scatter(x=np.concatenate([line_x, line_x[::-1]]),
+                                          y=np.concatenate([list(line_upper), list(line_lower[::-1])]), 
+                                          mode='lines', fill='toself', fillcolor=roi_color_opac, 
+                                          line=dict(color=roi_color_opac, width=0), showlegend=False), 
+                              row=1, col=l+1)
+            except RuntimeError:
+                print(f"Fit failed for ROI: {roi}")
 
             # Markers
             fig.add_trace(go.Scatter(x=ecc_median, 
