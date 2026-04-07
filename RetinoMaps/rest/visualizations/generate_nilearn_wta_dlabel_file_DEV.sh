@@ -3,13 +3,12 @@
 # Generate label file with winner-take-all colors from TSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 # Example use for main output of interest
-# $ ./generate_workbench_wta_dlabel_file.sh fisher-z by_hemi
+# $ ./generate_nilearn_wta_dlabel_file.sh fisher-z by_hemi
 #####################################################
 
 # Parse command-line arguments
 CORR_TYPE="${1:-full_corr}"      # full_corr or fisher-z
 HEMI_TYPE="${2:-bilateral}"      # bilateral or by_hemi
-PARC_MODE="${3:-default}"        # default or legacy
 
 # Validate inputs
 if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher-z" ]]; then
@@ -35,11 +34,10 @@ echo ""
 # Construct file suffix based on options
 FILE_SUFFIX="${CORR_TYPE}"
 [[ "$HEMI_TYPE" == "by_hemi" ]] && FILE_SUFFIX="${FILE_SUFFIX}_by_hemi"
-[[ "$PARC_MODE" == "legacy" ]] && FILE_SUFFIX="${FILE_SUFFIX}_legacy"
 
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
-OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
+OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/nilearn"
 OUTPUT_FILE="${ATLAS_DIR}/wta_mmp1_labels.txt"
 
 # Winner colors (seed number -> RGB + alpha)
@@ -302,38 +300,6 @@ read_all_winners() {
         eval "${lh_arr_name}=()"
         for idx in $(seq 0 $(( rh_len - 1 ))); do
             eval "${lh_arr_name}[$idx]=\"\${${rh_arr_name}[$idx]}\""
-        done
-    fi
-
-    ### Handle case where TSV has 106 rows (bilateral-style output)
-    local rh_len lh_len
-    eval "rh_len=\${#${rh_arr_name}[@]}"
-    eval "lh_len=\${#${lh_arr_name}[@]}"
-
-    if [[ "$rh_len" -eq 106 && "$lh_len" -eq 106 ]]; then
-        echo "  Detected 106-row input → splitting into hemispheres"
-
-    local idx
-
-        # Temporary arrays
-        local -a _rh_tmp=()
-        local -a _lh_tmp=()
-
-        for idx in $(seq 0 52); do
-             eval "_rh_tmp[$idx]=\"\${${rh_arr_name}[$idx]}\""
-        done
-
-        for idx in $(seq 53 105); do
-            eval "_lh_tmp[$((idx-53))]=\"\${${lh_arr_name}[$idx]}\""
-        done
-
-        # Overwrite original arrays
-        eval "${rh_arr_name}=()"
-        eval "${lh_arr_name}=()"
-
-        for idx in $(seq 0 52); do
-            eval "${rh_arr_name}[$idx]=\"\${_rh_tmp[$idx]}\""
-            eval "${lh_arr_name}[$idx]=\"\${_lh_tmp[$idx]}\""
         done
     fi
 }

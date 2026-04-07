@@ -14,7 +14,7 @@
 # Parse command-line arguments
 CORR_TYPE="${1:-full_corr}"      # 'full_corr' or 'fisher-z'
 HEMI_TYPE="${2:-bilateral}"      # 'bilateral' or 'by_hemi'
-LEGACY_MODE="${3:-default}"      # 'default' or 'legacy'
+PARC_MODE="${3:-default}"      # 'default' or 'legacy'
 
 # Validate inputs
 if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher-z" ]]; then
@@ -29,21 +29,21 @@ if [[ "$HEMI_TYPE" != "bilateral" ]] && [[ "$HEMI_TYPE" != "by_hemi" ]]; then
     exit 1
 fi
 
-if [[ "$LEGACY_MODE" != "default" ]] && [[ "$LEGACY_MODE" != "legacy" ]]; then
-    echo "Error: LEGACY_MODE must be 'default' or 'legacy'"
+if [[ "$PARC_MODE" != "default" ]] && [[ "$PARC_MODE" != "legacy" ]]; then
+    echo "Error: PARC_MODE must be 'default' or 'legacy'"
     echo "Usage: $0 [full_corr|fisher-z] [bilateral|by_hemi] [default|legacy]"
     exit 1
 fi
 
 # Set legacy flag for workbench
-[[ "$LEGACY_MODE" == "legacy" ]] && LEGACY_FLAG="-legacy-mode" || LEGACY_FLAG=""
+[[ "$PARC_MODE" == "legacy" ]] && PARC_FLAG="-legacy-mode" || PARC_FLAG=""
 
 echo "=========================================="
 echo "WTA ANALYSIS CONFIGURATION"
 echo "=========================================="
 echo "Correlation type: ${CORR_TYPE}"
 echo "Hemisphere mode:  ${HEMI_TYPE}"
-echo "Legacy mode:      ${LEGACY_MODE}"
+echo "Legacy mode:      ${PARC_MODE}"
 echo "=========================================="
 echo ""
 
@@ -59,7 +59,7 @@ declare -a ROIS=("mPCS" "sPCS" "iPCS" "sIPS" "iIPS" "hMT+" "VO" "LO" "V3AB" "V3"
 # Construct file suffix based on options
 FILE_SUFFIX="${CORR_TYPE}"
 [[ "$HEMI_TYPE" == "by_hemi" ]] && FILE_SUFFIX="${FILE_SUFFIX}_by_hemi"
-[[ "$LEGACY_MODE" == "legacy" ]] && FILE_SUFFIX="${FILE_SUFFIX}_legacy"
+[[ "$PARC_MODE" == "legacy" ]] && FILE_SUFFIX="${FILE_SUFFIX}_legacy"
 
 # Determine which hemispheres to process
 if [[ "$HEMI_TYPE" == "by_hemi" ]]; then
@@ -133,7 +133,7 @@ for HEMI in "${HEMIS[@]}"; do
                 "${FULL_CORR}/sub-${sub}_${CORR_TYPE}_${roi}_hollow.dscalar.nii" \
                 "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
                 "${FULL_CORR}/sub-${sub}_${CORR_TYPE}${HEMI_SUFFIX}_${roi}.pscalar.nii" \
-                -method MEAN -only-numeric ${LEGACY_FLAG}
+                -method MEAN -only-numeric ${PARC_FLAG}
 
             # Convert to TSV for violin plots
             wb_command -cifti-convert -to-text \
@@ -233,7 +233,7 @@ echo ""
 echo "Configuration:"
 echo "  Correlation: ${CORR_TYPE}"
 echo "  Hemisphere:  ${HEMI_TYPE}"
-echo "  Legacy mode: ${LEGACY_MODE}"
+echo "  Legacy mode: ${PARC_MODE}"
 echo ""
 echo "Output files:"
 if [[ "$HEMI_TYPE" == "bilateral" ]]; then

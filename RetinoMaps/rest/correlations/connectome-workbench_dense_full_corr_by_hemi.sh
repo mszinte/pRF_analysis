@@ -87,10 +87,23 @@ mkdir -p "$OUT_DIR"
 	      "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
 	      -method MEAN -exclude-outliers 3 3
 
+		# Parcellate targets (using -legacy-mode to override missing data in sub-25 parcel 6mp)
+	    wb_command -cifti-parcellate \
+	      "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
+	      "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+	      "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+	      -method MEAN -legacy-mode;
+
+	    wb_command -cifti-parcellate \
+	      "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
+	      "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+	      "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+	      -method MEAN -legacy-mode;
+
 		# Convert to TSV for violin plots
         wb_command -cifti-convert -to-text \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.tsv"
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.tsv"
 		
 		# Mask vertex-wise results for visualizations in supplementary information
 	    wb_command -cifti-restrict-dense-map "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" COLUMN \
