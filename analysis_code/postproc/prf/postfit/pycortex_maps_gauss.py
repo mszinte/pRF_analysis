@@ -26,6 +26,7 @@ Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-01 n
 python pycortex_maps_gauss.py ~/disks/meso_S/data RetinoMaps sub-hcp1.6mm n
+python pycortex_maps_gauss.py ~/disks/meso_S/data amblyo7T_prf sub-04 n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
