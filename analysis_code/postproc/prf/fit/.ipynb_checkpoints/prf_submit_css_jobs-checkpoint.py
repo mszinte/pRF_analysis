@@ -44,12 +44,12 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
-import yaml
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
-from pycortex_utils import set_pycortex_config_file
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.abspath(os.path.join(script_dir, "../../../../analysis_code/utils")))
 from settings_utils import load_settings
+from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
@@ -62,7 +62,7 @@ nb_procs = 8
 hour_proc = 10
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
@@ -92,9 +92,9 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 pp_fns = []
 for avg_method in avg_methods:
     for prf_task_name in prf_task_names:
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*{}*.func.gii".format(
+        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*{}*.dtseries.nii".format(
+        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
 
         # Accumulate the results

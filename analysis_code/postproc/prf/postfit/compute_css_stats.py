@@ -25,6 +25,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_css_stats.py /scratch/mszinte/data amblyo7T_prf sub-04 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)

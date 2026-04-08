@@ -68,7 +68,7 @@ analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
 nb_procs = 8
 memory_val = 48
-hour_proc = 30
+hour_proc = 12
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(
