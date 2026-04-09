@@ -24,13 +24,13 @@ To run:
 python bids_conversion.py [main directory] [project name] [subject BIDS] [subject code] [group] [subject group]
 -----------------------------------------------------------------------------------------
 Example:
+cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/bids/
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-01 bm 327 A
 python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-13 ac 327 C
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
-
 # import modules
 import sys
 import os
@@ -52,7 +52,8 @@ from bids_utils import (
     update_functional_metadata,
     fix_nifti_tr,
     update_fieldmap_metadata,
-    update_dataset_description
+    update_dataset_description,
+    convert_freesurfer_t1_to_nifti
 )
 
 # inputs
@@ -157,6 +158,18 @@ if os.path.exists(freesurfer_tgz):
         print(f"  WARNING: Extracted folder not found at {extracted_folder}\n")
 else:
     print(f"  WARNING: FreeSurfer archive not found at {freesurfer_tgz}\n")
+
+# Step 6.5: Optional MGZ to NIfTI conversion if T1w not found
+print("Step 6.5: Checking for FreeSurfer T1.mgz conversion...")
+t1w_exists = os.path.exists(opj(session_dir, 'anat', f'{subject}_ses-01_T1w.nii.gz'))
+if not t1w_exists:
+    print("  No T1w found in PARREC data")
+    response = input("  Convert FreeSurfer T1.mgz to NIfTI? (y/n): ")
+    if response.lower() == 'y':
+        convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject)
+    print()
+else:
+    print("  ✓ T1w already exists, skipping MGZ conversion\n")
 
 # Step 7: Copy functional runs
 print("Step 7: Copying functional runs...")

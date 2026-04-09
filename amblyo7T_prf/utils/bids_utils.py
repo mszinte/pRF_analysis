@@ -565,3 +565,71 @@ def update_dataset_description(base_path):
     
     with open(dataset_json, 'w') as f:
         json.dump(data, f, indent=2)
+
+
+def convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject):
+    """
+    Convert FreeSurfer T1.mgz to NIfTI T1w image.
+    Optionally replaces existing T1w if present.
+    
+    Parameters
+    ----------
+    freesurfer_dir : str
+        Path to FreeSurfer subject directory (e.g., sub-XX_ses-01)
+    session_dir : str
+        Session directory in BIDS structure
+    subject : str
+        Subject BIDS code
+        
+    Returns
+    -------
+    bool
+        True if conversion successful, False otherwise
+    """
+    mgz_path = opj(freesurfer_dir, 'mri', 'T1.mgz')
+    
+    if not os.path.exists(mgz_path):
+        print(f"  ERROR: T1.mgz not found at {mgz_path}")
+        return False
+    
+    # Load MGZ file
+    try:
+        mgz_img = nib.load(mgz_path)
+    except Exception as e:
+        print(f"  ERROR: Failed to load T1.mgz: {e}")
+        return False
+    
+    # Define output path
+    output_nii = opj(session_dir, 'anat', f'{subject}_ses-01_T1w.nii.gz')
+    
+    # Check if T1w already exists
+    if os.path.exists(output_nii):
+        print(f"  T1w already exists at {output_nii}")
+        response = input("  Replace existing T1w with FreeSurfer T1.mgz? (y/n): ")
+        if response.lower() != 'y':
+            print("  Skipping MGZ conversion")
+            return False
+    
+    # Save as NIfTI
+    try:
+        mgz_img.set_data_dtype(np.float32)
+        nib.save(mgz_img, output_nii)
+        print(f"  ✓ Converted T1.mgz to NIfTI: {subject}_ses-01_T1w.nii.gz")
+        
+        # Create minimal JSON metadata
+        json_path = opj(session_dir, 'anat', f'{subject}_ses-01_T1w.json')
+        t1w_json = {
+            'SkullStripped': False,
+            'Manufacturer': 'Philips',
+            'ManufacturersModelName': 'Intera Achieva',
+            'MagneticFieldStrength': 7.0,
+            'Source': 'FreeSurfer T1.mgz'
+        }
+        with open(json_path, 'w') as f:
+            json.dump(t1w_json, f, indent=2)
+        print(f"  ✓ Created JSON metadata")
+        
+        return True
+    except Exception as e:
+        print(f"  ERROR: Failed to save NIfTI: {e}")
+        return False

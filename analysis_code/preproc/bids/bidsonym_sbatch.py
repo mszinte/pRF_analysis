@@ -27,6 +27,7 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 python bidsonym_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 v0.0.4 pydeface
+python bidsonym_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-16 327 b327 v0.0.4 pydeface
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 edited by Martin Szinte (martin.szinte@gmail.com)
@@ -105,4 +106,3 @@ of.close()
 # Submit jobs
 print("Submitting {} to queue".format(sh_fn))
 os.system("sbatch {}".format(sh_fn))
-
