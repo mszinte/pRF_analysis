@@ -56,7 +56,7 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
                 y_reg_nan,
                 sigma=sigma, 
                 absolute_sigma=True, 
-                maxfev=10000
+                maxfev=1000
             )
             c, d = params
         else:

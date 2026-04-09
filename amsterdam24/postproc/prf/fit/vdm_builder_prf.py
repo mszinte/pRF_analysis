@@ -69,8 +69,6 @@ TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0]
 vdm_height = analysis_info['vdm_size_pix'][1]
 
-deb()
-
 for prf_task_name in prf_task_names:
     
     # Video dir

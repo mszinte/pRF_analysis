@@ -21,3 +21,7 @@ task_glm:
     "vision_and_pursuit": 5 
     "vision_and_saccade": 6 
     "vision_and_pursuit_and_saccade" : 7
+
+"categories_to_plot": 
+  description: "Categories for which roi figures are down"
+  value: ["vision", "vision_and_pursuit_and_saccade", "pursuit_and_saccade"]
