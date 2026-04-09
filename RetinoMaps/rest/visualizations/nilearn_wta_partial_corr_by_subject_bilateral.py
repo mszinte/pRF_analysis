@@ -106,10 +106,10 @@ print("Processing subjects...")
 
 for subject in subjects:
 
-    subj_dir = main_data / Path(subject) / "91k/rest/corr/partial_corr"
+    subj_dir = main_data / Path(subject) / "91k/rest/corr/partial_corr/bilateral"
     subj_dir.mkdir(parents=True, exist_ok=True)
 
-    csv_file = subj_dir / "cluster_by_mmp-parcel_partial.csv"
+    csv_file = subj_dir / "cluster_by_mmp-parcel_partial_bilateral.csv"
 
     df_full = pd.read_csv(csv_file, index_col=0)
 
@@ -124,8 +124,8 @@ for subject in subjects:
 # Group-level results
 # =============================================================================
 
-group_result_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr"
-group_csv = os.path.join(group_result_path, "group_median_cluster_by_mmp-parcel_partial.csv")
+group_result_path = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr/bilateral"
+group_csv = os.path.join(group_result_path, "group_median_cluster_by_mmp-parcel_partial_bilateral.csv")
 df_group = pd.read_csv(group_csv, index_col=0)
 group_winners = compute_winners(df_group, seed_to_parcels, seed_to_number)
 all_winners.append(group_winners)
@@ -136,7 +136,7 @@ subject_ids.append("GROUP")
 # =============================================================================
 
 winners_df = pd.DataFrame(all_winners, columns=df_group.columns, index=subject_ids)
-out_csv = Path(output_folder) / "winning_seeds_by_subject_partial_corr.csv"
+out_csv = Path(output_folder) / "winning_seeds_by_subject_partial_corr_bilateral.csv"
 winners_df.to_csv(out_csv)
 
 print("Saved:", out_csv)
@@ -161,7 +161,7 @@ consistency_df = pd.DataFrame({
     "Consistency_%": consistency
 }).sort_values("Consistency_%", ascending=False)
 
-consistency_file = Path(output_folder) / "winner_consistency_by_parcel_partial_corr.csv"
+consistency_file = Path(output_folder) / "winner_consistency_by_parcel_partial_corr_bilateral.csv"
 consistency_df.to_csv(consistency_file, index=False)
 
 print("Saved:", consistency_file)
