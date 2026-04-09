@@ -25,6 +25,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
+python make_tsv_css.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -121,7 +122,6 @@ for avg_method in avg_methods:
                 df_rois = pd.DataFrame()
                 if format_ == 'fsnative':
                     pycortex_subject = subject
-                    
                     for hemi in ['hemi-L', 'hemi-R']:
     
                         # Derivatives
@@ -145,7 +145,6 @@ for avg_method in avg_methods:
                         print(f'loading {pcm_fn}')
                         pcm_img, pcm_mat = load_surface(pcm_fn)
                         
-    
                         # Combine all derivatives
                         all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
                         

@@ -23,6 +23,7 @@ python preproc_end.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python preproc_end.py /scratch/mszinte/data RetinoMaps sub-01 327
+python preproc_end.py /scratch/mszinte/data amblyo7T_prf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
