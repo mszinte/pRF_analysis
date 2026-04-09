@@ -123,7 +123,7 @@ for fit_num, residual_fn in enumerate(residual_fns):
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {logs_dir}/{subject}_residuals_gauss_%N_%j_%a.err
 #SBATCH -o {logs_dir}/{subject}_residuals_gauss_%N_%j_%a.out
-#SBATCH -J {subject}_gaussfit
+#SBATCH -J {subject}_res_gaussfit
 """.format(cluster_name=cluster_name, server_project=server_project,
            nb_procs=nb_procs, hour_proc=hour_proc,
            subject=subject, memory_val=memory_val, logs_dir=logs_dir)
