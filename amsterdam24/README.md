@@ -12,8 +12,8 @@ experiment overview see: [https://docs.google.com/spreadsheets/d/1Y0ZTe_oxl2hHWh
 
 # Data stucture and BIDS
 ---
-- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](process.sh)
-- [x] Copy events.tsv and matlab files from experients repo [copy_events_and_matfiles.py](preproc/copy_events_and_matfiles.py)
+- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process_sub01.sh](preproc/process_sub01.sh) [process_sub02](preproc/process_sub02) [process_sub03](preproc/process_sub03)
+- [x] Copy events.tsv and matlab files from experients repo [copy_events_and_matfiles.py](preproc/copy_events_and_matfiles.py) & update metdata [update_metadata.py](preproc/update_metadata.py)
 - [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
