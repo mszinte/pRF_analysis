@@ -83,6 +83,7 @@ filtering = analysis_info['filtering']
 partial_scan = analysis_info['partial_scan']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 starting_TR = analysis_info['starting_TR']
+ending_TR = analysis_info['ending_TR']
 
 # Make extension folders
 for format_, extension in zip(formats, extensions):
@@ -104,20 +105,25 @@ for format_, extension in zip(formats, extensions):
             print('No files for {}'.format(session))
             continue
             
-        for func_fn in fmriprep_func_fns :
+        for func_fn in fmriprep_func_fns:
 
             # Make output filtered filenames
-            filtered_data_fn_end = func_fn.split('/')[-1].replace('bold', '{}_{}_{}_bold'.format(
+            fn_basename = func_fn.split('/')[-1]
+            filtered_data_fn_end = fn_basename.replace('bold', '{}_{}_{}_bold'.format(
                 preproc_prep, filtering, normalization))
+
+            print('Processing: {}'.format(fn_basename))
 
             # Load data
             surf_img, surf_data = load_surface(fn=func_fn)
 
-            # Cut TRs before starting_TR
-            print('Cutting first {} TRs (keeping TRs {}:{})'.format(
-                starting_TR, starting_TR, surf_data.shape[0]))
-            
-            surf_data = surf_data[starting_TR:, :]
+
+            # Cut TRs before starting_TR and after ending_TR
+            end_idx = surf_data.shape[0] if ending_TR is None else surf_data.shape[0] - ending_TR
+            print('Cutting first {} TRs and last {} TRs (keeping TRs {}:{})'.format(
+                starting_TR, ending_TR if ending_TR is not None else 0, starting_TR, end_idx))
+
+            surf_data = surf_data[starting_TR:end_idx, :]
             
             # Identify valid vertices (exclude non-covered areas)
             if partial_scan:
