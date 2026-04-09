@@ -16,13 +16,13 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/RetinoMaps/preproc/functional/
+>> cd ~/projects/pRF_analysis/amsterdam24/preproc/functional/
 2. run python command
 python averaging.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/preproc/functional/
-python averaging.py /scratch/mszinte/data RetinoMaps sub-02 327
+cd ~/projects/pRF_analysis/amsterdam24/preproc/functional/
+python averaging.py /scratch/mszinte/data amsterdam24 sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -155,7 +155,6 @@ for preproc_files in preproc_files_list:
                 nb.save(avg_img, avg_fn)    
         
             elif avg_method == 'loo-avg':
-                
                 # Leave-one-out averaging computation
                 if len(preproc_files_task):
                     combi = []
@@ -198,36 +197,36 @@ for preproc_files in preproc_files_list:
                             print("loo save: {}".format(loo_fn))
                             shutil.copyfile(loo, loo_fn)
 
-            elif avg_method == 'concat': 
-                # Concatonate all runs and save 
-                preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
-                data_concat = []
-                
-                for preproc_file in preproc_files_task:
-                    print('concat add: {}'.format(preproc_file))
-                    preproc_img, preproc_data = load_surface(fn=preproc_file)
-                    data_concat.append(preproc_data)
-                
-                # Concatenate along the time axis (shape is (time, vertices))
-                data_concat = np.concatenate(data_concat, axis=0)
-                
-                # Export concatenated data
-                if hemi:
-                    concat_fn = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_concat/{}_task-{}_{}_{}_{}_{}_concat_bold.func.gii".format(
-                        main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
-                        subject, task, hemi, preproc_prep, filtering, normalization)
-                else:
-                    concat_fn = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_concat/{}_task-{}_{}_{}_{}_concat_bold.dtseries.nii".format(
-                        main_dir, project_dir, subject, preproc_prep, filtering, normalization, 
-                        subject, task, preproc_prep, filtering, normalization)
-                
-                print('concat save: {}'.format(concat_fn))
-                concat_img = make_surface_image(data=data_concat, source_img=preproc_img)
-                nb.save(concat_img, concat_fn)
+            elif avg_method == "single-run":
+                            # Just copy the files in single-run
+                            # Here to debug and find back task of each run
+                            print("\nSingle runs")
 
-            else: 
-                print("No valid averaging method provided. Stopping.")
-                break 
+                            for preproc_file in preproc_files_task:
+                                print(f"    Loading: {preproc_file}")
+                                img, data = load_surface(fn=preproc_file)
+
+                                task = preproc_file.split('task-')[1].split('_')[0]
+                                run_ = preproc_file.split('run-')[1].split('_')[0]
+
+                                # Create output directory and filename based on hemi
+                                if hemi:
+                                    output_dir = "{}/{}/derivatives/pp_data/{}/fsnative/func/{}_{}_{}_single-run".format(
+                                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                                    os.makedirs(output_dir, exist_ok=True)
+                                    single_run_fn = "{}/{}_task-{}_run-{}_{}_{}_{}_{}_single-run_bold.func.gii".format(
+                                        output_dir, subject, task, run_, hemi, preproc_prep, filtering, normalization)
+                                else:
+                                    output_dir = "{}/{}/derivatives/pp_data/{}/170k/func/{}_{}_{}_single-run".format(
+                                        main_dir, project_dir, subject, preproc_prep, filtering, normalization)
+                                    os.makedirs(output_dir, exist_ok=True)
+                                    single_run_fn = "{}/{}_task-{}_run-{}_{}_{}_{}_single-run_bold.dtseries.nii".format(
+                                        output_dir, subject, task, run_, preproc_prep, filtering, normalization)
+
+                                print(f"    Saved: {single_run_fn}")
+                                single_run_fn_img = make_surface_image(data=data, source_img=img)
+                                nb.save(single_run_fn_img, single_run_fn)
+
                     
 
 # Define permission cmd
