@@ -14,7 +14,7 @@
 # Parse command-line arguments
 CORR_TYPE="${1:-full_corr}"      # 'full_corr' or 'fisher-z'
 HEMI_TYPE="${2:-bilateral}"      # 'bilateral' or 'by_hemi'
-PARC_MODE="${3:-default}"      # 'default' or 'legacy'
+PARC_MODE="${3:-default}"        # 'default' or 'legacy'
 
 # Validate inputs
 if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher-z" ]]; then

@@ -341,7 +341,7 @@ for seed in seed_clusters:
     # ------------------------------------------------------------------
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Partial Correlation (r)", fontsize=18, fontweight="bold")
+    ax.set_xlabel("Full Correlation (fisher-z)", fontsize=18, fontweight="bold")
     ax.set_ylabel("Target Cluster",          fontsize=18, fontweight="bold")
     ax.set_title(f"{seed} seed",             fontsize=18, fontweight="bold")
     ax.tick_params(axis='both', which='major', labelsize=16)

@@ -15,13 +15,13 @@ for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
 do
 
 SEED_DIR="$TASK_RESULTS/sub-${i}/91k/rest/seed"
-OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
+OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/workbench_full_corr/bilateral"
 
 ## Make sure all files are accessible
 chmod -Rf 771 "$SEED_DIR"
 chgrp -Rf 771 "$SEED_DIR"
 
-mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
+mkdir -p "$OUT_DIR"
 
     for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1; 
     do
@@ -52,27 +52,41 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
             -right-roi "$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_rh_${ROI}.shape.gii" \
             -cifti "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dconn.nii";
             
-        # Average correlation values within the target ROIs (both hemispheres)
+        # Parcellate targets
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
         "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated.pscalar.nii" -method MEAN;
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated.pscalar.nii" \
+        -method MEAN;
         
-       # Same step as previous with Fisher-z outputs
+        # Parcellate targets (fisher-z outputs)
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
         "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" -method MEAN;
-        
-        # Average correlation values within the target ROIs (both hemispheres) this time excluding outliers -/+3 SD above the mean
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" \
+        -method MEAN;
+
+        # Parcellate targets using legacy mode
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
         "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_no_outliers.pscalar.nii" -method MEAN \
-        -exclude-outliers 3 3;
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+        -method MEAN -legacy-mode;
         
-       # Same step as previous with Fisher-z outputs
+        # Parcellate targets using legacy mode (fisher-z outputs)
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
         "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.pscalar.nii" -method MEAN \
-        -exclude-outliers 3 3;
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+        -method MEAN -legacy-mode;
+        
+        # Parcellate targets excluding outliers -/+3 SD above the mean
+        wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
+        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_no_outliers.pscalar.nii" \
+        -method MEAN -exclude-outliers 3 3;
+        
+       # Parcellate targets excluding outliers -/+3 SD above the mean (fisher-z output)
+        wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
+        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.pscalar.nii" \
+        -method MEAN -exclude-outliers 3 3;
 
         # Mask vertex-wise results for visualizations in supplementary information
         wb_command -cifti-restrict-dense-map "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" COLUMN \
@@ -89,6 +103,19 @@ mkdir "$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr"
         # Optional: Export to text for Python/Pandas use
         # wb_command -cifti-convert -to-text "$OUTPUT_PATH/sub-${i}/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.nii" \
         # "$OUTPUT_PATH/sub-${i}/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.txt"
+
+        # Convert all parcellated fisher-z outputs to TSV files for stats and visualizations
+        wb_command -cifti-convert -to-text \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.tsv"
+
+        wb_command -cifti-convert -to-text \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_legacy-mode.tsv"
+
+        wb_command -cifti-convert -to-text \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.pscalar.nii" \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.tsv"
 
         # Remove files that occupy excessive memory space
         rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dconn.nii"
