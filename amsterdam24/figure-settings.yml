@@ -17,7 +17,7 @@ flatmap_size_scale:
 
 flatmap_alpha_range:
   description: "Flatmap colorscale transparency range (min=transparent, max:fully opaque)"
-  value: [0, 0.3]
+  value: [0, 0.4]
 
 flatmap_n_scale: 
   description: "pRF n flatmap colorscale"
