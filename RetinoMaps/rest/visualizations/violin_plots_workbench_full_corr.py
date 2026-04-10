@@ -140,7 +140,7 @@ results = {
 
 for sub in subjects:
 
-    sub_path = os.path.join(main_data, f"{sub}/91k/rest/corr/full_corr")
+    sub_path = os.path.join(main_data, f"{sub}/91k/rest/corr/full_corr/workbench_full_corr")
 
     for seed in seed_clusters:
         for hemi in hemis:

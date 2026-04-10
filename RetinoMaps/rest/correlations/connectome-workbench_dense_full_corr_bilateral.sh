@@ -54,39 +54,39 @@ mkdir -p "$OUT_DIR"
             
         # Parcellate targets
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated.pscalar.nii" \
-        -method MEAN;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated.pscalar.nii" \
+            -method MEAN;
         
         # Parcellate targets (fisher-z outputs)
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" \
-        -method MEAN;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated.pscalar.nii" \
+            -method MEAN;
 
         # Parcellate targets using legacy mode
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-        -method MEAN -legacy-mode;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+            -method MEAN -legacy-mode;
         
         # Parcellate targets using legacy mode (fisher-z outputs)
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-        -method MEAN -legacy-mode;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+            -method MEAN -legacy-mode;
         
         # Parcellate targets excluding outliers -/+3 SD above the mean
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_no_outliers.pscalar.nii" \
-        -method MEAN -exclude-outliers 3 3;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}_parcellated_no_outliers.pscalar.nii" \
+            -method MEAN -exclude-outliers 3 3;
         
        # Parcellate targets excluding outliers -/+3 SD above the mean (fisher-z output)
         wb_command -cifti-parcellate "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}.dscalar.nii" \
-        "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.pscalar.nii" \
-        -method MEAN -exclude-outliers 3 3;
+            "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${ROI}_parcellated_no_outliers.pscalar.nii" \
+            -method MEAN -exclude-outliers 3 3;
 
         # Mask vertex-wise results for visualizations in supplementary information
         wb_command -cifti-restrict-dense-map "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${ROI}.dscalar.nii" COLUMN \

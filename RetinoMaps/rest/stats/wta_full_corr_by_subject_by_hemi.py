@@ -110,7 +110,7 @@ for hemi in hemispheres:
     print("Processing subjects...")
     
     for subject in subjects:
-        subj_dir = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
+        subj_dir = main_data / subject / "91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
         
         csv_file = subj_dir / f"cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv"
         
