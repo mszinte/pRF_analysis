@@ -25,6 +25,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -105,7 +106,7 @@ if subject != 'template_avg':
                 print(f'{avg_method} - {format_} - {prf_task_name}')
 
                 # Find pRF func/pred files
-                fit_fns = glob.glob('{}/*task-{}*_{}*_prf-css_fit.{}'.format(
+                fit_fns = glob.glob('{}/*task-{}_*_{}*_prf-css_fit.{}'.format(
                         prf_fit_dir, prf_task_name, avg_method, extension))
     
                 # Compute derivatives
@@ -131,7 +132,7 @@ if subject != 'template_avg':
                     print('Compute median across LOO')                
                     
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*_loo-avg-*_prf-css_deriv.{extension}")
+                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}_*loo-avg-*_prf-css_deriv.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
@@ -204,7 +205,7 @@ elif subject == 'template_avg':
                                                         maps_names=maps_names)
                 nb.save(template_deriv_img, template_deriv_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

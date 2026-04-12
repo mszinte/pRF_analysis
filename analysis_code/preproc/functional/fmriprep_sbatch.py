@@ -26,6 +26,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 1
 python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 1
+python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 0
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -88,7 +89,7 @@ if anat_only:
     anat_only_end = '_anat_only'
     procs_hours_in = procs_hours_anat
 else: 
-    nb_procs = 32
+    nb_procs = 8
     nthreads = 8
     omp_nthreads = 4
     anat_only_in = ''
