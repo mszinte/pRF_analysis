@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Full correlation violin plots split by hemisphere
-From workbench outputs
+Goal of the script:
+Partial correlation violin plots split by hemisphere.
+Seeds are on the y-axis, one figure per TARGET cluster.
+This makes it easy to compare correlation strength across seeds
+for a given target (winner-take-all inspection).
+
+The target's own row is muted (self-correlation), preserving
+the same logic as the seed-figure version.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -24,10 +30,8 @@ from pathlib import Path
 USER = os.environ["USER"]
 
 # Main folders
-main_data = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
-seed_folder = main_data
-atlas_folder = main_data / "atlas"
-output_folder = main_data / "group/91k/rest/full_corr"
+main_data     = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
+output_folder = main_data / "group/91k/rest/partial_corr"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -83,7 +87,7 @@ macro_colors = {
 
 # Derived hemisphere shades: LH = darker, RH = lighter
 SHADE_FACTORS = {"LH": 0.75, "RH": 1.25}
-SEED_COLOR    = "#F5F5F5"   # near-white silver for the self-seed row
+SEED_COLOR    = "#F5F5F5"   # near-white silver for the self (target) row
 
 
 def derive_hemi_color(base_hex: str, hemi: str) -> np.ndarray:
@@ -96,25 +100,26 @@ def derive_hemi_color(base_hex: str, hemi: str) -> np.ndarray:
     rgb = np.array(mcolors.to_rgb(base_hex))
     return np.clip(rgb * factor, 0, 1)
 
+
 # =========================
 # Build parcel indices
 # =========================
- 
+
 # clusters_all is already ordered mPCS-first (reversed above)
 # its order matches the row order of the .npy matrix files
 clusters = clusters_all   # alias — used as clusters.index(seed) below
- 
+
 # Flat ordered parcel list, built from the YAML mapping in clusters_all order
 # This matches the column order of the .npy matrix files (53 parcels, SCEF first)
 parcels = []
 for cl in clusters_all:
     parcels.extend(cluster_to_parcels[cl])
- 
+
 cluster_to_parcel_idx = {
     cl: [parcels.index(p) for p in plist]
     for cl, plist in cluster_to_parcels.items()
 }
- 
+
 print("\nParcels from YAML:", len(parcels), "| first:", parcels[0])
 print("Clusters from YAML:", clusters)
 print("\nCluster → parcel indices:")
@@ -130,6 +135,7 @@ for cl in seed_clusters:
 
 hemis = ["lh", "rh"]
 
+# results[seed][target][hemi] — same structure as the seed-figure version
 results = {
     seed: {
         tc: {hemi: [] for hemi in hemis}
@@ -140,64 +146,64 @@ results = {
 
 for sub in subjects:
 
-    sub_path = os.path.join(main_data, f"{sub}/91k/rest/corr/full_corr/workbench_full_corr")
+    sub_path = os.path.join(main_data,
+                            f"{sub}/91k/rest/corr/partial_corr/by_hemi")
 
-    for seed in seed_clusters:
-        for hemi in hemis:
+    for hemi in hemis:
 
-            fname = (
-                f"{sub_path}/{sub}_task-rest_space-fsLR_den-91k"
-                f"_desc-fisher-z_{hemi}_{seed}_parcellated.tsv"
-            )
+        fname = os.path.join(
+            sub_path,
+            f"cluster_by_mmp-parcel_partial_fisherz_{hemi}.npy"
+        )
+        cluster_partial = np.load(fname)
 
-            values_full = pd.read_csv(fname, header=None, sep='\t').squeeze().to_numpy(dtype=float)
+        print(f"{sub} ({hemi}): {cluster_partial.shape}")
 
-            if len(values_full) != 106:
-                raise ValueError(f"{fname} has {len(values_full)} rows, expected 106")
-
-            values = values_full[:53] if hemi == "lh" else values_full[53:]
-
-            print(f"{sub} ({hemi}, seed={seed}): loaded {len(values)} parcel values")
+        for seed in seed_clusters:
+            seed_idx = clusters.index(seed)
 
             for tc in target_clusters:
                 if tc == seed:
                     continue
 
-                idx = cluster_to_parcel_idx[tc]
-                results[seed][tc][hemi].append(float(np.nanmean(values[idx])))
+                parcel_idx = cluster_to_parcel_idx[tc]
+                vals = cluster_partial[seed_idx, parcel_idx]
+                mean = np.nanmean(vals)
+
+                results[seed][tc][hemi].append(mean)
 
 # =========================
-# Plotting (split violins)
+# Plotting — one figure per TARGET
+# y-axis: seeds (which seed is the correlator)
+# x-axis: partial correlation (fisher-z)
+# muted row: the target itself (self-correlation absent)
 # =========================
 
-for seed in seed_clusters:
+for target in target_clusters:
 
-    seed_row_idx = seed_clusters.index(seed)   # integer position in y-axis
+    target_row_idx = seed_clusters.index(target)   # y-position of the muted row
 
     # ------------------------------------------------------------------
-    # Build DataFrame — seed row gets NaN so seaborn still draws the
-    # category slot (preserving y-axis ordering) but produces an empty
-    # violin body that we will fully cover with a grey band.
-    # Using NaN rather than zeros avoids a spurious spike at x = 0.
+    # Build DataFrame.
+    # The target's own row gets NaN sentinels (no self-correlation data).
+    # All other rows show the correlation of each seed with this target.
     # ------------------------------------------------------------------
     plot_rows = []
 
-    for tc in seed_clusters:
-        if tc == seed:
-            # One NaN sentinel per hemisphere keeps the category present
-            # but renders no visible violin body.
+    for seed in seed_clusters:
+        if seed == target:
             for hemi_label in ["LH", "RH"]:
                 plot_rows.append({
-                    "Target":      tc,
+                    "Seed":        seed,
                     "Correlation": np.nan,
                     "Hemisphere":  hemi_label,
                 })
             continue
 
         for hemi in hemis:
-            for val in results[seed][tc][hemi]:
+            for val in results[seed][target][hemi]:
                 plot_rows.append({
-                    "Target":      tc,
+                    "Seed":        seed,
                     "Correlation": val,
                     "Hemisphere":  hemi.upper(),
                 })
@@ -205,7 +211,7 @@ for seed in seed_clusters:
     df = pd.DataFrame(plot_rows)
 
     # ------------------------------------------------------------------
-    # Draw violins — all white initially; we colour them right after.
+    # Draw violins — all white initially; coloured right after.
     # Snapshot ax.collections BEFORE the call so we know exactly which
     # artists are newly added by violinplot.
     # ------------------------------------------------------------------
@@ -216,7 +222,7 @@ for seed in seed_clusters:
 
     sns.violinplot(
         data=df,
-        y="Target",
+        y="Seed",
         x="Correlation",
         hue="Hemisphere",
         order=seed_clusters,
@@ -231,17 +237,19 @@ for seed in seed_clusters:
     new_collections = ax.collections[n_collections_before:]
 
     # ------------------------------------------------------------------
-    # Colour the violin halves
+    # Colour the violin halves.
     #
     # seaborn (split=True) adds exactly 2 PolyCollection objects per
     # category row that has plottable data, in category order:
     # first the LH half (hue[0]), then the RH half (hue[1]).
     #
     # IMPORTANT: seaborn silently skips rows where ALL values are NaN —
-    # it adds 0 collections for that row, not 2.  The seed row uses NaN
+    # it adds 0 collections for that row, not 2.  The target row uses NaN
     # sentinels so it contributes 0 collections.  The expected count is
-    # therefore (n_rows - 1) * 2, and we must skip the seed row when
+    # therefore (n_rows - 1) * 2, and we must skip the target row when
     # mapping row index → collection index.
+    #
+    # Violins are colored by SEED (rows), not by target.
     # ------------------------------------------------------------------
 
     n_plottable_rows     = len(seed_clusters) - 1
@@ -249,20 +257,20 @@ for seed in seed_clusters:
 
     assert len(new_collections) == expected_collections, (
         f"Expected {expected_collections} violin PolyCollections "
-        f"(skipping the seed row '{seed}') but got {len(new_collections)}. "
+        f"(skipping the target row '{target}') but got {len(new_collections)}. "
         "seaborn's internal layout may have changed — check version."
     )
 
     hemi_labels    = ["LH", "RH"]
     collection_idx = 0
 
-    for tc in seed_clusters:
-        if tc == seed:
+    for seed in seed_clusters:
+        if seed == target:
             continue   # no collections were added for this row
 
-        for hemi_j, hemi_label in enumerate(hemi_labels):
+        for hemi_label in hemi_labels:
             artist   = new_collections[collection_idx]
-            base_hex = macro_colors[tc]
+            base_hex = macro_colors[seed]          # colored by seed
             rgb      = derive_hemi_color(base_hex, hemi_label)
             artist.set_facecolor(rgb)
             artist.set_edgecolor(rgb)
@@ -270,33 +278,30 @@ for seed in seed_clusters:
             collection_idx += 1
 
     # ------------------------------------------------------------------
-    # Grey band over the seed row — drawn at zorder=0 so it sits behind
-    # the axes grid and all data artists
+    # Grey band over the target's own row
     # ------------------------------------------------------------------
 
     ax.axhspan(
-        seed_row_idx - 0.45,
-        seed_row_idx + 0.45,
+        target_row_idx - 0.45,
+        target_row_idx + 0.45,
         color=SEED_COLOR,
         zorder=0,
         label="_nolegend_",
     )
 
     # ------------------------------------------------------------------
-    # Median lines — narrower span to avoid overlap; distinct grey shades
-    # so LH and RH medians are visually separable without a legend.
-    # LH: dark charcoal  |  RH: mid grey
+    # Median lines — LH: dark charcoal  |  RH: mid grey
     # ------------------------------------------------------------------
 
     MEDIAN_COLORS   = {"lh": "#222222", "rh": "#888888"}
     MEDIAN_HALF_LEN = 0.08
 
-    for i, tc in enumerate(seed_clusters):
-        if tc == seed:
+    for i, seed in enumerate(seed_clusters):
+        if seed == target:
             continue
 
         for hemi, y_offset in zip(hemis, [-0.12, 0.12]):
-            vals = np.array(results[seed][tc][hemi])
+            vals = np.array(results[seed][target][hemi])
             med  = np.nanmedian(vals)
 
             ax.plot(
@@ -314,12 +319,12 @@ for seed in seed_clusters:
 
     rng = np.random.default_rng(seed=42)   # fixed seed → reproducible jitter
 
-    for i, tc in enumerate(seed_clusters):
-        if tc == seed:
+    for i, seed in enumerate(seed_clusters):
+        if seed == target:
             continue
 
         for hemi, y_offset in zip(hemis, [-0.1, 0.1]):
-            x = np.array(results[seed][tc][hemi])
+            x = np.array(results[seed][target][hemi])
             y_jitter = (np.ones(len(x)) * i + y_offset
                         + rng.normal(0, 0.03, size=len(x)))
 
@@ -341,9 +346,9 @@ for seed in seed_clusters:
     # ------------------------------------------------------------------
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Full Correlation (fisher-z)", fontsize=18, fontweight="bold")
-    ax.set_ylabel("Target Cluster",          fontsize=18, fontweight="bold")
-    ax.set_title(f"{seed} seed",             fontsize=18, fontweight="bold")
+    ax.set_xlabel("Partial Correlation (fisher-z)", fontsize=18, fontweight="bold")
+    ax.set_ylabel("Seed Cluster",                   fontsize=18, fontweight="bold")
+    ax.set_title(f"{target} target",                fontsize=18, fontweight="bold")
     ax.tick_params(axis='both', which='major', labelsize=16)
 
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
@@ -353,7 +358,7 @@ for seed in seed_clusters:
 
     outname = os.path.join(
         fig_dir,
-        f"violin_seed-{seed}_full_corr_by_hemi_fisher-z.png"
+        f"violin_target-{target}_partial_corr_by_hemi_fisher-z_seeds_by_target.png"
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
     print(f"Saved figure: {outname}")

@@ -37,15 +37,15 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 		wb_command -metric-resample \
 		    "$OUT_DIR1/sub-${i}_intertask_Sac_Pur.dtseries.left_hemi.shape.gii" \
-		    fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii \
-		    fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii \
+		    "$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii \
+		    "$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii \
 		    BARYCENTRIC -largest \
 		    "$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur.dtseries.left_hemi.bary_largest.shape.gii";
 			
 		wb_command -metric-resample \
 		    "$OUT_DIR1/sub-${i}_intertask_Sac_Pur.dtseries.right_hemi.shape.gii" \
-		    fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii \
-		    fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii \
+		    "$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii \
+		    "$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii \
 		    BARYCENTRIC -largest \
 		    "$OUT_DIR2/sub-${i}_91k_intertask_Sac_Pur.dtseries.right_hemi.bary_largest.shape.gii";
 

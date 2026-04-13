@@ -17,7 +17,7 @@ CLUSTERS=(mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1)
 for sub in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25; do
     echo "Processing sub-${sub}..."
 
-    FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr"
+    FULL_CORR="${BASE_PATH}/sub-${sub}/91k/rest/corr/full_corr/workbench_full_corr"
 
     # Create output directories if needed
     mkdir -p "${FULL_CORR}/hollow_seed"

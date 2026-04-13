@@ -21,7 +21,7 @@ Example:
 source .bashrc
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/visualizations
-python submit_workbench_wta_jobs.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta_full_corr_dev.sh 0:30:00 fisher-z by_hemi legacy
+python submit_workbench_wta_jobs.py /scratch/mszinte/data RetinoMaps 327 b327 workbench_compute_wta_full_corr.sh 0:30:00 fisher-z by_hemi legacy
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
