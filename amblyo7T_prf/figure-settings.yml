@@ -109,6 +109,10 @@ ecc_size_num_bins:
 ecc_size_max: 
   description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
   value: [15, 15]
+
+ecc_size_axis: 
+  description: "Eccentricity and pCM bounds in the violin plot axis"
+  value: [0, 15]
   
 ecc_pcm_num_bins: 
   description: "Number of bins for eccentricity vs pcm plot"

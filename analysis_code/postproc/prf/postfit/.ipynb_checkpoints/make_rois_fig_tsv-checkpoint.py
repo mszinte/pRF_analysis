@@ -25,6 +25,7 @@ cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -46,8 +47,8 @@ import pandas as pd
 
 # Personal import
 sys.path.append("{}/../../../utils".format(os.getcwd()))
-from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_nan_percentile, make_prf_barycentre_df
 from settings_utils import load_settings
+from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_nan_percentile, make_prf_barycentre_df
 
 # Inputs
 main_dir = sys.argv[1]
@@ -338,7 +339,6 @@ for avg_method in avg_methods:
 
                     # Spatial distribution 
                     # --------------------  
-                    
                     hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
                     for i, hemi in enumerate(hemis):
                         hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]

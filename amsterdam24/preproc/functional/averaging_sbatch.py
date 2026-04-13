@@ -23,7 +23,7 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amsterdam24/preproc/functional
-python averaging_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python averaging_sbatch.py /scratch/mszinte/data amsterdam24 sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

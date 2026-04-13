@@ -18,7 +18,7 @@ cluster_name:
 # Dataset description
 subjects:
   description: "Subjects of the dataset"
-  value: ["sub-01", "sub-03", "sub-04", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11", "sub-13"]
+  value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11", "sub-12", "sub-13", "sub-14", "sub-17", "sub-18", "sub-20"]
 
 sessions:
   description: "Sessions of the dataset"
@@ -34,8 +34,9 @@ func_session:
 
 prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
+  value: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
   to_check_label: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
+  full_analysis: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
 
 partial_scan: 
   description: "Dataset including non whole-head recording"
@@ -54,6 +55,10 @@ TRs:
 starting_TR: 
   description: "TR in which aquisition started"
   value: 0
+
+ending_TR: 
+  description: "Number of TRs to cut from the end, null to keep all"
+  value: null 
   
 # Preprocessing
 preproc_prep: 

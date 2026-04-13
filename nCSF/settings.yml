@@ -61,6 +61,10 @@ TRs:
 starting_TR: 
   description: "TR in which aquisition started"
   value: 0
+
+ending_TR: 
+  description: "Number of TRs to cut from the end, null to keep all"
+  value: null
   
 # Preprocessing
 preproc_prep: 

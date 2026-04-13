@@ -180,7 +180,7 @@ gauss_bounds = [(-max_ecc_size, max_ecc_size), # x
                 (-max_ecc_size, max_ecc_size), # y
                 (size_th[0], size_th[1]), # prf size
                 (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
-                (0, 0), #(-2, 2), # bold baseline
+                (-2, 2), # bold baseline
                 (0, 10), # hrf1
                 (0, 0)  # hrf2
                 ]

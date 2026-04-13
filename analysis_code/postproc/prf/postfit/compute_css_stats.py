@@ -25,6 +25,7 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_css_stats.py /scratch/mszinte/data amblyo7T_prf sub-04 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -126,7 +127,7 @@ if subject != 'template_avg':
                     else:
                         if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                            prf_bold_fn = glob.glob('{}/*task-{}_*_hemi-{}*_{}_bold*.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, avg_method, extension))[0]
                         elif format_ == '170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
@@ -190,16 +191,7 @@ if subject != 'template_avg':
                             # Recalculate p-values for median data
                             t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
                             degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
-
-                            # Recalculate p-values for median data
-                            print(f"slope - nan: {np.isnan(loo_prf_stats[slope_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[slope_idx,:]).sum()}")
-                            print(f"stderr - nan: {np.isnan(loo_prf_stats[stderr_idx,:]).sum()}, zeros: {(loo_prf_stats[stderr_idx,:]==0).sum()}, finite: {np.isfinite(loo_prf_stats[stderr_idx,:]).sum()}")
-                            print(f"trs - nan: {np.isnan(loo_prf_stats[trs_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[trs_idx,:]).sum()}")
-                            print(f"degrees_of_freedom: {degrees_of_freedom}")
-                            print(f"t_statistic - nan: {np.isnan(t_statistic).sum()}, inf: {np.isinf(t_statistic).sum()}, finite: {np.isfinite(t_statistic).sum()}")
-
                             p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
-                            print(f"p_values - nan: {np.isnan(p_values).sum()}, finite: {np.isfinite(p_values).sum()}")
                             corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
                             
                             # Update median data with recalculated p-values
