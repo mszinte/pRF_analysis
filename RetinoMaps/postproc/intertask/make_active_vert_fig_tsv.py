@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 python make_active_vert_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_active_vert_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_active_vert_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_active_vert_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -224,17 +224,17 @@ for tasks in group_tasks :
                     df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
                     
                     group_active_vertex_roi_melt_df = pd.concat([df_active_vertex_roi_median_df, 
-                                                                 df_active_vertex_roi_ci_low_df.drop(columns=['roi', 'categorie']), 
-                                                                 df_active_vertex_roi_ci_high_df.drop(columns=['roi', 'categorie'])], 
+                                                                 df_active_vertex_roi_ci_low_df.drop(columns=[rois_type, 'categorie']), 
+                                                                 df_active_vertex_roi_ci_high_df.drop(columns=[rois_type, 'categorie'])], 
                                                                 axis=1).reset_index(drop=True)
                     # Export DF 
                     fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                         intertask_group, preproc_prep, filtering,
                         normalization, avg_method, rois_method_format)
                     
-                    tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject_to_group, format_)
+                    tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
                     tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
-                        tsv_dir, subject_to_group, fn_spec, rois_type)
+                        tsv_dir, subject, fn_spec, rois_type)
                     print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
                 group_active_vertex_roi_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
                 

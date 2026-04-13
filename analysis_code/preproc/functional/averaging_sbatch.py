@@ -69,7 +69,7 @@ cluster_name  = analysis_info['cluster_name']
 proj_name = analysis_info['project_name']
 nb_procs = 8
 memory_val = 48
-hour_proc = 10
+hour_proc = 25
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, project_dir, subject)
