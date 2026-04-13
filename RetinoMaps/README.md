@@ -107,35 +107,37 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 ### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
-- [x] Run GLM for the differents tasks [glm_fit.py](glm/fit/glm_fit.py) or [glm_sbatch.py](glm/fit/glm_sbatch.py)
-- [x] Compute GLM statistics [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
+- [x] Run GLM for the differents tasks [glm_fit.py](postproc/glm/fit/glm_fit.py) or [glm_sbatch.py](postproc/glm/fit/glm_sbatch.py)
+- [x] Compute GLM statistics [compute_glm_stats.py](postproc/glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](postproc/glm/postfit/glm_stats_sbatch.py)
 
 ### *Group-level analysis*
-Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+Analysis are run on the template of the HCP cifti format (**170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
-- [x] Compute GLM statistics for **sub-170k** [compute_glm_stats.py](glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](glm/postfit/glm_stats_sbatch.py)
+- [x] Compute GLM statistics for **template_avg** [compute_glm_stats.py](postproc/glm/postfit/compute_glm_stats.py) or [glm_stats_sbatch.py](postproc/glm/postfit/glm_stats_sbatch.py)
 
 # Inter task analysis 
 ---
 ### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
-- [x] Make intertasks image [make_intertask_img.py](intertask/make_intertask_img.py)
-- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
-- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py) 
-- [x] Make figure specific TSV with GLM results for active vertex [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
-- [x] Make final statistical maps maps with pycortex [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
+- [x] Make intertasks image [make_intertask_img.py](postproc/intertask/make_intertask_img.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_tsv.py](postproc/intertask/make_intertask_tsv.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results [make_intertask_rois_fig_tsv_sbatch.py](postproc/intertask/make_intertask_rois_fig_tsv_sbatch.py) 
+- [x] Make figure specific TSV with GLM results for active vertex [make_active_vert_fig_tsv.py](postproc/intertask/make_active_vert_fig_tsv.py)
+- [x] Make figure specific with GLM results for active vertex [make_active_vert_fig.py](postproc/intertask/make_active_vert_fig.py) 
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results [make_intertask_rois_fig.py](postproc/intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](postproc/intertask/make_intertask_rois_fig.sh)
+- [x] Make statistical maps maps with pycortex [pycortex_maps_intertask.py](postproc/intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](postproc/intertask/pycortex_maps_intertask.sh)
 
 ### *Group-level analysis*
-Analysis are run on the template of the HCP cifti format (**sub-170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
+Analysis are run on the template of the HCP cifti format (**170k**) in which individual results are averaged and on an ROI-based group analysis determined individually on subject surfaces fsnative (**group**).</br> 
 
-- [x] Make intertasks image for **sub-170k** [make_intertask_img.py](intertask/make_intertask_img.py)
-- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results for **sub-170k** [make_intertask_tsv.py](intertask/make_intertask_tsv.py)
-- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results for **sub-170k** and **group** [make_intertask_rois_fig_tsv.py](intertask/make_intertask_rois_fig_tsv.py) or [make_intertask_rois_fig_tsv_sbatch.py](intertask/make_intertask_rois_fig_tsv_sbatch.py)
-- [x] Make figure specific TSV with GLM results for active vertex for **sub-170k** and **group** [make_active_vert_fig_tsv.py](intertask/make_active_vert_fig_tsv.py) 
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results for **sub-170k** and **group** [make_intertask_rois_fig.py](intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](intertask/make_intertask_rois_fig.sh)
-- [x] Make intertask statistical maps maps with pycortex  for **sub-170k** [pycortex_maps_intertask.py](intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](intertask/pycortex_maps_intertask.sh)
+- [x] Make intertasks image for **sub-hcp1.6mm** [make_intertask_img.py](postproc/intertask/make_intertask_img.py)
+- [x] Make general TSV with CSS pRF fit derivatives, statistics, CM and GLM results for **sub-hcp1.6mm** [make_intertask_tsv.py](postproc/intertask/make_intertask_tsv.py)
+- [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results for **sub-hcp1.6mm** and **group** [make_intertask_rois_fig_tsv.py](postproc/intertask/make_intertask_rois_fig_tsv.py) or [make_intertask_rois_fig_tsv_sbatch.py](postproc/intertask/make_intertask_rois_fig_tsv_sbatch.py)
+- [x] Make figure specific TSV with GLM results for active vertex for **sub-hcp1.6mm** and **group** [make_active_vert_fig_tsv.py](postproc/intertask/make_active_vert_fig_tsv.py)
+- [x] Make figure specific with GLM results for active vertex for **sub-hcp1.6mm** and **group** [make_active_vert_fig.py](postproc/intertask/make_active_vert_fig.py) 
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results for **sub-hcp1.6mm** and **group** [make_intertask_rois_fig.py](postproc/intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](postproc/intertask/make_intertask_rois_fig.sh)
+- [x] Make intertask statistical maps maps with pycortex  for **sub-hcp1.6mm** [pycortex_maps_intertask.py](postproc/intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](postproc/intertask/pycortex_maps_intertask.sh)
 
 # Resting-state preprocessing
 ---

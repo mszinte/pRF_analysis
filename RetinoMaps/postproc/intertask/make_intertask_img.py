@@ -22,7 +22,7 @@ python stats_final.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 python make_intertask_img.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_intertask_img.py /scratch/mszinte/data RetinoMaps template_avg 327
+python make_intertask_img.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (mail@martinszinte.net) 
@@ -68,6 +68,7 @@ group_tasks = analysis_info['task_intertask']
 fdr_alpha = analysis_info['stats_th']
 intertask_code_names = analysis_info['intertask_code_names']
 maps_names_inter_task = analysis_info['maps_names_intertask']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
  
 # Index
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
@@ -92,7 +93,7 @@ for format_, extension in zip(formats, extensions):
 stats_fns = glm_stats_fns + prf_stats_fns
 
 # split filtered files  depending of their nature
-if subject != 'template_avg':
+if subject != pycortex_subject_template:
     stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
     for subtype in stats_fns:
         if "hemi-L" in subtype:

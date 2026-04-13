@@ -23,7 +23,7 @@ python make_rois_fig.py [main directory] [project name] [subject] [group]
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 python make_intertask_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_intertask_rois_fig.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python make_intertask_rois_fig.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_intertask_rois_fig.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
