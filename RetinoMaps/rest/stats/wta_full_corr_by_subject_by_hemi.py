@@ -1,15 +1,38 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Feb 27, 2025
 
-Compute winner take all on partial correlation results
-From Nilearn (outputs are parcellated by definition)
-
----------------------------------------------------
+wta_full_corr_by_subject_by_hemi.py
+-----------------------------------------------------------------------------------------
+Goal of the script:
+Compute winner take all on full correlation results from workbench outputs
+Written to run the same pipeline as with Nilearn outputs
+-----------------------------------------------------------------------------------------
+Input(s):
+sys.argv[1]: main project directory
+sys.argv[2]: project name (correspond to directory)
+sys.argv[3]: 
+sys.argv[4]: server group (e.g. 327)
+-----------------------------------------------------------------------------------------
+Output(s):
+TSV to import into the generate workbench dlabel file scripts
+-----------------------------------------------------------------------------------------
+To run:
+1. cd to function
+2. run python command
+-----------------------------------------------------------------------------------------
+Examples:
+cd 
+-----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
----------------------------------------------------
+-----------------------------------------------------------------------------------------
 """
+# Stop warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+# Debug
+import ipdb
+deb = ipdb.set_trace
 
 import os
 import sys
@@ -112,7 +135,7 @@ for hemi in hemispheres:
     for subject in subjects:
         subj_dir = main_data / subject / "91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
         
-        csv_file = subj_dir / f"cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv"
+        csv_file = subj_dir / f"sub-08_task-rest_space-fsLR_den-91k_desc-fisher-z_lh_iIPS_parcellated_legacy-mode.tsv"
         
         if not csv_file.exists():
             print(f"{subject}: WARNING - File not found: {csv_file}")
