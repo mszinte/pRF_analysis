@@ -33,16 +33,17 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 		### 2. Resample from 170k to 91k - try this one for more advanced registration options wb_command -cifti-resample 
 		### (in the step before maybe use -cifti-separate to get the dense labels dlabel.nii)
 		### Note: The ADAP_BARY_AREA method is recommended for ordinary metric data, because it should use all data while downsampling, unlike BARYCENTRIC
+		### WE NEED TO USE INDIVIDUAL MIDTHICKNESS SURFACES HERE
 		wb_command -metric-resample \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_left_hemi.shape.gii" \
-			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii \
-			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii" \
 			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_bary_largest.shape.gii";
 			
 		wb_command -metric-resample \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii" \
-			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii \
-			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii" \
 			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_bary_largest.shape.gii";
 
 		### 3. Import labels to rename them and change the color map (using Uriel's rgb convention)
