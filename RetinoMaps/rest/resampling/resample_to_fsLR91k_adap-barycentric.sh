@@ -12,7 +12,7 @@
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
-	for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25 170k;
+	for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
 	do
 	
 	# Output dirs for every subject
@@ -30,29 +30,32 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 			COLUMN -metric CORTEX_RIGHT \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii";
 
-		### 2. Resample from 170k to 91k - try this one for more advanced registration options wb_command -cifti-resample 
-		### (in the step before maybe use -cifti-separate to get the dense labels dlabel.nii)
+		### 2. Resample from 170k to 91k
 		### Note: The ADAP_BARY_AREA method is recommended for ordinary metric data, because it should use all data while downsampling, unlike BARYCENTRIC
 		### WE NEED TO USE INDIVIDUAL MIDTHICKNESS SURFACES HERE
 		wb_command -metric-resample \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_left_hemi.shape.gii" \
 			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii" \
 			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii" \
-			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_bary_largest.shape.gii";
+			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_adap-bary.shape.gii" \
+			-area-metrics "$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_desc-vaavg_midthickness.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_desc-vaavg_midthickness.shape.gii";
 			
 		wb_command -metric-resample \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii" \
 			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii" \
 			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii" \
-			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_bary_largest.shape.gii";
+			ADAP_BARY_AREA "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_adap-bary.shape.gii" \
+			-area-metrics "$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_desc-vaavg_midthickness.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_desc-vaavg_midthickness.shape.gii";
 
 		### 3. Import labels to rename them and change the color map (using Uriel's rgb convention)
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_bary_largest.shape.gii" \
-			"$ATLAS/intertask_label_list.txt \
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_adap-bary.shape.gii" \
+			"$ATLAS/intertask_label_list.txt" \
 			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_cmap.label.gii" && \
 		
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_bary_largest.shape.gii" \
-			"$ATLAS/intertask_label_list.txt \
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_adap-bary.shape.gii" \
+			"$ATLAS/intertask_label_list.txt" \
 			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_cmap.label.gii";
 
 		### 4. Mask the GLM results with the Glasser macro-regions (simply comment out these steps if you want to keep the results unmasked)
@@ -68,61 +71,60 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 		# Pursuit
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_pursuit.shape.gii" -name Pursuit -map 2 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur.shape.gii" -name Pursuit -map 2 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_pursuit.shape.gii" -name Pursuit -map 2;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur.shape.gii" -name Pursuit -map 2;
 
 		# Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_saccade.shape.gii" -name Saccade -map 3 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac.shape.gii" -name Saccade -map 3 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_saccade.shape.gii" -name Saccade -map 3;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac.shape.gii" -name Saccade -map 3;
 
 		# Pursuit & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_pursuit-saccade.shape.gii" -name Pursuit_and_Saccade -map 4 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-saccade.shape.gii" -name Pursuit_and_Saccade -map 4 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_pursuit-saccade.shape.gii" -name Pursuit_and_Saccade -map 4;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-saccade.shape.gii" -name Pursuit_and_Saccade -map 4;
 
 		# Vision
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision.shape.gii" -name Vision -map 5 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_pRF.shape.gii" -name Vision -map 5 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision.shape.gii" -name Vision -map 5;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_pRF.shape.gii" -name Vision -map 5;
 
 		# Vision & Pursuit
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit.shape.gii" -name Vision_and_Pursuit -map 6 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-pRF.shape.gii" -name Vision_and_Pursuit -map 6 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit.shape.gii" -name Vision_and_Pursuit -map 6;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-pRF.shape.gii" -name Vision_and_Pursuit -map 6;
 
 		# Vision & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-saccade.shape.gii" -name Vision_and_Saccade -map 7 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-pRF.shape.gii" -name Vision_and_Saccade -map 7 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-saccade.shape.gii" -name Vision_and_Saccade -map 7;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-pRF.shape.gii" -name Vision_and_Saccade -map 7;
 
 		# Vision & Pursuit & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit-saccade.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit-saccade.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
 
 		### 6. Create two additional files: saccade minus pursuit, pursuit minus saccade
 		# wb_command -cifti-merge out.dtseries.nii -cifti first.dtseries.nii -index 1 -cifti second.dtseries.nii;
 
 		### 7. Convert back to label files (the empty string "" tells the command to take whatever is non-empty in the metric file)
-
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit-saccade.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit-saccade.label.gii";
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit-saccade.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit-saccade.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF.shape.gii" "" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF.shape.gii" "" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF.label.gii";
 
 		### Next we'll rename the label keys to make it nicer (this part didn't work as expected - probably need to use additional flags)
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit-saccade.shape.gii" \
-			7_vision-pursuit-saccade.txt "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_vision-pursuit-saccade.label.gii";
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit-saccade.shape.gii" \
-			7_vision-pursuit-saccade.txt "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_vision-pursuit-saccade.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF.shape.gii" \
+			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF.shape.gii" \
+			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF.label.gii";
 
 	done
 
