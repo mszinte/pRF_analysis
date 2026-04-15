@@ -29,7 +29,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: server group (e.g. 327)
-sys.argv[4]: 
+sys.argv[4]: server project (eg b327)
+sys.argv[5]: grab legacy outputs or default
 -----------------------------------------------------------------------------------------
 Output(s):
 TSV to import into the generate workbench dlabel file scripts
@@ -70,7 +71,8 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
-mode = sys.argv[4] # legacy, default
+server = sys.argv[4]
+mode = sys.argv[5] # legacy, default
 
 # ============================================================
 # Load project settings
@@ -237,42 +239,29 @@ def load_corr_matrix(subject: str, hemi: str) -> Optional[pd.DataFrame]:
 # WTA: compute winning seed per parcel
 # ============================================================
 
-def compute_winners(
-    df_corr: pd.DataFrame,
-    seed_to_parcels: Dict[str, List[str]],
-    seed_to_number: Dict[str, int],
-) -> pd.Series:
+def compute_winners(df_corr, seed_to_parcels, seed_to_number):
     """
-    For each parcel-column, find the seed with the highest correlation.
-
-    Self-seed parcels are masked to NaN before taking the max so that a seed
-    cannot win its own territory.  Parcels where all seeds are NaN receive NaN.
-
-    Parameters
-    ----------
-    df_corr : DataFrame (n_seeds × n_parcels). Rows = seeds, columns = parcels.
-
-    Returns
-    -------
-    pd.Series of winner label (int, 1-based) indexed by parcel name.
-    NaN where no valid winner exists.
+    df_corr : DataFrame (seeds x parcels)
     """
     df = df_corr.copy()
 
+    # exclude self-seed parcels
     for seed, plist in seed_to_parcels.items():
         for p in plist:
             if seed in df.index and p in df.columns:
                 df.loc[seed, p] = np.nan
 
-    winners: Dict[str, float] = {}
+    winners = []
     for parcel in df.columns:
         col = df[parcel]
-        if col.isna().all():
-            winners[parcel] = np.nan
-        else:
-            winners[parcel] = float(seed_to_number[col.idxmax()])
 
-    return pd.Series(winners)
+        # if entire column is NaN → no winner
+        if col.isna().all():
+            winners.append(np.nan)
+        else:
+            winners.append(seed_to_number[col.idxmax()])
+
+    return np.array(winners)
 
 # ============================================================
 # Main loop

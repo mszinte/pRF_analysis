@@ -6,7 +6,25 @@
 
 #####################################################
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
+
+# Goal: Resample intertask results from 170k to 91k
+# This is the script used for VSS 2025 and up to april 2026
+# Kept only for tracking/comparison purposes 
+# Note: The ADAP_BARY_AREA method is recommended for ordinary metric data, 
+# because it should use all data while downsampling, unlike BARYCENTRIC
+# Usage:
+# ./resample_to_fsLR91k_bary.sh -largest
 #####################################################
+
+
+# Parse command-line arguments
+LARGEST_FLAG="${1:-largest}" # use largest behavior y/n
+
+# Validate inputs
+if [[ "$LARGEST_FLAG" != "-largest" ]] && [[ "$LARGEST_FLAG" != "" ]]; then
+    echo "Error: Behavior must be '-largest' or 'none (skip argument)'"
+    exit 1
+fi
 
 # Get the intertask results path
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"

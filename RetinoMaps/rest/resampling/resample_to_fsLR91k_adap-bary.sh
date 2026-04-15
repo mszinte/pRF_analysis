@@ -1,0 +1,157 @@
+#!/bin/bash
+
+#!/bin/bash
+
+# Uncomment to switch on debugging
+# set -e 
+# set -x
+
+#####################################################
+# Written by Marco Bedini (marco.bedini@univ-amu.fr)
+
+# Goal: Resample intertask results from 170k to 91k
+# Note: The ADAP_BARY_AREA method is recommended for ordinary metric data, 
+# because it should use all data while downsampling, unlike BARYCENTRIC
+# Usage:
+# ./resample_to_fsLR91k_adap-bary.sh -largest
+#####################################################
+
+# Parse command-line arguments
+LARGEST_FLAG="${1:-}" # use largest behavior: pass -largest or leave empty
+
+# Validate inputs
+if [[ "$LARGEST_FLAG" != "-largest" ]] && [[ "$LARGEST_FLAG" != "" ]]; then
+    echo "Error: Behavior must be '-largest' or omitted"
+    exit 1
+fi
+
+# Build a filename suffix so outputs can be distinguished by flag state
+if [[ "$LARGEST_FLAG" == "-largest" ]]; then
+    LARGEST_SUFFIX="_largest"
+else
+    LARGEST_SUFFIX=""
+fi
+
+# Get the intertask results path
+TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
+
+	for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
+	do
+	
+	# Output dirs for every subject
+	# mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
+	OUT_DIR1="$TASK_RESULTS/sub-${i}/91k/rest/seed/source_170k"
+	# mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
+	OUT_DIR2="$TASK_RESULTS/sub-${i}/91k/rest/seed/target_91k"
+
+		### 1. Separate the results by hemisphere
+		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii" \
+			COLUMN -metric CORTEX_LEFT \
+			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_left_hemi.shape.gii";
+
+		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii" \
+			COLUMN -metric CORTEX_RIGHT \
+			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii";
+
+		### 2. Resample from 170k to 91k
+		wb_command -metric-resample \
+			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_left_hemi.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_sphere.surf.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_sphere.surf.gii" \
+			ADAP_BARY_AREA $LARGEST_FLAG \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_adap-bary${LARGEST_SUFFIX}.shape.gii" \
+			-area-metrics "$ATLAS/fsLR/tpl-fsLR_hemi-L_den-59k_desc-vaavg_midthickness.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-L_den-32k_desc-vaavg_midthickness.shape.gii";
+			
+		wb_command -metric-resample \
+			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_sphere.surf.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_sphere.surf.gii" \
+			ADAP_BARY_AREA $LARGEST_FLAG \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_adap-bary${LARGEST_SUFFIX}.shape.gii" \
+			-area-metrics "$ATLAS/fsLR/tpl-fsLR_hemi-R_den-59k_desc-vaavg_midthickness.shape.gii" \
+			"$ATLAS/fsLR/tpl-fsLR_hemi-R_den-32k_desc-vaavg_midthickness.shape.gii";
+
+		### 3. Import labels to rename them and change the color map (using Uriel's rgb convention)
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_left_hemi_adap-bary${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/intertask_label_list.txt" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_cmap${LARGEST_SUFFIX}.label.gii" && \
+		
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_right_hemi_adap-bary${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/intertask_label_list.txt" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_cmap${LARGEST_SUFFIX}.label.gii";
+
+		### 4. Mask the GLM results with the Glasser macro-regions (simply comment out these steps if you want to keep the results unmasked)
+		wb_command -label-mask "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii";
+
+		wb_command -label-mask "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii";
+
+		### 5. Loop over each label to generate separate metric files (useful to mask the timeseries)
+
+		# Pursuit
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2;
+
+		# Saccade
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3;
+
+		# Pursuit & Saccade
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-saccade${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-saccade${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4;
+
+		# Vision
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_pRF${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_pRF${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5;
+
+		# Vision & Pursuit
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6;
+
+		# Vision & Saccade
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7;
+
+		# Vision & Pursuit & Saccade
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8 && \
+		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
+
+		### 6. Create two additional files: saccade minus pursuit, pursuit minus saccade
+		# wb_command -cifti-merge out.dtseries.nii -cifti first.dtseries.nii -index 1 -cifti second.dtseries.nii;
+
+		### 7. Convert back to label files (the empty string "" tells the command to take whatever is non-empty in the metric file)
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
+			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
+
+		### Next we'll rename the label keys to make it nicer (this part didn't work as expected - probably need to use additional flags)
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
+
+	done
+
+# Change all files permissions
+chmod -Rf 771 *
+chgrp -Rf 771 *

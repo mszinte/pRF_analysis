@@ -41,7 +41,7 @@ settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
 subjects          = analysis_info["subjects"]
 
-fig_dir = os.path.join(output_folder, "figures/violin_plots")
+fig_dir = os.path.join(output_folder, "figures/consistency_histograms")
 os.makedirs(fig_dir, exist_ok=True)
 
 # =========================
@@ -125,46 +125,5 @@ for cl in seed_clusters:
     if len(cluster_to_parcel_idx[cl]) == 0:
         raise RuntimeError(f"No parcels found for cluster '{cl}'")
 
-# =========================
-# Compute BOTH hemispheres
-# =========================
-
-hemis = ["lh", "rh"]
-
-results = {
-    seed: {
-        tc: {hemi: [] for hemi in hemis}
-        for tc in target_clusters if tc != seed
-    }
-    for seed in seed_clusters
-}
-
-for sub in subjects:
-
-    sub_path = os.path.join(main_data,
-    f"{sub}/91k/rest/corr/partial_corr/by_hemi")
-
-    for hemi in hemis:
-
-        fname = os.path.join(
-            sub_path,
-            f"cluster_by_mmp-parcel_partial_fisherz_{hemi}.npy"
-        )
-        cluster_partial = np.load(fname)
-
-        print(f"{sub} ({hemi}): {cluster_partial.shape}")
-
-        for seed in seed_clusters:
-            seed_idx = clusters.index(seed)
-
-            for tc in target_clusters:
-                if tc == seed:
-                    continue
-
-                parcel_idx = cluster_to_parcel_idx[tc]
-                vals = cluster_partial[seed_idx, parcel_idx]
-                mean = np.nanmean(vals)
-
-                results[seed][tc][hemi].append(mean)
-
+# Load consistency outputs
 
