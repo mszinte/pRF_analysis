@@ -1,5 +1,7 @@
-
-    
+# Debug
+import ipdb
+deb = ipdb.set_trace
+  
 def extract_data(main_dir, project_dir, subject, task, ses, runs, eye, file_type):
     """
     Load and process eye-tracking data and associated metadata from TSV and JSON files.
@@ -472,7 +474,7 @@ def load_event_files(main_dir, project_dir, subject, ses, task):
     
     data_events = sorted(glob.glob(r'{main_dir}/{project_dir}/{sub}/{ses}/func/{sub}_{ses}_task-{task}_*_events*.tsv'.format(
         main_dir=main_dir, project_dir=project_dir, sub=subject, ses = ses, task = task)))
-    
+
     assert len(data_events) > 0, "No event files found"
 
     return data_events
@@ -622,3 +624,47 @@ def downsample_vdm_to_tr(design_matrix, TR, original_sampling_rate=1000):
         downsampled[tr_idx] = np.mean(design_matrix[start_idx:end_idx], axis=0)
     
     return downsampled
+
+def remove_blinks(data, method, sampling_rate):
+    if method == 'pupil_off':
+        return blinkrm_pupil_off(data, sampling_rate)
+    elif method == 'pupil_off_smooth':
+        return blinkrm_pupil_off_smooth(data, sampling_rate)
+    else:
+        print("No blink removal method specified")
+        return data
+
+def drift_correction(data, method, fixation_periods):
+    from statistics import median
+    if method == "linear":
+        return detrend(data, type='linear')
+    elif method == 'median':
+        fixation_median = median([item for row in fixation_periods for item in row])
+        return np.array([elem - fixation_median for elem in data])
+    else:
+        print("No drift correction method specified")
+        return data
+
+def interpolate_nans(data):
+    return interpol_nans(data)
+
+def normalize_data(data):
+    from sklearn.preprocessing import MinMaxScaler
+    print('- normalizing pupil data')
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    return scaler.fit_transform(data.reshape(-1, 1)).flatten()
+
+def downsample_data(data, original_rate, target_rate):
+    return downsample_to_targetrate(data, original_rate, target_rate)
+
+def apply_smoothing(data, method, settings):
+    if method == 'moving_avg':
+        sampling_rate = settings["eyetrack_sampling"]
+        window = settings["window"]
+        return moving_average_smoothing(data, sampling_rate, window)
+    elif method == 'gaussian':
+        sigma = settings.get("sigma")
+        return gaussian_smoothing(data, 'x_coordinate', sigma)
+    else:
+        print(f"Unknown smoothing method: {method}")
+        return data
