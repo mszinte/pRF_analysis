@@ -1,6 +1,6 @@
 session:
   description: "Session of the task"
-  value: "ses-01"
+  value: "ses-02"
 
 eye:
   description: "Only left eye (eye1) recorded. According to BIDS standards"

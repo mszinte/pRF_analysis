@@ -41,7 +41,6 @@ deb = ipdb.set_trace
 # Imports
 import os
 import sys
-import json
 import pandas as pd
 
 # Plotly imports
@@ -323,7 +322,7 @@ for tasks in group_tasks :
                                                )
                             
                             for row_idx, line_label in enumerate(plot_groups):  
-                                for col_idx, roi in enumerate(line_label):      
+                                for col_idx, roi in enumerate(line_label):    
                                     df_roi = df_active_vertex_roi.loc[(df_active_vertex_roi['roi'] == roi) & 
                                                                           (df_active_vertex_roi['categorie'] == categorie)].sort_values(by='median', 
                                                                                                                                             ascending=True)

@@ -218,7 +218,7 @@ for tasks in group_tasks :
     
                     # Median across subjects
                     # Active Vertex roi
-                    # -----------------
+                    # -----------------                  
                     df_active_vertex_roi_median_df = df_active_vertex_roi.groupby([rois_type,'categorie'], sort=False).median(numeric_only=True).reset_index().rename(columns={'percentage_active': 'median'})
                     df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.025, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
                     df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
@@ -227,6 +227,19 @@ for tasks in group_tasks :
                                                                  df_active_vertex_roi_ci_low_df.drop(columns=[rois_type, 'categorie']), 
                                                                  df_active_vertex_roi_ci_high_df.drop(columns=[rois_type, 'categorie'])], 
                                                                 axis=1).reset_index(drop=True)
+                    
+                    # Add roi column for roi_mmp table
+                    roi_to_group = {
+                        roi: key
+                        for key, values in analysis_info['rois-group-mmp'].items()
+                        for roi in values
+                    }
+                    
+                    if 'roi' not in group_active_vertex_roi_melt_df.columns and 'roi_mmp' in group_active_vertex_roi_melt_df.columns:
+                        group_active_vertex_roi_melt_df['roi'] = (
+                            group_active_vertex_roi_melt_df['roi_mmp']
+                            .map(roi_to_group))
+                    
                     # Export DF 
                     fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                         intertask_group, preproc_prep, filtering,
@@ -236,7 +249,7 @@ for tasks in group_tasks :
                     tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
                         tsv_dir, subject, fn_spec, rois_type)
                     print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
-                group_active_vertex_roi_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
+                    group_active_vertex_roi_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
                 
                    
 # # Define permission cmd
