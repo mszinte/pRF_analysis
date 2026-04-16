@@ -87,7 +87,7 @@ mkdir -p "$OUT_DIR"
 	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
 	    	-method MEAN -only-numeric -exclude-outliers 3 3;
 
-		# Parcellate targets (using -legacy-mode to override missing data in sub-25 parcel 6mp)
+		# Parcellate targets using -legacy-mode (just to check if different behavior on sub-25 mPCS)
 	    wb_command -cifti-parcellate \
 	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
 	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
@@ -134,6 +134,6 @@ mkdir -p "$OUT_DIR"
 
 # Grant permissions to output files
 chmod -Rf 771 "$OUT_DIR"
-chgrp -Rf 771 "$OUT_DIR"
+chgrp -Rf 327 "$OUT_DIR"
 
 done

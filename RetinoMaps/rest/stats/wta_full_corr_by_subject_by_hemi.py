@@ -10,8 +10,9 @@ Written to run the same pipeline as with Nilearn outputs
 Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: 
-sys.argv[4]: server group (e.g. 327)
+sys.argv[3]: server group (e.g. 327)
+sys.argv[4]: server project (eg b327)
+sys.argv[5]: grab legacy outputs or default
 -----------------------------------------------------------------------------------------
 Output(s):
 TSV to import into the generate workbench dlabel file scripts
