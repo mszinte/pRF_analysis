@@ -103,12 +103,10 @@ for task in tasks :
     dfs_runs = [pd.read_csv(run, sep="\t") for run in data_events]
     all_run_durations = [np.cumsum(dfs['duration'] * 1000) for dfs in dfs_runs]
 
-
     precision_all_runs = []
     precision_one_thrs_list = []
 
     threshold = task_settings['threshold']
-
 
     for run in range(num_run):
             
@@ -141,10 +139,8 @@ for task in tasks :
         for count, (start, end) in enumerate(slice_indices_mov_seq, start=1):
         
             fig = plotly_layout_template(task, run)
-            try :
-                fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
-            except Exception:
-                deb()
+
+            fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 1], showlegend=False, line=dict(color='black', width=2)), row=1, col=1)
             fig.add_trace(go.Scatter(y=pred_x_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=1, col=1)
             fig.add_trace(go.Scatter(y=eye_data_all_runs[run][start:end][:, 2], showlegend=False, line=dict(color='black', width=2)), row=2, col=1)
             fig.add_trace(go.Scatter(y=pred_y_intpl[start:end], showlegend=False, line=dict(color='blue', width=2)), row=2, col=1)
