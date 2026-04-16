@@ -773,7 +773,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     # bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
-    ecc_pcm_axis = figure_info['ecc_size_axis']
+    ecc_pcm_axis = figure_info['ecc_pcm_axis']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
