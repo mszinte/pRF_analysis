@@ -125,6 +125,6 @@ mkdir -p "$OUT_DIR"
 
 # Grant permissions to output files
 chmod -Rf 771 "$OUT_DIR"
-chgrp -Rf 771 "$OUT_DIR"
+chgrp -Rf 327 "$OUT_DIR"
 
 done

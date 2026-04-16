@@ -3,16 +3,14 @@ Created on April 12, 2025
 
 wta_full_corr_by_subject_by_hemi.py
 -----------------------------------------------------------------------------------------
-Goal of the script:
-Compute winner take all on full correlation results from workbench outputs
-Written to run the same pipeline as with Nilearn outputs
-
------------------------------------------------------------------------------------------
 Goal:
-    Compute winner-take-all (WTA) from per-subject per-ROI TSV files
-    Outputs one winner table and one consistency table per hemisphere
+    Compute winner-take-all (WTA) from per-subject per-ROI TSV files.
+    Outputs one combined table per hemisphere containing:
+        - one row per subject   (winner seed label per parcel)
+        - one GROUP row         (modal winner across subjects per parcel)
+        - one CONSISTENCY row   (% of subjects matching the group winner)
 
-    Each TSV has:
+    Each input TSV has:
         - 106 rows : parcels in atlas-key order
                      rows  0–52  → right hemisphere (RH_PARCEL_ORDER, keys 1–163)
                      rows 53–105 → left  hemisphere (LH_PARCEL_ORDER, keys 181–343)
@@ -21,28 +19,26 @@ Goal:
 Pipeline per hemisphere:
     1. For each subject, load one TSV per seed/ROI and slice the hemi-specific rows.
     2. Stack into a (n_seeds × n_parcels_hemi) DataFrame.
-    3. Apply compute_winners() → winning seed label per parcel.
-    4. Collect across subjects + group → save winner table and consistency table.
+    3. apply compute_winners() → winning seed label per parcel.
+    4. Collect across subjects → compute GROUP (mode) and CONSISTENCY rows.
+    5. Save combined table.
 -----------------------------------------------------------------------------------------
+Inputs (sys.argv):
+    1: main project directory   (e.g. /scratch/mszinte/data)
+    2: project name/directory   (e.g. RetinoMaps)
+    3: server group             (e.g. 327)
+    4: server project           (e.g. b327)
+    5: parcellation mode:
+           "default"     → _parcellated.tsv
+           "legacy"      → _parcellated_legacy-mode.tsv
+           "no_outliers" → _parcellated_no_outliers.tsv
 
-Input(s):
-sys.argv[1]: main project directory
-sys.argv[2]: project name (correspond to directory)
-sys.argv[3]: server group (e.g. 327)
-sys.argv[4]: server project (eg b327)
-sys.argv[5]: grab legacy outputs or default
------------------------------------------------------------------------------------------
-Output(s):
-TSV to import into the generate workbench dlabel file scripts
------------------------------------------------------------------------------------------
+Output:
+    Per hemisphere, one CSV: subjects + GROUP + CONSISTENCY rows × parcel columns.
+
 To run:
-1. cd to function
-$ cd projects/pRF_analysis/RetinoMaps/rest/stats
-2. run python command
-
------------------------------------------------------------------------------------------
-Examples:
-
+    $ cd projects/pRF_analysis/RetinoMaps/rest/stats
+    $ python wta_full_corr_by_subject_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327 default
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -57,27 +53,61 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional
+from scipy import stats as scipy_stats
 
 # ============================================================
-# Personal imports — adjust base_dir as needed
+# Personal imports
 # ============================================================
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
 
 # ============================================================
-# Inputs
+# Parcellation mode → TSV filename suffix
 # ============================================================
-main_dir = sys.argv[1]
-project_dir = sys.argv[2]
-group = sys.argv[3]
-server = sys.argv[4]
-mode = sys.argv[5] # legacy, default
+MODE_SUFFIX: Dict[str, str] = {
+    "default":     "",
+    "legacy":      "_legacy-mode",
+    "no_outliers": "_no_outliers",
+}
+
+USAGE = (
+    "Usage: python wta_full_corr_by_subject_by_hemi.py "
+    "<main_dir> <project_dir> <group> <server> <mode>\n"
+    f"  <mode> must be one of: {', '.join(MODE_SUFFIX)}"
+)
 
 # ============================================================
-# Load project settings
+# Parse and validate arguments
 # ============================================================
-project_dir       = "RetinoMaps"
+if len(sys.argv) != 6:
+    print(f"ERROR: expected 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+    sys.exit(1)
+
+main_dir    = sys.argv[1]
+project_dir = sys.argv[2]
+group       = sys.argv[3]
+server      = sys.argv[4]
+mode        = sys.argv[5]
+
+if mode not in MODE_SUFFIX:
+    print(f"ERROR: unrecognised mode '{mode}'.\n  Accepted: {', '.join(MODE_SUFFIX)}\n{USAGE}")
+    sys.exit(1)
+
+tsv_suffix = MODE_SUFFIX[mode]
+
+print("=" * 80)
+print("WTA — full correlation (workbench parcellated TSVs)")
+print("=" * 80)
+print(f"  main_dir    : {main_dir}")
+print(f"  project_dir : {project_dir}")
+print(f"  group       : {group}")
+print(f"  server      : {server}")
+print(f"  mode        : {mode!r}  →  suffix: '_parcellated{tsv_suffix}.tsv'")
+
+# ============================================================
+# Load settings
+# ============================================================
 settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
@@ -87,17 +117,15 @@ subjects          = analysis_info["subjects"]
 # ============================================================
 # Paths
 # ============================================================
-main_data     = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
+main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
 output_folder = main_data / "group/91k/rest/wta/workbench"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
 # Atlas parcel keys
-# Both hemispheres share the same 53 parcel *names* in key-sorted order.
 # RH keys: 1–163   → TSV rows  0–52
 # LH keys: 181–343 → TSV rows 53–105
 # ============================================================
-
 R_KEYS: Dict[str, int] = {
     "V1":1,    "MST":2,   "V2":4,    "V3":5,    "V4":6,
     "V8":7,    "FEF":10,  "PEF":11,  "55b":12,  "V3A":13,
@@ -126,12 +154,11 @@ L_KEYS: Dict[str, int] = {
     "LO3":339, "VMV2":340,"VVC":343,
 }
 
-# Parcel names in key-sorted order — same sequence for both hemispheres
-RH_PARCEL_ORDER: List[str] = [name for name, _ in sorted(R_KEYS.items(), key=lambda x: x[1])]
-LH_PARCEL_ORDER: List[str] = [name for name, _ in sorted(L_KEYS.items(), key=lambda x: x[1])]
+RH_PARCEL_ORDER: List[str] = [n for n, _ in sorted(R_KEYS.items(), key=lambda x: x[1])]
+LH_PARCEL_ORDER: List[str] = [n for n, _ in sorted(L_KEYS.items(), key=lambda x: x[1])]
 
 N_PARCELS_PER_HEMI = 53
-N_PARCELS_TOTAL    = 106  # 53 RH + 53 LH per TSV
+N_PARCELS_TOTAL    = 106
 
 assert len(RH_PARCEL_ORDER) == N_PARCELS_PER_HEMI
 assert len(LH_PARCEL_ORDER) == N_PARCELS_PER_HEMI
@@ -139,9 +166,8 @@ assert RH_PARCEL_ORDER == LH_PARCEL_ORDER, (
     "Parcel name order differs between hemispheres — check key tables."
 )
 
-# Row slices within each 106-row TSV
 HEMI_ROW_SLICE: Dict[str, slice] = {
-    "rh": slice(0,  N_PARCELS_PER_HEMI),
+    "rh": slice(0, N_PARCELS_PER_HEMI),
     "lh": slice(N_PARCELS_PER_HEMI, N_PARCELS_TOTAL),
 }
 HEMI_PARCEL_ORDER: Dict[str, List[str]] = {
@@ -150,102 +176,81 @@ HEMI_PARCEL_ORDER: Dict[str, List[str]] = {
 }
 
 # ============================================================
-# ROI / cluster settings (from original script)
+# ROI / cluster settings
 # ============================================================
-clusters        = list(analysis_info["rois-drawn"])  # copy before reversing
-seed_to_parcels = analysis_info["rois-group-mmp"]    # {seed_name: [parcel_names]}
+clusters        = list(analysis_info["rois-drawn"])
+seed_to_parcels = analysis_info["rois-group-mmp"]   # {seed_name: [parcel_names]}
+clusters.reverse()                                   # mPCS first, same as original
 
-# Keep the same seed ordering as the original script (mPCS first)
-clusters.reverse()
-
-# 1-based integer label for each seed
 seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
-number_to_seed: Dict[int, str] = {v: k for k, v in seed_to_number.items()}
 
 # ============================================================
-# Helper: build TSV file path
+# Helpers
 # ============================================================
 
 def tsv_path(subject: str, hemi: str, roi: str) -> Path:
     """Return expected path for one subject / hemi / ROI TSV file."""
-    subj_dir = (
-        main_data / subject
-        / "91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
-    )
-    fname = (
+    subj_dir = main_data / subject / "91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
+    fname    = (
         f"{subject}_task-rest_space-fsLR_den-91k"
-        f"_desc-fisher-z_{hemi}_{roi}_parcellated_legacy-mode.tsv"
+        f"_desc-fisher-z_{hemi}_{roi}"
+        f"_parcellated{tsv_suffix}.tsv"
     )
     return subj_dir / fname
 
-# ============================================================
-# Helper: load seeds × parcels correlation matrix for one subject / hemi
-# ============================================================
 
 def load_corr_matrix(subject: str, hemi: str) -> Optional[pd.DataFrame]:
     """
-    Load one TSV per seed/ROI, slice the hemi-specific rows (53 of 106),
-    and stack into a DataFrame of shape (n_seeds × n_parcels_hemi).
+    Load one TSV per seed/ROI, slice the hemi-specific rows, and stack into
+    a DataFrame of shape (n_seeds × n_parcels_hemi).
 
-    Rows   = seed names  (from `clusters`)
-    Columns = parcel names (from HEMI_PARCEL_ORDER[hemi], key-sorted)
-
-    Returns None if any seed file is missing for this subject/hemi.
-    All missing files are reported before returning.
+    Returns None if any seed file is missing (all missing files are reported).
     """
     row_slice    = HEMI_ROW_SLICE[hemi]
     parcel_order = HEMI_PARCEL_ORDER[hemi]
-
     seed_series: Dict[str, pd.Series] = {}
-    missing_files: List[Path] = []
+    missing: List[Path] = []
 
     for seed in clusters:
         fpath = tsv_path(subject, hemi, seed)
-
         if not fpath.exists():
-            missing_files.append(fpath)
+            missing.append(fpath)
             continue
 
         raw = pd.read_csv(fpath, header=None, sep="\t")
-
         if raw.shape != (N_PARCELS_TOTAL, 1):
             raise ValueError(
                 f"Unexpected shape {raw.shape} in {fpath.name} "
                 f"(expected ({N_PARCELS_TOTAL}, 1))."
             )
 
-        hemi_values = raw.iloc[row_slice, 0].values  # 53 correlation values
-
         seed_series[seed] = pd.Series(
-            hemi_values,
+            raw.iloc[row_slice, 0].values,
             index=parcel_order,
             name=seed,
             dtype=float,
         )
 
-    if missing_files:
-        for f in missing_files:
+    if missing:
+        for f in missing:
             print(f"  WARNING [{subject} {hemi}]: missing {f.name}")
         return None
 
-    # (n_seeds × n_parcels) — rows are seeds, columns are parcels
     df_corr = pd.DataFrame(seed_series).T
     assert df_corr.shape == (len(clusters), N_PARCELS_PER_HEMI), (
         f"Unexpected matrix shape {df_corr.shape} for {subject} {hemi}."
     )
     return df_corr
 
-# ============================================================
-# WTA: compute winning seed per parcel
-# ============================================================
 
-def compute_winners(df_corr, seed_to_parcels, seed_to_number):
+def compute_winners(df_corr: pd.DataFrame) -> np.ndarray:
     """
-    df_corr : DataFrame (seeds x parcels)
+    Return a 1-D array of winning seed labels (1-based int) per parcel.
+    Self-seed parcels are masked to NaN before the argmax.
+    Parcels where all seeds are NaN receive NaN.
     """
     df = df_corr.copy()
 
-    # exclude self-seed parcels
     for seed, plist in seed_to_parcels.items():
         for p in plist:
             if seed in df.index and p in df.columns:
@@ -254,14 +259,58 @@ def compute_winners(df_corr, seed_to_parcels, seed_to_number):
     winners = []
     for parcel in df.columns:
         col = df[parcel]
-
-        # if entire column is NaN → no winner
-        if col.isna().all():
-            winners.append(np.nan)
-        else:
-            winners.append(seed_to_number[col.idxmax()])
+        winners.append(np.nan if col.isna().all() else seed_to_number[col.idxmax()])
 
     return np.array(winners)
+
+
+def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute and append two summary rows to the subject winner table:
+
+    GROUP row:
+        Modal winner per parcel across subjects (ignoring NaN).
+        Ties are broken by lowest seed number (scipy default behaviour).
+
+    CONSISTENCY row:
+        Percentage of subjects whose winner matches the GROUP winner.
+        NaN where the GROUP winner is NaN.
+
+    Parameters
+    ----------
+    subject_df : DataFrame, shape (n_subjects × n_parcels)
+        Integer winner labels (or NaN) per subject per parcel.
+
+    Returns
+    -------
+    DataFrame with GROUP and CONSISTENCY appended as the last two rows.
+    """
+    group_winners = []
+    for parcel in subject_df.columns:
+        col = subject_df[parcel].dropna()
+        if col.empty:
+            group_winners.append(np.nan)
+        else:
+            # keepdims=True avoids deprecation warning in newer scipy versions
+            group_winners.append(float(scipy_stats.mode(col, keepdims=True).mode[0]))
+
+    group_series = pd.Series(group_winners, index=subject_df.columns, name="GROUP")
+
+    consistency = []
+    for parcel in subject_df.columns:
+        gw = group_series[parcel]
+        if pd.isna(gw):
+            consistency.append(np.nan)
+        else:
+            consistency.append(
+                100.0 * (subject_df[parcel] == gw).sum() / len(subject_df)
+            )
+
+    consistency_series = pd.Series(consistency, index=subject_df.columns, name="CONSISTENCY_%")
+
+    return pd.concat(
+        [subject_df, group_series.to_frame().T, consistency_series.to_frame().T]
+    )
 
 # ============================================================
 # Main loop
@@ -270,15 +319,12 @@ def compute_winners(df_corr, seed_to_parcels, seed_to_number):
 for hemi in ("lh", "rh"):
     print(f"\n{'='*80}")
     print(f"Processing hemisphere: {hemi.upper()}")
-    print("="*80)
+    print("=" * 80)
 
-    parcel_order = HEMI_PARCEL_ORDER[hemi]
-    all_winners: List[pd.Series] = []
-    subject_ids: List[str]       = []
+    parcel_order  = HEMI_PARCEL_ORDER[hemi]
+    all_winners:  List[np.ndarray] = []
+    subject_ids:  List[str]        = []
 
-    # ------------------------------------------------------------------
-    # Subject-level WTA
-    # ------------------------------------------------------------------
     print("Processing subjects...")
     for subject in subjects:
         df_corr = load_corr_matrix(subject, hemi)
@@ -286,81 +332,29 @@ for hemi in ("lh", "rh"):
             print(f"  {subject}: SKIPPED")
             continue
 
-        winners = compute_winners(df_corr, seed_to_parcels, seed_to_number)
-        all_winners.append(winners)
+        all_winners.append(compute_winners(df_corr))
         subject_ids.append(subject)
         print(f"  {subject}: OK")
 
     if not all_winners:
-        print(f"  ERROR: No valid subjects for {hemi} — skipping hemisphere.")
+        print(f"  ERROR: no valid subjects for {hemi} — skipping hemisphere.")
         continue
 
-    # ------------------------------------------------------------------
-    # Group-level WTA
-    # ------------------------------------------------------------------
-    group_result_path = main_data / "group/91k/rest/full_corr/by_hemi"
-    group_csv         = (
-        group_result_path
-        / f"group_median_cluster_by_mmp-parcel_full_corr_{hemi}_by_hemi.csv"
-    )
+    # Build subject winner table and append GROUP + CONSISTENCY
+    subject_df  = pd.DataFrame(all_winners, index=subject_ids, columns=parcel_order)
 
-    if not group_csv.exists():
-        print(f"  WARNING: Group file not found: {group_csv}")
-        group_winners = pd.Series(np.nan, index=parcel_order)
-    else:
-        df_group      = pd.read_csv(group_csv, index_col=0)
-        group_winners = compute_winners(df_group, seed_to_parcels, seed_to_number)
-
-    all_winners.append(group_winners)
-    subject_ids.append("GROUP")
-
-    # ------------------------------------------------------------------
-    # Assemble winner table: rows = subjects + GROUP, columns = parcels
-    # ------------------------------------------------------------------
-    winners_df = pd.DataFrame(all_winners, index=subject_ids)
-
-    # Defensive: flag any parcels that dropped out
-    missing_parcels = set(parcel_order) - set(winners_df.columns)
+    missing_parcels = set(parcel_order) - set(subject_df.columns)
     if missing_parcels:
         print(f"  WARNING: parcels absent from winner table: {sorted(missing_parcels)}")
 
-    out_csv = output_folder / f"winning_seeds_by_subject_full_corr_{hemi}.csv"
-    winners_df.to_csv(out_csv)
-    print(f"\n  Saved winner table : {out_csv}")
+    combined_df = append_group_and_consistency(subject_df)
 
-    # ------------------------------------------------------------------
-    # Consistency: % of subjects matching the group winner, per parcel
-    # ------------------------------------------------------------------
-    subject_df = winners_df.drop(index="GROUP", errors="ignore")
+    out_csv = output_folder / f"winning_seeds_by_subject_full_corr_{hemi}_{mode}.csv"
+    combined_df.to_csv(out_csv)
+    print(f"\n  Saved: {out_csv}")
+    print(f"  Rows : {list(combined_df.index)}")
 
-    consistency_rows = []
-    for parcel in winners_df.columns:
-        gw = (
-            winners_df.loc["GROUP", parcel]
-            if "GROUP" in winners_df.index
-            else np.nan
-        )
-        if pd.isna(gw):
-            pct = np.nan
-        else:
-            pct = 100.0 * (subject_df[parcel] == gw).sum() / len(subject_df)
-
-        consistency_rows.append({
-            "Parcel":        parcel,
-            "Group_Winner":  gw,
-            "Consistency_%": pct,
-        })
-
-    consistency_df = (
-        pd.DataFrame(consistency_rows)
-        .sort_values("Consistency_%", ascending=False)
-    )
-
-    consistency_file = output_folder / f"winner_consistency_by_parcel_full_corr_{hemi}.csv"
-    consistency_df.to_csv(consistency_file, index=False)
-    print(f"  Saved consistency  : {consistency_file}")
-
-print("\n" + "="*80)
+print("\n" + "=" * 80)
 print("ALL HEMISPHERES COMPLETE")
-print("="*80)
+print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")

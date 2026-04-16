@@ -27,7 +27,7 @@ USER = os.environ["USER"]
 main_data = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
 seed_folder = main_data
 atlas_folder = main_data / "atlas"
-output_folder = main_data / "group/91k/rest/partial_corr"
+output_folder = main_data / "group/91k/rest/wta/workbench"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
