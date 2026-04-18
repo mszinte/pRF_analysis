@@ -181,3 +181,16 @@ distribution_screen_side:
 hot_zone_percent: 
   description: "Hot zone percent in the barycentre plot"
   value: 0.01
+
+# Correlation figures
+prf_tasks_eyes_names:
+  description: "Comparison groups of the concatenation of runs across the eye condition used to compute the correlation"
+  value: [['BarsBarsRingsWedgesRightEye', 'BarsBarsRingsWedgesLeftEye'],['BarsBarsRightEye', 'BarsBarsLeftEye'],['RingsWedgesRightEye', 'RingsWedgesLeftEye']]
+  
+corr_params:
+  description: "Parameters to correlate between amblyopic/right and fellow/left eye runs"
+  value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc', 'pcm_median']
+
+corr_bin_number:
+  description: "number of bining quartile to use in the paramete correlation plot"
+  value: 10
