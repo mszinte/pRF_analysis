@@ -167,7 +167,6 @@ print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
 print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
-deb() 
 
 # determine gaussian model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
