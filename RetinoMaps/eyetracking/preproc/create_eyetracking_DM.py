@@ -61,7 +61,6 @@ tasks = analysis_info['eye-tracking_task_names']
 prf_task_name = analysis_info['prf_task_names'][0]
 
 tasks.remove('rest')
-# tasks.remove('pRF')
 
 # Execption for subject 1 with no data for eye tracking
 if subject == 'sub-01':

@@ -136,8 +136,8 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics, CM  and GLM results for **sub-hcp1.6mm** and **group** [make_intertask_rois_fig_tsv.py](postproc/intertask/make_intertask_rois_fig_tsv.py) or [make_intertask_rois_fig_tsv_sbatch.py](postproc/intertask/make_intertask_rois_fig_tsv_sbatch.py)
 - [x] Make figure specific TSV with GLM results for active vertex for **sub-hcp1.6mm** and **group** [make_active_vert_fig_tsv.py](postproc/intertask/make_active_vert_fig_tsv.py)
 - [x] Make figure specific with GLM results for active vertex for **sub-hcp1.6mm** and **group** [make_active_vert_fig.py](postproc/intertask/make_active_vert_fig.py) 
-- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results for **sub-170k** and **group** [make_intertask_rois_fig.py](postproc/intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](postproc/intertask/make_intertask_rois_fig.sh)
-- [x] Make intertask statistical maps maps with pycortex  for **sub-170k** [pycortex_maps_intertask.py](postproc/intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](postproc/intertask/pycortex_maps_intertask.sh)
+- [x] Make ROIs figure of CSS pRF fit derivatives, statistics, CM and GLM results for **sub-hcp1.6mm** and **group** [make_intertask_rois_fig.py](postproc/intertask/make_intertask_rois_fig.py) or [make_intertask_rois_fig.sh](postproc/intertask/make_intertask_rois_fig.sh)
+- [x] Make intertask statistical maps maps with pycortex  for **sub-hcp1.6mm** [pycortex_maps_intertask.py](postproc/intertask/pycortex_maps_intertask.py) or [pycortex_maps_intertask.sh](postproc/intertask/pycortex_maps_intertask.sh)
 
 # Resting-state preprocessing
 ---
@@ -167,14 +167,14 @@ https://invibe.nohost.me/predicteye/
 
 # Eyetracking preprocessing 
 ---
-- [x] Generate experimental design matrix [create_eye_tracking_DM.py](../analysis_code/preproc/bids/create_eye_tracking_DM.py)
-- [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
+- [x] Generate experimental design matrix [create_eyetracking_DM.py](eyetracking/preproc/create_eyetracking_DM.py)
+- [x] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/preproc/eyetrack_preproc.py)
 
 # Eyetracking postprocessing
 ---
-- [ ] Extract trigger timestamps [extract_triggers.py](eyetracking/extract_triggers.py)
-- [ ] Extract saccades [extract_saccades.py](eyetracking/extract_saccades.py)
-- [ ] Create saccade model prediction timeseries [saccade_prediction.py](eyetracking/saccade_prediction.py)
+- [x] Extract trigger timestamps [extract_triggers.py](eyetracking/postproc/extract_triggers.py)
+- [x] Extract saccades [extract_saccades.py](eyetracking/postproc/extract_saccades.py)
+- [x] Create saccade model prediction timeseries [saccade_prediction.py](eyetracking/postproc/saccade_prediction.py)
 - [ ] Generate predictions timeseries and extract stats [generate_prediction.py](eyetracking/generate_prediction.py)
 - [ ] Create timeseries figures [timeseries_figures.py](eyetracking/timeseries_figures.py)
 - [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)

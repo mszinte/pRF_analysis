@@ -126,13 +126,11 @@ for tasks in group_tasks :
         if format_ == 'fsnative': 
             pycortex_subject = subject
             
-            # sub-02_task-Sac-Pur-pRF_hemi-L_fmriprep_dct_z-score_loo-avg_intertask.func.gii
             deriv_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_intertask.func.gii'.format(
                 intertask_deriv_dir, subject, intertask_group)
             deriv_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_intertask.func.gii'.format(
                 intertask_deriv_dir, subject, intertask_group)
             
-            # sub-02_task-pRF_hemi-R_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii
             prf_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(
                 prf_stats_dir, subject, prf_task_name)
             prf_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(

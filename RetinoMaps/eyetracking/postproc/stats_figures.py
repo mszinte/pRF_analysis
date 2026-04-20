@@ -22,7 +22,7 @@ group_{task}_threshold_ranking.pdf
 group_{task}_stats_figure.pdf
 -----------------------------------------------------------------------------------------
 To run:
-cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/
+cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/postproc
 python stats_figures.py /scratch/mszinte/data RetinoMaps group 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling
@@ -66,15 +66,15 @@ tasks = analysis_info['eye-tracking_task_names']
 prf_task_name = analysis_info['prf_task_names'][0]
 
 # General figure settings
-template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
-                      axes_width=2,
-                      axes_font_size=15,
-                      bg_col="rgba(255, 255, 255, 1)",
-                      font='Arial',
-                      title_font_size=15,
-                      plot_width=1.5)
+# template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+#                       axes_width=2,
+#                       axes_font_size=15,
+#                       bg_col="rgba(255, 255, 255, 1)",
+#                       font='Arial',
+#                       title_font_size=15,
+#                       plot_width=1.5)
 
-fig_template = plotly_template(template_specs)
+# fig_template = plotly_template(template_specs)
 
 colormap_subject_dict = {'sub-01': '#AA0DFE', 
                          'sub-02': '#3283FE', 
@@ -110,13 +110,13 @@ for task in tasks:
     task_settings_path = os.path.join(base_dir, "eye-tracking_{}.yml".format(task))
     task_settings = load_settings([task_settings_path, eye_tracking_settings_path, settings_path])[0] 
     
-    eye = task_settings_path['eye']
-    num_run = task_settings_path['num_run']
-    eyetracking_sampling = task_settings_path['eyetrack_sampling']
-    screen_size = task_settings_path['screen_size']
-    ppd = task_settings_path['ppd']
+    eye = task_settings['eye']
+    num_run = task_settings['num_run']
+    eyetracking_sampling = task_settings['eyetrack_sampling']
+    # screen_size = task_settings['screen_size']
+    ppd = task_settings['ppd']
     
-    threshold = task_settings_path['threshold']
+    threshold = task_settings['threshold']
            
     precision_data = {}
     for subject_to_group in subjects:
@@ -153,7 +153,7 @@ for task in tasks:
     fig.update_xaxes(showline=True, range=[0,6])
     fig.update_yaxes(showline=True, range=[0,1])
     
-    fig.update_layout(template=fig_template, 
+    fig.update_layout(template='simple_white', 
                       height=800, 
                       width=400)
                 
