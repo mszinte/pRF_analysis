@@ -167,17 +167,17 @@ https://invibe.nohost.me/predicteye/
 
 # Eyetracking preprocessing 
 ---
-- [x] Generate experimental design matrix [create_eye_tracking_DM.py](../analysis_code/preproc/bids/create_eye_tracking_DM.py)
-- [ ] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/eyetrack_preproc.py)
+- [x] Generate experimental design matrix [create_eyetracking_DM.py](eyetracking/preproc/create_eyetracking_DM.py)
+- [x] Eyetrack preprocessing [eyetrack_preproc.py](eyetracking/preproc/eyetrack_preproc.py)
 
 # Eyetracking postprocessing
 ---
-- [ ] Extract trigger timestamps [extract_triggers.py](eyetracking/extract_triggers.py)
-- [ ] Extract saccades [extract_saccades.py](eyetracking/extract_saccades.py)
-- [ ] Create saccade model prediction timeseries [saccade_prediction.py](eyetracking/saccade_prediction.py)
-- [ ] Generate predictions timeseries and extract stats [generate_prediction.py](eyetracking/generate_prediction.py)
-- [ ] Create timeseries figures [timeseries_figures.py](eyetracking/timeseries_figures.py)
-- [ ] Create stats figure [stats_figures.py](eyetracking/stats_figures.py)
+- [x] Extract trigger timestamps [extract_triggers.py](eyetracking/postproc/extract_triggers.py)
+- [x] Extract saccades [extract_saccades.py](eyetracking/postproc/extract_saccades.py)
+- [x] Create saccade model prediction timeseries [saccade_prediction.py](eyetracking/postproc/saccade_prediction.py)
+- [x] Generate predictions timeseries and extract stats [generate_prediction.py](eyetracking/postproc/generate_prediction.py)
+- [x] Create timeseries figures [timeseries_figures.py](eyetracking/postproc/timeseries_figures.py)
+- [x] Create stats figure [stats_figures.py](eyetracking/postproc/stats_figures.py)
 
 # pRF behaviour
 ---

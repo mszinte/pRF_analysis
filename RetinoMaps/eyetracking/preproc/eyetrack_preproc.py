@@ -23,7 +23,7 @@ Cleaned timeseries data per run
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/eyetracking/preproc/
-python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-02 327
+python eyetrack_preproc.py /scratch/mszinte/data RetinoMaps sub-01 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -57,7 +57,13 @@ settings = load_settings([eye_tracking_settings_path, settings_path])
 analysis_info = settings[0]  
 
 tasks = analysis_info['eye-tracking_task_names']
+prf_task_name = analysis_info['prf_task_names'][0]
 
+# Execption for subject 1 with no data for eye tracking
+if subject == 'sub-01':
+    if prf_task_name in tasks:
+        tasks.remove(prf_task_name)
+        
 # Prepare save directory 
 file_dir_save = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking/timeseries"
 os.makedirs(file_dir_save, exist_ok=True)
@@ -128,7 +134,7 @@ for task in tasks :
     
         print(f"Run {run_idx+1} preprocessed and saved at {tsv_file_path}")
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
