@@ -18,7 +18,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 Example:
 cd projects/pRF_analysis/RetinoMaps/rest/resampling
-python submit_resample_job.py /scratch/mszinte/data RetinoMaps 327 b327 adap-bary 2:00:00
+python submit_resample_job.py /scratch/mszinte/data RetinoMaps 327 b327 adap-bary 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
