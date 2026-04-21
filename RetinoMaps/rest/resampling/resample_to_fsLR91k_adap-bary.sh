@@ -14,8 +14,7 @@
 # because it should use all data while downsampling, unlike BARYCENTRIC
 # Note you need to include the largest flag
 # Unless you don't want to end up with discrete values in the 1-7 range
-# Usage:
-# ./resample_to_fsLR91k_adap-bary.sh -largest
+# Usage: checkout submit_resample_job.py in this folder
 #####################################################
 
 # Parse command-line arguments
@@ -137,16 +136,7 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
 			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
 
-		### 6. Create two additional files: saccade minus pursuit, pursuit minus saccade
-		# wb_command -cifti-merge out.dtseries.nii -cifti first.dtseries.nii -index 1 -cifti second.dtseries.nii;
-
-		### 7. Convert back to label files (the empty string "" tells the command to take whatever is non-empty in the metric file)
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.label.gii";
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.label.gii";
-
-		### Next we'll rename the label keys to make it nicer (this part didn't work as expected - probably need to use additional flags)
+		### 6. Convert back to label files (we'll rename the label keys to make it nicer)
 		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.shape.gii" \
 			"$ATLAS/pRF-Sac-Pur_label_import.txt" "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.label.gii";
 		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" \
