@@ -1,10 +1,12 @@
 #!/bin/bash
 
 #####################################################
+# Goal of the script:
+# Compute full correlation by vertex intra-hemispherically using Connectome Workbench v. 2.1
+# Outputs are parcellated using the mean method and masked for supplementary info visualizations
+# 
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
-
-# Remember to source your bashrc before running
 
 # Define some paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
@@ -19,7 +21,7 @@ OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/workbench_full_corr/by_h
 
 ## Make sure all files are accessible
 chmod -Rf 771 "$SEED_DIR"
-chgrp -Rf 771 "$SEED_DIR"
+chgrp -Rf 327 "$SEED_DIR"
 
 mkdir -p "$OUT_DIR"
 
