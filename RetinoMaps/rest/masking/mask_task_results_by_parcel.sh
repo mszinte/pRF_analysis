@@ -1,15 +1,17 @@
 #!/bin/bash
 
 #####################################################
+# Goal: break down intertask results by MMP1 parcel
+# Not used, only there as an additional option
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
 # Get the paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1_clusters/parcels"
+ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/parcels"
 
 # Subjects
-SUBJECTS=(01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25 170k)
+SUBJECTS=(01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25)
 
 # MMP1 parcels within the macro-regions
 ROIS=(
@@ -38,18 +40,18 @@ for subj in "${SUBJECTS[@]}"; do
     hemi=${roi:0:1}   # "L" or "R"
     
     if [ "$hemi" == "L" ]; then
-      INPUT="$OUT_DIR/target_91k/sub-${subj}_91k_intertask_Sac_Pur_lh_vision-pursuit-saccade.shape.gii"
+      INPUT="$OUT_DIR/target_91k/sub-${subj}_91k_intertask_Sac-Pur-pRF_lh_largest.shape.gii"
     else
-      INPUT="$OUT_DIR/target_91k/sub-${subj}_91k_intertask_Sac_Pur_rh_vision-pursuit-saccade.shape.gii"
+      INPUT="$OUT_DIR/target_91k/sub-${subj}_91k_intertask_Sac-Pur-pRF_rh_largest.shape.gii"
     fi
 
     wb_command -metric-mask \
       "$INPUT" \
       "$ATLAS/${roi}.shape.gii" \
-      "$OUT_DIR/sub-${subj}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${roi}.shape.gii"
+      "$OUT_DIR/sub-${subj}_91k_intertask_Sac-Pur-pRF_${roi}.shape.gii"
   done
 done
 
 # Fix permissions
 chmod -Rf 771 "$OUT_DIR"
-chgrp -Rf 771 "$OUT_DIR"
+chgrp -Rf 327 "$OUT_DIR"
