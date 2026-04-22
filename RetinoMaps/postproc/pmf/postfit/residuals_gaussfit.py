@@ -17,14 +17,14 @@ fit tester numpy arrays
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/postfit
 2. run python command
-python prf_gaussfit.py [main directory] [project name] [subject name] 
+python residuals_gaussfit.py [main directory] [project name] [subject name] 
                        [inout file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
-python pmf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/postfit
+python residuals_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -112,10 +112,10 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', 'residuals-gauss_fit')
+gauss_fit_fn = gauss_fit_fn.replace('residuals', 'residuals-gauss_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', 'residuals-gauss_pred')
+gauss_pred_fn = gauss_pred_fn.replace('residuals', 'residuals-gauss_pred')
 
 
 # Find vdm: check subject-specific directory first, then general vdm directory
@@ -137,7 +137,7 @@ else:
 print(f"Loading VDM from: {vdm_fn}")
 vdm = np.load(vdm_fn)
 
-
+deb()
 # define model parameter grid range
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
@@ -152,6 +152,7 @@ valid_vertices = ~np.isnan(raw_data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
+deb()
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,

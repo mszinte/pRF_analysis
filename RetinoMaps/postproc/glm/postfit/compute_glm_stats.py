@@ -75,6 +75,7 @@ fdr_alpha = analysis_info['fdr_alpha']
 extensions = analysis_info['extensions']
 maps_names = analysis_info['maps_names_css_stats']
 averaging_templates = analysis_info['averaging_templates']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -236,17 +237,17 @@ elif subject == 'template_avg':
                 
             # Export results
             template_stats_dir = "{}/{}/derivatives/pp_data/{}/170k/glm/glm_derivatives/".format(
-                    main_dir, project_dir, averaging_template_format)
+                    main_dir, project_dir, pycortex_subject_template)
             os.makedirs(template_stats_dir, exist_ok=True)
     
-            template_stat_fn = "{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(template_stats_dir, averaging_template_format, task)
+            template_stat_fn = "{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii".format(template_stats_dir, pycortex_subject_template, task)
             print("save: {}".format(template_stat_fn))
             template_stat_img = make_surface_image(data=data_stat_median, 
                                                    source_img=img, 
                                                    maps_names=maps_names)
             nb.save(template_stat_img, template_stat_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+# os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))

@@ -25,7 +25,7 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/amsterdam24/postproc/prf/fit
-python vdm_builder_prf.py /scratch/mszinte/data RetinoMaps 327
+python vdm_builder_prf.py /scratch/mszinte/data amsterdam24 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -68,8 +68,6 @@ prf_task_names = analysis_info['prf_task_names']
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0]
 vdm_height = analysis_info['vdm_size_pix'][1]
-
-deb()
 
 for prf_task_name in prf_task_names:
     
@@ -118,7 +116,7 @@ for prf_task_name in prf_task_names:
                                                    interpolation=cv2.INTER_NEAREST)
             
             # fill VDM matrix
-            vdm_mat[...,vdm_idx] = binary_reshape_resize_mat
+            vdm_mat[..., vdm_idx] = binary_reshape_resize_mat
             vdm_idx += 1
             
         vid_idx += 1

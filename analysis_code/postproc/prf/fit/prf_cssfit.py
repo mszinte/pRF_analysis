@@ -82,13 +82,19 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
+# gauss fit parameters
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
-n_th = analysis_info['n_th']
-rsq_iterative_th = analysis_info['rsq_iterative_th']
+size_bounds = analysis_info['size_th']
+prf_amplitude_bounds = analysis_info['prf_amplitude_bounds']
+prf_baseline_bounds = analysis_info['prf_baseline_bounds']
+hrf_1_bounds = analysis_info['hrf_1_bounds']
+hrf_2_bounds = analysis_info['hrf_2_bounds']
+# css fit parameters 
 css_grid_nr = analysis_info['css_grid_nr']
-size_th = analysis_info['size_th']
-prf_amp_th = analysis_info['prf_amp_th']
+css_exponent_bounds = analysis_info['n_th']
+rsq_iterative_th = analysis_info['rsq_iterative_th']
+
 
 # Load screen settings from subject dependend task-events.json
 prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
@@ -132,7 +138,7 @@ vdm = np.load(vdm_fn)
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
-exponent_css_grid = np.linspace(n_th[0], n_th[1], css_grid_nr)
+exponent_css_grid = np.linspace(css_exponent_bounds[0], css_exponent_bounds[1], css_grid_nr)
 
 # Load data
 img, data = load_surface(fn=input_fn)
@@ -165,14 +171,15 @@ print("==============================\n")
 
 # Gauss fit
 # ---------
-gauss_bounds = [(-max_ecc_size, max_ecc_size),  # x
-                (-max_ecc_size, max_ecc_size),  # y
-                (size_th[0], size_th[1]),  # prf size
-                (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
-                (-2, 2),# bold baseline
-                (0, 10),  # hrf1
-                (0, 0) # hrf2
-                ]  
+gauss_bounds = [
+    (-max_ecc_size, max_ecc_size),                     # x
+    (-max_ecc_size, max_ecc_size),                     # y
+    (size_bounds[0], size_bounds[1]),                  # sigma
+    (prf_amplitude_bounds[0], prf_amplitude_bounds[1]),# amplitude
+    (prf_baseline_bounds[0], prf_baseline_bounds[1]),  # baseline
+    (hrf_1_bounds[0], hrf_1_bounds[1]),                # hrf1
+    (hrf_2_bounds[0], hrf_2_bounds[1]),                # hrf2
+] 
 
 print("\n===== PRF FIT BOUNDS =====")
 print("Gauss bounds:")
@@ -186,15 +193,16 @@ print("  hrf2 range:", gauss_bounds[6])
 
 # CSS fit
 # -------
-css_bounds = [(-max_ecc_size, max_ecc_size),  # x
-              (-max_ecc_size, max_ecc_size),  # y
-              (size_th[0], size_th[1]),  # prf size
-              (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
-              (-2, 2),  # bold baseline 
-              (n_th[0], n_th[1]),  # n
-              (0, 10),  # hrf1
-              (0, 0) # hrf2
-              ] 
+css_bounds = [
+    (-max_ecc_size, max_ecc_size),  # x
+    (-max_ecc_size, max_ecc_size),  # y
+    (size_bounds[0], size_bounds[1]),
+    (prf_amplitude_bounds[0], prf_amplitude_bounds[1]),
+    (prf_baseline_bounds[0], prf_baseline_bounds[1]),
+    css_exponent_bounds,            # n
+    (hrf_1_bounds[0], hrf_1_bounds[1]),
+    (hrf_2_bounds[0], hrf_2_bounds[1])
+]
 
 print("\nCSS bounds:")
 print("  x range:", css_bounds[0])
@@ -206,6 +214,7 @@ print("  n exponent range:", css_bounds[5])
 print("  hrf1 range:", css_bounds[6])
 print("  hrf2 range:", css_bounds[7])
 print("==========================\n")
+
 
 # Define gauss model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)

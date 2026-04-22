@@ -24,7 +24,8 @@ To run:
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_stats.py /scratch/mszinte/data RetinoMaps sub-170k 327
+python compute_css_stats.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_css_stats.py /scratch/mszinte/data amblyo7T_prf sub-04 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -44,7 +45,6 @@ import os
 import re
 import sys
 import glob
-import yaml
 import numpy as np
 import nibabel as nb
 from scipy import stats
@@ -80,6 +80,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+averaging_templates = analysis_info['averaging_templates']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -92,8 +93,8 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 # Define preprocessing folder
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
-# sub-170k exeption
-if subject != 'sub-170k':
+# template_avg exeption
+if subject != 'template_avg':
     for avg_method in avg_methods:
         for format_, extension in zip(formats, extensions): 
             
@@ -111,9 +112,8 @@ if subject != 'sub-170k':
                 print(f'{avg_method} - {format_} - {prf_task_name}')
                 
                 # Find pRF func/pred files
-                prf_pred_fns = glob.glob('{}/*task-{}*_{}*_prf-css_pred.{}'.format(
+                prf_pred_fns = glob.glob('{}/*task-{}_*_{}*_prf-css_pred.{}'.format(
                     prf_fit_dir, prf_task_name, avg_method, extension))
-    
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
@@ -122,7 +122,7 @@ if subject != 'sub-170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, loo_number, extension))[0]
                         elif format_ == '170k':
-                            prf_bold_fn = glob.glob('{}/*task-{}*_loo-{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, loo_number, extension))[0]
                     else:
                         if format_ == 'fsnative': 
@@ -130,7 +130,7 @@ if subject != 'sub-170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, hemi, avg_method, extension))[0]
                         elif format_ == '170k':
-                            prf_bold_fn = glob.glob('{}/*task-{}*_{}_bold.{}'.format(
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold.{}'.format(
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
                         
                     # load data  
@@ -142,20 +142,9 @@ if subject != 'sub-170k':
                     # Compute linear regression 
                     results = linear_regression_surf(bold_signal=bold_data, 
                                                      model_prediction=pred_data, 
+                                                     alternative='two-sided',
                                                      correction='fdr_tsbh', 
                                                      alpha=fdr_alpha)
-
-                    
-                    # Compute two-sided corrected p-values
-                    t_statistic = results[slope_idx, :] / results[stderr_idx, :]
-                    degrees_of_freedom = np.nanmax(results[trs_idx, :]) - 2
-                    p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-                    corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                               correction='fdr_tsbh', 
-                                                               alpha=fdr_alpha)
-                    results[pvalue_idx, :] = p_values
-                    results[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-                    results[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                     
                     # Save results
                     prf_stats_fn = prf_pred_fn.split('/')[-1].replace('prf-css_pred', 'prf-css_stats')
@@ -171,7 +160,7 @@ if subject != 'sub-170k':
                     print('Computing median across LOO')
 
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}*loo-avg-*_prf-css_stats.{extension}")
+                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}_*loo-avg-*_prf-css_stats.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
@@ -202,7 +191,16 @@ if subject != 'sub-170k':
                             # Recalculate p-values for median data
                             t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
                             degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
+
+                            # Recalculate p-values for median data
+                            print(f"slope - nan: {np.isnan(loo_prf_stats[slope_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[slope_idx,:]).sum()}")
+                            print(f"stderr - nan: {np.isnan(loo_prf_stats[stderr_idx,:]).sum()}, zeros: {(loo_prf_stats[stderr_idx,:]==0).sum()}, finite: {np.isfinite(loo_prf_stats[stderr_idx,:]).sum()}")
+                            print(f"trs - nan: {np.isnan(loo_prf_stats[trs_idx,:]).sum()}, finite: {np.isfinite(loo_prf_stats[trs_idx,:]).sum()}")
+                            print(f"degrees_of_freedom: {degrees_of_freedom}")
+                            print(f"t_statistic - nan: {np.isnan(t_statistic).sum()}, inf: {np.isinf(t_statistic).sum()}, finite: {np.isfinite(t_statistic).sum()}")
+
                             p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                            print(f"p_values - nan: {np.isnan(p_values).sum()}, finite: {np.isfinite(p_values).sum()}")
                             corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
                             
                             # Update median data with recalculated p-values
@@ -215,50 +213,51 @@ if subject != 'sub-170k':
                             nb.save(loo_prf_stats_img, loo_prf_stats_fn)
                             print(f"Saving median: {loo_prf_stats_fn}")
 
-# Sub-170k median
-elif subject == 'sub-170k':
-    print('sub-170, computing median prf stats across subject...')
+# template_avg median
+elif subject == 'template_avg':
+    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+        print('{}, Median corr across subject...'. format(averaging_template_name))
     
-    for prf_task_name in prf_task_names:
-        
-        for avg_method in avg_methods:
+        for prf_task_name in prf_task_names:
             
-            # find all the subject prf stats
-            prf_stats_fns = []
-            for subject in subjects: 
-                prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir, subject)
-                prf_stats_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii".format(
-                    prf_deriv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)]
-    
-            # Computing  across subject
-            img, data_stat_median = median_subject_template(fns=prf_stats_fns)
-            
-            # Compute two sided corrected p-values
-            t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
-            degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-            corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                       correction='fdr_tsbh', 
-                                                       alpha=fdr_alpha)
-            data_stat_median[pvalue_idx, :] = p_values
-            data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+            for avg_method in avg_methods:
                 
-            # Export results
-            sub_170k_stats_dir = "{}/{}/derivatives/pp_data/sub-170k/170k/prf/prf_derivatives".format(
-                    main_dir, project_dir)
-            os.makedirs(sub_170k_stats_dir, exist_ok=True)
-            
-            sub_170k_stat_fn = "{}/sub-170k_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii".format(
-                sub_170k_stats_dir, prf_task_name, 
-                preproc_prep, filtering, normalization, avg_method)
-            print("saving: {}".format(sub_170k_stat_fn))
-            sub_170k_stat_img = make_surface_image(data=data_stat_median, 
-                                                   source_img=img, 
-                                                   maps_names=maps_names)
-            nb.save(sub_170k_stat_img, sub_170k_stat_fn)
+                # find all the subject prf stats
+                prf_stats_fns = []
+                for subject in subjects: 
+                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format)
+                    prf_stats_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii".format(
+                        prf_deriv_dir, subject, prf_task_name,
+                        preproc_prep, filtering, normalization, avg_method)]
+        
+                # Computing  across subject
+                img, data_stat_median = median_subject_template(fns=prf_stats_fns)
+                
+                # Compute two sided corrected p-values
+                t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
+                degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
+                p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                           correction='fdr_tsbh', 
+                                                           alpha=fdr_alpha)
+                data_stat_median[pvalue_idx, :] = p_values
+                data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+                data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                    
+                # Export results
+                template_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
+                        main_dir, project_dir, averaging_template_name, averaging_template_format)
+                os.makedirs(template_stats_dir, exist_ok=True)
+                
+                template_stat_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii".format(
+                    template_stats_dir, averaging_template_name, prf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
+                print("saving: {}".format(template_stat_fn))
+                template_stat_img = make_surface_image(data=data_stat_median, 
+                                                       source_img=img, 
+                                                       maps_names=maps_names)
+                nb.save(template_stat_img, template_stat_fn)
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

@@ -10,9 +10,13 @@ eyetrack_sampling:
   description: 'Sampling rate of the SR research eye-tracker'
   value: 1000
 
+num_seq:
+  description: "Number of sequences in the task design"
+  value: 1
+
 num_run:
   description: ""
-  value: 5
+  value: 2
 
 first_trial_pattern:
   description: "String specifiying first trial onset in eye tracking message files"

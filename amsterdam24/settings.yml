@@ -52,6 +52,10 @@ TRs:
 
 starting_TR: 
   description: "TR in which aquisition started"
+  value: 0
+
+ending_TR: 
+  description: "Number of TRs to cut from the end, null to keep all"
   value: 3
   
 # Preprocessing
@@ -61,7 +65,7 @@ preproc_prep:
 
 flattening_method:
   description: "Method use to obtain cortical flat maps"
-  value: "autoflatten"
+  value: "autoflatten_freesurfer"
   levels: ["autoflatten", "mrisflatten", "autoflatten_freesurfer"]
   level-description: 
     autoflatten: "Use autoflatten software for automatic flattening using pyflatten"

@@ -445,103 +445,79 @@ def replace_blinks_with_nan(samples, sampling_rate):
     return cleaned_samples
 
 
-def plotly_layout_template(task,run):
+def plotly_layout_template(task, run, duration_seconds):
     from plotly.subplots import make_subplots
     import plotly.graph_objects as go
     import numpy as np
-
     # Horizontal eye trace
-    screen_val =  12.5
-    ymin1,ymax1,y_tick_num1 = -screen_val,screen_val,11
-    y_tick1 = np.linspace(ymin1,ymax1,y_tick_num1)
-    xmin1,xmax1,x_tick_num1 = 0,1,5
-    x_tick1 = np.linspace(xmin1,xmax1,x_tick_num1)
-
+    screen_val = 12.5
+    ymin1, ymax1, y_tick_num1 = -screen_val, screen_val, 11
+    y_tick1 = np.linspace(ymin1, ymax1, y_tick_num1)
+    xmin1, xmax1, x_tick_num1 = 0, duration_seconds, 5
+    x_tick1 = np.linspace(xmin1, xmax1, x_tick_num1)
     # Vertical eye trace
-    ymin2,ymax2,y_tick_num2 = -screen_val,screen_val,11
-    y_tick2 = np.linspace(ymin2,ymax2,y_tick_num2)
-    xmin2,xmax2,x_tick_num2 = 0,1,5
-    x_tick2 = np.linspace(xmin2,xmax2,x_tick_num2)
-
-    radius = {'rads': [0,2.5,5,7.5,10,0]}  
-    theta = np.linspace(0, 2*np.pi, 100)
-
+    ymin2, ymax2, y_tick_num2 = -screen_val, screen_val, 11
+    y_tick2 = np.linspace(ymin2, ymax2, y_tick_num2)
+    xmin2, xmax2, x_tick_num2 = 0, duration_seconds, 5
+    x_tick2 = np.linspace(xmin2, xmax2, x_tick_num2)
+    radius = {'rads': [0, 2.5, 5, 7.5, 10, 0]}
+    theta = np.linspace(0, 2 * np.pi, 100)
     # Constants
     axis_width = 1
-
     # Create subplots with modified layout
     fig = make_subplots(
         rows=2, cols=3,
         column_widths=[0.5, 0.5, 0],
-        horizontal_spacing = 0.1,
-        specs=[[{}, {"rowspan": 2},{'type': 'polar'}],
-            [{}, None, None]]
+        horizontal_spacing=0.1,
+        specs=[[{}, {"rowspan": 2}, {'type': 'polar'}],
+               [{}, None, None]]
     )
-
-    # Plot horizontal eye position
+    # Plot horizontal eye position reference lines
     for rad in radius['rads']:
         fig.add_trace(
-            go.Scatter(x=x_tick1, y=x_tick1*0+rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
+            go.Scatter(x=x_tick1, y=x_tick1 * 0 + rad, mode='lines', line=dict(color='black', width=axis_width * 0.5)),
             row=1, col=1
         )
         fig.add_trace(
-            go.Scatter(x=x_tick1, y=x_tick1*0-rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
+            go.Scatter(x=x_tick1, y=x_tick1 * 0 - rad, mode='lines', line=dict(color='black', width=axis_width * 0.5)),
             row=1, col=1
         )
-
-    # Plot vertical eye position
+    # Plot vertical eye position reference lines
     for rad in radius['rads']:
         fig.add_trace(
-            go.Scatter(x=x_tick2, y=x_tick2*0+rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
+            go.Scatter(x=x_tick2, y=x_tick2 * 0 + rad, mode='lines', line=dict(color='black', width=axis_width * 0.5)),
             row=2, col=1
         )
         fig.add_trace(
-            go.Scatter(x=x_tick2, y=x_tick2*0-rad, mode='lines', line=dict(color='black', width=axis_width*0.5)),
+            go.Scatter(x=x_tick2, y=x_tick2 * 0 - rad, mode='lines', line=dict(color='black', width=axis_width * 0.5)),
             row=2, col=1
         )
-
-    fig.add_vrect(x0=0, x1=1, row="all", col=1,
-                fillcolor="grey", opacity=0.15, line_width=0)
-
-    # Plot screen view
+    
+    # Plot screen view (spatial panel)
     for rad in radius['rads']:
         fig.add_trace(
-            go.Scatter(x=rad*np.cos(theta), y=rad*np.sin(theta), mode='lines', line=dict(color='black', width=axis_width*0.5)),
+            go.Scatter(x=rad * np.cos(theta), y=rad * np.sin(theta), mode='lines', line=dict(color='black', width=axis_width * 0.5)),
             row=1, col=2
         )
-
     fig.add_vrect(x0=-12.5, x1=12.5, row="all", col=2,
-                fillcolor="grey", opacity=0.15, line_width=0)
-
-    # Update layout
-    y_data = [-12.5,-10.0,-7.5,-5.0,-2.5,0.0,2.5,5.0,7.5,10.0,12.5]
-    fig.update_xaxes(title_text="Time (%)", row=1, col=1)
-    fig.update_xaxes(title_text="Time (%)", row=2, col=1)
-    fig.update_yaxes(title_text="Hor. coord. (dva)",tickvals=y_data, range = [-12.5,12.5], row=1, col=1, title_standoff=0.15)
-    fig.update_yaxes(title_text="Ver. coord. (dva)",tickvals=y_data, range = [-12.5,12.5],row=2, col=1, title_standoff=0.15),
-
-
-    fig.update_xaxes(title_text="Horizontal coordinates (dva)", tickvals=y_data,range = [-12.5,12.5], row=1, col=2)
-    fig.update_yaxes(title_text="Vertical coordinates (dva)", tickvals=y_data,range = [-12.5,12.5], row=1, col=2, title_standoff=0.15)
-
-
-
+                  fillcolor="grey", opacity=0.15, line_width=0)
+    # Update axes
+    y_data = [-12.5, -10.0, -7.5, -5.0, -2.5, 0.0, 2.5, 5.0, 7.5, 10.0, 12.5]
+    fig.update_xaxes(title_text="Time (sec)", row=1, col=1)
+    fig.update_xaxes(title_text="Time (sec)", row=2, col=1)
+    fig.update_yaxes(title_text="Hor. coord. (dva)", tickvals=y_data, range=[-12.5, 12.5], row=1, col=1, title_standoff=0.15)
+    fig.update_yaxes(title_text="Ver. coord. (dva)", tickvals=y_data, range=[-12.5, 12.5], row=2, col=1, title_standoff=0.15)
+    fig.update_xaxes(title_text="Horizontal coordinates (dva)", tickvals=y_data, range=[-12.5, 12.5], row=1, col=2)
+    fig.update_yaxes(title_text="Vertical coordinates (dva)", tickvals=y_data, range=[-12.5, 12.5], row=1, col=2, title_standoff=0.15)
     fig.update_layout(
         showlegend=False,
         title=f"Eye Positions {task}, run {run + 1}",
         height=700,
-        width=1420,  
-        template="simple_white", 
-        margin=dict(
-            l=100,
-            r=10,
-            b=100,
-            t=100
-        )
+        width=1420,
+        template="simple_white",
+        margin=dict(l=100, r=10, b=100, t=100)
     )
-
-
-    return fig 
+    return fig
 
 
 def interp1d(array: np.ndarray, new_len: int) -> np.ndarray:
@@ -728,3 +704,6 @@ def add_missing_sac_rows(correct_saccades, direction):
     #display(correct_saccades_new)
 
     return correct_saccades_new
+
+
+

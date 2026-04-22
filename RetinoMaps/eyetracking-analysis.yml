@@ -1,0 +1,48 @@
+# Main configuration
+eye-tracking_task_names: 
+  description: "Names of the tasks for which we process eye tracking data"
+  value: ["rest", "pRF", "PurLoc", "SacLoc"]
+
+ppd: 
+  description: "Pixel per degree: how many pixels were dispayed within one degree of visual angle. Derived from matlab set-up"
+  value: 52.00031911320716
+
+center: 
+  description: "Center of the screen where stimulus was displayed in pixels. Derived from matlab set-up"
+  value: [960.0,540.0]
+
+blinks_remove: 
+  description: "Type of method used to remove blinks from eye tracking data"
+  value: "pupil_off"
+  levels: ["pupil_off_smooth", "pupil_off"]
+
+drift_corr: 
+  description: "Type of method used to remove drifts from eye tracking data"
+  value: "linear"
+  levels: ["linear", "median", NULL]
+
+downsampling: 
+  description: "If eye tracking data should be downsampled. If yes, need to specify target rate"
+  value: NULL
+  levels: [1, NULL]
+
+desired_sampling_rate: 
+  description: "Desired target sampling rate for applied downsampling (see above)"
+  value: 100
+
+smoothing: 
+  description: "Type of method used to smooth eye tracking data. If type moving_avg, window size must be specified. If type is gaussian, sigma must be specified"
+  value: "moving_avg"
+  levels: ["moving_avg", "gaussian"]
+
+window: 
+  description: "Window size for moving average smoothing method (see above)"
+  value: 50 
+
+sigma: 
+  description: "Size of Gaussian kernel for gaussian smoothing (see above)"
+  value: 20 
+
+threshold:
+  description: "Distance threshold to calculate the fraction of samples whose Euclidean error is smaller said threshold. Used for quality measurement"
+  value: 2

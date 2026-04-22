@@ -25,6 +25,7 @@ python freesurfer_import_pycortex.py [main directory] [project name] [fs_subject
 Executions:
 cd ~/projects/pRF_analysis/analysis_code/preproc/functional/
 python freesurfer_import_pycortex.py /scratch/mszinte/data MotConf sub-01_ses-01 sub-01 327
+python freesurfer_import_pycortex.py /scratch/mszinte/data amblyo7T_prf sub-12_ses-01 sub-12 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)

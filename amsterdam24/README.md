@@ -12,8 +12,8 @@ experiment overview see: [https://docs.google.com/spreadsheets/d/1Y0ZTe_oxl2hHWh
 
 # Data stucture and BIDS
 ---
-- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process.sh](process.sh)
-- [x] Copy events.tsv and matlab files from experients repo [copy_events_and_matfiles.py](preproc/copy_events_and_matfiles.py)
+- [x] Convert to nifti with dcm2niix, copy relevant data and rename according to BIDS standards [process_sub01.sh](preproc/process_sub01.sh) [process_sub02](preproc/process_sub02) [process_sub03](preproc/process_sub03)
+- [x] Copy events.tsv and matlab files from experients repo [copy_events_and_matfiles.py](preproc/copy_events_and_matfiles.py) & update metdata [update_metadata.py](preproc/update_metadata.py)
 - [x] BIDS eyetracking conversion [run_eye2bids.py](../analysis_code/preproc/bids/run_eye2bids.py)
 - [x] Validate bids format [https://bids-standard.github.io/bids-validator/] / alternately, use a docker [https://pypi.org/project/bids-validator/]
 
@@ -36,8 +36,7 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] fMRIprep [fmriprep_sbatch.py](../analysis_code/preproc/functional/fmriprep_sbatch.py)
 - [x] Load freesurfer and import subject in pycortex db [freesurfer_import_pycortex.py](../analysis_code/preproc/functional/freesurfer_import_pycortex.py)
 - [x] High-pass, z-score, anat [preproc_end.py](../analysis_code/preproc/functional/preproc_end.py)
-- [x] Averaging across runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
-- [x] Single-run option [averaging.py](../amblyo7T_prf/preproc/functional/averaging.py) 
+- [x] Averaging across runs [averaging_sbatch.py](preproc/functional/averaging_sbatch.py) using [averaging.py](functional/averaging.py)
 
 # Inter-run correlations 
 ---
@@ -74,9 +73,9 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ---
 ### *Subject-level analysis*
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
-- [x] CSS fit within the ROIs [prf_submit_css_jobs.py](postproc/prf/fit/prf_submit_css_jobs.py)
-- [x] Compute CSS statistics [css_stats_sbatch.py](postproc/prf/postfit/css_stats_sbatch.py)
-- [x] Compute CSS fit derivatives [compute_css_derivatives.py](postproc/prf/postfit/compute_css_derivatives.py)
+- [x] CSS fit within the ROIs [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [x] Compute CSS statistics [css_stats_sbatch.py](../analysis_code/postproc/prf/postfit/css_stats_sbatch.py)
+- [x] Compute CSS fit derivatives [compute_css_derivatives.py](../analysis_code/postproc/prf/postfit/compute_css_derivatives.py)
 - [x] Compute CSS population cortical magnification (CM) [css_pcm_sbatch.py](../analysis_code/postproc/prf/postfit/css_pcm_sbatch.py)
 - [x] Make maps with pycortex [pycortex_maps_css.py](../analysis_code/postproc/prf/postfit/pycortex_maps_css.py) or [pycortex_maps_css.sh](../analysis_code/postproc/prf/postfit/pycortex_maps_css.sh)
 - [x] Make general TSV with CSS pRF fit derivatives, statistics and CM [make_tsv_css.py](../analysis_code/postproc/prf/postfit/make_tsv_css.py)

@@ -16,14 +16,14 @@ Pycortex flatmaps figures
 To run:
 0. TO RUN ON INVIBE SERVER (with Inkscape) 
 1. cd to function
->> cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/intertask
+>> cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/postproc/intertask
 2. run python command
 >> python pycortex_maps_intertask.py [main directory] [project name] [subject num] [save_svg_in]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/intertask
+cd ~/disks/meso_H/projects/pRF_analysis/RetinoMaps/postproc/intertask
 python pycortex_maps_intertask.py ~/disks/meso_shared RetinoMaps sub-01 n
-python pycortex_maps_intertask.py ~/disks/meso_shared RetinoMaps sub-170k n
+python pycortex_maps_intertask.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (mail@martinszinte.net)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -41,42 +41,40 @@ deb = ipdb.set_trace
 import os
 import sys
 import copy
-import json
 import cortex
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Personal imports
-sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
-from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex, create_colormap
+# Personal import
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
+from pycortex_utils import draw_cortex, set_pycortex_config_file, load_surface_pycortex
 
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg_in = sys.argv[4]
+save_svg = sys.argv[4]
 
-#Define analysis parameters
-with open('../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
-if subject == 'sub-170k': formats = ['170k']
-else: formats = analysis_info['formats']
+# load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+glm_settings_path = os.path.join(base_dir, project_dir, "glm-analysis.yml")
+figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
+settings = load_settings([settings_path, prf_settings_path, glm_settings_path, figure_settings_path])
+analysis_info = settings[0]
+
+formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-prf_task_name = analysis_info['prf_task_name']
-alpha_range = analysis_info["alpha_range"]
+alpha_range = analysis_info["flatmap_alpha_range"]
 group_tasks = analysis_info['task_intertask']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
 
-try:
-    if save_svg_in == 'yes' or save_svg_in == 'y':
-        save_svg = True
-    elif save_svg_in == 'no' or save_svg_in == 'n':
-        save_svg = False
-    else:
-        raise ValueError
-except ValueError:
-    sys.exit('Error: incorrect input (Yes, yes, y or No, no, n)')
-       
+rsq2use = 'prf_loo_rsq'
+avg_method = 'loo-avg'
+prf_task_name = analysis_info['prf_task_names'][0]
+
 # Maps settings
 all_idx, pur_idx, sac_idx, pur_sac_idx, prf_idx, prf_pur_idx, prf_sac_idx, \
         prf_pur_sac_idx = 0,1,2,3,4,5,6,7
@@ -89,38 +87,35 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Define/create colormap
-# colormap_name = 'stats_colors'
 colormap_name = 'viridis'
-colormap_dict = {'n/a': (255, 255, 255),
-                 'Pursuit':  (227, 119, 194),
-                 'Saccade': (140, 86, 75),
-                 'Pursuit_and_Saccade': (148, 103, 189),
-                 'Vision': (214, 39, 40),
-                 'Vision_and_Pursuit': (44, 160, 44), 
-                 'Vision_and_Saccade': (255, 127, 14),
-                 'Vision_and_Pursuit_and_Saccade': (31, 119, 180)}
-create_colormap(cortex_dir=cortex_dir, 
-                colormap_name=colormap_name, 
-                colormap_dict=colormap_dict)
+interatsk_r2_min = 0
+interatsk_r2_max = 0.4
 
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: 
-        suffix = 'SacVE_PurVE'
+        intertask_group = 'SacVE-PurVE-pRF'
         sac_task = 'SacVELoc'
         pur_task = 'PurVELoc'
     else : 
-        suffix = 'Sac_Pur'
+        intertask_group = 'Sac-Pur-pRF'
         sac_task = 'SacLoc'
         pur_task = 'PurLoc'
 
-    for format_, pycortex_subject in zip(formats, [subject, 'sub-170k']):
+    for format_ in formats :
+        # define list of rois for each format
+
         # Define directories and fn
         intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask".format(
             main_dir, project_dir, subject,format_)
+        intertask_deriv_dir = "{}/intertask_derivatives".format(intertask_dir)
         prf_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
             main_dir, project_dir, subject,format_)
         glm_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives".format(
             main_dir, project_dir,  subject,format_)
+        
+        if not os.path.isdir(intertask_dir):
+            print(f"[SKIP] intertask_dir not found for format={format_}: {intertask_dir}")
+            continue
         
         flatmaps_dir = '{}/pycortex/flatmaps_stats'.format(intertask_dir)
         datasets_dir = '{}/pycortex/datasets_stats'.format(intertask_dir)
@@ -129,24 +124,26 @@ for tasks in group_tasks :
         os.makedirs(datasets_dir, exist_ok=True)
         
         if format_ == 'fsnative': 
-            deriv_stats_fn_L = '{}/{}_hemi-L_intertask_{}.func.gii'.format(
-                intertask_dir, subject, suffix)
-            deriv_stats_fn_R = '{}/{}_hemi-R_intertask_{}.func.gii'.format(
-                intertask_dir, subject, suffix)
+            pycortex_subject = subject
             
-            prf_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
+            deriv_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_intertask.func.gii'.format(
+                intertask_deriv_dir, subject, intertask_group)
+            deriv_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_intertask.func.gii'.format(
+                intertask_deriv_dir, subject, intertask_group)
+            
+            prf_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(
                 prf_stats_dir, subject, prf_task_name)
-            prf_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_prf-stats_loo-median.func.gii'.format(
+            prf_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(
                 prf_stats_dir, subject, prf_task_name)
             
-            sac_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_glm-stats_loo-median.func.gii'.format(
+            sac_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_glm-stats.func.gii'.format(
                 glm_stats_dir, subject, sac_task)
-            sac_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_glm-stats_loo-median.func.gii'.format(
+            sac_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_glm-stats.func.gii'.format(
                 glm_stats_dir, subject, sac_task)
             
-            pur_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_avg_glm-stats_loo-median.func.gii'.format(
+            pur_stats_fn_L = '{}/{}_task-{}_hemi-L_fmriprep_dct_z-score_loo-avg_glm-stats.func.gii'.format(
                 glm_stats_dir, subject, pur_task)
-            pur_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_avg_glm-stats_loo-median.func.gii'.format(
+            pur_stats_fn_R = '{}/{}_task-{}_hemi-R_fmriprep_dct_z-score_loo-avg_glm-stats.func.gii'.format(
                 glm_stats_dir, subject, pur_task)
             
             #  Load data
@@ -163,13 +160,15 @@ for tasks in group_tasks :
             pur_mat = results_pur['data_concat']
             
         elif format_ == '170k':
-            stats_avg_fn = '{}/{}_intertask_{}.dtseries.nii'.format(
-                intertask_dir, subject, suffix)
-            prf_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_prf-stats_loo-median.dtseries.nii'.format(
+            pycortex_subject = pycortex_subject_template
+            
+            stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii'.format(
+                intertask_deriv_dir, subject, intertask_group)
+            prf_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_prf-css_stats.dtseries.nii'.format(
                 prf_stats_dir, subject, prf_task_name)
-            sac_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_glm-stats_loo-median.dtseries.nii'.format(
+            sac_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii'.format(
                 glm_stats_dir, subject, sac_task)
-            pur_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_avg_glm-stats_loo-median.dtseries.nii'.format(
+            pur_stats_avg_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_glm-stats.dtseries.nii'.format(
                 glm_stats_dir, subject, pur_task)
             
             #  Load data
@@ -185,10 +184,6 @@ for tasks in group_tasks :
             results_pur = load_surface_pycortex(brain_fn=pur_stats_avg_fn)
             pur_mat = results_pur['data_concat']
     
-            if subject == 'sub-170k': save_svg = save_svg
-            else: save_svg = False
-        
-
         # Compute R2 from R
         prf_mat[rvalue_idx,:] =  prf_mat[rvalue_idx,:]**2
         sac_mat[rvalue_idx,:] = sac_mat[rvalue_idx,:]**2
@@ -286,11 +281,9 @@ for tasks in group_tasks :
         param_all = {'data': rsq_all, 
                      'cmap': colormap_name, 
                      'alpha': alpha_all, 
-                     'vmin': 0, 
-                     'vmax': 0.4, 
-                     # 'cbar': 'discrete_personalized', 
-                     'cmap_steps': len(colormap_dict),
-                     'cmap_dict': colormap_dict,
+                     'vmin': interatsk_r2_min, 
+                     'vmax': interatsk_r2_max, 
+                     'cbar': 'discrete',
                      'cortex_type': 'VertexRGB', 
                      'description': 'intertask map', 
                      'curv_brightness': 0.1, 
@@ -314,11 +307,9 @@ for tasks in group_tasks :
         param_pursuit = {'data': rsq_pur, 
                          'cmap': colormap_name, 
                          'alpha': alpha_pur, 
-                         'vmin': 0, 
-                         'vmax': 0.4, 
-                         # 'cbar': 'discrete_personalized', 
-                         'cmap_steps': len(colormap_dict),
-                         'cmap_dict': colormap_dict,
+                         'vmin': interatsk_r2_min, 
+                         'vmax': interatsk_r2_max, 
+                         'cbar': 'discrete',
                          'cortex_type': 'VertexRGB', 
                          'description': 'intertask map',
                          'curv_brightness': 0.1, 
@@ -339,11 +330,9 @@ for tasks in group_tasks :
         param_saccade = {'data': rsq_sac, 
                          'cmap': colormap_name, 
                          'alpha': alpha_sac, 
-                         'vmin': 0, 
-                         'vmax': 0.4, 
-                         # 'cbar': 'discrete_personalized', 
-                         'cmap_steps': len(colormap_dict),
-                         'cmap_dict': colormap_dict,
+                         'vmin': interatsk_r2_min, 
+                         'vmax': interatsk_r2_max, 
+                         'cbar': 'discrete',
                          'cortex_type': 'VertexRGB', 
                          'description': 'intertask map',
                          'curv_brightness': 0.1, 
@@ -363,11 +352,9 @@ for tasks in group_tasks :
         param_pursuit_and_saccade = {'data': rsq_pur_sac, 
                                      'cmap': colormap_name, 
                                      'alpha': alpha_pur_sac, 
-                                     'vmin': 0, 
-                                     'vmax': 0.4, 
-                                     # 'cbar': 'discrete_personalized', 
-                                     'cmap_steps': len(colormap_dict),
-                                     'cmap_dict': colormap_dict,
+                                     'vmin': interatsk_r2_min, 
+                                     'vmax': interatsk_r2_max, 
+                                     'cbar': 'discrete',
                                      'cortex_type': 'VertexRGB', 
                                      'description': 'intertask map',
                                      'curv_brightness': 0.1, 
@@ -388,11 +375,9 @@ for tasks in group_tasks :
         param_vision = {'data': rsq_prf, 
                         'cmap': colormap_name, 
                         'alpha': alpha_prf, 
-                        'vmin': 0, 
-                        'vmax': 0.4, 
-                        # 'cbar': 'discrete_personalized', 
-                        'cmap_steps': len(colormap_dict),
-                        'cmap_dict': colormap_dict,
+                        'vmin': interatsk_r2_min, 
+                        'vmax': interatsk_r2_max, 
+                        'cbar': 'discrete',
                         'cortex_type': 'VertexRGB', 
                         'description': 'intertask map',
                         'curv_brightness': 0.1, 
@@ -411,11 +396,9 @@ for tasks in group_tasks :
         param_vision_and_pursuit = {'data': rsq_prf_pur, 
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_pur, 
-                                    'vmin': 0, 
-                                    'vmax': 0.4, 
-                                    # 'cbar': 'discrete_personalized', 
-                                    'cmap_steps': len(colormap_dict), 
-                                    'cmap_dict': colormap_dict,
+                                    'vmin': interatsk_r2_min, 
+                                    'vmax': interatsk_r2_max, 
+                                    'cbar': 'discrete',
                                     'cortex_type': 'VertexRGB', 
                                     'description': 'intertask map',
                                     'curv_brightness': 0.1, 
@@ -435,11 +418,9 @@ for tasks in group_tasks :
         param_vision_and_saccade = {'data': rsq_prf_sac, 
                                     'cmap': colormap_name, 
                                     'alpha': alpha_prf_sac, 
-                                    'vmin': 0, 
-                                    'vmax': 0.4, 
-                                    # 'cbar': 'discrete_personalized', 
-                                    'cmap_steps': len(colormap_dict), 
-                                    'cmap_dict': colormap_dict,
+                                    'vmin': interatsk_r2_min, 
+                                    'vmax': interatsk_r2_max, 
+                                    'cbar': 'discrete',
                                     'cortex_type': 'VertexRGB', 
                                     'description': 'intertask map',
                                     'curv_brightness': 0.1, 
@@ -459,11 +440,9 @@ for tasks in group_tasks :
         param_vision_and_pursuit_and_saccade = {'data': rsq_prf_pur_sac, 
                                                 'cmap': colormap_name, 
                                                 'alpha': alpha_prf_pur_sac, 
-                                                'vmin': 0, 
-                                                'vmax': 0.4, 
-                                                # 'cbar': 'discrete_personalized', 
-                                                'cmap_steps': len(colormap_dict), 
-                                                'cmap_dict': colormap_dict,
+                                                'vmin': interatsk_r2_min, 
+                                                'vmax': interatsk_r2_max, 
+                                                'cbar': 'discrete',
                                                 'cortex_type': 'VertexRGB', 
                                                 'description': 'intertask map', 
                                                 'curv_brightness': 0.1, 
@@ -483,7 +462,7 @@ for tasks in group_tasks :
             print(roi_name)
             exec('param_{}.update(roi_param)'.format(maps_name))
             exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name = maps_name))
-            exec("plt.savefig('{}/{}_{}_{}.pdf')".format(flatmaps_dir, subject, maps_name, suffix))
+            exec("plt.savefig('{}/{}_{}_{}.pdf')".format(flatmaps_dir, subject, maps_name, intertask_group))
             plt.close()
         
             # save flatmap as dataset
@@ -492,8 +471,8 @@ for tasks in group_tasks :
             volumes.update({vol_description:volume})
         
         # save dataset
-        dataset_file = "{}/{}_intertask_{}.hdf".format(datasets_dir, subject, suffix)
+        dataset_file = "{}/{}_intertask_{}.hdf".format(datasets_dir, subject, intertask_group)
         dataset = cortex.Dataset(data=volumes)
         dataset.save(dataset_file)
-    
+        
     

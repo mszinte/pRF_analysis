@@ -25,6 +25,7 @@ Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-01 n
 python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
+python pycortex_maps_css.py ~/disks/meso_S/data amblyo7T_prf sub-hcp1.6mm n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -123,7 +124,7 @@ for avg_method in avg_methods:
                 main_dir, project_dir, subject, format_)
 
             if not os.path.isdir(prf_dir):
-                print(f"[SKIP] corr_dir not found for format={format_}: {prf_dir}")
+                print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
                 continue
 
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)

@@ -24,7 +24,6 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
-
 python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -123,7 +122,7 @@ for format_, extension in zip(formats, extensions):
                     array_rois[mask] = i
                     
                 # Load data to have source img
-                data_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
+                data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}'.format(
                     main_dir, project_dir, subject, format_,
                     preproc_prep, filtering, normalization)
 
@@ -139,6 +138,7 @@ for format_, extension in zip(formats, extensions):
                 rois_fn = '{}_{}_{}_{}_{}_{}.{}'.format(subject, hemi, preproc_prep, filtering, 
                                                         normalization, rois_method_format,
                                                         extension)
+
     
                 # Saving file
                 array_rois = array_rois.reshape(1, -1)
@@ -148,7 +148,7 @@ for format_, extension in zip(formats, extensions):
                           
         elif format_ == '170k':
             # Load data to have source img
-            data_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
+            data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}'.format(
                 main_dir, project_dir, subject, format_,
                 preproc_prep, filtering, normalization)
             

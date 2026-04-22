@@ -25,6 +25,7 @@ cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-01 327
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
 python make_rois_fig.py /scratch/mszinte/data RetinoMaps group 327
+python make_rois_fig.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -61,7 +62,6 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
-
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -103,10 +103,11 @@ for avg_method in avg_methods:
                 fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
                     main_dir, project_dir, subject, format_)
                 os.makedirs(fig_dir, exist_ok=True)
+
                 fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                     prf_task_name, preproc_prep, filtering, 
                     normalization, avg_method, rois_method_format)
-                
+
                 # Roi active vertex
                 tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(tsv_dir, subject, fn_spec)
                 df_roi_active_vert = pd.read_table(tsv_roi_active_vert_fn, sep="\t")
@@ -185,7 +186,11 @@ for avg_method in avg_methods:
                 
                 # Spatial distibution barycentre plot
                 tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
-                df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                try:
+                    df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                except FileNotFoundError:
+                    print(f"File not found: {tsv_barycentre_fn}, skipping...")
+                    continue
                 fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
                 fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
                 print('Saving pdf: {}'.format(fig_fn))

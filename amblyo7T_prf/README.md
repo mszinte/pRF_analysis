@@ -25,8 +25,9 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ```cd ~/temp_data/amblyopia-data-2025;gin download --content```
 - [x] Upload raw data to mesocentre
 ```rsync -avuz --exclude='.git' --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
-- [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participant.sh)
+- [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participants.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
+- [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py)
 - [x] Create manualy event_files for concatenated runswith screen settings
 
 ## MRI Data analysis
@@ -36,7 +37,6 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**).</br>
 
 #### Structural preprocessing
-- [x] Create sagittal video [sagital_view.py](../analysis_code/preproc/anatomical/sagital_view.py)
 - [x] Flattening of the cortex using [flatten_sbatch.py](../analysis_code/preproc/anatomical/flatten_sbatch.py) (with or without manual cut [cortex_cuts.sh](../analysis_code/preproc/anatomical/cortex_cuts.sh))
 
 #### Functional preprocessing
