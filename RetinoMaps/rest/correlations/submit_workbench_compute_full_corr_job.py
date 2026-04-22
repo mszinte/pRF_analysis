@@ -22,8 +22,8 @@ Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
 python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 2:00:00
------------------------------------------------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
+--------------------------------------------------------------------------------------------------------------
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
 
 # Stop warnings
@@ -39,7 +39,7 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-mode = sys.argv[5]   # "bilateral" or "by_hemi"
+mode = sys.argv[5] # "bilateral" or "by_hemi"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations

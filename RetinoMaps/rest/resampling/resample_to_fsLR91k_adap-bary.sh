@@ -12,8 +12,9 @@
 # Goal: Resample intertask results from 170k to 91k
 # Note: The ADAP_BARY_AREA method is recommended for ordinary metric data, 
 # because it should use all data while downsampling, unlike BARYCENTRIC
-# Usage:
-# ./resample_to_fsLR91k_adap-bary.sh -largest
+# Note you need to include the largest flag
+# Unless you don't want to end up with discrete values in the 1-7 range
+# Usage: checkout submit_resample_job.py in this folder
 #####################################################
 
 # Parse command-line arguments
@@ -40,9 +41,9 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 	do
 	
 	# Output dirs for every subject
-	# mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
+	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
 	OUT_DIR1="$TASK_RESULTS/sub-${i}/91k/rest/seed/source_170k"
-	# mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
+	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
 	OUT_DIR2="$TASK_RESULTS/sub-${i}/91k/rest/seed/target_91k"
 
 		### 1. Separate the results by hemisphere
@@ -95,63 +96,54 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 		# Pursuit
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur_lh${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur_rh${LARGEST_SUFFIX}.shape.gii" -name Pursuit -map 2;
 
 		# Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac_lh${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac_rh${LARGEST_SUFFIX}.shape.gii" -name Saccade -map 3;
 
 		# Pursuit & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-saccade${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur-Sac_lh${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-saccade${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur-Sac_rh${LARGEST_SUFFIX}.shape.gii" -name Pursuit_and_Saccade -map 4;
 
 		# Vision
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_pRF${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_pRF_lh${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_pRF${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5;
+			"$OUT_DIR2/sub-${i}_91k_intertask_pRF_rh${LARGEST_SUFFIX}.shape.gii" -name Vision -map 5;
 
 		# Vision & Pursuit
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur-pRF_lh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit -map 6;
 
 		# Vision & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-pRF_lh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-pRF_rh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Saccade -map 7;
 
 		# Vision & Pursuit & Saccade
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8 && \
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8 && \
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
+			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" -name Vision_and_Pursuit_and_Saccade -map 8;
 
-		### 6. Create two additional files: saccade minus pursuit, pursuit minus saccade
-		# wb_command -cifti-merge out.dtseries.nii -cifti first.dtseries.nii -index 1 -cifti second.dtseries.nii;
-
-		### 7. Convert back to label files (the empty string "" tells the command to take whatever is non-empty in the metric file)
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" "" \
-			"$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
-
-		### Next we'll rename the label keys to make it nicer (this part didn't work as expected - probably need to use additional flags)
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" \
-			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_lh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
-		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.shape.gii" \
-			"$ATLAS/7_vision-pursuit-saccade.txt" "$OUT_DIR2/sub-${i}_91k_intertask_rh_Sac-Pur-pRF${LARGEST_SUFFIX}.label.gii";
+		### 6. Convert back to label files (we'll rename the label keys to make it nicer)
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/pRF-Sac-Pur_label_import.txt" "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.label.gii";
+		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" \
+			"$ATLAS/pRF-Sac-Pur_label_import.txt" "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.label.gii";
 
 	done
 
 # Change all files permissions
 chmod -Rf 771 *
-chgrp -Rf 771 *
+chgrp -Rf 327 *
