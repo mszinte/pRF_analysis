@@ -71,7 +71,8 @@ analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-prf_task_names = analysis_info['prf_task_names']
+#prf_task_names = analysis_info['prf_task_names']
+prf_task_names = ['SacLoc']
 maps_names_gauss = analysis_info['maps_names_gauss']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
@@ -135,10 +136,10 @@ for avg_method in avg_methods:
                 
                 if format_ == 'fsnative':
                     pycortex_subject = subject
-                    deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_pmf-gauss_deriv.func.gii'.format(
+                    deriv_avg_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_pmf-residuals-gauss_deriv.func.gii'.format(
                         prf_deriv_dir, subject, prf_task_name, 
                         preproc_prep, filtering, normalization, avg_method)
-                    deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_pmf-gauss_deriv.func.gii'.format(
+                    deriv_avg_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_pmf-residuals-gauss_deriv.func.gii'.format(
                         prf_deriv_dir, subject, prf_task_name, 
                         preproc_prep, filtering, normalization, avg_method)
                     results = load_surface_pycortex(L_fn=deriv_avg_fn_L, 
@@ -147,7 +148,7 @@ for avg_method in avg_methods:
                     
                 elif format_ == '170k':
                     pycortex_subject = pycortex_subject_template
-                    deriv_avg_fn = '{}/{}_task-{}_{}_{}_{}_{}_pmf-gauss_deriv.dtseries.nii'.format(
+                    deriv_avg_fn = '{}/{}_task-{}_{}_{}_{}_{}_pmf-residuals-gauss_deriv.dtseries.nii'.format(
                         prf_deriv_dir, subject, prf_task_name, 
                         preproc_prep, filtering, normalization, avg_method)
                     results = load_surface_pycortex(brain_fn=deriv_avg_fn)
@@ -258,7 +259,7 @@ for avg_method in avg_methods:
                     print(roi_name)
                     exec('param_{}.update(roi_param)'.format(maps_name))
                     exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-                    exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}{}_gauss-{}.pdf')".format(
+                    exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}{}_gauss-residuals-{}.pdf')".format(
                         flatmaps_dir, subject, prf_task_name, 
                         preproc_prep, filtering, normalization, avg_method,
                         rois_method_format_txt, maps_name))
@@ -270,7 +271,7 @@ for avg_method in avg_methods:
                     volumes.update({vol_description:volume})
                 
                 # save dataset
-                dataset_file = "{}/{}_task-{}_{}_{}_{}_{}{}_gauss.hdf".format(
+                dataset_file = "{}/{}_task-{}_{}_{}_{}_{}{}_gauss-residuals.hdf".format(
                     datasets_dir, subject, prf_task_name, 
                     preproc_prep, filtering, normalization, 
                     avg_method, rois_method_format_txt)

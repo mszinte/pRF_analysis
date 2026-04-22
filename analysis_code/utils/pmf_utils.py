@@ -36,6 +36,8 @@ def make_rotated_gaussian_2d(
     return canvas
 
 
+
+
 def make_vdm_from_saccades(
     sacc_out,
     sacc_in,
@@ -104,52 +106,72 @@ def make_vdm_from_saccades(
         if len(tr_sacc) == 0:
             continue
 
-        # process each saccade
-        for _, sac in tr_sacc.iterrows():
+        # --- select strongest saccade by amplitude ---
+        amplitudes = tr_sacc.apply(
+            lambda r: np.sqrt(
+                (r['sac_x_offset'] - r['sac_x_onset'])**2 +
+                (r['sac_y_offset'] - r['sac_y_onset'])**2
+            ), axis=1
+        )
+        sac = tr_sacc.loc[amplitudes.idxmax()]  # single row, a Series
 
-            # --- direction vector ---
-            dx = sac['sac_x_offset'] - sac['sac_x_onset']
-            dy = sac['sac_y_offset'] - sac['sac_y_onset']
+        # --- direction vector ---
+        dx = sac['sac_x_offset'] - sac['sac_x_onset']
+        dy = sac['sac_y_offset'] - sac['sac_y_onset']
+        theta = np.degrees(np.arctan2(dy, dx))
 
-            theta = np.degrees(np.arctan2(dy, dx))
+        # --- placement ---
+        if sac['direction'] == 'out':
+            gx = sac['sac_x_offset']
+            gy = sac['sac_y_offset']
+        else:
+            gx = -sac['sac_x_onset']
+            gy = -sac['sac_y_onset']
 
-            # --- placement ---
-            if sac['direction'] == 'out':
-                gx = sac['sac_x_offset']
-                gy = sac['sac_y_offset']
-            else:
-                gx = -sac['sac_x_onset']
-                gy = -sac['sac_y_onset']
+        # --- amplitude & sigma ---
+        amp = np.sqrt(dx**2 + dy**2)
+        sigma = max(amp * sigma_scale, 0.5)
 
-            # --- amplitude & sigma ---
-            amp = np.sqrt(dx**2 + dy**2)
-            sigma = max(amp * sigma_scale, 0.5)
+        
+        # --- draw gaussian once ---
+        g = make_rotated_gaussian_2d(
+            canvas_size=canvas_size,
+            x_dva=gx, y_dva=gy,
+            sigma_x_dva=sigma,
+            sigma_y_dva=0.5 * sigma,
+            theta=theta,
+            dva_range=dva_range
+        )
 
-            # --- draw gaussian ---
-            g = make_rotated_gaussian_2d(
-                canvas_size=canvas_size,
-                x_dva=gx,
-                y_dva=gy,
-                sigma_x_dva=sigma,
-                sigma_y_dva=0.5 * sigma,
-                theta=theta,
-                dva_range=dva_range
+        # --- timing  ---
+        t_on  = sac['sac_t_onset']
+        t_off = sac['sac_t_offset']         
+        sac_dur = max(t_off - t_on, 1e-6)   # guard against zero-duration
+        
+        for overlap_tr in range(n_TRs):
+            tr_s = scan_start + overlap_tr * TR
+            tr_e = tr_s + TR
+
+            overlap = min(t_off, tr_e) - max(t_on, tr_s)
+            if overlap <= 0:
+                continue
+
+            weight = overlap / sac_dur      # fraction of saccade in this TR
+            vdm[:, :, overlap_tr] = np.maximum(
+                vdm[:, :, overlap_tr],
+                g * weight
             )
 
-            # --- combine (max pooling) ---
-            vdm[:, :, tr_idx] = np.maximum(vdm[:, :, tr_idx], g)
-
-            # --- logging ---
-            log.append({
-                'tr': tr_idx,
-                'direction': sac['direction'],
-                'gx': gx,
-                'gy': gy,
-                'theta': theta,
-                'amp': amp,
-                'sigma': sigma,
-                't_onset': sac['sac_t_onset']
-            })
+        # --- logging (one row per saccade, not per TR) ---
+        log.append({
+            'tr': tr_idx,           # TR where onset fell
+            'direction': sac['direction'],
+            'gx': gx, 'gy': gy,
+            'theta': theta,
+            'amp': amp, 'sigma': sigma,
+            't_onset': t_on,
+            't_offset': t_off
+        })
 
     log_df = pd.DataFrame(log)
 
@@ -157,32 +179,43 @@ def make_vdm_from_saccades(
 
 
 
-def save_vdm_video(vdm, log_df, output_path, dva_range=10.0,
-                   preview_fps=60, TR=1.2):
+def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
+                   dva_range=10.0, preview_fps=60, TR=1.2):
     """
-    Save saccade VDM as grayscale mp4.
-    Saccade frames show the gaussian blob in white; empty frames are black.
+    Save saccade VDM as grayscale mp4 with correct within-TR timing.
+    Each video frame corresponds to a real time window; gaussians are shown
+    only during frames that overlap [t_onset, t_offset].
     """
     n_trs = vdm.shape[2]
-    frames_per_tr = int(preview_fps * TR)
-
-    tr_has_saccade = set(log_df['tr'].astype(int))
+    n_total_frames = int(round(n_trs * TR * preview_fps))
+    frame_dur = 1.0 / preview_fps          # seconds per frame
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(output_path, fourcc, preview_fps,
-                             (vdm.shape[1], vdm.shape[0]), False)  # isColor=False
+                             (vdm.shape[1], vdm.shape[0]), False)
 
-    for tr_idx in range(n_trs):
-        if tr_idx in tr_has_saccade:
+    for frame_idx in range(n_total_frames):
+        # real time at centre of this frame
+        t_frame_start = scan_start + frame_idx * frame_dur
+        t_frame_end   = t_frame_start + frame_dur
+
+        # which TR does this frame fall in?
+        tr_idx = min(int(t_frame_start / TR - scan_start / TR), n_trs - 1)
+
+        # any saccade whose [t_onset, t_offset] overlaps this frame?
+        active = log_df[
+            (log_df['t_onset']  < t_frame_end) &
+            (log_df['t_offset'] > t_frame_start)
+        ]
+
+        if len(active) > 0:
             frame = vdm[:, :, tr_idx]
             frame_uint8 = np.uint8(np.clip(frame, 0, 1) * 255)
-            frame_uint8 = np.flipud(frame_uint8)
         else:
             frame_uint8 = np.zeros((vdm.shape[0], vdm.shape[1]), dtype=np.uint8)
 
-        for _ in range(frames_per_tr):
-            writer.write(frame_uint8)
+        writer.write(np.flipud(frame_uint8))
 
     writer.release()
     size_mb = os.path.getsize(output_path) / 1e6
-    print(f"Saved {output_path}  ({size_mb:.1f} MB, {n_trs * TR:.1f}s)")
+    print(f"Saved {output_path}  ({n_trs * TR:.1f}s, {n_total_frames} frames, {size_mb:.1f} MB)")
