@@ -91,13 +91,13 @@ if subject != 'template_avg':
         os.makedirs(prf_deriv_dir, exist_ok=True)
         
         # Get prf fit filenames
-        fit_fns = glob.glob("{}/{}/{}/pmf/fit/*pmf-gauss_fit*".format(pp_dir, subject, format_))
+        fit_fns = glob.glob("{}/{}/{}/pmf/fit/*pmf-residuals-gauss_fit*".format(pp_dir, subject, format_))
 
         # Compute derivatives 
         for fit_fn in fit_fns:
             
             deriv_fn = fit_fn.split('/')[-1]
-            deriv_fn = deriv_fn.replace('pmf-gauss_fit', 'pmf-gauss_deriv')
+            deriv_fn = deriv_fn.replace('pmf-residuals-gauss_fit', 'pmf-residuals-gauss_deriv')
         
             if os.path.isfile(fit_fn) == False:
                 sys.exit('Missing files, analysis stopped : {}'.format(fit_fn))
@@ -130,7 +130,7 @@ elif subject == 'template_avg':
                 for subject in subjects: 
                     prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/pmf/pmf_derivatives'.format(
                         main_dir, project_dir, subject, averaging_template_format)
-                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*pmf-gauss_deriv.dtseries.nii".format(
+                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*pmf-residuals-gauss_deriv.dtseries.nii".format(
                          prf_deriv_dir, subject, prf_task_name, avg_method)
                     prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
     
@@ -142,7 +142,7 @@ elif subject == 'template_avg':
                         main_dir, project_dir, averaging_template_name, averaging_template_format)
                 os.makedirs(template_deriv_dir, exist_ok=True)
                 
-                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_pmf-gauss_deriv.dtseries.nii".format(
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_pmf-residuals-gauss_deriv.dtseries.nii".format(
                     template_deriv_dir, averaging_template_name, prf_task_name, preproc_prep, filtering, normalization, avg_method)
                 
                 print("saving: {}".format(template_deriv_fn))

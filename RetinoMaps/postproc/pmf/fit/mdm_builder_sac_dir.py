@@ -129,7 +129,8 @@ for run_idx in range(n_runs):
     print(f"Saved video: {video_fn}")
 
 # ── Concatenate and save all runs ──────────────────────────────────────────────
-vdm_concat = np.concatenate(vdm_runs, axis=0)   
+vdm_concat = np.concatenate(vdm_runs, axis=-1)   
+print(vdm_concat.shape)
 
 np.save(f"{save_fn}/{subject}_task-SacLoc_saccade_mdm.npy", vdm_concat)
 print(f"Saved concatenated VDM: {save_fn}  shape={vdm_concat.shape}")
