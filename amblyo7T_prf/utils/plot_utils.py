@@ -62,11 +62,30 @@ def plotly_template(template_specs):
                                     xaxis_color=template_specs['axes_color'],
                                     xaxis_showgrid=False,
                                     xaxis_ticks="outside",
+                                    xaxis_ticklen=8,
+                                    xaxis_tickwidth=template_specs['axes_width'],
+                                    xaxis_title_font_family=template_specs['font'],
+                                    xaxis_title_font_size=template_specs['title_font_size'],
+                                    xaxis_tickfont_family=template_specs['font'],
+                                    xaxis_tickfont_size=template_specs['axes_font_size'],
+                                    xaxis_zeroline=False,
                                     yaxis_visible=True,
                                     yaxis_linewidth=template_specs['axes_width'],
                                     yaxis_color=template_specs['axes_color'],
                                     yaxis_showgrid=False,
-                                    yaxis_ticks="outside"))
+                                    yaxis_ticks="outside",
+                                    yaxis_ticklen=8,
+                                    yaxis_tickwidth=template_specs['axes_width'],
+                                    yaxis_tickfont_family=template_specs['font'],
+                                    yaxis_tickfont_size=template_specs['axes_font_size'],
+                                    yaxis_title_font_family=template_specs['font'],
+                                    yaxis_title_font_size=template_specs['title_font_size'],
+                                    yaxis_zeroline=False))
+
+    fig_template.layout.annotationdefaults = go.layout.Annotation(
+                                    font_color=template_specs['axes_color'],
+                                    font_family=template_specs['font'],
+                                    font_size=template_specs['title_font_size'])
 
     return fig_template
 
@@ -252,6 +271,164 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
                       width=fig_width,
                       showlegend=False,
                       template=fig_template,
+                      margin_l=fig_margin[0],
+                      margin_t=fig_margin[1],
+                      margin_r=fig_margin[2],
+                      margin_b=fig_margin[3])
+
+    return fig
+
+
+def eyes_active_vert_plot(df, figure_info, format_):
+    """
+    Make grouped bar plots of significant vertices per ROI for AE-RE and FE-LE eye conditions.
+    Two subplots: FDR 0.05 and FDR 0.01.
+    AE-RE: solid bars. FE-LE: x-pattern bars.
+    Legend: two gray bar entries inside each subplot top-right.
+
+    Parameters
+    ----------
+    df : dataframe with columns roi, eye_condition, n_vert_tot,
+         n_vert_corr_pvalue_5pt, n_vert_corr_pvalue_1pt, ratio_5pt, ratio_1pt
+    figure_info : dict with figure settings
+    format_ : str, data format (e.g. 'fsnative', '170k')
+
+    Returns
+    -------
+    fig : grouped bar plot
+    """
+
+    # General figure settings
+    template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          rois_plot_width=1.5)
+    fig_template = plotly_template(template_specs)
+
+    rois = figure_info['rois']
+    roi_colors = figure_info['roi_colors']
+    fig_margin = figure_info['rois_fig_margin']
+    rois_hor_spacing = figure_info['rois_hor_spacing']
+    rois_ver_spacing = figure_info['rois_ver_spacing']
+    bar_width = figure_info['rois_bar_width']
+    rois_plot_height = figure_info['rois_plot_height']
+    subject_group = figure_info['subject_group']
+
+    rows, cols = 1, 2
+    fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows - 1))
+    fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols - 1))
+    hor_spacing = rois_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
+    ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
+
+    # Eye condition labels depend on subject group
+    if subject_group == 'patient':
+        eye_labels = {'AE-RE': 'AE', 'FE-LE': 'FE'}
+    else:
+        eye_labels = {'AE-RE': 'RE', 'FE-LE': 'LE'}
+
+    # Pattern per eye condition
+    eye_patterns = {'FE-LE': '', 'AE-RE': '/'}
+    eye_conditions = ['FE-LE', 'AE-RE']
+
+    fig = make_subplots(rows=rows, cols=cols,
+                        subplot_titles=['FDR threshold = 0.05', 'FDR threshold = 0.01'],
+                        vertical_spacing=ver_spacing,
+                        horizontal_spacing=hor_spacing)
+
+    if format_ == 'fsnative':
+        range_val = figure_info['active_vert_fsnative_range']
+    elif format_ == '170k':
+        range_val = figure_info['active_vert_170k_range']
+
+    for col_idx, (fdr_label, ratio_col, sig_col) in enumerate([
+            ('FDR 0.05', 'ratio_5pt', 'n_vert_corr_pvalue_5pt'),
+            ('FDR 0.01', 'ratio_1pt', 'n_vert_corr_pvalue_1pt')], start=1):
+
+        legend_ref = 'legend' if col_idx == 1 else 'legend2'
+
+        for eye_condition in eye_conditions:
+            df_eye = df.loc[df.eye_condition == eye_condition]
+            eye_label = eye_labels[eye_condition]
+            pattern_shape = eye_patterns[eye_condition]
+            bar_colors = [roi_colors[roi] for roi in df_eye['roi']]
+
+            # Total vertices — transparent background with pattern
+            
+            fig.add_trace(go.Bar(
+                x=df_eye['roi'],
+                y=df_eye['n_vert_tot'],
+                name=eye_label,
+                text=(df_eye[ratio_col] * 100).astype(int).astype(str) + '%',
+                textposition='outside',
+                textangle=-90,
+                textfont=dict(size=15),
+                offsetgroup=eye_condition,
+                marker=dict(color=bar_colors,
+                            opacity=0.15,
+                            ),
+                showlegend=False,
+                legend=legend_ref),
+                row=1, col=col_idx)
+
+            # Significant vertices — solid/patterned bar
+            fig.add_trace(go.Bar(
+                x=df_eye['roi'],
+                y=df_eye[sig_col],
+                name=eye_label,
+                offsetgroup=eye_condition,
+                marker=dict(color=bar_colors,
+                            pattern=dict(shape=pattern_shape,
+                                         fgcolor='rgba(0,0,0,1)',
+                                         bgcolor='rgba(0,0,0,0)',
+                                         size=8)),
+                showlegend=False,
+                legend=legend_ref),
+                row=1, col=col_idx)
+
+        # Dummy bar traces for legend — one per subplot using legend/legend2
+        for eye_condition in eye_conditions:
+            eye_label = eye_labels[eye_condition]
+            pattern_shape = eye_patterns[eye_condition]
+            fig.add_trace(go.Bar(
+                x=[None], y=[None],
+                name=eye_label,
+                marker=dict(color='rgba(128,128,128,1)',
+                            pattern=dict(shape=pattern_shape,
+                                         fgcolor='rgba(0,0,0,1)',
+                                         bgcolor='rgba(0,0,0,0.3)',
+                                         size=8)),
+                showlegend=True,
+                legend=legend_ref),
+                row=1, col=col_idx)
+
+    fig.update_xaxes(showline=True, ticklen=0, linecolor='rgba(255,255,255,0)')
+    fig.update_yaxes(range=range_val, showline=True, nticks=10,
+                     title_text='Number of vertex')
+
+    legend_style = dict(orientation='h',
+                        font_family=template_specs['font'],
+                        font_size=template_specs['axes_font_size'],
+                        x=0.44, y=0.95,
+                        xanchor='right',
+                        yanchor='top',
+                        bgcolor='rgba(0,0,0,0)',
+                        borderwidth=0,
+                        traceorder='normal',
+                        itemwidth=30)
+
+    legend2_style = {**legend_style, 'x': 1}
+
+    fig.update_layout(barmode='group',
+                      bargap=0.3,
+                      bargroupgap=0.05,
+                      height=fig_height,
+                      width=fig_width,
+                      template=fig_template,
+                      legend=legend_style,
+                      legend2=legend2_style,
                       margin_l=fig_margin[0],
                       margin_t=fig_margin[1],
                       margin_r=fig_margin[2],

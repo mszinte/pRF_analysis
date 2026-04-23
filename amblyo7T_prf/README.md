@@ -76,5 +76,5 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Merge all figures [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
 
 #### Main analysis
-- [x] Make parameter correlation TSV [make_corr_tsv.py](postproc/prf/postfit/make_corr_tsv.py)
-- [ ] Make correlation figure [make_corr_fig.py](postproc/prf/postfit/make_corr_fig.py)
+- [x] Make pRF parameters eye correlation TSV [make_corr_tsv.py](postproc/prf/postfit/make_corr_tsv.py) or [make_corr_tsv.sh](postproc/prf/postfit/make_corr_tsv.sh)
+- [x] Make pRF parameters eye correlation figures [make_corr_fig.py](postproc/prf/postfit/make_corr_fig.py) or [make_corr_fig.sh](postproc/prf/postfit/make_corr_fig.sh)

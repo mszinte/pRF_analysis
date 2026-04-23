@@ -132,7 +132,7 @@ active_vert_fsnative_range:
   
 active_vert_170k_range:
   description: "Range of number of active vertex plot with 170k format"
-  value: [0, 10000]
+  value: [0, 6000]
   
 violin_rsq_range:
   description: "R-square range in the violin plot"
@@ -200,5 +200,32 @@ corr_params:
   value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc', 'pcm_median']
 
 corr_bin_number:
-  description: "number of bining quartile to use in the paramete correlation plot"
-  value: 10
+  description: "number of bining quartile to use in the parameter correlation plot"
+  value: 30
+
+corr_ecc_th:
+  description: "Eccentricity range threshold for eye correlation analysis"
+  units: "dva"
+  value: [0.05, 10]
+
+corr_size_th:
+  description: "Size range threshold for eye correlation analysis"
+  units: "dva"
+  value: [0.05, 6]
+
+corr_rsqr_th:
+  description: "R-square minimum threshold for eye correlation analysis"
+  value: 0
+
+corr_n_th:
+  description: "CSS n range threshold for for eye correlation analysis"
+  value: [0.01, 1]
+
+corr_prf_amp_th: 
+  description: "pRF amplitude range threshold for eye correlation analysis"
+  value: [-6, 6]
+
+corr_stats_th: 
+  description: "p value minimum threshold for eye correlation analysis"
+  value: 0.01
+  
