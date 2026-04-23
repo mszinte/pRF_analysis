@@ -127,7 +127,7 @@ for subject in subjects:
         for roi in clusters:
             mask_img, mask_data = load_surface(
                 f"{main_data}/{subject}/91k/rest/seed/"
-                f"{subject}_91k_intertask_Sac_Pur_vision-pursuit-saccade"
+                f"{subject}_91k_intertask_Sac-Pur-pRF"
                 f"_{seed_key}_{roi}.shape.gii"
             )
             mask = mask_data.ravel()
