@@ -188,6 +188,8 @@ for subject in subjects:
             vals = C[0, 1:]   # seed row, skip self-correlation
 
             partial_matrix[i_cl, included_idx]    = vals
+
+            # Get the fizher-z transformed values
             partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
 
         # -------------------------

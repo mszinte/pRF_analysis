@@ -31,7 +31,7 @@ cd ~/projects/pRF_analysis/RetinoMaps/rest
 Basic command:
 python xcp-d_aroma_sbatch_no_motion_filtering.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
 ------------------------------------------------------------------------------------------------------------
-Written by Marco Bedini (marco.bedini@univ-amu.fr) adapting previous examples in the RetinoMaps project
+Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------------------------
 """
 
