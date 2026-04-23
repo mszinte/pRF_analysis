@@ -36,7 +36,7 @@ mkdir -p "$OUT_DIR"
 	      ROI_FLAG="-right-roi"
 	    fi
 
-	    ROI_FILE="$SEED_DIR/sub-${i}_91k_intertask_Sac_Pur_vision-pursuit-saccade_${HEMI}_${ROI}.shape.gii"
+	    ROI_FILE="$SEED_DIR/sub-${i}_91k_intertask_Sac-Pur-pRF_${HEMI}_${ROI}.shape.gii"
 
 	    # Full correlation
 	    wb_command -cifti-correlation \
