@@ -186,6 +186,14 @@ hot_zone_percent:
 prf_tasks_eyes_names:
   description: "Comparison groups of the concatenation of runs across the eye condition used to compute the correlation"
   value: [['BarsBarsRingsWedgesRightEye', 'BarsBarsRingsWedgesLeftEye'],['BarsBarsRightEye', 'BarsBarsLeftEye'],['RingsWedgesRightEye', 'RingsWedgesLeftEye']]
+
+corr_bin_eye: 
+  description: "Eye on which we bin the data for the correlations"
+  value: "FE-LE"
+  levels: ["AE-RE", "FE-LE"]
+  level-description: 
+    AE-RE: "Use the amblyopic eye (patient) / right eye (control)"
+    FE-LE: "Use the fellow eye (patient) / left eye (control)"
   
 corr_params:
   description: "Parameters to correlate between amblyopic/right and fellow/left eye runs"

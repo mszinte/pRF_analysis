@@ -3,31 +3,36 @@
 make_corr_tsv.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Make per-subject TSVs of pRF parameter correlations between eyes (AE/RE vs FE/LE).
-For each task, format, ROI method, and parameter, data from the two eyes are merged,
+Make per-subject or per-group TSVs of pRF parameter correlations between eyes
+(AE/RE vs FE/LE). For individual subjects, data from the two eyes are merged,
 quantile-binned by AE/RE, and weighted medians (+ 95% CI) are computed per bin.
+For group subjects (group-patient, group-control), individual subject TSVs are loaded
+and aggregated: bin medians are averaged across subjects, and CI bounds reflect
+across-subject variability (2.5/97.5 percentiles of per-subject medians).
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory (e.g. /home/mszinte/disks/meso_S/data)
 sys.argv[2]: project name (e.g. amblyo7T_prf)
-sys.argv[3]: subject name (e.g. sub-17)
+sys.argv[3]: subject name (e.g. sub-17, group-patient, group-control)
 sys.argv[4]: server group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
-- Per-subject, per-task, per-parameter TSVs with binned correlations:
+- Per-subject/group, per-task, per-parameter TSVs with binned correlations:
   {subject}_{fn_spec}_{corr_param}-corr.tsv
 - Per-subject, per-task merged two-eye TSV:
   {subject}_{fn_spec_combined}_prf-css-deriv.tsv
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+>> cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
 2. run python command
-python make_correlations_param_eyes_tsv.py [main directory] [project name] [subject] [group]
+python make_corr_tsv.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Example:
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python make_corr_tsv.py /home/mszinte/disks/meso_S/data amblyo7T_prf sub-17 327
+cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
+python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf group-patient 327
+python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
@@ -47,7 +52,7 @@ import numpy as np
 import pandas as pd
 
 # Personal import
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
 from maths_utils import weighted_nan_median, weighted_nan_percentile
 
@@ -81,6 +86,8 @@ avg_methods = analysis_info['avg_methods']
 
 # Parameters specific to eye correlation analysis
 corr_bin_number = analysis_info['corr_bin_number']
+corr_bin_eye = analysis_info['corr_bin_eye']
+corr_other_eye = 'FE-LE' if corr_bin_eye == 'AE-RE' else 'AE-RE'
 corr_params = analysis_info['corr_params']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 
@@ -88,9 +95,18 @@ prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 participants_path = os.path.join(main_dir, project_dir, 'participants.tsv')
 participants_df = pd.read_table(participants_path)
 amblyopic_eyes = dict(zip(participants_df['participant_id'], participants_df['amblyopic_eye']))
-groups = dict(zip(participants_df['participant_id'], participants_df['group']))
-amblyopic_eye = amblyopic_eyes[subject]
-subject_group = groups[subject]
+subject_groups = dict(zip(participants_df['participant_id'], participants_df['group']))
+
+# Determine if individual or group run
+if 'group' not in subject:
+    amblyopic_eye = amblyopic_eyes[subject]
+    subject_group = subject_groups[subject]
+else:
+    # Identify which group and load the corresponding subject list
+    if 'patient' in subject:
+        subjects_to_group = analysis_info['group_patient']
+    elif 'control' in subject:
+        subjects_to_group = analysis_info['group_control']
 
 # Main loop
 for avg_method in avg_methods:
@@ -108,134 +124,184 @@ for avg_method in avg_methods:
 
             for prf_task_eyes_names in prf_tasks_eyes_names:
 
-                data_task_eye = {}
-                for prf_task_eye_name in prf_task_eyes_names:
-
-                    print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
-
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
-
-                    if not os.path.isdir(tsv_dir):
-                        print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
-                        continue
-
-                    fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
-                        prf_task_eye_name, preproc_prep, filtering,
-                        normalization, avg_method, rois_method_format)
-                    tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
-                    data = pd.read_table(tsv_fn, sep="\t")
-
-                    # Threshold data (replace by nan)
-                    if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                    elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                    data.loc[(data.amplitude < amplitude_threshold[0]) |
-                             (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                             (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
-                             (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
-                             (data[rsq2use] < rsqr_threshold) |
-                             (data[stats_col] > stats_threshold)] = np.nan
-                    data = data.dropna()
-
-                    # Get eye_val
-                    if 'RightEye' in prf_task_eye_name:
-                        eye_val = 'right eye'
-                    elif 'LeftEye' in prf_task_eye_name:
-                        eye_val = 'left eye'
-                    data['eye_val'] = eye_val
-
-                    # Get eye_type
-                    if subject_group == 'patient':
-                        amblyopic_side = amblyopic_eye[0]
-                        if eye_val == 'right eye' and amblyopic_side == 'R':
-                            eye_type = 'amblyopic eye'
-                        elif eye_val == 'right eye' and amblyopic_side == 'L':
-                            eye_type = 'fellow eye'
-                        elif eye_val == 'left eye' and amblyopic_side == 'L':
-                            eye_type = 'amblyopic eye'
-                        elif eye_val == 'left eye' and amblyopic_side == 'R':
-                            eye_type = 'fellow eye'
-                    elif subject_group == 'control':
-                        eye_type = eye_val
-                    data['eye_type'] = eye_type
-
-                    # Merge two eyes
-                    if len(data_task_eye) == 0:
-                        data_task_eye['first'] = data
-                        first_eye_type = eye_type
-                    else:
-                        second_eye_type = eye_type
-
-                        if first_eye_type in ['amblyopic eye', 'right eye']:
-                            suffix1, suffix2 = '_AE-RE', '_FE-LE'
-                        else:
-                            suffix1, suffix2 = '_FE-LE', '_AE-RE'
-                            data_task_eye['first'], data = data, data_task_eye['first']
-
-                        data = pd.merge(data_task_eye['first'], data,
-                                        on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
-                                        suffixes=(suffix1, suffix2))
-
-                # Save the merged two-eye TSV
                 fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
                     prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
                     preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                output_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec_combined)
-                data.to_csv(output_fn, sep='\t', index=False)
-                print(f"Saving: {output_fn}")
+                # Individual subject analysis
+                # ---------------------------
+                if 'group' not in subject:
 
-                # PARAMETER CORRELATIONS AE/RE vs. FE/LE
-                # ----------------------------------------
-                for corr_param in corr_params:
+                    data_task_eye = {}
+                    for prf_task_eye_name in prf_task_eyes_names:
 
-                    for num_roi, roi in enumerate(rois):
+                        print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
 
-                        df_roi = data.loc[(data.roi == roi)]
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subject, format_)
 
-                        # Bin by AE-RE (X-axis / independent variable)
-                        df_bin_AR = df_roi.groupby(pd.qcut(df_roi[f'{corr_param}_AE-RE'],
-                                    q=corr_bin_number,
-                                    duplicates='drop'))
+                        if not os.path.isdir(tsv_dir):
+                            print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                            continue
 
-                        df_bin = pd.DataFrame()
-                        df_bin['roi'] = [roi] * len(df_bin_AR)
-                        df_bin['num_bins'] = np.arange(len(df_bin_AR))
-                        df_bin['n_vertex'] = df_bin_AR.size().values
+                        fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
+                            prf_task_eye_name, preproc_prep, filtering,
+                            normalization, avg_method, rois_method_format)
+                        tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
+                        data = pd.read_table(tsv_fn, sep="\t")
 
-                        # AE-RE (X-axis)
-                        df_bin[f'{corr_param}_AE-RE_median'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_median(x[f'{corr_param}_AE-RE'].values,
-                                                          x[f'{rsq2use}_AE-RE'].values)).values
-                        df_bin[f'{corr_param}_AE-RE_ci_upper_bound'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_percentile(x[f'{corr_param}_AE-RE'].values,
-                                                              x[f'{rsq2use}_AE-RE'].values, 97.5)).values
-                        df_bin[f'{corr_param}_AE-RE_ci_lower_bound'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_percentile(x[f'{corr_param}_AE-RE'].values,
-                                                              x[f'{rsq2use}_AE-RE'].values, 2.5)).values
+                        # Threshold data (replace by nan)
+                        if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                        elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                        data.loc[(data.amplitude < amplitude_threshold[0]) |
+                                 (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                                 (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
+                                 (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
+                                 (data[rsq2use] < rsqr_threshold) |
+                                 (data[stats_col] > stats_threshold)] = np.nan
+                        data = data.dropna()
 
-                        # FE-LE (Y-axis) — from same AE-RE bins
-                        df_bin[f'{corr_param}_FE-LE_median'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_median(x[f'{corr_param}_FE-LE'].values,
-                                                          x[f'{rsq2use}_FE-LE'].values)).values
-                        df_bin[f'{corr_param}_FE-LE_ci_upper_bound'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_percentile(x[f'{corr_param}_FE-LE'].values,
-                                                              x[f'{rsq2use}_FE-LE'].values, 97.5)).values
-                        df_bin[f'{corr_param}_FE-LE_ci_lower_bound'] = df_bin_AR.apply(
-                            lambda x: weighted_nan_percentile(x[f'{corr_param}_FE-LE'].values,
-                                                              x[f'{rsq2use}_FE-LE'].values, 2.5)).values
+                        # Get eye_val
+                        if 'RightEye' in prf_task_eye_name:
+                            eye_val = 'right eye'
+                        elif 'LeftEye' in prf_task_eye_name:
+                            eye_val = 'left eye'
+                        data['eye_val'] = eye_val
 
-                        # Weight by AE-RE R²
-                        df_bin[f'{rsq2use}_median'] = np.array(df_bin_AR[f'{rsq2use}_AE-RE'].median())
+                        # Get eye_type
+                        if subject_group == 'patient':
+                            amblyopic_side = amblyopic_eye[0]
+                            if eye_val == 'right eye' and amblyopic_side == 'R':
+                                eye_type = 'amblyopic eye'
+                            elif eye_val == 'right eye' and amblyopic_side == 'L':
+                                eye_type = 'fellow eye'
+                            elif eye_val == 'left eye' and amblyopic_side == 'L':
+                                eye_type = 'amblyopic eye'
+                            elif eye_val == 'left eye' and amblyopic_side == 'R':
+                                eye_type = 'fellow eye'
+                        elif subject_group == 'control':
+                            eye_type = eye_val
+                        data['eye_type'] = eye_type
 
-                        if num_roi == 0: df_bins = df_bin
-                        else: df_bins = pd.concat([df_bins, df_bin])
+                        # Merge two eyes
+                        if len(data_task_eye) == 0:
+                            data_task_eye['first'] = data
+                            first_eye_type = eye_type
+                        else:
+                            second_eye_type = eye_type
 
-                    tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
-                    print('Saving tsv: {}'.format(tsv_fn))
-                    df_bins.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+                            if first_eye_type in ['amblyopic eye', 'right eye']:
+                                suffix1, suffix2 = '_AE-RE', '_FE-LE'
+                            else:
+                                suffix1, suffix2 = '_FE-LE', '_AE-RE'
+                                data_task_eye['first'], data = data, data_task_eye['first']
+
+                            data = pd.merge(data_task_eye['first'], data,
+                                            on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
+                                            suffixes=(suffix1, suffix2))
+
+                    # Save the merged two-eye TSV
+                    output_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec_combined)
+                    data.to_csv(output_fn, sep='\t', index=False)
+                    print(f"Saving: {output_fn}")
+
+                    # PARAMETER CORRELATIONS AE/RE vs. FE/LE
+                    # ----------------------------------------
+                    for corr_param in corr_params:
+
+                        for num_roi, roi in enumerate(rois):
+
+                            df_roi = data.loc[(data.roi == roi)]
+
+                            # Bin by corr_bin_eye (X-axis / independent variable)
+                            df_bin_x = df_roi.groupby(pd.qcut(df_roi[f'{corr_param}_{corr_bin_eye}'],
+                                        q=corr_bin_number,
+                                        duplicates='drop'))
+
+                            df_bin = pd.DataFrame()
+                            df_bin['roi'] = [roi] * len(df_bin_x)
+                            df_bin['num_bins'] = np.arange(len(df_bin_x))
+                            df_bin['n_vertex'] = df_bin_x.size().values
+
+                            # X-axis eye (binning eye = corr_bin_eye)
+                            df_bin[f'{corr_param}_{corr_bin_eye}_median'] = df_bin_x.apply(
+                                lambda x: weighted_nan_median(x[f'{corr_param}_{corr_bin_eye}'].values,
+                                                              x[f'{rsq2use}_{corr_bin_eye}'].values)).values
+                            df_bin[f'{corr_param}_{corr_bin_eye}_ci_upper_bound'] = df_bin_x.apply(
+                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_bin_eye}'].values,
+                                                                  x[f'{rsq2use}_{corr_bin_eye}'].values, 97.5)).values
+                            df_bin[f'{corr_param}_{corr_bin_eye}_ci_lower_bound'] = df_bin_x.apply(
+                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_bin_eye}'].values,
+                                                                  x[f'{rsq2use}_{corr_bin_eye}'].values, 2.5)).values
+
+                            # Y-axis eye (other eye = corr_other_eye) — from same corr_bin_eye bins
+                            df_bin[f'{corr_param}_{corr_other_eye}_median'] = df_bin_x.apply(
+                                lambda x: weighted_nan_median(x[f'{corr_param}_{corr_other_eye}'].values,
+                                                              x[f'{rsq2use}_{corr_other_eye}'].values)).values
+                            df_bin[f'{corr_param}_{corr_other_eye}_ci_upper_bound'] = df_bin_x.apply(
+                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_other_eye}'].values,
+                                                                  x[f'{rsq2use}_{corr_other_eye}'].values, 97.5)).values
+                            df_bin[f'{corr_param}_{corr_other_eye}_ci_lower_bound'] = df_bin_x.apply(
+                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_other_eye}'].values,
+                                                                  x[f'{rsq2use}_{corr_other_eye}'].values, 2.5)).values
+
+                            # Weight by corr_bin_eye R²
+                            df_bin[f'{rsq2use}_median'] = np.array(df_bin_x[f'{rsq2use}_{corr_bin_eye}'].median())
+
+                            if num_roi == 0: df_bins = df_bin
+                            else: df_bins = pd.concat([df_bins, df_bin])
+
+                        tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+                        print('Saving tsv: {}'.format(tsv_fn))
+                        df_bins.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+
+                # Group analysis
+                # --------------
+                else:
+                    print(f'Group: {subject} - {avg_method} - {format_}')
+
+                    for corr_param in corr_params:
+
+                        # Load and concatenate individual subject TSVs
+                        for i, subject_to_group in enumerate(subjects_to_group):
+                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subject_to_group, format_)
+                            tsv_fn = "{}/{}_{}_{}-corr.tsv".format(
+                                tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
+                            df_indiv = pd.read_table(tsv_fn, sep="\t")
+                            if i == 0: df_all = df_indiv.copy()
+                            else: df_all = pd.concat([df_all, df_indiv])
+
+                        # Median across subjects per roi/bin
+                        median_cols = [f'{corr_param}_{corr_bin_eye}_median',
+                                       f'{corr_param}_{corr_other_eye}_median',
+                                       f'{rsq2use}_median',
+                                       'n_vertex']
+                        df_group = df_all.groupby(['roi', 'num_bins'], sort=False)[median_cols].median().reset_index()
+
+                        # CI across subjects (2.5/97.5 percentiles of per-subject medians)
+                        for eye in [corr_bin_eye, corr_other_eye]:
+                            df_group[f'{corr_param}_{eye}_ci_upper_bound'] = (
+                                df_all.groupby(['roi', 'num_bins'], sort=False)
+                                [f'{corr_param}_{eye}_median']
+                                .quantile(0.975)
+                                .reset_index()[f'{corr_param}_{eye}_median'])
+                            df_group[f'{corr_param}_{eye}_ci_lower_bound'] = (
+                                df_all.groupby(['roi', 'num_bins'], sort=False)
+                                [f'{corr_param}_{eye}_median']
+                                .quantile(0.025)
+                                .reset_index()[f'{corr_param}_{eye}_median'])
+
+                        # Save group TSV
+                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subject, format_)
+                        os.makedirs(tsv_dir_group, exist_ok=True)
+                        tsv_fn = "{}/{}_{}_{}-corr.tsv".format(
+                            tsv_dir_group, subject, fn_spec_combined, corr_param)
+                        print('Saving tsv: {}'.format(tsv_fn))
+                        df_group.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
 # Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
