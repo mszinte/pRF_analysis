@@ -4,11 +4,25 @@ make_corr_tsv.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Make per-subject or per-group TSVs of pRF parameter correlations between eyes
-(AE/RE vs FE/LE). For individual subjects, data from the two eyes are merged,
-quantile-binned by AE/RE, and weighted medians (+ 95% CI) are computed per bin.
-For group subjects (group-patient, group-control), individual subject TSVs are loaded
-and aggregated: bin medians are averaged across subjects, and CI bounds reflect
-across-subject variability (2.5/97.5 percentiles of per-subject medians).
+(FE/LE x-axis vs AE/RE y-axis).
+
+For individual subjects:
+- Data from RightEye and LeftEye runs are loaded separately, thresholded, and merged
+  on common vertices (inner join on num_vert). The AE/FE labeling accounts for which
+  physical eye is amblyopic (from participants.tsv): for left-amblyopic patients the
+  LeftEye file is assigned _AE-RE and RightEye is assigned _FE-LE (swap), and vice
+  versa for right-amblyopic. Controls always have RightEye=_AE-RE, LeftEye=_FE-LE.
+- For each parameter and ROI, a weighted 2D KDE is computed on a fixed
+  corr_grid_size x corr_grid_size grid (x = FE/LE, y = AE/RE), weighted by the
+  mean R² of both eyes.
+- A weighted Deming (orthogonal) regression is computed per ROI, weighted by mean R²,
+  along with Pearson r², p-value, n_vertex, and mean R² weight.
+
+For group subjects (group-patient, group-control):
+- KDE density grids are averaged cell by cell across subjects (each subject contributes
+  equally regardless of vertex count).
+- Regression stats (slope, intercept, r2_pearson) are averaged across subjects with
+  2.5/97.5 percentile CI bounds.
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory (e.g. /home/mszinte/disks/meso_S/data)
@@ -17,8 +31,13 @@ sys.argv[3]: subject name (e.g. sub-17, group-patient, group-control)
 sys.argv[4]: server group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
-- Per-subject/group, per-task, per-parameter TSVs with binned correlations:
-  {subject}_{fn_spec}_{corr_param}-corr.tsv
+- Per-subject/group, per-task, per-parameter KDE density TSVs:
+  {subject}_{fn_spec_combined}_{corr_param}-corr.tsv
+  columns: roi, x_grid, y_grid, density
+- Per-subject/group, per-task, per-parameter regression stats TSVs:
+  {subject}_{fn_spec_combined}_{corr_param}-regression.tsv
+  columns: roi, slope, intercept, r2_pearson, p_value, n_vertex, mean_r2_weight
+  (+ ci bounds for group)
 - Per-subject, per-task merged two-eye TSV:
   {subject}_{fn_spec_combined}_prf-css-deriv.tsv
 -----------------------------------------------------------------------------------------
@@ -50,11 +69,11 @@ import os
 import sys
 import numpy as np
 import pandas as pd
+from scipy.stats import gaussian_kde
 
 # Personal import
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
-from maths_utils import weighted_nan_median, weighted_nan_percentile
 
 # Inputs
 main_dir = sys.argv[1]
@@ -74,7 +93,6 @@ formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 rois_methods = analysis_info['rois_methods']
 
-
 ecc_threshold = analysis_info['corr_ecc_th']
 size_threshold = analysis_info['corr_size_th']
 rsqr_threshold = analysis_info['corr_rsqr_th']
@@ -88,10 +106,16 @@ normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
 # Parameters specific to eye correlation analysis
-corr_bin_number = analysis_info['corr_bin_number']
-corr_bin_eye = analysis_info['corr_bin_eye']
-corr_other_eye = 'FE-LE' if corr_bin_eye == 'AE-RE' else 'AE-RE'
 corr_params = analysis_info['corr_params']
+corr_grid_size = analysis_info['corr_grid_size']
+corr_param_ranges = {
+    'prf_rsq':    analysis_info['prf_rsq_param_range'],
+    'prf_x':      analysis_info['prf_x_param_range'],
+    'prf_y':      analysis_info['prf_y_param_range'],
+    'prf_size':   analysis_info['prf_size_param_range'],
+    'prf_ecc':    analysis_info['prf_ecc_param_range'],
+    'pcm_median': analysis_info['pcm_median_param_range']
+}
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 
 # Load participant info
@@ -105,7 +129,6 @@ if 'group' not in subject:
     amblyopic_eye = amblyopic_eyes[subject]
     subject_group = subject_groups[subject]
 else:
-    # Identify which group and load the corresponding subject list
     if 'patient' in subject:
         subjects_to_group = analysis_info['group_patient']
     elif 'control' in subject:
@@ -189,7 +212,6 @@ for avg_method in avg_methods:
                         elif subject_group == 'control':
                             eye_type = eye_val
                         data['eye_type'] = eye_type
-                        print(f"[DEBUG2] {prf_task_eye_name} | eye_type assigned={eye_type} | unique in col={data['eye_type'].unique()}")
 
                         # Merge two eyes
                         if len(data_task_eye) == 0:
@@ -205,13 +227,10 @@ for avg_method in avg_methods:
                                 suffix1, suffix2 = '_AE-RE', '_FE-LE'
 
                             # Reassign eye_val and eye_type after potential swap
-                            # using .loc to ensure proper in-place assignment
                             data_task_eye['first'].loc[:, 'eye_val'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
                             data_task_eye['first'].loc[:, 'eye_type'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
                             data.loc[:, 'eye_val'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
                             data.loc[:, 'eye_type'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
-
-                            print(f"[DEBUG] subject={subject}, first_eye_type={first_eye_type}, suffix1={suffix1}, task_eye_name_first={data_task_eye['first']['task_eye_name'].iloc[0]}, task_eye_name_second={data['task_eye_name'].iloc[0]}")
 
                             data = pd.merge(data_task_eye['first'], data,
                                             on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
@@ -222,68 +241,93 @@ for avg_method in avg_methods:
                     data.to_csv(output_fn, sep='\t', index=False)
                     print(f"Saving: {output_fn}")
 
-                    # Sanity check: verify correct TSV files ended up in AE-RE and FE-LE columns
-                    ae_tasks = data['task_eye_name_AE-RE'].unique()
-                    fe_tasks = data['task_eye_name_FE-LE'].unique()
-                    if subject_group == 'patient':
-                        amblyopic_side = amblyopic_eye[0]
-                        ae_ok = all(('RightEye' in t if amblyopic_side == 'R' else 'LeftEye' in t) for t in ae_tasks)
-                        fe_ok = all(('LeftEye' in t if amblyopic_side == 'R' else 'RightEye' in t) for t in fe_tasks)
-                    else:
-                        ae_ok = all('RightEye' in t for t in ae_tasks)
-                        fe_ok = all('LeftEye' in t for t in fe_tasks)
-                    status = '✓' if ae_ok and fe_ok else '✗ MISMATCH'
-                    print(f"[CHECK] {subject} | AE-RE from={ae_tasks} | FE-LE from={fe_tasks} | {status}")
-
-                    # PARAMETER CORRELATIONS AE/RE vs. FE/LE
-                    # ----------------------------------------
+                    # PARAMETER CORRELATIONS — WEIGHTED 2D KDE + REGRESSION STATS
+                    # -------------------------------------------------------------
+                    from scipy.stats import pearsonr
                     for corr_param in corr_params:
 
+                        param_range = corr_param_ranges[corr_param]
+                        x_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
+                        y_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
+                        xx, yy = np.meshgrid(x_grid, y_grid)
+                        grid_points = np.vstack([xx.ravel(), yy.ravel()])
+
+                        df_reg_rows = []
                         for num_roi, roi in enumerate(rois):
 
-                            df_roi = data.loc[(data.roi == roi)]
+                            df_roi = data.loc[(data.roi == roi)].copy()
 
-                            # Bin by corr_bin_eye (X-axis / independent variable)
-                            df_bin_x = df_roi.groupby(pd.qcut(df_roi[f'{corr_param}_{corr_bin_eye}'],
-                                        q=corr_bin_number,
-                                        duplicates='drop'))
+                            x_vals = df_roi[f'{corr_param}_FE-LE'].values  # x = FE (reference)
+                            y_vals = df_roi[f'{corr_param}_AE-RE'].values  # y = AE (outcome)
+                            r2_ae = df_roi[f'{rsq2use}_AE-RE'].values
+                            r2_fe = df_roi[f'{rsq2use}_FE-LE'].values
+                            r2_combined = (r2_ae + r2_fe) / 2
 
-                            df_bin = pd.DataFrame()
-                            df_bin['roi'] = [roi] * len(df_bin_x)
-                            df_bin['num_bins'] = np.arange(len(df_bin_x))
-                            df_bin['n_vertex'] = df_bin_x.size().values
+                            # Remove NaNs
+                            mask = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
+                            x_vals = x_vals[mask]
+                            y_vals = y_vals[mask]
+                            r2_combined = r2_combined[mask]
 
-                            # X-axis eye (binning eye = corr_bin_eye)
-                            df_bin[f'{corr_param}_{corr_bin_eye}_median'] = df_bin_x.apply(
-                                lambda x: weighted_nan_median(x[f'{corr_param}_{corr_bin_eye}'].values,
-                                                              x[f'{rsq2use}_{corr_bin_eye}'].values)).values
-                            df_bin[f'{corr_param}_{corr_bin_eye}_ci_upper_bound'] = df_bin_x.apply(
-                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_bin_eye}'].values,
-                                                                  x[f'{rsq2use}_{corr_bin_eye}'].values, 97.5)).values
-                            df_bin[f'{corr_param}_{corr_bin_eye}_ci_lower_bound'] = df_bin_x.apply(
-                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_bin_eye}'].values,
-                                                                  x[f'{rsq2use}_{corr_bin_eye}'].values, 2.5)).values
+                            n_vertex = len(x_vals)
+                            mean_r2_weight = np.nanmean(r2_combined)
 
-                            # Y-axis eye (other eye = corr_other_eye) — from same corr_bin_eye bins
-                            df_bin[f'{corr_param}_{corr_other_eye}_median'] = df_bin_x.apply(
-                                lambda x: weighted_nan_median(x[f'{corr_param}_{corr_other_eye}'].values,
-                                                              x[f'{rsq2use}_{corr_other_eye}'].values)).values
-                            df_bin[f'{corr_param}_{corr_other_eye}_ci_upper_bound'] = df_bin_x.apply(
-                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_other_eye}'].values,
-                                                                  x[f'{rsq2use}_{corr_other_eye}'].values, 97.5)).values
-                            df_bin[f'{corr_param}_{corr_other_eye}_ci_lower_bound'] = df_bin_x.apply(
-                                lambda x: weighted_nan_percentile(x[f'{corr_param}_{corr_other_eye}'].values,
-                                                                  x[f'{rsq2use}_{corr_other_eye}'].values, 2.5)).values
+                            # Normalize weights
+                            r2_norm = r2_combined / r2_combined.sum()
 
-                            # Weight by corr_bin_eye R²
-                            df_bin[f'{rsq2use}_median'] = np.array(df_bin_x[f'{rsq2use}_{corr_bin_eye}'].median())
+                            # Compute weighted 2D KDE
+                            kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                            density = kde(grid_points).reshape(corr_grid_size, corr_grid_size)
 
-                            if num_roi == 0: df_bins = df_bin
-                            else: df_bins = pd.concat([df_bins, df_bin])
+                            # Save KDE as long-format dataframe
+                            df_kde_roi = pd.DataFrame({
+                                'roi': roi,
+                                'x_grid': xx.ravel(),
+                                'y_grid': yy.ravel(),
+                                'density': density.ravel()
+                            })
 
+                            if num_roi == 0: df_kde = df_kde_roi
+                            else: df_kde = pd.concat([df_kde, df_kde_roi])
+
+                            # Deming regression + stats
+                            if n_vertex > 2:
+                                weights = r2_norm
+                                x_mean = np.sum(weights * x_vals)
+                                y_mean = np.sum(weights * y_vals)
+                                sxx = np.sum(weights * (x_vals - x_mean) ** 2)
+                                syy = np.sum(weights * (y_vals - y_mean) ** 2)
+                                sxy = np.sum(weights * (x_vals - x_mean) * (y_vals - y_mean))
+                                slope = (syy - sxx + np.sqrt((syy - sxx) ** 2 + 4 * sxy ** 2)) / (2 * sxy)
+                                intercept = y_mean - slope * x_mean
+                                r_val, p_val = pearsonr(x_vals, y_vals)
+                                r2_pearson = r_val ** 2
+                            else:
+                                slope = np.nan
+                                intercept = np.nan
+                                r2_pearson = np.nan
+                                p_val = np.nan
+
+                            df_reg_rows.append({
+                                'roi': roi,
+                                'slope': slope,
+                                'intercept': intercept,
+                                'r2_pearson': r2_pearson,
+                                'p_value': p_val,
+                                'n_vertex': n_vertex,
+                                'mean_r2_weight': mean_r2_weight
+                            })
+
+                        # Save KDE TSV
                         tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
                         print('Saving tsv: {}'.format(tsv_fn))
-                        df_bins.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+                        df_kde.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+
+                        # Save regression TSV
+                        df_reg = pd.DataFrame(df_reg_rows)
+                        reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+                        print('Saving tsv: {}'.format(reg_tsv_fn))
+                        df_reg.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
 
                 # Group analysis
                 # --------------
@@ -302,27 +346,10 @@ for avg_method in avg_methods:
                             if i == 0: df_all = df_indiv.copy()
                             else: df_all = pd.concat([df_all, df_indiv])
 
-                        # Median across subjects per roi/bin
-                        median_cols = [f'{corr_param}_{corr_bin_eye}_median',
-                                       f'{corr_param}_{corr_other_eye}_median',
-                                       f'{rsq2use}_median',
-                                       'n_vertex']
-                        df_group = df_all.groupby(['roi', 'num_bins'], sort=False)[median_cols].median().reset_index()
+                        # Average density across subjects per roi/grid cell
+                        df_group = df_all.groupby(['roi', 'x_grid', 'y_grid'], sort=False)[['density']].mean().reset_index()
 
-                        # CI across subjects (2.5/97.5 percentiles of per-subject medians)
-                        for eye in [corr_bin_eye, corr_other_eye]:
-                            df_group[f'{corr_param}_{eye}_ci_upper_bound'] = (
-                                df_all.groupby(['roi', 'num_bins'], sort=False)
-                                [f'{corr_param}_{eye}_median']
-                                .quantile(0.975)
-                                .reset_index()[f'{corr_param}_{eye}_median'])
-                            df_group[f'{corr_param}_{eye}_ci_lower_bound'] = (
-                                df_all.groupby(['roi', 'num_bins'], sort=False)
-                                [f'{corr_param}_{eye}_median']
-                                .quantile(0.025)
-                                .reset_index()[f'{corr_param}_{eye}_median'])
-
-                        # Save group TSV
+                        # Save group KDE TSV
                         tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
                             main_dir, project_dir, subject, format_)
                         os.makedirs(tsv_dir_group, exist_ok=True)
@@ -330,6 +357,29 @@ for avg_method in avg_methods:
                             tsv_dir_group, subject, fn_spec_combined, corr_param)
                         print('Saving tsv: {}'.format(tsv_fn))
                         df_group.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+
+                        # Group regression — load and average per-subject regression TSVs
+                        for i, subject_to_group in enumerate(subjects_to_group):
+                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subject_to_group, format_)
+                            reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(
+                                tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
+                            df_reg_indiv = pd.read_table(reg_tsv_fn, sep="\t")
+                            if i == 0: df_reg_all = df_reg_indiv.copy()
+                            else: df_reg_all = pd.concat([df_reg_all, df_reg_indiv])
+
+                        # Mean slope and intercept across subjects
+                        df_reg_group = df_reg_all.groupby(['roi'], sort=False)[['slope', 'intercept', 'r2_pearson', 'n_vertex', 'mean_r2_weight']].mean().reset_index()
+
+                        # CI across subjects (2.5/97.5 percentiles)
+                        for col in ['slope', 'intercept', 'r2_pearson']:
+                            df_reg_group[f'{col}_ci_lower'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.025).reset_index()[col]
+                            df_reg_group[f'{col}_ci_upper'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.975).reset_index()[col]
+
+                        reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(
+                            tsv_dir_group, subject, fn_spec_combined, corr_param)
+                        print('Saving tsv: {}'.format(reg_tsv_fn))
+                        df_reg_group.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
 
 # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

@@ -13,6 +13,47 @@ from plotly.subplots import make_subplots
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from maths_utils import weighted_regression
 
+
+def weighted_deming_regression(x, y, weights=None):
+    """
+    Weighted Deming (orthogonal) regression.
+    Minimizes perpendicular distances, symmetric when x and y are swapped.
+
+    Parameters
+    ----------
+    x, y : array-like
+        Data arrays
+    weights : array-like, optional
+        Weights for each point (e.g. mean R²)
+
+    Returns
+    -------
+    slope, intercept : float
+    """
+    x = np.array(x)
+    y = np.array(y)
+
+    if weights is None:
+        weights = np.ones(len(x))
+    weights = np.array(weights)
+    weights = weights / weights.sum()
+
+    # Weighted means
+    x_mean = np.sum(weights * x)
+    y_mean = np.sum(weights * y)
+
+    # Weighted variances and covariance
+    sxx = np.sum(weights * (x - x_mean) ** 2)
+    syy = np.sum(weights * (y - y_mean) ** 2)
+    sxy = np.sum(weights * (x - x_mean) * (y - y_mean))
+
+    # Deming slope (assumes equal error variance in x and y, lambda=1)
+    slope = (syy - sxx + np.sqrt((syy - sxx) ** 2 + 4 * sxy ** 2)) / (2 * sxy)
+    intercept = y_mean - slope * x_mean
+
+    return slope, intercept
+
+
 def plotly_template(template_specs):
     """
     Define the template for plotly
@@ -92,13 +133,14 @@ def plotly_template(template_specs):
 
 def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
     """
-    Make correlation plot across eyes (AE/RE vs FE/LE).
+    Make correlation plot across eyes (FE/LE x-axis vs AE/RE y-axis).
     One figure with rows = ROIs, columns = corr_params.
+    KDE contour from pre-computed TSV, regression line from regression TSV.
 
     Parameters
     ----------
     tsv_dir : str
-        Directory containing the per-parameter correlation TSVs
+        Directory containing the per-parameter correlation TSVs and merged TSV
     subject : str
         Subject name (e.g. sub-17, group-patient)
     fn_spec_combined : str
@@ -113,20 +155,14 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
     fig : plotly figure object
     """
 
-    # Axis settings per parameter
+    # Axis label settings per parameter
     corr_plot_settings = {
-        'prf_rsq':    {'axes': 'pRF R<sup>2</sup>',
-                       'range': [0, 0.8], 'tick_step': 0.2, 'n_ticks': 5},
-        'prf_x':      {'axes': 'pRF x coord. (dva)',
-                       'range': [-5, 5], 'tick_step': 2.5, 'n_ticks': 5},
-        'prf_y':      {'axes': 'pRF y coord. (dva)',
-                       'range': [-5, 5], 'tick_step': 2.5, 'n_ticks': 5},
-        'prf_size':   {'axes': 'pRF size (dva)',
-                       'range': [0, 4], 'tick_step': 1, 'n_ticks': 5},
-        'prf_ecc':    {'axes': 'pRF ecc. (dva)',
-                       'range': [0, 10], 'tick_step': 2, 'n_ticks': 6},
-        'pcm_median': {'axes': 'pRF CM (mm/dva)',
-                       'range': [0, 30], 'tick_step': 5, 'n_ticks': 7}
+        'prf_rsq':    {'axes': 'pRF R<sup>2</sup>',   'tick_step': 0.2},
+        'prf_x':      {'axes': 'pRF x coord. (dva)',   'tick_step': 2.5},
+        'prf_y':      {'axes': 'pRF y coord. (dva)',   'tick_step': 2.5},
+        'prf_size':   {'axes': 'pRF size (dva)',        'tick_step': 1},
+        'prf_ecc':    {'axes': 'pRF ecc. (dva)',        'tick_step': 2},
+        'pcm_median': {'axes': 'pRF CM (mm/dva)',       'tick_step': 5}
     }
 
     # Template
@@ -144,6 +180,7 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
     fig_margin = figure_info['rois_fig_margin']
     rois = figure_info['rois']
     corr_params = figure_info['corr_params']
+    corr_param_ranges = figure_info['corr_param_ranges']
     rows, cols = len(rois), len(corr_params)
 
     rois_hor_spacing = figure_info['rois_hor_spacing']
@@ -151,8 +188,6 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
     subject_group = figure_info['subject_group']
-    corr_bin_eye = figure_info['corr_bin_eye']
-    corr_other_eye = 'FE-LE' if corr_bin_eye == 'AE-RE' else 'AE-RE'
 
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows - 1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols - 1))
@@ -163,88 +198,96 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
                         horizontal_spacing=hor_spacing,
                         vertical_spacing=ver_spacing)
 
-    # Axis labels depend on subject group and binning eye
+    # Axis labels: x = FE/LE (reference), y = AE/RE (outcome)
     if subject_group == 'patient':
-        eye_labels = {'AE-RE': 'AE', 'FE-LE': 'FE'}
+        x_label_prefix = 'FE'
+        y_label_prefix = 'AE'
     else:
-        eye_labels = {'AE-RE': 'RE', 'FE-LE': 'LE'}
-    x_label_prefix = eye_labels[corr_bin_eye]
-    y_label_prefix = eye_labels[corr_other_eye]
+        x_label_prefix = 'LE'
+        y_label_prefix = 'RE'
 
     for l, corr_param in enumerate(corr_params):
 
-        # Load per-parameter TSV
-        tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
-        df = pd.read_table(tsv_fn, sep="\t")
+        param_range = corr_param_ranges[corr_param]
+        axis_settings = corr_plot_settings[corr_param]
+
+        # Load KDE TSV
+        kde_tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+        df_kde = pd.read_table(kde_tsv_fn, sep="\t")
+
+        # Build grid coordinates
+        x_grid = np.sort(df_kde['x_grid'].unique())
+        y_grid = np.sort(df_kde['y_grid'].unique())
+
+        # Load regression TSV
+        reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+        if os.path.isfile(reg_tsv_fn):
+            df_reg = pd.read_table(reg_tsv_fn, sep='\t')
+        else:
+            df_reg = None
 
         for j, roi in enumerate(rois):
 
             roi_color = roi_colors[roi]
-            axis_settings = corr_plot_settings[corr_param]
 
-            df_roi = df.loc[(df.roi == roi)]
+            # Parse roi_color to rgba for colorscale
+            rgb = roi_color.replace('rgb(', '').replace(')', '').split(',')
+            r, g, b = int(rgb[0]), int(rgb[1]), int(rgb[2])
 
-            # X-axis eye (corr_bin_eye)
-            param_x_median = np.array(df_roi[f'{corr_param}_{corr_bin_eye}_median'])
-            param_x_upper_bound = np.array(df_roi[f'{corr_param}_{corr_bin_eye}_ci_upper_bound'])
-            param_x_lower_bound = np.array(df_roi[f'{corr_param}_{corr_bin_eye}_ci_lower_bound'])
+            df_roi = df_kde.loc[df_kde.roi == roi].copy()
+            df_roi = df_roi.sort_values(['y_grid', 'x_grid'])
+            density = df_roi['density'].values.reshape(len(y_grid), len(x_grid))
 
-            # Y-axis eye (corr_other_eye)
-            param_y_median = np.array(df_roi[f'{corr_param}_{corr_other_eye}_median'])
-            param_y_upper_bound = np.array(df_roi[f'{corr_param}_{corr_other_eye}_ci_upper_bound'])
-            param_y_lower_bound = np.array(df_roi[f'{corr_param}_{corr_other_eye}_ci_lower_bound'])
+            # Normalize density to [0, 1] for colorscale
+            d_max = np.nanmax(density)
+            if d_max > 0:
+                density_norm = density / d_max
+            else:
+                density_norm = density
 
-            # Binned R² median
-            r2_median = np.array(df_roi[f'{rsq2use}_median'])
-
-            # Reference line range
-            line_x = np.linspace(axis_settings['range'][0], axis_settings['range'][1], 50)
-
-            # Diagonal reference (identity line)
-            fig.add_trace(go.Scatter(x=line_x, y=line_x, mode='lines',
-                                     line=dict(color='rgba(0, 0, 0, 1)', width=2, dash='dash'),
+            # Identity line
+            line_xy = np.linspace(param_range[0], param_range[1], 50)
+            fig.add_trace(go.Scatter(x=line_xy, y=line_xy, mode='lines',
+                                     line=dict(color='rgba(0,0,0,0.5)', width=2, dash='dash'),
                                      showlegend=False),
                           row=j + 1, col=l + 1)
 
-            # Weighted linear regression
-            slope, intercept = weighted_regression(param_x_median, param_y_median, r2_median, model='linear')
-            line = slope * line_x + intercept
-            fig.add_trace(go.Scatter(x=line_x, y=line, mode='lines',
-                                     line=dict(color=roi_color, width=3),
-                                     showlegend=False),
-                          row=j + 1, col=l + 1)
-
-            # Marker size scaled by R² (normalized per ROI)
-            min_size, max_size = 5, 15
-            r2_min = np.nanmin(r2_median)
-            r2_max = np.nanmax(r2_median)
-            r2_normalized = (r2_median - r2_min) / (r2_max - r2_min + 1e-8)
-            marker_size = min_size + (r2_normalized * (max_size - min_size))
-
-            # Scatter with error bars
-            fig.add_trace(go.Scatter(
-                x=param_x_median,
-                y=param_y_median,
-                mode='markers',
-                error_x=dict(type='data',
-                             array=param_x_upper_bound - param_x_median,
-                             arrayminus=param_x_median - param_x_lower_bound,
-                             visible=True, thickness=3, width=0, color=roi_color),
-                error_y=dict(type='data',
-                             array=param_y_upper_bound - param_y_median,
-                             arrayminus=param_y_median - param_y_lower_bound,
-                             visible=True, thickness=3, width=0, color=roi_color),
-                marker=dict(color=roi_color, symbol='square', size=marker_size,
-                            opacity=1.0, line=dict(color=roi_color, width=3)),
-                showlegend=False),
+            # KDE contour
+            fig.add_trace(go.Contour(
+                x=x_grid,
+                y=y_grid,
+                z=density_norm,
+                colorscale=[[0, f'rgba({r},{g},{b},0)'],
+                            [1, f'rgba({r},{g},{b},1)']],
+                showscale=False,
+                contours=dict(coloring='fill',
+                              showlines=False,
+                              start=0.05,
+                              end=1.0,
+                              size=0.05),
+                zmin=0, zmax=1),
                 row=j + 1, col=l + 1)
 
-            # ROI label annotation (top-right corner)
-            r = axis_settings['range']
+            # Regression line from regression TSV
+            if df_reg is not None:
+                df_reg_roi = df_reg.loc[df_reg.roi == roi]
+                if len(df_reg_roi) > 0:
+                    slope = df_reg_roi['slope'].values[0]
+                    intercept = df_reg_roi['intercept'].values[0]
+                    if not np.isnan(slope):
+                        reg_x = np.linspace(param_range[0], param_range[1], 50)
+                        reg_y = slope * reg_x + intercept
+                        fig.add_trace(go.Scatter(x=reg_x, y=reg_y, mode='lines',
+                                                 line=dict(color=roi_color, width=3),
+                                                 showlegend=False),
+                                      row=j + 1, col=l + 1)
+
+            # ROI label annotation
+            r = param_range
             annotation = go.layout.Annotation(
                 x=r[1] - 0.05 * (r[1] - r[0]),
-                y=r[1] - 0.9 * (r[1] - r[0]),
-                text=roi, xanchor='right',
+                y=r[0] + 0.05 * (r[1] - r[0]),
+                text=roi, xanchor='right', yanchor='bottom',
                 showarrow=False, font_color=roi_color,
                 font_family=template_specs['font'],
                 font_size=template_specs['axes_font_size'])
@@ -253,16 +296,16 @@ def corr_plot(tsv_dir, subject, fn_spec_combined, figure_info, rsq2use):
             # Axis labels: x only on last row, y on all rows
             x_title = f"{x_label_prefix} – {axis_settings['axes']}" if j == len(rois) - 1 else ''
             fig.update_xaxes(title_text=x_title,
-                             range=axis_settings['range'],
+                             range=param_range,
                              tickmode='linear',
-                             tick0=axis_settings['range'][0],
+                             tick0=param_range[0],
                              dtick=axis_settings['tick_step'],
                              showline=True,
                              row=j + 1, col=l + 1)
             fig.update_yaxes(title_text=f"{y_label_prefix} – {axis_settings['axes']}",
-                             range=axis_settings['range'],
+                             range=param_range,
                              tickmode='linear',
-                             tick0=axis_settings['range'][0],
+                             tick0=param_range[0],
                              dtick=axis_settings['tick_step'],
                              showline=True,
                              row=j + 1, col=l + 1)
@@ -355,8 +398,7 @@ def eyes_active_vert_plot(df, figure_info, format_):
             pattern_shape = eye_patterns[eye_condition]
             bar_colors = [roi_colors[roi] for roi in df_eye['roi']]
 
-            # Total vertices — transparent background with pattern
-            
+            # Total vertices — transparent background
             fig.add_trace(go.Bar(
                 x=df_eye['roi'],
                 y=df_eye['n_vert_tot'],
@@ -367,8 +409,7 @@ def eyes_active_vert_plot(df, figure_info, format_):
                 textfont=dict(size=15),
                 offsetgroup=eye_condition,
                 marker=dict(color=bar_colors,
-                            opacity=0.15,
-                            ),
+                            opacity=0.15),
                 showlegend=False,
                 legend=legend_ref),
                 row=1, col=col_idx)

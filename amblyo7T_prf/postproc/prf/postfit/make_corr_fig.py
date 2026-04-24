@@ -4,7 +4,8 @@ make_corr_fig.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Make per-subject or per-group figures of pRF parameter correlations between eyes
-(AE/RE vs FE/LE). One figure per task with rows = ROIs, columns = parameters.
+(FE/LE vs AE/RE). One figure per task with rows = ROIs, columns = parameters.
+x-axis = FE/LE (reference eye), y-axis = AE/RE (outcome eye).
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory (e.g. /home/mszinte/disks/meso_S/data)
@@ -42,6 +43,7 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
+import pandas as pd
 
 # Personal import
 sys.path.insert(0, "{}/../../../utils".format(os.getcwd()))
@@ -72,10 +74,16 @@ normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 corr_params = analysis_info['corr_params']
-corr_bin_eye = analysis_info['corr_bin_eye']
+corr_param_ranges = {
+    'prf_rsq':    analysis_info['prf_rsq_param_range'],
+    'prf_x':      analysis_info['prf_x_param_range'],
+    'prf_y':      analysis_info['prf_y_param_range'],
+    'prf_size':   analysis_info['prf_size_param_range'],
+    'prf_ecc':    analysis_info['prf_ecc_param_range'],
+    'pcm_median': analysis_info['pcm_median_param_range']
+}
 
 # Load participant info
-import pandas as pd
 participants_path = os.path.join(main_dir, project_dir, 'participants.tsv')
 participants_df = pd.read_table(participants_path)
 subject_groups = dict(zip(participants_df['participant_id'], participants_df['group']))
@@ -124,8 +132,8 @@ for avg_method in avg_methods:
                 figure_info = analysis_info.copy()
                 figure_info['rois'] = rois
                 figure_info['corr_params'] = corr_params
+                figure_info['corr_param_ranges'] = corr_param_ranges
                 figure_info['subject_group'] = subject_group
-                figure_info['corr_bin_eye'] = corr_bin_eye
 
                 # Make and save figure
                 fig = corr_plot(tsv_dir=tsv_dir,
