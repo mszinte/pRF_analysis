@@ -37,7 +37,7 @@ def make_rotated_gaussian_2d(
 
 
 
-
+    
 def make_vdm_from_saccades(
     sacc_out,
     sacc_in,
@@ -81,128 +81,89 @@ def make_vdm_from_saccades(
     vdm = np.zeros((canvas_size, canvas_size, n_TRs))
     log = []
 
-    # --- combine and label ---
-    sacc_out = sacc_out.copy()
-    sacc_out['direction'] = 'out'
-
-    sacc_in = sacc_in.copy()
-    sacc_in['direction'] = 'in'
-
-    
+    sacc_out = sacc_out.copy(); sacc_out['direction'] = 'out'
+    sacc_in  = sacc_in.copy();  sacc_in['direction']  = 'in'
     saccades = pd.concat([sacc_out, sacc_in], ignore_index=True)
 
-    # --- main loop ---
     for tr_idx in range(n_TRs):
-
         tr_start = scan_start + tr_idx * TR
         tr_end   = tr_start + TR
 
-        # select saccades in this TR
         tr_sacc = saccades[
-            (saccades['sac_t_onset'] >= tr_start) &
-            (saccades['sac_t_onset'] < tr_end)
+            (saccades['sac_t_onset']  >= tr_start) &
+            (saccades['sac_t_offset'] <  tr_end)
         ]
-
         if len(tr_sacc) == 0:
             continue
 
-        # --- select strongest saccade by amplitude ---
         amplitudes = tr_sacc.apply(
             lambda r: np.sqrt(
                 (r['sac_x_offset'] - r['sac_x_onset'])**2 +
                 (r['sac_y_offset'] - r['sac_y_onset'])**2
             ), axis=1
         )
-        sac = tr_sacc.loc[amplitudes.idxmax()]  # single row, a Series
+        sac = tr_sacc.loc[amplitudes.idxmax()]
 
-        # --- direction vector ---
         dx = sac['sac_x_offset'] - sac['sac_x_onset']
         dy = sac['sac_y_offset'] - sac['sac_y_onset']
         theta = np.degrees(np.arctan2(dy, dx))
 
-        # --- placement ---
         if sac['direction'] == 'out':
             gx = sac['sac_x_offset']
             gy = sac['sac_y_offset']
         else:
+            # Mirror of landing position 
             gx = -sac['sac_x_onset']
             gy = -sac['sac_y_onset']
 
-        # --- amplitude & sigma ---
-        amp = np.sqrt(dx**2 + dy**2)
+        amp   = np.sqrt(dx**2 + dy**2)
         sigma = max(amp * sigma_scale, 0.5)
 
-        
-        # --- draw gaussian once ---
         g = make_rotated_gaussian_2d(
             canvas_size=canvas_size,
-            x_dva=gx, y_dva=gy,
+            x_dva=gx,
+            y_dva=gy,
             sigma_x_dva=sigma,
             sigma_y_dva=0.5 * sigma,
             theta=theta,
             dva_range=dva_range
         )
+        vdm[:, :, tr_idx] = g
 
-        # --- timing  ---
-        t_on  = sac['sac_t_onset']
-        t_off = sac['sac_t_offset']         
-        sac_dur = max(t_off - t_on, 1e-6)   # guard against zero-duration
-        
-        for overlap_tr in range(n_TRs):
-            tr_s = scan_start + overlap_tr * TR
-            tr_e = tr_s + TR
-
-            overlap = min(t_off, tr_e) - max(t_on, tr_s)
-            if overlap <= 0:
-                continue
-
-            weight = overlap / sac_dur      # fraction of saccade in this TR
-            vdm[:, :, overlap_tr] = np.maximum(
-                vdm[:, :, overlap_tr],
-                g * weight
-            )
-
-        # --- logging (one row per saccade, not per TR) ---
         log.append({
-            'tr': tr_idx,           # TR where onset fell
+            'tr':        tr_idx,
+            'tr_start':  tr_start,       
+            'tr_end':    tr_end,          
             'direction': sac['direction'],
-            'gx': gx, 'gy': gy,
-            'theta': theta,
-            'amp': amp, 'sigma': sigma,
-            't_onset': t_on,
-            't_offset': t_off
+            'gx':        gx,
+            'gy':        gy,
+            'theta':     theta,
+            'amp':       amp,
+            'sigma':     sigma,
+            't_onset':   sac['sac_t_onset'],
+            't_offset':  sac['sac_t_offset'],
         })
 
-    log_df = pd.DataFrame(log)
-
-    return vdm, log_df
-
+    return vdm, pd.DataFrame(log)
 
 
 def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
-                   dva_range=10.0, preview_fps=60, TR=1.2):
-    """
-    Save saccade VDM as grayscale mp4 with correct within-TR timing.
-    Each video frame corresponds to a real time window; gaussians are shown
-    only during frames that overlap [t_onset, t_offset].
-    """
+                   dva_range=15.0, preview_fps=60, TR=1.2):
     n_trs = vdm.shape[2]
     n_total_frames = int(round(n_trs * TR * preview_fps))
-    frame_dur = 1.0 / preview_fps          # seconds per frame
+    frame_dur = 1.0 / preview_fps
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(output_path, fourcc, preview_fps,
                              (vdm.shape[1], vdm.shape[0]), False)
 
     for frame_idx in range(n_total_frames):
-        # real time at centre of this frame
         t_frame_start = scan_start + frame_idx * frame_dur
         t_frame_end   = t_frame_start + frame_dur
 
-        # which TR does this frame fall in?
-        tr_idx = min(int(t_frame_start / TR - scan_start / TR), n_trs - 1)
+        # Fixed: offset by scan_start before floor-dividing
+        tr_idx = min(int((t_frame_start - scan_start) / TR), n_trs - 1)
 
-        # any saccade whose [t_onset, t_offset] overlaps this frame?
         active = log_df[
             (log_df['t_onset']  < t_frame_end) &
             (log_df['t_offset'] > t_frame_start)
@@ -219,3 +180,5 @@ def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
     writer.release()
     size_mb = os.path.getsize(output_path) / 1e6
     print(f"Saved {output_path}  ({n_trs * TR:.1f}s, {n_total_frames} frames, {size_mb:.1f} MB)")
+
+
