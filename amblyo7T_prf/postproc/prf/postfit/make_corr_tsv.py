@@ -163,6 +163,10 @@ for avg_method in avg_methods:
                                  (data[rsq2use] < rsqr_threshold) |
                                  (data[stats_col] > stats_threshold)] = np.nan
                         data = data.dropna()
+                        data = data.reset_index(drop=True)
+
+                        # Store original task name for traceability
+                        data['task_eye_name'] = prf_task_eye_name
 
                         # Get eye_val
                         if 'RightEye' in prf_task_eye_name:
@@ -185,10 +189,11 @@ for avg_method in avg_methods:
                         elif subject_group == 'control':
                             eye_type = eye_val
                         data['eye_type'] = eye_type
+                        print(f"[DEBUG2] {prf_task_eye_name} | eye_type assigned={eye_type} | unique in col={data['eye_type'].unique()}")
 
                         # Merge two eyes
                         if len(data_task_eye) == 0:
-                            data_task_eye['first'] = data
+                            data_task_eye['first'] = data.copy()
                             first_eye_type = eye_type
                         else:
                             second_eye_type = eye_type
@@ -196,8 +201,17 @@ for avg_method in avg_methods:
                             if first_eye_type in ['amblyopic eye', 'right eye']:
                                 suffix1, suffix2 = '_AE-RE', '_FE-LE'
                             else:
-                                suffix1, suffix2 = '_FE-LE', '_AE-RE'
                                 data_task_eye['first'], data = data, data_task_eye['first']
+                                suffix1, suffix2 = '_AE-RE', '_FE-LE'
+
+                            # Reassign eye_val and eye_type after potential swap
+                            # using .loc to ensure proper in-place assignment
+                            data_task_eye['first'].loc[:, 'eye_val'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
+                            data_task_eye['first'].loc[:, 'eye_type'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
+                            data.loc[:, 'eye_val'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
+                            data.loc[:, 'eye_type'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
+
+                            print(f"[DEBUG] subject={subject}, first_eye_type={first_eye_type}, suffix1={suffix1}, task_eye_name_first={data_task_eye['first']['task_eye_name'].iloc[0]}, task_eye_name_second={data['task_eye_name'].iloc[0]}")
 
                             data = pd.merge(data_task_eye['first'], data,
                                             on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
@@ -207,6 +221,19 @@ for avg_method in avg_methods:
                     output_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec_combined)
                     data.to_csv(output_fn, sep='\t', index=False)
                     print(f"Saving: {output_fn}")
+
+                    # Sanity check: verify correct TSV files ended up in AE-RE and FE-LE columns
+                    ae_tasks = data['task_eye_name_AE-RE'].unique()
+                    fe_tasks = data['task_eye_name_FE-LE'].unique()
+                    if subject_group == 'patient':
+                        amblyopic_side = amblyopic_eye[0]
+                        ae_ok = all(('RightEye' in t if amblyopic_side == 'R' else 'LeftEye' in t) for t in ae_tasks)
+                        fe_ok = all(('LeftEye' in t if amblyopic_side == 'R' else 'RightEye' in t) for t in fe_tasks)
+                    else:
+                        ae_ok = all('RightEye' in t for t in ae_tasks)
+                        fe_ok = all('LeftEye' in t for t in fe_tasks)
+                    status = '✓' if ae_ok and fe_ok else '✗ MISMATCH'
+                    print(f"[CHECK] {subject} | AE-RE from={ae_tasks} | FE-LE from={fe_tasks} | {status}")
 
                     # PARAMETER CORRELATIONS AE/RE vs. FE/LE
                     # ----------------------------------------
