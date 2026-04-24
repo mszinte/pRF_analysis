@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mar 27, 2026
+Compute INTRA-HEMISPHERIC PARTIAL correlations between clusters (seeds)
+and parcels (targets) using Nilearn partial correlation.
 
-Compute INTRA-HEMISPHERIC* PARTIAL correlations between clusters (seeds)
-and parcels (targets) using Nilearn partial correlation
+Left-hemisphere seeds are correlated only with left-hemisphere parcels,
+and right-hemisphere seeds with right-hemisphere parcels.
 
-* i.e., Left-hemisphere seeds are correlated only with left-hemisphere parcels,
-and right-hemisphere seeds with right-hemisphere parcels
+Important note: the conditioning set now includes all other parcels
+Whether intra or inter-hemispheric 
+Matching Dawson et al. (2016) and Genç et al. (2016) 
 
 For each cluster:
   - parcels belonging to that cluster are EXCLUDED from the conditioning set
@@ -34,7 +36,8 @@ main_data        = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 seed_folder      = main_data
 atlas_folder     = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 partial_output_folder = (
-    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/group/91k/rest/partial_corr/by_hemi"
+    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+    "/group/91k/rest/partial_corr/by_hemi"
 )
 os.makedirs(partial_output_folder, exist_ok=True)
 
@@ -44,6 +47,64 @@ sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
+
+# ============================================================
+# Helpers
+# ============================================================
+
+def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
+    """Replace NaN values in a (n_time × n_signals) matrix before passing to
+    Nilearn's ConnectivityMeasure, which cannot handle NaNs.
+
+    Strategy (column-wise, conservative):
+      - Columns that are entirely NaN → replaced with zeros.
+        These carry no information; zeroing them is equivalent to
+        excluding them from the partial correlation without altering
+        the matrix shape or index mapping.
+      - Columns with *some* NaN timepoints → replaced with the column mean.
+        This minimises distortion of the covariance structure relative to
+        alternatives such as linear interpolation or global-mean imputation.
+
+    A warning is printed for every affected column so the operator can
+    identify problematic parcels/seeds in the log.
+
+    Parameters
+    ----------
+    X     : array, shape (n_time, n_signals)
+    label : optional string prefix for warning messages (e.g. subject + hemi)
+
+    Returns
+    -------
+    X_clean : array, same shape, no NaNs
+    """
+    X_clean   = X.copy()
+    n_signals = X_clean.shape[1]
+
+    for j in range(n_signals):
+        col      = X_clean[:, j]
+        nan_mask = np.isnan(col)
+
+        if not nan_mask.any():
+            continue
+
+        n_nan = int(nan_mask.sum())
+
+        if nan_mask.all():
+            print(
+                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
+                f"ALL {n_nan} timepoints are NaN — replacing with zeros"
+            )
+            X_clean[:, j] = 0.0
+        else:
+            col_mean = np.nanmean(col)
+            print(
+                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
+                f"{n_nan}/{len(col)} NaN timepoints — imputing with column mean "
+                f"({col_mean:.4f})"
+            )
+            X_clean[nan_mask, j] = col_mean
+
+    return X_clean
 
 # Load settings
 project_dir = "RetinoMaps"
@@ -73,8 +134,8 @@ for cl in clusters:
 # Each entry drives the full pipeline for one hemisphere:
 #   seed_key  : suffix used in seed .shape.gii filenames  (lh / rh)
 #   atlas_key : prefix used in atlas parcel filenames     (L  / R )
-#   ts_key    : key returned by from_91k_to_32k for the
-#               hemisphere-specific timeseries array
+#   ts_key    : key in from_91k_to_32k result dict when
+#               return_concat_hemis=False ('data_L' / 'data_R')
 # ============================================================
 
 HEMIS = [
@@ -104,16 +165,24 @@ for subject in subjects:
 
     ts_img, ts_data_raw = load_surface(timeseries_fn)
 
-    # Request separate hemisphere arrays from the utils
-    res = from_91k_to_32k(ts_img, ts_data_raw, return_concat_hemis=False, return_32k_mask=True) # sanity check for medial wall vertices
+    # return_concat_hemis=False → separate 'data_L' and 'data_R' arrays
+    # return_32k_mask=True      → 'mask_32k' boolean array (True=cortex, False=medial wall)
+    res = from_91k_to_32k(
+        ts_img, ts_data_raw,
+        return_concat_hemis=False,
+        return_32k_mask=True,
+    )
+
+    mask_32k = res["mask_32k"]
+    print(f"  mask_32k: {int(np.sum(~mask_32k))} medial-wall vertices masked per hemi")
 
     for h in HEMIS:
-        label     = h["label"]          # "LH" or "RH"
-        seed_key  = h["seed_key"]       # "lh" or "rh"
-        atlas_key = h["atlas_key"]      # "L"  or "R"
-        ts_key    = h["ts_key"]         # "data_L" or "data_R"
+        label     = h["label"]     # "LH" or "RH"
+        seed_key  = h["seed_key"]  # "lh" or "rh"
+        atlas_key = h["atlas_key"] # "L"  or "R"
+        ts_key    = h["ts_key"]    # "data_L" or "data_R"
 
-        ts_data = res[ts_key]           # shape: (n_time, n_vertices_hemi)
+        ts_data = res[ts_key]      # shape: (n_time, n_vertices_hemi)
 
         print(f"\n  [{label}] Timeseries shape: {ts_data.shape}")
 
@@ -132,68 +201,152 @@ for subject in subjects:
             )
             mask = mask_data.ravel()
 
+            if not np.any(mask):
+                print(f"  [{label}] ⚠️  Empty seed mask for {roi} — skipping")
+                continue
+
             cluster_ts_list.append(ts_data[:, mask > 0].mean(axis=1))
             cluster_names_used.append(roi)
+
+        if not cluster_ts_list:
+            print(f"  [{label}] ⚠️  No valid cluster timeseries — skipping hemisphere")
+            continue
 
         cluster_ts = np.column_stack(cluster_ts_list)
         print(f"  [{label}] Clusters used: {cluster_names_used}")
 
         # -------------------------
-        # Parcel timeseries (single hemisphere)
+        # Parcel timeseries — BILATERAL conditioning set
+        #
+        # All 106 parcels (both hemispheres) are loaded into the conditioning
+        # matrix X so that inter-hemispheric confounds are fully controlled.
+        # We track two index sets per parcel name:
+        #   bilateral_col_idx : column position in the full 106-parcel matrix
+        #   ipsi_col_idx      : subset of the above that belongs to the
+        #                       ipsilateral hemisphere (atlas_key), used to
+        #                       read off the result values after partial corr.
         # -------------------------
 
-        parcel_ts_list   = []
-        parcel_names_used = []
+        # Both hemisphere keys, ipsilateral first so the loop is explicit
+        ATLAS_KEYS_BILATERAL = {"L": ["L", "R"], "R": ["R", "L"]}
+        atlas_keys_ordered   = ATLAS_KEYS_BILATERAL[atlas_key]   # ipsi, contra
 
-        for parcel in parcels:
-            mask_img, mask_data = load_surface(
-                f"{atlas_folder}/mmp1_clusters/parcels/"
-                f"{atlas_key}_{parcel}_ROI.shape.gii"
-            )
-            mask = mask_data.ravel()
+        parcel_ts_list    = []   # one entry per successfully loaded parcel×hemi
+        parcel_names_used = []   # matching parcel name (same parcel can appear twice)
+        parcel_hemi_used  = []   # "L" or "R" for each column
+        ipsi_col_idx      = []   # column indices that are ipsilateral
 
-            parcel_ts_list.append(ts_data[:, mask > 0].mean(axis=1))
-            parcel_names_used.append(parcel)
+        for ak in atlas_keys_ordered:
+            ts_source = res["data_L" if ak == "L" else "data_R"]
+
+            for parcel in parcels:
+                mask_img, mask_data = load_surface(
+                    f"{atlas_folder}/parcels/"
+                    f"{ak}_{parcel}_ROI.shape.gii"
+                )
+                mask = mask_data.ravel()
+
+                if not np.any(mask):
+                    continue
+
+                col_idx = len(parcel_ts_list)
+                parcel_ts_list.append(ts_source[:, mask > 0].mean(axis=1))
+                parcel_names_used.append(parcel)
+                parcel_hemi_used.append(ak)
+
+                if ak == atlas_key:
+                    ipsi_col_idx.append(col_idx)
+
+        if not parcel_ts_list:
+            print(f"  [{label}] ⚠️  No valid parcel timeseries — skipping hemisphere")
+            continue
 
         parcel_ts = np.column_stack(parcel_ts_list)
-        print(f"  [{label}] Parcels used: {len(parcel_names_used)}/{len(parcels)}")
+
+        n_ipsi   = sum(1 for h in parcel_hemi_used if h == atlas_key)
+        n_contra = sum(1 for h in parcel_hemi_used if h != atlas_key)
+        print(
+            f"  [{label}] Loaded bilateral parcel matrix: "
+            f"{parcel_ts.shape[1]} columns before exclusions "
+            f"({n_ipsi} ipsi [{atlas_key}] + {n_contra} contra)"
+        )
+
+        # Impute NaNs in both timeseries matrices before entering Nilearn.
+        # Cluster seeds are unlikely to have NaNs but checked defensively.
+        cluster_ts = impute_nan_columns(cluster_ts, label=f"{subject} {label} seed")
+        parcel_ts  = impute_nan_columns(parcel_ts,  label=f"{subject} {label} parcel")
 
         # -------------------------
         # Partial correlation
+        #
+        # Conditioning set per seed = all bilateral parcel columns MINUS:
+        #   (a) the seed's own cluster parcels (ipsilateral only, by convention)
+        #   (b) the target parcel being correlated (ipsilateral only)
+        # Result values are read from the ipsilateral columns only.
         # -------------------------
 
         n_clusters_used = cluster_ts.shape[1]
-        n_parcels_used  = parcel_ts.shape[1]
-
-        partial_matrix    = np.full((n_clusters_used, n_parcels_used), np.nan)
+        # Output matrix rows = clusters, cols = ipsilateral parcels only
+        partial_matrix    = np.full((n_clusters_used, len(ipsi_col_idx)), np.nan)
         partial_matrix_fz = np.full_like(partial_matrix, np.nan)
+
+        # Build a name→column lookup restricted to ipsilateral parcels
+        ipsi_parcel_names = [parcel_names_used[j] for j in ipsi_col_idx]
 
         for i_cl, cl_name in enumerate(cluster_names_used):
 
-            exclude = set(seed_to_parcels.get(cl_name, []))
+            # (a) seed's own cluster parcels excluded from conditioning (ipsi only)
+            seed_own_parcels = set(seed_to_parcels.get(cl_name, []))
 
-            included_idx = [
-                j for j, p in enumerate(parcel_names_used)
-                if p not in exclude
-            ]
+            for i_target, target_parcel in enumerate(ipsi_parcel_names):
 
-            X = np.column_stack([
-                cluster_ts[:, i_cl],
-                parcel_ts[:, included_idx],
-            ])
+                # (b) exclude the target parcel itself from the conditioning set
+                exclude_cols = set()
+                for j, (pname, phemi) in enumerate(
+                    zip(parcel_names_used, parcel_hemi_used)
+                ):
+                    if phemi == atlas_key and (
+                        pname in seed_own_parcels or pname == target_parcel
+                    ):
+                        exclude_cols.add(j)
 
-            conn = ConnectivityMeasure(kind="partial correlation")
-            C    = conn.fit_transform([X])[0]
+                conditioning_idx = [
+                    j for j in range(len(parcel_names_used))
+                    if j not in exclude_cols
+                    and j != ipsi_col_idx[i_target]   # target itself not in X
+                ]
 
-            vals = C[0, 1:]   # seed row, skip self-correlation
+                if not conditioning_idx:
+                    print(
+                        f"  [{label}] ⚠️  No conditioning parcels left "
+                        f"for seed {cl_name} → target {target_parcel}"
+                    )
+                    continue
 
-            partial_matrix[i_cl, included_idx]    = vals
+                # X = [seed | target_parcel | conditioning parcels]
+                # C[0,1] gives the seed ↔ target partial correlation
+                X = np.column_stack([
+                    cluster_ts[:, i_cl],
+                    parcel_ts[:, ipsi_col_idx[i_target]],
+                    parcel_ts[:, conditioning_idx],
+                ])
 
-            # Get the fizher-z transformed values
-            partial_matrix_fz[i_cl, included_idx] = np.arctanh(vals)
+                conn = ConnectivityMeasure(kind="partial correlation")
+                C    = conn.fit_transform([X])[0]
+
+                val = C[0, 1]   # seed ↔ target, conditioned on everything else
+
+                partial_matrix[i_cl, i_target]    = val
+                partial_matrix_fz[i_cl, i_target] = np.arctanh(val)
+
+        print(
+            f"  [{label}] Partial corr matrix: "
+            f"{partial_matrix.shape[0]} clusters × {partial_matrix.shape[1]} ipsi parcels"
+        )
 
         # -------------------------
         # Map back to full (clusters × parcels) grid
+        # columns correspond to the ipsilateral parcels only
         # -------------------------
 
         filled    = np.full((len(clusters), len(parcels)), np.nan)
@@ -201,10 +354,10 @@ for subject in subjects:
 
         for i_cl, cl in enumerate(cluster_names_used):
             gr = clusters.index(cl)
-            for j_pa, pa in enumerate(parcel_names_used):
+            for i_target, pa in enumerate(ipsi_parcel_names):
                 gc = parcels.index(pa)
-                filled[gr, gc]    = partial_matrix[i_cl, j_pa]
-                filled_fz[gr, gc] = partial_matrix_fz[i_cl, j_pa]
+                filled[gr, gc]    = partial_matrix[i_cl, i_target]
+                filled_fz[gr, gc] = partial_matrix_fz[i_cl, i_target]
 
         # -------------------------
         # Save subject-level results
@@ -235,7 +388,7 @@ for subject in subjects:
         all_subject_partial_fz[label].append(filled_fz)
 
 # =========================
-# GROUP STATS (per hemisphere)
+# GROUP STATS  (per hemisphere)
 # =========================
 
 print("\n=== GROUP STATS ===")
@@ -245,6 +398,10 @@ for h in HEMIS:
 
     sub_list    = all_subject_partial[label]
     sub_list_fz = all_subject_partial_fz[label]
+
+    if not sub_list:
+        print(f"  [{label}] ⚠️  No subject data collected — skipping group stats")
+        continue
 
     stacked    = np.stack(sub_list,    axis=0)   # (n_subjects, n_clusters, n_parcels)
     stacked_fz = np.stack(sub_list_fz, axis=0)
@@ -258,15 +415,15 @@ for h in HEMIS:
 
     pd.DataFrame(mean_partial,   index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
+                     f"group_mean_cluster_by_mmp-parcel_partial_{tag}.csv")
     )
     pd.DataFrame(median_partial, index=clusters, columns=parcels).to_csv(
         os.path.join(partial_output_folder,
-                     f"group_median_cluster_by_mmp-parcel_partial_{tag}_by_hemi.csv")
+                     f"group_median_cluster_by_mmp-parcel_partial_{tag}.csv")
     )
 
     np.savez_compressed(
-        os.path.join(partial_output_folder, f"group_partial_corr_{tag}_by_hemi.npz"),
+        os.path.join(partial_output_folder, f"group_partial_corr_{tag}.npz"),
         mean_cluster_parcel_partial         = mean_partial,
         mean_cluster_parcel_partial_fisherz = mean_partial_fz,
         median_cluster_parcel_partial       = median_partial,
