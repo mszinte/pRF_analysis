@@ -675,7 +675,7 @@ def add_missing_sac_rows(correct_saccades, direction):
 
         # Get trials for this one sequence
         existing_trials = list(datafr['trial'])
-        print(existing_trials)
+        #print(existing_trials)
 
         missing_trials = []
 
@@ -683,7 +683,7 @@ def add_missing_sac_rows(correct_saccades, direction):
         for trial in pattern:
             if trial not in existing_trials:
                 missing_trials.append(trial)
-                print(f"Found missing trial {trial}")
+                #print(f"Found missing trial {trial}")
 
         # Add missing rows to the filtered DataFrame
         for trial in missing_trials:
@@ -697,7 +697,7 @@ def add_missing_sac_rows(correct_saccades, direction):
         # Sort by 'trial' column to maintain order 
         datafr = datafr.sort_values(by='trial')
         new_datafr.append(datafr)
-        print(len(datafr))
+        #print(len(datafr))
         
 
     correct_saccades_new = pd.concat(new_datafr)

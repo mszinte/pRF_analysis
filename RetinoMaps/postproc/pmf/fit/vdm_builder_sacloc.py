@@ -3,7 +3,7 @@
 vdm_builder_sacloc.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Generate vidual design matrix and videos of retinal displacement of SacLoc task.
+Generate visual design matrix and videos of retinal displacement of SacLoc task.
 Loops over all runs and creates concatenated downsampled VDM.
 -----------------------------------------------------------------------------------------
 Input(s):
@@ -14,14 +14,11 @@ sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Per run:
-- target + gaze vdm_target_gaze.mp4 in eyetracking frequency
-- retinal vdm_preview.mp4 in eyetracking frequency 
-- retinal vdm_run.npy and vdm.mp4 downsampled to TR 
-- target-only vdm_target_run.npy downsampled to TR (black and white)
-
+- target + gaze preview:  vdm_target_gaze.mp4    (eyetracking frequency)
+- retinal preview:        vdm_preview.mp4         (eyetracking frequency)
+- retinal downsampled:    vdm_run_0{run}.mp4      (TR resolution)
 Concatenated:
-- vdm.npy downsampled to TR (concatenated across all runs)
-- vdm_target.npy downsampled to TR (concatenated across all runs)
+- vdm.npy   downsampled to TR (concatenated across all runs)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
@@ -30,11 +27,9 @@ python vdm_builder_sacloc.py /scratch/mszinte/data RetinoMaps sub-02 327
 Written by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
-
 import pandas as pd
 import numpy as np
 import os, sys, cv2, ipdb
-
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from eyetrack_utils import (
     load_eye_data, load_event_files,
@@ -59,23 +54,22 @@ TR                 = 1.2
 TIME_SCALE         = 1e-3          # ms → seconds
 SAMPLES_PER_TR     = int(TR * 1000)  # 1200 samples at 1 kHz
 N_PIXELS           = 100
-VISUAL_FIELD_SIZE  = 40            # degrees
+VISUAL_FIELD_SIZE  = 20            # degrees
 TARGET_RADIUS      = 0.5           # degrees
-CHUNK_SIZE         = 10_000        # timepoints per chunk (controls RAM use)
 PREVIEW_FPS        = 60
 
 ses = 'ses-01' if subject == 'sub-01' else 'ses-02'
 sub_num = subject[4:]
 
-# ── Directories 
+# ── Directories ───────────────────────────────────────────────────────────────
 gaze_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking/timeseries"
 vdm_dir  = f"{main_dir}/{project_dir}/derivatives/vdm/{subject}"
 os.makedirs(gaze_dir, exist_ok=True)
 os.makedirs(vdm_dir,  exist_ok=True)
 
-# ── Load settings + events 
+# ── Load settings + events ────────────────────────────────────────────────────
 base_dir      = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, 'eyetracking', 'eye-tracking.yml')
+settings_path = os.path.join(base_dir, project_dir, 'eyetracking-analysis.yml')
 analysis_info = load_settings([settings_path])[0]
 
 event_files = load_event_files(main_dir, project_dir, subject, ses, TASK)
@@ -91,31 +85,69 @@ with h5py.File(h5_fn, "r") as f:
 print(f"Subject: {subject}  |  Runs found: {len(event_runs)}")
 
 
+# def build_vdm_chunked(frame_fn, n_timepoints):
+#     """
+#     Samples the middle timepoint of each TR window to build the downsampled VDM.
+#     Avoids carryover blending from position transitions.
+#     """
+#     n_trs = int(np.floor(n_timepoints / SAMPLES_PER_TR))
+#     out   = np.zeros((n_trs, N_PIXELS, N_PIXELS), dtype=np.float32)
+#     for tr_idx in range(n_trs):
+#         t = tr_idx * SAMPLES_PER_TR + SAMPLES_PER_TR // 2
+#         out[tr_idx] = frame_fn(t)
+#         if tr_idx % 50 == 0:
+#             print(f"    TR {tr_idx}/{n_trs}", end='\r')
+#     print(f"    {n_trs}/{n_trs} TRs processed")
+#     return np.transpose(out, (1, 2, 0))  # → (H, W, T_TR)
+
 def build_vdm_chunked(frame_fn, n_timepoints):
     """
-    Uses the last sample of each TR window instead of mean,
-    avoiding carryover blending from position transitions.
+    Build VDM by averaging all samples within each TR window.
     """
     n_trs = int(np.floor(n_timepoints / SAMPLES_PER_TR))
     out   = np.zeros((n_trs, N_PIXELS, N_PIXELS), dtype=np.float32)
 
     for tr_idx in range(n_trs):
-        # Take the middle sample of the TR window
-        t = tr_idx * SAMPLES_PER_TR + SAMPLES_PER_TR // 2
-        out[tr_idx] = frame_fn(t)
+        start = tr_idx * SAMPLES_PER_TR
+        end   = min((tr_idx + 1) * SAMPLES_PER_TR, n_timepoints)
 
-        if tr_idx % 50 == 0:
+        # accumulate instead of storing full list → avoids huge memory use
+        acc = np.zeros((N_PIXELS, N_PIXELS), dtype=np.float32)
+        count = 0
+
+        for t in range(start, end):
+            acc += frame_fn(t)
+            count += 1
+
+        out[tr_idx] = acc / max(count, 1)
+
+        if tr_idx % 10 == 0:
             print(f"    TR {tr_idx}/{n_trs}", end='\r')
 
     print(f"    {n_trs}/{n_trs} TRs processed")
+
     return np.transpose(out, (1, 2, 0))  # → (H, W, T_TR)
 
 
+def write_grayscale_video(frames_hw_t, output_path, fps, repeat=1, flip_ud=True):
+    H, W, T = frames_hw_t.shape
+    fourcc  = cv2.VideoWriter_fourcc(*'mp4v')
+    writer  = cv2.VideoWriter(output_path, fourcc, fps, (W, H), False)
+
+    for t in range(T):
+        frame = np.uint8(np.clip(frames_hw_t[:, :, t], 0, 1) * 255)
+        if flip_ud:
+            frame = np.flipud(frame)
+
+        for _ in range(repeat):
+            writer.write(frame)
+
+    writer.release()
+    print(f"  Saved {output_path}")
 
 
-# ── Per-run processing 
-all_vdm_downsampled        = []
-all_vdm_target_downsampled = []
+# ── Per-run processing ────────────────────────────────────────────────────────
+all_vdm_downsampled = []
 
 for run in range(1, len(event_runs) + 1):
     print(f"\n{'='*60}\nRUN {run}\n{'='*60}")
@@ -135,7 +167,6 @@ for run in range(1, len(event_runs) + 1):
                                            event_runs[run - 1], analysis_info)
     target_x_exp = np.full(n_timepoints, np.nan)
     target_y_exp = np.full(n_timepoints, np.nan)
-
     for i in range(len(trial_onsets_sec) - 1):
         s = np.argmin(np.abs(eye_times - trial_onsets_sec[i]))
         e = np.argmin(np.abs(eye_times - trial_onsets_sec[i + 1]))
@@ -156,8 +187,8 @@ for run in range(1, len(event_runs) + 1):
                      ("retino_Y", retino_y)]:
         np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_{tag}"), arr)
 
-    # ── 1. Retinal VDM (chunked, saved as npy) 
-    print("Building retinal VDM...")
+    # ── 1. Retinal VDM downsampled → npy + mp4 per run ───────────────────────
+    print("Building retinal VDM (downsampled)...")
     vdm_down = build_vdm_chunked(
         lambda t: create_visual_frame(
             retino_x[t], retino_y[t],
@@ -167,38 +198,51 @@ for run in range(1, len(event_runs) + 1):
         ),
         n_timepoints,
     )
-    np.save(os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.npy"), vdm_down)
     print(f"  Retinal VDM shape: {vdm_down.shape}")
+
+    # Save npy
+    npy_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.npy")
+    np.save(npy_fn, vdm_down)
+    print(f"  Saved {npy_fn}")
+
+    # Save mp4 at TR resolution (one frame per TR, played at PREVIEW_FPS)
+    mp4_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.mp4")
+    frames_per_tr = 10
+    video_fps = frames_per_tr / TR
+    write_grayscale_video(vdm_down, mp4_fn, fps=video_fps, repeat=frames_per_tr, flip_ud=False)
+
     all_vdm_downsampled.append(vdm_down)
 
-    # ── 2. Target-only VDM (chunked, accumulated for concat) ─────────────────
-    print("Building target-only VDM...")
-    vdm_target_down = build_vdm_chunked(
-        lambda t: create_visual_frame(
-            target_x_exp[t], target_y_exp[t],
+    # ── 2. Retinal preview video at eyetracking frequency ─────────────────────
+    print("Writing retinal preview video (eyetracking frequency)...")
+    n_trs_run    = vdm_down.shape[-1]
+    frames_per_tr = int(PREVIEW_FPS * TR)
+    total_frames  = n_trs_run * frames_per_tr
+    step          = max(1, n_timepoints // total_frames)
+    preview_idx   = np.arange(0, n_timepoints, step)[:total_frames]
+
+    preview_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_preview.mp4")
+    fourcc     = cv2.VideoWriter_fourcc(*'mp4v')
+    writer     = cv2.VideoWriter(preview_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), False)
+    for idx in preview_idx:
+        frame = create_visual_frame(
+            retino_x[idx], retino_y[idx],
             n_pixels=N_PIXELS,
             visual_field_size=VISUAL_FIELD_SIZE,
             target_radius=TARGET_RADIUS,
-        ),
-        n_timepoints,
-    )
-    print(f"  Target VDM shape: {vdm_target_down.shape}")
-    all_vdm_target_downsampled.append(vdm_target_down)   # no per-run save
+        )
+        frame_u8 = np.uint8(np.clip(frame, 0, 1) * 255)
+        writer.write(frame_u8)
+    writer.release()
+    size_mb = os.path.getsize(preview_fn) / 1e6
+    print(f"  Saved {preview_fn}  ({len(preview_idx)/PREVIEW_FPS:.1f}s, {size_mb:.1f} MB)")
 
-    # ── 3. Target + gaze video
-    print("Writing target+gaze video...")
-    n_trs_run = vdm_down.shape[-1]
-    frames_per_tr    = int(PREVIEW_FPS * TR)
-    total_frames     = n_trs_run * frames_per_tr
-    # one eye sample per preview frame (at 60 fps ≈ every 16.7 ms → every 17th sample)
-    step = max(1, n_timepoints // total_frames)
-    preview_indices  = np.arange(0, n_timepoints, step)[:total_frames]
-
-    video_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target_gaze.mp4")
-    fourcc   = cv2.VideoWriter_fourcc(*'mp4v')
-    writer   = cv2.VideoWriter(video_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), True)
-
-    for idx in preview_indices:
+    # ── 3. Target + gaze video at eyetracking frequency ───────────────────────
+    print("Writing target+gaze video (eyetracking frequency)...")
+    tg_fn  = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target_gaze.mp4")
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    writer = cv2.VideoWriter(tg_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), True)
+    for idx in preview_idx:
         frame = create_visual_frame_target_gaze(
             target_x_exp[idx], target_y_exp[idx],
             gaze_x[idx], gaze_y[idx],
@@ -211,33 +255,20 @@ for run in range(1, len(event_runs) + 1):
         rgb[..., 0] = np.uint8(np.clip(frame[0], 0, 1) * 255)  # red  = target
         rgb[..., 2] = np.uint8(np.clip(frame[1], 0, 1) * 255)  # blue = gaze
         writer.write(rgb)
-
     writer.release()
-    size_mb = os.path.getsize(video_fn) / 1e6
-    print(f"  Saved {video_fn}  ({size_mb:.1f} MB, {len(preview_indices)/PREVIEW_FPS:.1f}s)")
+    size_mb = os.path.getsize(tg_fn) / 1e6
+    print(f"  Saved {tg_fn}  ({len(preview_idx)/PREVIEW_FPS:.1f}s, {size_mb:.1f} MB)")
 
-
-# ── Concatenate retinal VDMs across all runs
+# ── Concatenate retinal VDMs across all runs ──────────────────────────────────
 print(f"\n{'='*60}\nConcatenating retinal VDMs\n{'='*60}")
-vdm_all = np.concatenate(all_vdm_downsampled, axis=-1)  # (H, W, T_total)
+vdm_all   = np.concatenate(all_vdm_downsampled, axis=-1)   # (H, W, T_total)
 concat_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm.npy")
 np.save(concat_fn, vdm_all)
 
-# Concatenate target-only VDMs across all runs
-vdm_target_all = np.concatenate(all_vdm_target_downsampled, axis=-1)  # (H, W, T_total)
-concat_target_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm_target.npy")
-np.save(concat_target_fn, vdm_target_all)
-
-print(f"  Target per-run shapes : {[v.shape for v in all_vdm_target_downsampled]}")
-print(f"  Target concatenated   : {vdm_target_all.shape}  →  {concat_target_fn}")
-assert vdm_target_all.shape == vdm_all.shape, \
-    f"Shape mismatch between retinal {vdm_all.shape} and target {vdm_target_all.shape} VDMs!"
-
-print(f"  Per-run shapes : {[v.shape for v in all_vdm_downsampled]}")
-print(f"  Concatenated   : {vdm_all.shape}  →  {concat_fn}")
 assert vdm_all.shape[-1] == sum(v.shape[-1] for v in all_vdm_downsampled), \
     "Concatenation length mismatch!"
-
+print(f"  Per-run shapes : {[v.shape for v in all_vdm_downsampled]}")
+print(f"  Concatenated   : {vdm_all.shape}  →  {concat_fn}")
 
 print(f"\nSetting permissions in {main_dir}/{project_dir}")
 os.system(f"chmod -Rf 771 {main_dir}/{project_dir}")
