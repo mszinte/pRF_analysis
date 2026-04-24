@@ -81,7 +81,7 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/xcp-d participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/xcp-d_w_atlas participant \
         --participant-label {sub_num} \
     	--mode 'linc' \
     	--bids-filter-file /work_dir/{project_dir}/derivatives/fmripost_aroma/filter_func_data.json \
