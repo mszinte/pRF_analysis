@@ -41,6 +41,8 @@ import os
 import sys
 import shutil
 import re
+import subprocess
+import tempfile
 
 # Personal import
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
@@ -117,7 +119,26 @@ for format_ in formats:
                     new_fn = f'{subject}_{fn}'
                     dst = os.path.join(group_fig_dir, new_fn)
                     
-                    print(f'  Copying: {fn}')
-                    shutil.copy2(src, dst)
+                    # Use rsync to copy with temp name, then rename
+                    with tempfile.NamedTemporaryFile(dir=group_fig_dir, delete=False) as tmp:
+                        tmp_path = tmp.name
+                    
+                    try:
+                        # rsync with -a flag (archive mode: preserves permissions, timestamps, etc)
+                        subprocess.run(['rsync', '-a', src, tmp_path], 
+                                     check=True, 
+                                     stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.DEVNULL)
+                        # Rename to final name
+                        os.rename(tmp_path, dst)
+                        print(f'  Copying: {fn}')
+                    except subprocess.CalledProcessError as e:
+                        print(f'  [ERROR] rsync failed for {fn}: {e}')
+                        if os.path.exists(tmp_path):
+                            os.remove(tmp_path)
+                    except Exception as e:
+                        print(f'  [ERROR] Failed to copy {fn}: {e}')
+                        if os.path.exists(tmp_path):
+                            os.remove(tmp_path)
 
 print(f'Done copying figures to {group_label}')
