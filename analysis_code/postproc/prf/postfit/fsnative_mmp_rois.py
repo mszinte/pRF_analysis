@@ -16,15 +16,14 @@ sys.argv[5]: group of shared data (e.g. 327)
 Output(s):
 None
 -----------------------------------------------------------------------------------------
-To run LOCALLY with Inkscape installed:
 1. cd to function
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 python fsnative_mmp_rois.py [main directory] [project name] [subject] 
                             [freesurfer_subject] [group]
 -----------------------------------------------------------------------------------------
 Executions:
-cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
+cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 python fsnative_mmp_rois.py ~/disks/meso_shared RetinoMaps sub-01 sub-01 327
 python fsnative_mmp_rois.py /scratch/mszinte/data amblyo7T_prf sub-01 sub-01_ses-01 327
 -----------------------------------------------------------------------------------------

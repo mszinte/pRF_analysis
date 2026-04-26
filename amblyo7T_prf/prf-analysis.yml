@@ -1,7 +1,7 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["single-run"]
+  value: ["concat"]
   levels: ["avg", "loo-avg", "concat", "single-run"]
   level-description: 
     avg: "averaging across runs"
@@ -52,12 +52,12 @@ rsq_iterative_th:
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20]
+  value: [0.05, 10]
 
 size_th:
   description: "Size range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20.0]
+  value: [0.05, 10.0]
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
@@ -73,7 +73,7 @@ prf_amp_th:
 
 stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"
-  value: 0.05
+  value: 0.01
 
 vertex_pcm_rad:
   description: "Radius (in mm) of vertex-vertex geodesic distance for population cortical magnification analysis"

@@ -385,8 +385,8 @@ for avg_method in avg_methods:
                         fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                             prf_task_name, preproc_prep, filtering, normalization, avg_method, rois_method_format)
                 
-                        # ROI surface areas 
-                        # -----------------
+                        # ROI active vertices
+                        # -------------------
                         tsv_roi_area_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
                             tsv_dir, subject_to_group, fn_spec)
                         df_roi_area_indiv = pd.read_table(tsv_roi_area_fn, sep="\t")
