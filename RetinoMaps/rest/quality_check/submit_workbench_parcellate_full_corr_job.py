@@ -19,7 +19,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 10:00:00
+python submit_workbench_parcellate_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 10:00:00
 --------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -71,7 +71,7 @@ slurm_cmd = f"""#!/bin/bash
 
 # Assuming scripts are in the same directory as this Python script
 script_dir = os.path.dirname(os.path.abspath(__file__))
-script_name = "connectome-workbench_parcellated_full_corr.sh"
+script_name = f"connectome-workbench_parcellate_full_corr.sh"
 your_script_path = os.path.join(script_dir, script_name)
 
 main_cmd = "bash {}".format(your_script_path)

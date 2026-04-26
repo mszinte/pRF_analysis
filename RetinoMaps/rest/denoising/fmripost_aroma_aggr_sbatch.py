@@ -15,7 +15,8 @@ sys.argv[5]: data group (e.g. 327)
 sys.argv[6]: server_project
 -----------------------------------------------------------------------------------------
 Outputs: resting-state fMRI data denoised from motion artifacts with ICA-AROMA (aggressive, non-aggressive, or orthogonal)
-Test for aggressive denoising convergence because this is what we're applying with XCP-D 
+Test for aggressive denoising convergence because this is what we're applying with XCP-D
+Latest version of fMRIPostAroma with melodic seed set to ensure reproducibility
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
@@ -49,11 +50,11 @@ server_project = sys.argv[6]
 
 # Define cluster/server specific parameters
 cluster_name = 'skylake'
-singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v0.0.8.simg".format(
+singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v.23.0.0.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
 memory_val = 100000
-log_dir = "{main_dir}/{project_dir}/derivatives/fmripost_aroma_aggr/log_outputs".format(
+log_dir = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/log_outputs".format(
     main_dir=main_dir, project_dir=project_dir)
 
 # define SLURM cmd
@@ -73,16 +74,19 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/fmripost_aroma_aggr participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/fmripost_aroma participant \
         --participant-label {sub_num} -t rest \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem {memory_val} \
         --melodic-dimensionality -200 \
+        --melodic-seed 17 \
         --denoising-method aggr \
         -w /work_dir/temp/ \
+        --debug 'all' \
+        --error-on-warnings \
         --resource-monitor --write-graph \
         --stop-on-first-crash \
-	-vv".format(main_dir=main_dir, 
+	    -vvv".format(main_dir=main_dir, 
             project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
             
 # define permission cmd
@@ -90,13 +94,13 @@ chmod_cmd = "\nchmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir,
 chgrp_cmd = "\nchgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group)
 
 # create sh folder and file
-sh_fn = "{main_dir}/{project_dir}/derivatives/fmripost_aroma_aggr/jobs/sub-{sub_num}_fmripost_aroma.sh".format(
+sh_fn = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/jobs/sub-{sub_num}_fmripost_aroma.sh".format(
         main_dir=main_dir, sub_num=sub_num,
         project_dir=project_dir)
 
-os.makedirs("{main_dir}/{project_dir}/derivatives/fmripost_aroma_aggr/jobs".format(
+os.makedirs("{main_dir}/{project_dir}/derivatives/fmripost_aroma/jobs".format(
                 main_dir=main_dir,project_dir=project_dir), exist_ok=True)
-os.makedirs("{main_dir}/{project_dir}/derivatives/fmripost_aroma_aggr/log_outputs".format(
+os.makedirs("{main_dir}/{project_dir}/derivatives/fmripost_aroma/log_outputs".format(
                 main_dir=main_dir,project_dir=project_dir), exist_ok=True)
 
 of = open(sh_fn, 'w')
