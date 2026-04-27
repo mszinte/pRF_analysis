@@ -69,7 +69,7 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 cluster_name  = analysis_info['cluster_name']
-prf_task_names = "SacLoc"
+prf_task_names = ["SacLoc"]
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
@@ -129,19 +129,19 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_gauss_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_gauss_%N_%j_%a.out
+#SBATCH -e {log_dir}/{subject}_prf-gauss_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_prf-gauss_%N_%j_%a.out
 #SBATCH -J {subject}_gaussfit
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=prf_logs_dir)
 
     # define fit cmd
-    fit_cmd = "python pmf_gaussfit.py {} {} {} {} {}".format(
+    fit_cmd = "python prf_gaussfit.py {} {} {} {} {}".format(
         main_dir, project_dir, subject, pp_fn, nb_procs)
     
     # create sh
-    sh_fn = "{}/jobs/{}_pmf_gaussfit-{}.sh".format(prf_dir, subject, fit_num)
+    sh_fn = "{}/jobs/{}_prf_gaussfit-{}.sh".format(prf_dir, subject, fit_num)
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
                                         chmod_cmd, chgrp_cmd))

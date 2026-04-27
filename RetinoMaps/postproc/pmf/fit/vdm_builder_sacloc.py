@@ -85,24 +85,9 @@ with h5py.File(h5_fn, "r") as f:
 print(f"Subject: {subject}  |  Runs found: {len(event_runs)}")
 
 
-# def build_vdm_chunked(frame_fn, n_timepoints):
-#     """
-#     Samples the middle timepoint of each TR window to build the downsampled VDM.
-#     Avoids carryover blending from position transitions.
-#     """
-#     n_trs = int(np.floor(n_timepoints / SAMPLES_PER_TR))
-#     out   = np.zeros((n_trs, N_PIXELS, N_PIXELS), dtype=np.float32)
-#     for tr_idx in range(n_trs):
-#         t = tr_idx * SAMPLES_PER_TR + SAMPLES_PER_TR // 2
-#         out[tr_idx] = frame_fn(t)
-#         if tr_idx % 50 == 0:
-#             print(f"    TR {tr_idx}/{n_trs}", end='\r')
-#     print(f"    {n_trs}/{n_trs} TRs processed")
-#     return np.transpose(out, (1, 2, 0))  # → (H, W, T_TR)
-
 def build_vdm_chunked(frame_fn, n_timepoints):
     """
-    Build VDM by averaging all samples within each TR window.
+    Build VDM by averaging all samples within each TR window
     """
     n_trs = int(np.floor(n_timepoints / SAMPLES_PER_TR))
     out   = np.zeros((n_trs, N_PIXELS, N_PIXELS), dtype=np.float32)
@@ -111,7 +96,7 @@ def build_vdm_chunked(frame_fn, n_timepoints):
         start = tr_idx * SAMPLES_PER_TR
         end   = min((tr_idx + 1) * SAMPLES_PER_TR, n_timepoints)
 
-        # accumulate instead of storing full list → avoids huge memory use
+        # accumulate 
         acc = np.zeros((N_PIXELS, N_PIXELS), dtype=np.float32)
         count = 0
 

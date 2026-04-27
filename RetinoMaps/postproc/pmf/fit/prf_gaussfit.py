@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-pmf_gaussfit.py
+prf_gaussfit.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Prf fit using gaussian model
@@ -24,7 +24,7 @@ python prf_gaussfit.py [main directory] [project name] [subject name]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
-python pmf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -90,7 +90,7 @@ size_th = analysis_info['size_th']
 prf_amp_th = analysis_info['prf_amp_th']
 
 # Load screen settings from subject dependend task-events.json
-prf_task_name = 'pRF'
+prf_task_name = 'SacLoc'
 screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
 
 print("\n===== PRF FIT PARAMETERS =====")
@@ -112,15 +112,15 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', 'pmf-gauss_fit')
+gauss_fit_fn = gauss_fit_fn.replace('bold', 'prf-gauss_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', 'pmf-gauss_pred')
+gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
 
 
 # Find vdm: check subject-specific directory first, then general vdm directory
 vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_vdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name)
+vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_vdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #visual retinal dm 
 vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
 
 if os.path.isfile(vdm_fn_subject):
