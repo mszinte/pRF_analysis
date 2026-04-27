@@ -120,7 +120,7 @@ gauss_pred_fn = gauss_pred_fn.replace('residuals', 'residuals-gauss_pred')
 
 # Find vdm: check subject-specific directory first, then general vdm directory
 vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_vdm_target.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #dont use retinal vdm, but only target position 
+vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_saccade_mdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #use retinal spaced saccade movement mdm
 vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
 
 if os.path.isfile(vdm_fn_subject):
@@ -137,7 +137,6 @@ else:
 print(f"Loading VDM from: {vdm_fn}")
 vdm = np.load(vdm_fn)
 
-deb()
 # define model parameter grid range
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
 eccs = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
@@ -152,7 +151,6 @@ valid_vertices = ~np.isnan(raw_data).any(axis=0)
 valid_vertices_idx = np.where(valid_vertices)[0]
 data = raw_data[:,valid_vertices]
 
-deb()
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,

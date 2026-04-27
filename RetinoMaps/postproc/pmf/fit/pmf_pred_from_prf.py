@@ -149,17 +149,17 @@ params_valid = (
     np.isfinite(prf_fit_data[0, :]) &                          # mu_x
     np.isfinite(prf_fit_data[1, :]) &                          # mu_y
     np.isfinite(prf_fit_data[2, :]) &                          # size
-    (prf_fit_data[3, :] >= prf_amp_th[0]) &                    # amplitude lower bound
-    (prf_fit_data[3, :] <= prf_amp_th[1]) &                    # amplitude upper bound
+    (prf_fit_data[3, :] > -1e6)     &                          # amp not overflowed
+    (prf_fit_data[3, :] <  1e6)     &                          # amp not overflowed
     np.isfinite(prf_fit_data[4, :]) &                          # baseline
     np.isfinite(prf_fit_data[5, :]) &                          # hrf_1
     (prf_fit_data[2, :] > 0)        &                          # size > 0
     (prf_fit_data[7, :] > 0.1)                                 # r²
 )
 
-
 # Intersect with existing valid_vertices_idx
 valid_vertices_idx_prf = np.array([v for v in valid_vertices_idx if params_valid[v]])
+
 
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],

@@ -32,36 +32,46 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 import warnings
 warnings.filterwarnings("ignore")
 
-# debug 
-import ipdb 
+# Debug
+import ipdb
 deb = ipdb.set_trace
 
-# general imports
+# General imports
 import os
 import sys
-import json
 
-# inputs
+# personal imports
+sys.path.append("{}/../../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
+
+# Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 
-# define analysis parameters
-with open('../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+# load settings
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+glm_settings_path = os.path.join(base_dir, project_dir, "glm-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path, glm_settings_path])
+analysis_info = settings[0]
+
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
-
 nb_procs = 1
 memory_val = 48
 hour_proc = 1
 
-# set folders
-log_dir = "{}/{}/derivatives/pp_data/{}/glm/log_outputs".format(main_dir, project_dir, subject)
-job_dir = "{}/{}/derivatives/pp_data/{}/glm/jobs".format(main_dir, project_dir, subject)
+# Set folders
+log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(main_dir, 
+                                                            project_dir, 
+                                                            subject)
+job_dir = "{}/{}/derivatives/pp_data/{}/jobs".format(main_dir, 
+                                                     project_dir, 
+                                                     subject)
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 
@@ -73,20 +83,22 @@ slurm_cmd = """\
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_tsv_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_tsv_%N_%j_%a.out
-#SBATCH -J {subject}_tsv
+#SBATCH -e {log_dir}/{subject}_intertask_fig_tsv_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_sintertask_fig_tsv_%N_%j_%a.out
+#SBATCH -J {subject}_intertask_fig_tsv
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-glm_fit_cmd = "python make_intertask_rois_fig_tsv.py {} {} {} {}".format(main_dir, project_dir, subject, group)
+compute_stats_cmd = "python make_intertask_rois_fig_tsv.py {} {} {} {}".format(
+    main_dir, project_dir, subject, group)
 
-# create sh fn
-sh_fn = "{}/{}_tsv.sh".format(job_dir, subject)
+# Create sh fn
+sh_fn = "{}/{}_intertask_fig_tsv.sh".format(job_dir, subject)
+
 of = open(sh_fn, 'w')
-
-of.write("{} \n{}".format(slurm_cmd, glm_fit_cmd))
+of.write("{}".format(slurm_cmd))
+of.write("{}".format(compute_stats_cmd))
 of.close()
 
 # Submit jobs

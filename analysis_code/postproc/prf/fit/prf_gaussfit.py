@@ -81,11 +81,17 @@ analysis_info = settings[0]
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0] 
 vdm_height = analysis_info['vdm_size_pix'][1]
+
+# gauss fit parameters
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
+size_bounds = analysis_info['size_th']
+prf_amplitude_bounds = analysis_info['prf_amplitude_bounds']
+prf_baseline_bounds = analysis_info['prf_baseline_bounds']
+hrf_1_bounds = analysis_info['hrf_1_bounds']
+hrf_2_bounds = analysis_info['hrf_2_bounds']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
-size_th = analysis_info['size_th']
-prf_amp_th = analysis_info['prf_amp_th']
+
 
 # Load screen settings from subject dependend task-events.json
 prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
@@ -161,6 +167,7 @@ print("Eccentricity grid range:", np.min(eccs), np.max(eccs))
 print("Size grid range:", np.min(sizes), np.max(sizes))
 print("==============================\n")
 
+
 # determine gaussian model
 gauss_model = Iso2DGaussianModel(stimulus=stimulus)
 
@@ -176,16 +183,15 @@ gauss_fitter.grid_fit(ecc_grid=eccs,
                       n_batches=n_batches)
 
 # Iterative fit gauss model
-gauss_bounds = [(-max_ecc_size, max_ecc_size), # x
-                (-max_ecc_size, max_ecc_size), # y
-                (size_th[0], size_th[1]), # prf size
-                (prf_amp_th[0], prf_amp_th[1]), # prf amplitude
-                (-2, 2), # bold baseline
-                (0, 10), # hrf1
-                (0, 0)  # hrf2
-                ]
-
-# one idea: grid fit more loose, limit with bounds afterwards 
+gauss_bounds = [
+    (-max_ecc_size, max_ecc_size),                     # x
+    (-max_ecc_size, max_ecc_size),                     # y
+    (size_bounds[0], size_bounds[1]),                  # sigma
+    (prf_amplitude_bounds[0], prf_amplitude_bounds[1]),# amplitude
+    (prf_baseline_bounds[0], prf_baseline_bounds[1]),  # baseline
+    (hrf_1_bounds[0], hrf_1_bounds[1]),                # hrf1
+    (hrf_2_bounds[0], hrf_2_bounds[1]),                # hrf2
+] 
 
 print("\n===== PRF FIT BOUNDS =====")
 print("Gauss bounds:")

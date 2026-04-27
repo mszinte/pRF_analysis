@@ -1,7 +1,7 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["avg", "loo-avg", "single-run"]
+  value: ["avg", "loo-avg"]
   levels: ["avg", "loo-avg", "concat", "single-run"]
   level-description: 
     avg: "averaging across runs"
@@ -43,6 +43,22 @@ max_ecc_size:
   description: "Maximum eccentricity and size value"
   units: "dva"
   value: 10
+
+prf_amplitude_bounds:
+  description: "Scaling factor of the pRF response (signal gain)"
+  value: [0, 5]
+
+prf_baseline_bounds:
+  description: "Additive baseline (offset) of the BOLD signal"
+  value: [-2, 2]
+
+hrf_1_bounds:
+  description: "Primary HRF parameter"
+  value: [0, 10]
+
+hrf_2_bounds:
+  description: "Secondary HRF parameter (fixed if lower=upper=0)"
+  value: [0, 0]
   
 rsq_iterative_th: 
   description: "R-square minimum threshold for iterative fit"

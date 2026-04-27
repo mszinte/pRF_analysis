@@ -627,18 +627,16 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
     
     # General figure settings
     fig_template = plotly_template(template_specs)
-    max_ecc = figure_info['ecc_size_max'][0]
     max_size = figure_info['ecc_size_max'][1]
-    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
     rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois_groups)
     rois_hor_spacing = figure_info['rois_hor_spacing']
     rois_ver_spacing = figure_info['rois_ver_spacing']
-    # bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
+    ecc_size_axis = figure_info['ecc_size_axis']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -720,8 +718,8 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
-        fig.update_yaxes(title_text='pRF size (dva)', range=[0, max_size], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
+        fig.update_yaxes(title_text='pRF size (dva)', range=[ecc_size_axis[0], ecc_size_axis[1]], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 
@@ -766,7 +764,6 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     fig_template = plotly_template(template_specs)
     max_ecc = figure_info['ecc_pcm_max'][0]
     max_pcm = figure_info['ecc_pcm_max'][1]
-    rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['rois_fig_margin']
     rois_groups = figure_info['rois_groups_plot']
@@ -776,6 +773,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     # bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     rois_plot_width = figure_info['rois_plot_width']
+    ecc_pcm_axis = figure_info['ecc_pcm_axis']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -803,39 +801,42 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             pcm_upper_bound = np.array(df_roi.prf_pcm_bins_ci_upper_bound)
             pcm_lower_bound = np.array(df_roi.prf_pcm_bins_ci_lower_bound)
             
-            # Linear regression
-            slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
-            
-            slope_upper, intercept_upper = weighted_regression(ecc_median[~np.isnan(pcm_upper_bound)], 
-                                                               pcm_upper_bound[~np.isnan(pcm_upper_bound)], 
-                                                               r2_median[~np.isnan(pcm_upper_bound)], 
-                                                               model='pcm')
-            
-            slope_lower, intercept_lower = weighted_regression(ecc_median[~np.isnan(pcm_lower_bound)], 
-                                                               pcm_lower_bound[~np.isnan(pcm_lower_bound)], 
-                                                               r2_median[~np.isnan(pcm_lower_bound)], 
-                                                               model='pcm')
-
-            line_x = np.linspace(ecc_median[0], ecc_median[-1], 50)
-            line = 1 / (slope * line_x + intercept)
-            line_upper = 1 / (slope_upper * line_x + intercept_upper)
-            line_lower = 1 / (slope_lower * line_x + intercept_lower)
-
-            fig.add_trace(go.Scatter(x=line_x, 
-                                     y=line, 
-                                     mode='lines', 
-                                     name=roi, 
-                                     legendgroup=roi, 
-                                     line=dict(color=roi_color, width=3), 
-                                     showlegend=False), 
-                          row=1, col=l+1)
-
-            # Error area
-            fig.add_trace(go.Scatter(x=np.concatenate([line_x, line_x[::-1]]),
-                                      y=np.concatenate([list(line_upper), list(line_lower[::-1])]), 
-                                      mode='lines', fill='toself', fillcolor=roi_color_opac, 
-                                      line=dict(color=roi_color_opac, width=0), showlegend=False), 
-                          row=1, col=l+1)
+            try:
+                # Linear regression
+                slope, intercept = weighted_regression(ecc_median, pcm_median, r2_median, model='pcm')
+                
+                slope_upper, intercept_upper = weighted_regression(ecc_median[~np.isnan(pcm_upper_bound)], 
+                                                                   pcm_upper_bound[~np.isnan(pcm_upper_bound)], 
+                                                                   r2_median[~np.isnan(pcm_upper_bound)], 
+                                                                   model='pcm')
+                
+                slope_lower, intercept_lower = weighted_regression(ecc_median[~np.isnan(pcm_lower_bound)], 
+                                                                   pcm_lower_bound[~np.isnan(pcm_lower_bound)], 
+                                                                   r2_median[~np.isnan(pcm_lower_bound)], 
+                                                                   model='pcm')
+    
+                line_x = np.linspace(ecc_median[0], ecc_median[-1], 50)
+                line = 1 / (slope * line_x + intercept)
+                line_upper = 1 / (slope_upper * line_x + intercept_upper)
+                line_lower = 1 / (slope_lower * line_x + intercept_lower)
+    
+                fig.add_trace(go.Scatter(x=line_x, 
+                                         y=line, 
+                                         mode='lines', 
+                                         name=roi, 
+                                         legendgroup=roi, 
+                                         line=dict(color=roi_color, width=3), 
+                                         showlegend=False), 
+                              row=1, col=l+1)
+    
+                # Error area
+                fig.add_trace(go.Scatter(x=np.concatenate([line_x, line_x[::-1]]),
+                                          y=np.concatenate([list(line_upper), list(line_lower[::-1])]), 
+                                          mode='lines', fill='toself', fillcolor=roi_color_opac, 
+                                          line=dict(color=roi_color_opac, width=0), showlegend=False), 
+                              row=1, col=l+1)
+            except RuntimeError:
+                print(f"Fit failed for ROI: {roi}")
 
             # Markers
             fig.add_trace(go.Scatter(x=ecc_median, 
@@ -864,8 +865,8 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             fig.add_annotation(annotation, row=1, col=l+1)
 
         # Set axis 
-        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[0, max_ecc], showline=True)
-        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[0, max_pcm], showline=True)
+        fig.update_xaxes(title_text='pRF eccentricity (dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
+        fig.update_yaxes(title_text='pRF cortical magn. (mm/dva)', range=[ecc_pcm_axis[0], ecc_pcm_axis[1]], showline=True)
         fig.update_layout(height=fig_height, 
                           width=fig_width, 
                           showlegend=False, 
