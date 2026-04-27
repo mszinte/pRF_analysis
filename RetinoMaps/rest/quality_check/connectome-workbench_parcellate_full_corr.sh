@@ -17,17 +17,27 @@ OUT_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/quality_check"
 
 for i in 03 04 14 21 23;
 do
-	# Parcellate targets
+	# Parcellate targets in two steps:
+	# The first produces a dense by parcel matrix
+	# The second parcel by parcel
+	# See wb_command -cifti-help for a shorthand on the typical mappings
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
 	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
-	    -method MEAN -only-numeric 
+	    -method MEAN
+
+	# Parcellate targets
+	wb_command -cifti-parcellate \
+	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
+	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" ROW \
+	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.pconn.nii" \
+	    -method MEAN
 
 	# Convert all parcellated outputs to TSV for visualizations
-    wb_command -cifti-convert -to-text \
-        "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
-        "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.tsv"
+    #wb_command -cifti-convert -to-text \
+    #    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
+    #    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.tsv"
 
 	# Remove files that occupy excessive memory space
     # rm "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii"
@@ -37,12 +47,19 @@ do
 	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
 	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
-	    -method MEAN -only-numeric
+	    -method MEAN
+
+	# Parcellate targets
+	wb_command -cifti-parcellate \
+	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
+	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" ROW \
+	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.pconn.nii" \
+	    -method MEAN
 
 	# Convert all parcellated outputs to TSV for visualizations
-    wb_command -cifti-convert -to-text \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
-        "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.tsv"
+    #wb_command -cifti-convert -to-text \
+    #    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
+    #    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.tsv"
 
 	# Remove files that occupy excessive memory space
     # rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii"
