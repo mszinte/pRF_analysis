@@ -50,7 +50,7 @@ server_project = sys.argv[6]
 
 # Define cluster/server specific parameters
 cluster_name = 'skylake'
-singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v.23.0.0.simg".format(
+singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v.0.0.12.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
 memory_val = 100000
