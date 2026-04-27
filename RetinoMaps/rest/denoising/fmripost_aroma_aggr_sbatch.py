@@ -79,10 +79,9 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem {memory_val} \
         --melodic-dimensionality -200 \
-        --melodic-seed 17 \
+        --random-seed 17 \
         --denoising-method aggr \
         -w /work_dir/temp/ \
-        --debug 'all' \
         --error-on-warnings \
         --resource-monitor --write-graph \
         --stop-on-first-crash \
