@@ -93,6 +93,7 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 # Define preprocessing folder
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
+
 # template_avg exeption
 if subject != 'template_avg':
     for avg_method in avg_methods:
@@ -132,6 +133,7 @@ if subject != 'template_avg':
                         elif format_ == '170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
+    
                         
                     # load data  
                     print(f'Loading pred: {prf_pred_fn}') 
