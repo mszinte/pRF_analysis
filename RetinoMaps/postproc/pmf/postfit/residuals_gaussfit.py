@@ -100,6 +100,19 @@ print(f"TR: {TR}")
 print(f"Max eccentricity/size values: {max_ecc_size}")
 print("==============================\n")
 
+# ── determine input type from filename ───────────────────────────────────────
+if 'residuals' in input_fn:
+    input_type = 'residuals'
+elif 'bold' in input_fn:
+    input_type = 'bold'
+else:
+    raise ValueError(f"Cannot determine input type from filename: {input_fn}")
+
+print(f"Input type: {input_type}")
+
+# ── output filenames ──────────────────────────────────────────────────────────
+base_fn = input_fn.split('/')[-1]
+
 # Define directories
 if input_fn.endswith('.nii'):
     prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/pmf/fit".format(
@@ -111,16 +124,21 @@ elif input_fn.endswith('.gii'):
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
-gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('residuals', 'residuals-gauss_fit')
+# Output filenmaes based on type
+if input_type == 'residuals':
+    gauss_fit_fn  = base_fn.replace('pmf-gauss_resid', 'pmf-resid-gauss_fit')
+    gauss_pred_fn = base_fn.replace('pmf-gauss_resid', 'pmf-resid-gauss_pred')
 
-gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('residuals', 'residuals-gauss_pred')
+elif input_type == 'bold':
+    gauss_fit_fn  = base_fn.replace('bold', 'pmf2-gauss_fit')
+    gauss_pred_fn = base_fn.replace('bold', 'pmf2-gauss_pred')
 
+print(f"Output fit:  {gauss_fit_fn}")
+print(f"Output pred: {gauss_pred_fn}")
 
 # Find vdm: check subject-specific directory first, then general vdm directory
 vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_saccade_mdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #use retinal spaced saccade movement mdm
+vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_saccade_mdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #use retinal space saccade movement mdm
 vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
 
 if os.path.isfile(vdm_fn_subject):
