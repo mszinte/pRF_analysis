@@ -101,8 +101,7 @@ for task in tasks :
        
     for run in range(num_run):    
         if task == "PurLoc":
-            pred_x_intpl, pred_y_intpl = predicted_pursuit(
-                dfs_runs[run], task_settings)
+            pred_x_intpl, pred_y_intpl = predicted_pursuit(main_dir,project_dir,dfs_runs[run], task_settings)
             
             # Save prediction x and y as tsv.gz
             prediction = np.stack((pred_x_intpl, pred_y_intpl), axis=1)

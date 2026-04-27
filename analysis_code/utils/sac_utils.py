@@ -524,10 +524,10 @@ def interp1d(array: np.ndarray, new_len: int) -> np.ndarray:
     la = len(array)
     return np.interp(np.linspace(0, la - 1, num=new_len), np.arange(la), array)
 
-def predicted_pursuit(df_run,settings):
+def predicted_pursuit(main_dir, project_dir, df_run,settings):
     import numpy as np
     import os
-    path = "{}/".format(os.getcwd())
+    path = os.path.join(main_dir,project_dir, "derivatives", "exp_design")
     pursuit_coord_x = np.load(f"{path}/design_coordinates_x.npy")
     pursuit_coord_y = np.load(f"{path}design_coordinates_y.npy")
 
@@ -569,8 +569,8 @@ def predicted_pursuit(df_run,settings):
 def predicted_saccade(main_dir, project_dir, df_run,settings):  
     import os
     path = os.path.join(main_dir,project_dir, "derivatives", "exp_design")
-    saccade_coord_x = np.load(f"{path}/sacloc_design_coordinates_x.npy")
-    saccade_coord_y = np.load(f"{path}/sacloc_design_coordinates_y.npy")
+    saccade_coord_x = np.load(f"{path}/design_coordinates_x.npy")
+    saccade_coord_y = np.load(f"{path}/design_coordinates_y.npy")
 
     amplitude = list(df_run['eyemov_amplitude'])
     seq_trial = list(df_run['sequence_trial'])
