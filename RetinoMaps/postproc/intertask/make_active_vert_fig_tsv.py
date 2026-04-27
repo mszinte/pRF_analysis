@@ -117,23 +117,24 @@ for tasks in group_tasks :
                     continue
                 
                 data = pd.read_table(tsv_fn, sep="\t")
-                raw_data = data.copy()
+                # raw_data = data.copy()
+                data_vision_filtered = data.copy() 
                 
                 # replace nan in pcm by non_computed 
-                data.loc[data['all'] != 'vision', 
+                data_vision_filtered.loc[data_vision_filtered['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
     
                 # Threshold data (replace by nan)
                 if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
                 elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                data.loc[(data.amplitude < amplitude_threshold[0]) |
-                         (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                         (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) | 
-                         (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-                         (data[rsq2use] < rsqr_threshold) |
-                         (data[stats_col] > stats_threshold)] = np.nan
-                data = data.dropna()
+                data_vision_filtered.loc[(data_vision_filtered.amplitude < amplitude_threshold[0]) |
+                         (data.prf_ecc < ecc_threshold[0]) | (data_vision_filtered.prf_ecc > ecc_threshold[1]) |
+                         (data_vision_filtered.prf_size < size_threshold[0]) | (data_vision_filtered.prf_size > size_threshold[1]) | 
+                         (data_vision_filtered.prf_n < n_threshold[0]) | (data_vision_filtered.prf_n > n_threshold[1]) | 
+                         (data_vision_filtered[rsq2use] < rsqr_threshold) |
+                         (data_vision_filtered[stats_col] > stats_threshold)] = np.nan
+                data_vision_filtered = data_vision_filtered.dropna()
     
                 for rois_type in ['roi', 'roi_mmp']:
                     if rois_type == 'roi':
@@ -145,14 +146,16 @@ for tasks in group_tasks :
                     subject_rois_area_categorie_df = pd.DataFrame()
                     for roi in rois : 
                         # Compute categorie proportions 
-                        n_vert_roi = raw_data.loc[raw_data[rois_type] == roi].shape[0]
+                        n_vert_roi = data.loc[data[rois_type] == roi].shape[0]
                         n_vert_roi_saccade = data.loc[(data[rois_type] == roi) & (data['saccade'] == 'saccade')].shape[0]
                         n_vert_roi_pursuit = data.loc[(data[rois_type] == roi) & (data['pursuit'] == 'pursuit')].shape[0]
-                        n_vert_roi_vision = data.loc[(data[rois_type] == roi) & (data['vision'] == 'vision')].shape[0]
-                        n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & 
-                                                                             (data['saccade'] == 'saccade') & 
-                                                                             (data['pursuit'] == 'pursuit') & 
-                                                                             (data['vision'] == 'vision')].shape[0]
+                        n_vert_roi_vision = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['vision'] == 'vision')].shape[0]
+                        # n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & 
+                        #                                                      (data['saccade'] == 'saccade') & 
+                        #                                                      (data['pursuit'] == 'pursuit') & 
+                        #                                                      (data['vision'] == 'vision')].shape[0]
+                        n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & (data['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
+
                         # Compute percentage active vertex in rois
                         if n_vert_roi == 0 :
                             percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0

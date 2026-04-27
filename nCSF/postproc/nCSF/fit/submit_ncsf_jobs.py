@@ -17,15 +17,14 @@ Output(s):
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
 2. run python command
-python prf_submit_css_jobs.py [main directory] [project name] [subject] 
+python submit_ncsf_jobs.py [main directory] [project name] [subject] 
                               [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python submit_ncsf_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python submit_ncsf_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327
+cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
+python submit_ncsf_jobs.py /scratch/mszinte/data nCSF sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -46,10 +45,9 @@ import sys
 import glob
 
 # Personal imports
-script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(os.path.join(script_dir, "../../../../analysis_code/utils")))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
-from pycortex_utils import set_pycortex_config_file
+# from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
@@ -62,7 +60,7 @@ nb_procs = 8
 hour_proc = 10
 
 # Load settings
-base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
@@ -71,52 +69,47 @@ analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-prf_task_names = analysis_info['prf_task_names']
+nCSF_task_names = analysis_info['nCSF_task_names'][0]
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
-# Set pycortex db and colormaps
-cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
-set_pycortex_config_file(cortex_dir)
+# # Set pycortex db and colormaps
+# cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+# set_pycortex_config_file(cortex_dir)
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
-# define permission cmd
-chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
-chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
-
 # Define fns (filenames)
 pp_fns = []
 for avg_method in avg_methods:
-    for prf_task_name in prf_task_names:
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, prf_task_name, avg_method)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
+    dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
+        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
 
-        # Accumulate the results
-        pp_fns.extend(glob.glob(dct_avg_gii_fns))
-        pp_fns.extend(glob.glob(dct_avg_nii_fns))
+    # Accumulate the results
+    pp_fns.extend(glob.glob(dct_avg_gii_fns))
+    pp_fns.extend(glob.glob(dct_avg_nii_fns))
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
-        prf_dir = "{}/{}/170k/prf".format(pp_dir, subject)
-        os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/170k/prf/jobs".format(pp_dir, subject)
-        os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/170k/prf/log_outputs".format(pp_dir, subject)
-        os.makedirs(prf_logs_dir, exist_ok=True)
+        ncsf_dir = "{}/{}/170k/ncsf".format(pp_dir, subject)
+        os.makedirs(ncsf_dir, exist_ok=True)
+        ncsf_jobs_dir = "{}/{}/170k/ncsf/jobs".format(pp_dir, subject)
+        os.makedirs(ncsf_jobs_dir, exist_ok=True)
+        ncsf_logs_dir = "{}/{}/170k/ncsf/log_outputs".format(pp_dir, subject)
+        os.makedirs(ncsf_logs_dir, exist_ok=True)
 
     elif pp_fn.endswith('.gii'):
-        prf_dir = "{}/{}/fsnative/prf".format(pp_dir, subject)
-        os.makedirs(prf_dir, exist_ok=True)
-        prf_jobs_dir = "{}/{}/fsnative/prf/jobs".format(pp_dir, subject)
-        os.makedirs(prf_jobs_dir, exist_ok=True)
-        prf_logs_dir = "{}/{}/fsnative/prf/log_outputs".format(pp_dir, subject)
-        os.makedirs(prf_logs_dir, exist_ok=True)
+        ncsf_dir = "{}/{}/fsnative/ncsf".format(pp_dir, subject)
+        os.makedirs(ncsf_dir, exist_ok=True)
+        ncsf_jobs_dir = "{}/{}/fsnative/ncsf/jobs".format(pp_dir, subject)
+        os.makedirs(ncsf_jobs_dir, exist_ok=True)
+        ncsf_logs_dir = "{}/{}/fsnative/ncsf/log_outputs".format(pp_dir, subject)
+        os.makedirs(ncsf_logs_dir, exist_ok=True)
     
     slurm_cmd = """\
 #!/bin/bash
@@ -126,29 +119,29 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_css_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_css_fit_%N_%j_%a.out
-#SBATCH -J {subject}_css_fit
+#SBATCH -e {log_dir}/{subject}_ncsf_fit_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_ncsf_fit_%N_%j_%a.out
+#SBATCH -J {subject}_ncsf_fit
 """.format(server_project=server_project, 
            cluster_name=cluster_name,
            nb_procs=nb_procs, 
            hour_proc=hour_proc, 
            subject=subject, 
            memory_val=memory_val, 
-           log_dir=prf_logs_dir)
+           log_dir=ncsf_logs_dir)
 
     # Define fit cmd
-    fit_cmd = "python prf_cssfit.py {} {} {} {} {}".format(
+    fit_cmd = "python ncsf_fit.py {} {} {} {} {}".format(
         main_dir, project_dir, subject, pp_fn, nb_procs)
     
     # Create shs
-    sh_fn = "{}/jobs/{}_prf_css_fit-{}.sh".format(prf_dir, subject, fit_num)
+    sh_fn = "{}/jobs/{}_ncsf_fit-{}.sh".format(ncsf_dir, subject, fit_num)
 
     of = open(sh_fn, 'w')
-    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
-                                        chmod_cmd, chgrp_cmd))
+    of.write("{} \n{}".format(slurm_cmd, fit_cmd))
     of.close()
 
-    # Submit jobs
+    # # Submit jobs
     print("Submitting {} to queue".format(sh_fn))
     os.system("sbatch {}".format(sh_fn))
+    stop
