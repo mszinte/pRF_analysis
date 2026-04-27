@@ -140,7 +140,7 @@ rois-group-mmp:
     LO: ["LO1", "LO2", "LO3"] 
     VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
     hMT+: ["V4t", "MST", "MT", "FST"]
-    iIPS: ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"]
+    iIPS: ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7Pl"]
     sIPS: ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
     iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
     sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 

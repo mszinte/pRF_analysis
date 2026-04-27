@@ -3,7 +3,7 @@
 ncsf_fit.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Prf fit computing css fit
+Fit nCSF model to data
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -17,13 +17,14 @@ fit tester numpy arrays
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
+>> cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
 2. run python command
 python ncsf_fit.py [main directory] [project name] [subject name] 
                      [input file name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
-python prf_cssfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
+python ncsf_fit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -47,20 +48,20 @@ import pandas as pd
 
 # MRI analysis imports
 import nibabel as nb
+from prfpy_csenf.fit import CSenFFitter
 from prfpy_csenf.model import CSenFModel
 from prfpy_csenf.stimulus import CSenFStimulus
-from prfpy_csenf.fit import CSenFFitter
 # from prfpy_csenf.rf import * 
 # from prfpy_csenf.csenf_plot_functions import *
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
-from pycortex_utils import set_pycortex_config_file
+# from pycortex_utils import set_pycortex_config_file
 from surface_utils import load_surface, make_surface_image
 
 
-# Get inputs
+# Get inputs cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
 start_time = datetime.datetime.now()
 
 # Inputs
@@ -75,9 +76,9 @@ n_batches = n_jobs
 verbose = True
 
 
-# Set pycortex db and colormaps
-cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
-set_pycortex_config_file(cortex_dir)
+# # Set pycortex db and colormaps
+# cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+# set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -170,8 +171,10 @@ SFp_grid            = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], 
 CSp_grid            = np.linspace(ncsf_bounds['CSp'][0], ncsf_bounds['CSp'][1], ncsf_grid_nr)
 width_l_grid        = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)     
 crf_exp_grid        = np.linspace(ncsf_bounds['crf_exp'][0], ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
-hrf_1_grid = None
-hrf_2_grid = None
+# hrf_1_grid = None
+# hrf_2_grid = None
+hrf_1_grid = np.zeros(len(width_r_grid))
+hrf_2_grid = np.zeros(len(width_r_grid))
 
 grid_bounds = [ncsf_bounds['amp_1']]
 fixed_grid_baseline=False
@@ -223,13 +226,15 @@ ncsf_pred_mat = np.zeros_like(raw_data)
 
 for est, vert in enumerate(valid_vertices_idx):
     ncsf_fit_mat[vert] = ncsf_fit[est]
-    # ncsf_pred_mat[:,vert] = csenf_model.return_prediction(mu_x=ncsf_fit[est][0], 
-    #                                                       mu_y=ncsf_fit[est][1], 
-    #                                                       size=ncsf_fit[est][2], 
-    #                                                       beta=ncsf_fit[est][3], 
-    #                                                       baseline=ncsf_fit[est][4],
-    #                                                       hrf_1=ncsf_fit[est][5],
-    #                                                       hrf_2=ncsf_fit[est][6])
+    ncsf_pred_mat[:,vert] = csenf_model.return_prediction(width_r=ncsf_fit[est][0], 
+                                                          SFp=ncsf_fit[est][1], 
+                                                          CSp=ncsf_fit[est][2], 
+                                                          width_l=ncsf_fit[est][3], 
+                                                          crf_exp=ncsf_fit[est][4],
+                                                          beta=ncsf_fit[est][5],
+                                                          baseline=ncsf_fit[est][6],
+                                                          hrf_1=ncsf_fit[est][7],
+                                                          hrf_2=ncsf_fit[est][8])
 
 
 ncsf_fit_mat = np.where(ncsf_fit_mat == 0, np.nan, ncsf_fit_mat)
@@ -255,8 +260,6 @@ ncsf_pred_fn = input_fn.split('/')[-1]
 ncsf_pred_fn = ncsf_pred_fn.replace('bold', 'ncsf_pred')
 
 
-
-              
 # export fit
 img_ncsf_fit_mat = make_surface_image(data=ncsf_fit_mat.T, source_img=img, maps_names=ncsf_maps_names)
 nb.save(img_ncsf_fit_mat,'{}/{}'.format(ncsf_fit_dir, ncsf_fit_fn)) 
@@ -265,7 +268,10 @@ nb.save(img_ncsf_fit_mat,'{}/{}'.format(ncsf_fit_dir, ncsf_fit_fn))
 img_ncsf_pred_mat = make_surface_image(data=ncsf_pred_mat, source_img=img)
 nb.save(img_ncsf_pred_mat,'{}/{}'.format(ncsf_fit_dir, ncsf_pred_fn)) 
 
-
+# Print duration
+end_time = datetime.datetime.now()
+print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(
+start_time=start_time, end_time=end_time, dur=end_time - start_time))
 
 
 
