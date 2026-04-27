@@ -14,6 +14,8 @@ import os
 import re
 import json
 import glob
+import gzip
+import shutil
 import subprocess
 import nibabel as nib
 import numpy as np
@@ -633,3 +635,179 @@ def convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject):
     except Exception as e:
         print(f"  ERROR: Failed to save NIfTI: {e}")
         return False
+
+
+# -----------------------------------------------------------------------------------------
+# Special pipeline functions (for subjects without PARREC data)
+# -----------------------------------------------------------------------------------------
+
+def gzip_nifti_files(raw_dir):
+    """
+    Gzip all .nii files in raw_dir that don't already have a .nii.gz counterpart.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Directory containing raw (uncompressed) NIfTI files
+
+    Returns
+    -------
+    list of str
+        List of .nii.gz file paths (newly created or already existing)
+    """
+    nii_files = glob.glob(opj(raw_dir, '*.nii'))
+    created = []
+    for nii_path in nii_files:
+        gz_path = nii_path + '.gz'
+        if os.path.exists(gz_path):
+            print(f"  Already gzipped, skipping: {os.path.basename(gz_path)}")
+            created.append(gz_path)
+            continue
+        print(f"  Gzipping: {os.path.basename(nii_path)}")
+        with open(nii_path, 'rb') as f_in:
+            with gzip.open(gz_path, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        created.append(gz_path)
+    return created
+
+
+def build_raw_file_index(raw_dir):
+    """
+    Build a mapping from file number to basename for all .nii.gz files in raw_dir.
+
+    Uses the same logic as copy_functional_runs: the last underscore-separated
+    numeric token before the extension is the file number.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Directory containing .nii.gz files
+
+    Returns
+    -------
+    dict
+        {file_number_str: basename_without_extension}
+    """
+    index = {}
+    for filename in os.listdir(raw_dir):
+        if filename.endswith('.nii.gz') and '_modulus' in filename:
+            parts = filename.replace('.nii.gz', '').split('_')
+            # filename pattern: Prefix_SCANNUM_1_modulus -> scan number is third-to-last token
+            if len(parts) >= 3 and parts[-3].isdigit():
+                index[parts[-3]] = filename.replace('.nii.gz', '')
+    print("  Found raw NIfTI files:")
+    for num, base in sorted(index.items(), key=lambda x: int(x[0])):
+        print(f"    File #{num}: {base}")
+    return index
+
+
+def copy_and_adapt_func_json(sub01_func_dir, dst_json_path, task_name):
+    """
+    Copy a functional JSON sidecar from sub-01 and adapt TaskName.
+
+    Parameters
+    ----------
+    sub01_func_dir : str
+        Path to sub-01/ses-01/func/
+    dst_json_path : str
+        Destination path for the new JSON
+    task_name : str
+        BIDS task name to set in TaskName field
+    """
+    template_jsons = sorted(glob.glob(opj(sub01_func_dir, '*_bold.json')))
+    if not template_jsons:
+        raise FileNotFoundError(f"No bold JSON templates found in {sub01_func_dir}")
+
+    with open(template_jsons[0], 'r') as f:
+        data = json.load(f)
+
+    data['TaskName'] = task_name
+
+    with open(dst_json_path, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def copy_and_adapt_anat_json(sub01_anat_dir, dst_json_path):
+    """
+    Copy an anatomical T1w JSON sidecar from sub-01.
+
+    Parameters
+    ----------
+    sub01_anat_dir : str
+        Path to sub-01/ses-01/anat/
+    dst_json_path : str
+        Destination path for the new JSON
+    """
+    template_jsons = sorted(glob.glob(opj(sub01_anat_dir, '*_T1w.json')))
+    if not template_jsons:
+        raise FileNotFoundError(f"No T1w JSON templates found in {sub01_anat_dir}")
+
+    shutil.copy(template_jsons[0], dst_json_path)
+
+
+def copy_functional_runs_special(scans, raw_dir, session_dir, subject,
+                                  sub01_func_dir, copy_commands_file):
+    """
+    Copy functional runs from a raw NIfTI directory to BIDS structure and
+    generate JSON sidecars from sub-01 templates.
+
+    For use when raw files are already .nii.gz (after gzip_nifti_files) and
+    no JSON sidecars exist in the source directory.
+
+    Parameters
+    ----------
+    scans : list of dict
+        Parsed scan list from parse_readme
+    raw_dir : str
+        Directory with gzipped raw NIfTI files
+    session_dir : str
+        BIDS session directory for this subject
+    subject : str
+        Subject BIDS code
+    sub01_func_dir : str
+        Path to sub-01/ses-01/func/ for JSON templates
+    copy_commands_file : str
+        Path where the copy shell script will be written
+    """
+    raw_index = build_raw_file_index(raw_dir)
+
+    copy_commands = ["#!/bin/bash\n"]
+    n_copied = 0
+
+    for scan in scans:
+        file_num = scan['file_num']
+        task_name = scan['task_name']
+        run_num = scan['run_num']
+
+        file_num_int = str(int(file_num))           # '05' -> '5'
+        file_num_padded = file_num_int.zfill(2)    # '5'  -> '05'
+        source_base = (raw_index.get(file_num) or
+                       raw_index.get(file_num_int) or
+                       raw_index.get(file_num_padded))
+
+        if source_base:
+            target_base = f"{subject}_ses-01_task-{task_name}_run-{run_num:02d}_bold"
+            src_nii = opj(raw_dir, f"{source_base}.nii.gz")
+            dst_nii = opj(session_dir, 'func', f"{target_base}.nii.gz")
+            copy_commands.append(f"cp {src_nii} {dst_nii}\n")
+            print(f"  Scan {scan['scan_num']}: {source_base} -> {target_base}")
+            n_copied += 1
+        else:
+            print(f"  WARNING: File #{file_num} not found for scan {scan['scan_num']}")
+
+    # Write and execute copy commands
+    with open(copy_commands_file, 'w') as f:
+        f.writelines(copy_commands)
+    os.chmod(copy_commands_file, 0o755)
+    subprocess.run(copy_commands_file, shell=True, check=True)
+
+    # Generate JSON sidecars for every copied bold file
+    bold_niis = sorted(glob.glob(opj(session_dir, 'func', '*_bold.nii.gz')))
+    for bold_nii in bold_niis:
+        basename = os.path.basename(bold_nii)
+        task_match = basename.split('task-')[1].split('_')[0]
+        json_path = bold_nii.replace('.nii.gz', '.json')
+        copy_and_adapt_func_json(sub01_func_dir, json_path, task_match)
+
+    print(f"  Copied {n_copied} functional runs")
+    print(f"  Generated {len(bold_niis)} JSON sidecars")

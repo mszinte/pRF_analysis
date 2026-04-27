@@ -104,7 +104,7 @@ roi_plot_width:
 
 ecc_size_num_bins: 
   description: "Number of bins for eccentricity vs size plot"
-  value: 6
+  value: 10
 
 ecc_size_max: 
   description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
@@ -116,7 +116,7 @@ ecc_size_axis:
   
 ecc_pcm_num_bins: 
   description: "Number of bins for eccentricity vs pcm plot"
-  value: 6
+  value: 10
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
@@ -209,7 +209,7 @@ prf_y_param_range:
 
 prf_size_param_range:
   description: "Axis range for pRF size in the 2D correlation KDE plot"
-  value: [0, 4]
+  value: [0, 2]
 
 prf_ecc_param_range:
   description: "Axis range for pRF eccentricity in the 2D correlation KDE plot"

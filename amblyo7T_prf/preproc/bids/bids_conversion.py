@@ -25,8 +25,8 @@ python bids_conversion.py [main directory] [project name] [subject BIDS] [subjec
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/amblyo7T_prf/preproc/bids/
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-01 bm 327 A
-python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-13 ac 327 C
+python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-01 xx 327 A
+python bids_conversion.py /scratch/mszinte/data amblyo7T_prf sub-13 xx 327 C
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
