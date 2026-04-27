@@ -29,7 +29,7 @@ Outputs: carefully denoised and postprocessed resting-state fMRI data in a varie
 Example:
 cd ~/projects/pRF_analysis/RetinoMaps/rest
 Basic command:
-python xcp-d_aroma_sbatch_no_motion_filtering.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
+python xcp-d_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
 ------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------------------------
