@@ -29,7 +29,7 @@ Outputs: carefully denoised and postprocessed resting-state fMRI data in a varie
 Example:
 cd ~/projects/pRF_analysis/RetinoMaps/rest
 Basic command:
-python xcp-d_aroma_sbatch_no_motion_filtering.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
+python xcp-d_aroma_sbatch.py /scratch/mszinte/data RetinoMaps sub-06 5 327 b327
 ------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ slurm_cmd = """\
            log_dir=log_dir, cluster_name=cluster_name)
 
 # define singularity cmd
-singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/xcp-d_w_atlas participant \
+singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/xcp-d participant \
         --participant-label {sub_num} \
     	--mode 'linc' \
     	--bids-filter-file /work_dir/{project_dir}/derivatives/fmripost_aroma/filter_func_data.json \
