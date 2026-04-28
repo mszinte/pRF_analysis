@@ -49,11 +49,12 @@ group = sys.argv[5]
 server_project = sys.argv[6]
 
 # Define cluster/server specific parameters
+# fMRIPostAroma changed the argument to mb but slurm takes GB not MB so we will hardcode the value to be sure it matches
 cluster_name = 'skylake'
 singularity_img = "{main_dir}/{project_dir}/code/singularity/fmripost-aroma_v.0.0.12.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
-memory_val = 100000
+memory_val = 50
 log_dir = "{main_dir}/{project_dir}/derivatives/fmripost_aroma/log_outputs".format(
     main_dir=main_dir, project_dir=project_dir)
 
@@ -77,7 +78,7 @@ slurm_cmd = """\
 singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /work_dir/{project_dir}/derivatives/fmriprep/fmriprep_91k /work_dir/{project_dir}/derivatives/fmripost_aroma participant \
         --participant-label {sub_num} -t rest \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-        --mem {memory_val} \
+        --mem-mb '50000' \
         --melodic-dimensionality -200 \
         --random-seed 17 \
         --denoising-method aggr \
