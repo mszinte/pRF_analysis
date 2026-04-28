@@ -52,16 +52,16 @@ rsq_iterative_th:
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 10]
+  value: [0.05, 8]
 
 size_th:
   description: "Size range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 10.0]
+  value: [0.05, 20.0]
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
-  value: 0
+  value: 0.15
 
 n_th:
   description: "CSS n range threshold for pRF post-fit analysis"

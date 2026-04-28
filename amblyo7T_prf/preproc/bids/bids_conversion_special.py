@@ -98,14 +98,14 @@ print()
 # --------------------------------------------------------------------------
 print("Step 1: Gzipping raw NIfTI files...")
 gz_files = gzip_nifti_files(raw_dir)
-print(f"✓ {len(gz_files)} .nii.gz files ready\n")
+print(f"  {len(gz_files)} .nii.gz files ready\n")
 
 # --------------------------------------------------------------------------
 # Step 2: Parse Readme.txt
 # --------------------------------------------------------------------------
 print("Step 2: Parsing Readme.txt for task mapping...")
 scans = parse_readme(readme_path)
-print(f"✓ Found {len(scans)} scans\n")
+print(f"  Found {len(scans)} scans\n")
 
 # --------------------------------------------------------------------------
 # Step 3: Create and display verification file
@@ -113,7 +113,7 @@ print(f"✓ Found {len(scans)} scans\n")
 print("Step 3: Creating verification file...")
 verification_file = opj(sourcedata_dir, 'bids_mapping_verification.txt')
 create_verification_file(scans, subject, readme_path, verification_file)
-print(f"✓ Verification file created: {verification_file}\n")
+print(f"  Verification file created: {verification_file}\n")
 
 print("=" * 80)
 print("BIDS CONVERSION MAPPING")
@@ -137,13 +137,13 @@ if os.path.exists(freesurfer_tgz):
     if not os.path.exists(extracted_folder):
         print(f"  Extracting {freesurfer_tgz}...")
         subprocess.run(['tar', '-xzf', freesurfer_tgz, '-C', anatomy_dir], check=True)
-        print("  ✓ Extraction complete")
+        print("  Extraction complete")
     else:
-        print("  ✓ FreeSurfer folder already extracted")
+        print("  FreeSurfer folder already extracted")
 
     os.makedirs(freesurfer_dir, exist_ok=True)
     subprocess.run(['cp', '-r', f'{extracted_folder}/.', freesurfer_dir], check=True)
-    print(f"  ✓ FreeSurfer files copied to {freesurfer_dir}\n")
+    print(f"  FreeSurfer files copied to {freesurfer_dir}\n")
 else:
     print(f"  WARNING: FreeSurfer archive not found at {freesurfer_tgz}\n")
 
@@ -152,7 +152,7 @@ t1w_path = opj(session_dir, 'anat', f'{subject}_ses-01_T1w.nii.gz')
 if not os.path.exists(t1w_path):
     convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject)
 else:
-    print("  ✓ T1w already exists, skipping\n")
+    print("  T1w already exists, skipping\n")
 
 # Copy anat JSON from sub-01 template and flag the source
 anat_json_path = opj(session_dir, 'anat', f'{subject}_ses-01_T1w.json')
@@ -165,11 +165,11 @@ if not os.path.exists(anat_json_path):
         anat_meta['Source'] = 'FreeSurfer T1.mgz'
         with open(anat_json_path, 'w') as f:
             json.dump(anat_meta, f, indent=2)
-        print("  ✓ T1w JSON created\n")
+        print("  T1w JSON created\n")
     except FileNotFoundError as e:
         print(f"  WARNING: {e}\n")
 else:
-    print("  ✓ T1w JSON already exists\n")
+    print("  T1w JSON already exists\n")
 
 # --------------------------------------------------------------------------
 # Step 5: Copy functional runs + generate JSON sidecars
@@ -178,21 +178,21 @@ print("Step 5: Copying functional runs and generating JSON sidecars...")
 copy_commands_file = opj(sourcedata_dir, 'copy_commands.sh')
 copy_functional_runs_special(scans, raw_dir, session_dir, subject,
                               sub01_func_dir, copy_commands_file)
-print("✓ Functional runs copied\n")
+print("  Functional runs copied\n")
 
 # --------------------------------------------------------------------------
-# Step 6: Fix TR in NIfTI headers
+# Step 6: Fix TR and time units in NIfTI headers
 # --------------------------------------------------------------------------
-print("Step 6: Fixing TR in NIfTI headers...")
+print("Step 6: Fixing TR and time units in NIfTI headers...")
 fix_nifti_tr(session_dir, subject)
-print("✓ TR fixed\n")
+print()
 
 # --------------------------------------------------------------------------
 # Step 7: Update dataset_description.json
 # --------------------------------------------------------------------------
 print("Step 7: Updating dataset_description.json...")
 update_dataset_description(base_path)
-print("✓ Dataset description updated\n")
+print("  Dataset description updated\n")
 
 # --------------------------------------------------------------------------
 # Step 8: Set permissions
@@ -200,7 +200,7 @@ print("✓ Dataset description updated\n")
 print("Step 8: Setting permissions...")
 os.system(f"chmod -Rf 771 {base_path}")
 os.system(f"chgrp -Rf {group} {base_path}")
-print("✓ Permissions set\n")
+print("  Permissions set\n")
 
 print("=" * 80)
 print("BIDS CONVERSION (SPECIAL) COMPLETE")

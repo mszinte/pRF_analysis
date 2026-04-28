@@ -7,6 +7,14 @@ Make per-subject or per-group figures of eccentricity vs pRF size (row 1),
 eccentricity vs pCM (row 2), eccentricity vs mean R² (row 3), and eccentricity vs
 n_vertex (row 4), separately for AE-RE and FE-LE eye conditions.
 One column per ROI. AE-RE: solid line. FE-LE: dashed line.
+
+For control subjects (individual and group-control): a third CTRL condition is also
+plotted (gray filled square markers, solid line), derived from the subject's own TSV.
+
+For group-patient: the CTRL condition is loaded from the group-control TSV and plotted
+alongside the patient AE/FE data.
+
+For patient subjects (individual): only AE-RE and FE-LE are plotted (no CTRL).
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory (e.g. /home/mszinte/disks/meso_S/data)
@@ -128,6 +136,20 @@ for avg_method in avg_methods:
                 df = pd.read_table(tsv_fn, sep='\t')
                 print(f'Loaded: {tsv_fn}')
 
+                # For group-patient: load CTRL rows from group-control TSV
+                df_ctrl = None
+                if subject == 'group-patient':
+                    ctrl_tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                        main_dir, project_dir, 'group-control', format_)
+                    ctrl_tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(
+                        ctrl_tsv_dir, 'group-control', fn_spec_combined)
+                    if os.path.isfile(ctrl_tsv_fn):
+                        df_ctrl_all = pd.read_table(ctrl_tsv_fn, sep='\t')
+                        df_ctrl = df_ctrl_all.loc[df_ctrl_all.eye_condition == 'CTRL'].copy()
+                        print(f'Loaded CTRL from: {ctrl_tsv_fn}')
+                    else:
+                        print(f"[WARN] group-control TSV not found, CTRL will not be plotted: {ctrl_tsv_fn}")
+
                 # Build figure_info
                 figure_info = analysis_info.copy()
                 figure_info['rois'] = rois
@@ -136,7 +158,8 @@ for avg_method in avg_methods:
                 # Make and save figure
                 fig = eyes_ecc_size_pcm_plot(df=df,
                                              figure_info=figure_info,
-                                             rsq2use=rsq2use)
+                                             rsq2use=rsq2use,
+                                             df_ctrl=df_ctrl)
 
                 fig_fn = "{}/{}_{}_ecc-size-pcm.pdf".format(fig_dir, subject, fn_spec_combined)
                 print('Saving pdf: {}'.format(fig_fn))

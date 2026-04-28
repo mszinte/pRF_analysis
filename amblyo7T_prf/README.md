@@ -27,6 +27,7 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ```rsync -avuz --exclude='.git' --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
 - [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participants.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
+- [x] Convert to bids subject with missing raw data [bids_conversion_special.py](preproc/bids/bids_conversion_special.py)
 - [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py)
 - [x] Create manualy event_files for concatenated runswith screen settings
 

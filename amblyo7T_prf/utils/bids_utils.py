@@ -75,7 +75,7 @@ def generate_psir_images(dcm2niix_dir, prefix="PARREC_WIPPSIR1mm3SENSE"):
     
     print(f"  Data shape: {imgm1_data.shape}")
     
-    # Step 1: Create complex images: S = magnitude × exp(i×phase)
+    # Step 1: Create complex images: S = magnitude x exp(i x phase)
     S1 = np.multiply(imgm1_data, np.exp(1j * imgp1_data))
     S2 = np.multiply(imgm2_data, np.exp(1j * imgp2_data))
     
@@ -330,7 +330,6 @@ def copy_functional_runs(scans, dcm2niix_dir, session_dir, subject, copy_command
     # Find all dcm2niix functional files
     dcm2niix_files = {}
     for filename in os.listdir(dcm2niix_dir):
-        #if filename.endswith('.nii.gz') and 'fMRI' in filename:
         if filename.endswith('.nii.gz'):
             # Extract the file number from the end of filename
             parts = filename.replace('.nii.gz', '').split('_')
@@ -456,8 +455,11 @@ def update_functional_metadata(session_dir, subject):
 
 def fix_nifti_tr(session_dir, subject):
     """
-    Fix TR in NIfTI headers for functional files.
-    
+    Fix TR and time units in NIfTI headers for functional files.
+    Sets TR to 2.0s and ensures time unit is seconds (not milliseconds).
+    Needed for special subjects (sub-05, sub-15) whose raw NIfTIs were not
+    produced by dcm2niix and may have incorrect xyzt_units.
+
     Parameters
     ----------
     session_dir : str
@@ -473,10 +475,11 @@ def fix_nifti_tr(session_dir, subject):
         zooms = list(hdr.get_zooms())
         zooms[3] = 2.0
         hdr.set_zooms(zooms)
+        hdr.set_xyzt_units('mm', 'sec')  # fix time unit: msec -> sec
         new_img = nib.Nifti1Image(img.get_fdata(), img.affine, hdr)
         nib.save(new_img, func_file)
     
-    print(f"  Fixed TR in {len(func_files)} NIfTI files")
+    print(f"  Fixed TR and time units in {len(func_files)} NIfTI files")
 
 
 def update_fieldmap_metadata(session_dir, subject):
@@ -616,7 +619,7 @@ def convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject):
     try:
         mgz_img.set_data_dtype(np.float32)
         nib.save(mgz_img, output_nii)
-        print(f"  ✓ Converted T1.mgz to NIfTI: {subject}_ses-01_T1w.nii.gz")
+        print(f"  Converted T1.mgz to NIfTI: {subject}_ses-01_T1w.nii.gz")
         
         # Create minimal JSON metadata
         json_path = opj(session_dir, 'anat', f'{subject}_ses-01_T1w.json')
@@ -629,7 +632,7 @@ def convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject):
         }
         with open(json_path, 'w') as f:
             json.dump(t1w_json, f, indent=2)
-        print(f"  ✓ Created JSON metadata")
+        print(f"  Created JSON metadata")
         
         return True
     except Exception as e:
@@ -638,7 +641,7 @@ def convert_freesurfer_t1_to_nifti(freesurfer_dir, session_dir, subject):
 
 
 # -----------------------------------------------------------------------------------------
-# Special pipeline functions (for subjects without PARREC data)
+# Special pipeline functions (for subjects without PARREC data: sub-05, sub-15)
 # -----------------------------------------------------------------------------------------
 
 def gzip_nifti_files(raw_dir):

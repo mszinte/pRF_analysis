@@ -104,11 +104,11 @@ roi_plot_width:
 
 ecc_size_num_bins: 
   description: "Number of bins for eccentricity vs size plot"
-  value: 10
+  value: 8
 
 ecc_size_max: 
   description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
-  value: [6, 3]
+  value: [6, 4]
 
 ecc_size_axis: 
   description: "Eccentricity and pCM bounds in the violin plot axis"
@@ -116,7 +116,7 @@ ecc_size_axis:
   
 ecc_pcm_num_bins: 
   description: "Number of bins for eccentricity vs pcm plot"
-  value: 10
+  value: 8
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
@@ -255,7 +255,7 @@ ecc_rsq_range:
 
 ecc_n_vert_range:
   description: "Vertex count axis range in the ecc-size-pcm eye condition plot"
-  value: [0, 4000]
+  value: [0, 2000]
 
 ecc_range:
   description: "PRF eccentricity axis range in the ecc-size-pcm eye condition plot"
@@ -263,8 +263,16 @@ ecc_range:
 
 size_range:
   description: "PRF size axis range in the ecc-size-pcm eye condition plot"
-  value: [0, 3]
+  value: [0, 6]
 
 pmc_range:
   description: "PRF CM axis range in the ecc-size-pcm eye condition plot"
-  value: [0, 20]
+  value: [0, 25]
+
+ecc_comp_params:
+  description: "Parameters to compare across pRF eccentricity (foveal vs periphery"
+  value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc', 'pcm_median']
+
+foveal_ecc_bound:
+  description: "Eccentricity boundary (dva) separating foveal (<= bound) from peripheral (> bound) pRFs"
+  value: 2.5
