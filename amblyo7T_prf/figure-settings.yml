@@ -271,7 +271,7 @@ pmc_range:
 
 ecc_comp_params:
   description: "Parameters to compare across pRF eccentricity (foveal vs periphery"
-  value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc', 'pcm_median']
+  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median', 'n_vert']
 
 foveal_ecc_bound:
   description: "Eccentricity boundary (dva) separating foveal (<= bound) from peripheral (> bound) pRFs"
