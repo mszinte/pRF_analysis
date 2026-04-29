@@ -276,3 +276,83 @@ ecc_comp_params:
 foveal_ecc_bound:
   description: "Eccentricity boundary (dva) separating foveal (<= bound) from peripheral (> bound) pRFs"
   value: 2.5
+
+# Comp ECC figure
+# --- Add these entries to figure-settings.yml (ecc_comp figure settings) ---
+
+ecc_comp_fig_width:
+  description: "Width of each ecc-comp figure in pixels"
+  value: 1600
+
+ecc_comp_fig_height:
+  description: "Height of each ecc-comp figure in pixels"
+  value: 1400
+
+ecc_comp_marker_size:
+  description: "Marker size in ecc-comp figures"
+  value: 8
+
+ecc_comp_roi_x_spacing:
+  description: "Spacing between ROIs on the fake continuous x axis"
+  value: 1.0
+
+ecc_comp_marker_offset:
+  description: "Offset between eye condition markers within an ROI. First value for 2 conditions (e.g. AE/FE or RE/LE), second value for 3 conditions (e.g. AE/FE/CTRL)"
+  value: [0.11, 0.22]
+
+# pRF R² ranges
+ecc_comp_rsq_all_range:
+  description: "pRF R² axis range for all pRF in ecc-comp figure"
+  value: [0, 1]
+
+ecc_comp_rsq_foveal_range:
+  description: "pRF R² axis range for foveal pRF in ecc-comp figure"
+  value: [0, 1]
+
+ecc_comp_rsq_peripheral_range:
+  description: "pRF R² axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 1]
+
+# pRF size ranges
+ecc_comp_size_all_range:
+  description: "pRF size axis range for all pRF in ecc-comp figure"
+  value: [0, 3]
+
+ecc_comp_size_foveal_range:
+  description: "pRF size axis range for foveal pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_size_peripheral_range:
+  description: "pRF size axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 4]
+
+# pRF eccentricity ranges
+ecc_comp_ecc_all_range:
+  description: "pRF eccentricity axis range for all pRF in ecc-comp figure"
+  value: [0, 5]
+
+ecc_comp_ecc_foveal_range:
+  description: "pRF eccentricity axis range for foveal pRF in ecc-comp figure"
+  value: [0, 3]
+
+ecc_comp_ecc_peripheral_range:
+  description: "pRF eccentricity axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 8]
+
+# pRF CM ranges
+ecc_comp_pcm_all_range:
+  description: "pRF CM axis range for all pRF in ecc-comp figure"
+  value: [0, 30]
+
+ecc_comp_pcm_foveal_range:
+  description: "pRF CM axis range for foveal pRF in ecc-comp figure"
+  value: [0, 30]
+
+ecc_comp_pcm_peripheral_range:
+  description: "pRF CM axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 10]
+
+# ecc_comp_params: parameters with CI (excludes n_vert)
+ecc_comp_params:
+  description: "Parameters computed in the ecc comparison analysis (excludes n_vert which has no CI)"
+  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median']

@@ -231,24 +231,24 @@ for avg_method in avg_methods:
                                 has = len(df_cat) > 0
 
                                 row = {
-                                    'subject':          subj,
-                                    'subject_group':    subject_group,
-                                    'roi':              roi,
-                                    'eye_condition':    eye_condition,
-                                    'ecc_category':     ecc_cat,
-                                    'n_vert':           len(df_cat),
-                                    'prf_rsq':          weighted_nan_median(df_cat[rsq2use].values, w)          if has else np.nan,
-                                    'prf_rsq_ci_lo':    weighted_nan_percentile(df_cat[rsq2use].values, w, 2.5) if has else np.nan,
-                                    'prf_rsq_ci_hi':    weighted_nan_percentile(df_cat[rsq2use].values, w, 97.5) if has else np.nan,
-                                    'prf_size':         weighted_nan_median(df_cat['prf_size'].values, w)          if has else np.nan,
-                                    'prf_size_ci_lo':   weighted_nan_percentile(df_cat['prf_size'].values, w, 2.5) if has else np.nan,
-                                    'prf_size_ci_hi':   weighted_nan_percentile(df_cat['prf_size'].values, w, 97.5) if has else np.nan,
-                                    'prf_ecc':          weighted_nan_median(df_cat['prf_ecc'].values, w)          if has else np.nan,
-                                    'prf_ecc_ci_lo':    weighted_nan_percentile(df_cat['prf_ecc'].values, w, 2.5) if has else np.nan,
-                                    'prf_ecc_ci_hi':    weighted_nan_percentile(df_cat['prf_ecc'].values, w, 97.5) if has else np.nan,
-                                    'pcm_median':       weighted_nan_median(df_cat['pcm_median'].values, w)          if has else np.nan,
-                                    'pcm_median_ci_lo': weighted_nan_percentile(df_cat['pcm_median'].values, w, 2.5) if has else np.nan,
-                                    'pcm_median_ci_hi': weighted_nan_percentile(df_cat['pcm_median'].values, w, 97.5) if has else np.nan,
+                                    'subject':              subj,
+                                    'subject_group':        subject_group,
+                                    'roi':                  roi,
+                                    'eye_condition':        eye_condition,
+                                    'ecc_category':         ecc_cat,
+                                    'n_vert':               len(df_cat),
+                                    'prf_rsq_median':       weighted_nan_median(df_cat[rsq2use].values, w)           if has else np.nan,
+                                    'prf_rsq_ci_lo':        weighted_nan_percentile(df_cat[rsq2use].values, w, 2.5)  if has else np.nan,
+                                    'prf_rsq_ci_hi':        weighted_nan_percentile(df_cat[rsq2use].values, w, 97.5) if has else np.nan,
+                                    'prf_size_median':      weighted_nan_median(df_cat['prf_size'].values, w)           if has else np.nan,
+                                    'prf_size_ci_lo':       weighted_nan_percentile(df_cat['prf_size'].values, w, 2.5)  if has else np.nan,
+                                    'prf_size_ci_hi':       weighted_nan_percentile(df_cat['prf_size'].values, w, 97.5) if has else np.nan,
+                                    'prf_ecc_median':       weighted_nan_median(df_cat['prf_ecc'].values, w)           if has else np.nan,
+                                    'prf_ecc_ci_lo':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 2.5)  if has else np.nan,
+                                    'prf_ecc_ci_hi':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 97.5) if has else np.nan,
+                                    'pcm_median_median':    weighted_nan_median(df_cat['pcm_median'].values, w)           if has else np.nan,
+                                    'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 2.5)  if has else np.nan,
+                                    'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 97.5) if has else np.nan,
                                 }
                                 rows_list.append(row)
 
@@ -274,10 +274,10 @@ for avg_method in avg_methods:
                                     'ecc_category':  ecc_cat,
                                     'n_vert':        df_rc['n_vert'].median(),
                                 }
-                                for param in [p for p in params if p != 'n_vert']:
-                                    ctrl_row[param]              = df_rc[param].median()
-                                    ctrl_row[f'{param}_ci_lo']   = df_rc[f'{param}_ci_lo'].median()
-                                    ctrl_row[f'{param}_ci_hi']   = df_rc[f'{param}_ci_hi'].median()
+                                for param in params:
+                                    ctrl_row[f'{param}_median'] = df_rc[f'{param}_median'].median()
+                                    ctrl_row[f'{param}_ci_lo']  = np.nan
+                                    ctrl_row[f'{param}_ci_hi']  = np.nan
                                 ctrl_rows.append(ctrl_row)
                         df_subj = pd.concat([df_subj, pd.DataFrame(ctrl_rows)], ignore_index=True)
 
@@ -326,8 +326,13 @@ for avg_method in avg_methods:
                         if not isinstance(keys, tuple):
                             keys = (keys,)
                         row = dict(zip(group_cols, keys))
+                        # n_vert: median across subjects
+                        row['n_vert_median'] = weighted_nan_median(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)))
+                        row['n_vert_ci_lo']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 2.5)
+                        row['n_vert_ci_hi']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 97.5)
                         for p in params:
-                            vals = df_grp[p].values.astype(float)
+                            col = f'{p}_median'
+                            vals = df_grp[col].values.astype(float)
                             w    = np.ones(len(vals))
                             row[f'{p}_median'] = weighted_nan_median(vals, w)
                             row[f'{p}_ci_lo']  = weighted_nan_percentile(vals, w, 2.5)
@@ -399,16 +404,16 @@ for avg_method in avg_methods:
                                     if paired:
                                         # Matched subjects — pivot and drop NaN pairs
                                         df_piv = df_ab.pivot_table(
-                                            index='subject', columns=group_col, values=param)
+                                            index='subject', columns=group_col, values=f'{param}_median')
                                         df_piv = df_piv.dropna()
                                         if len(df_piv) < 2:
                                             p_unc = np.nan
                                         else:
                                             df_long = df_piv.reset_index().melt(
-                                                id_vars='subject', var_name=group_col, value_name=param)
+                                                id_vars='subject', var_name=group_col, value_name=f'{param}_median')
                                             try:
                                                 res   = pg.pairwise_tests(
-                                                    data=df_long, dv=param,
+                                                    data=df_long, dv=f'{param}_median',
                                                     within=group_col, subject='subject',
                                                     parametric=False,
                                                     alternative='two-sided')
@@ -418,14 +423,14 @@ for avg_method in avg_methods:
                                                 p_unc = np.nan
                                     else:
                                         # Unpaired Mann-Whitney
-                                        data_a = df_ab.loc[df_ab[group_col] == cond_a, param].dropna()
-                                        data_b = df_ab.loc[df_ab[group_col] == cond_b, param].dropna()
+                                        data_a = df_ab.loc[df_ab[group_col] == cond_a, f'{param}_median'].dropna()
+                                        data_b = df_ab.loc[df_ab[group_col] == cond_b, f'{param}_median'].dropna()
                                         if len(data_a) < 2 or len(data_b) < 2:
                                             p_unc = np.nan
                                         else:
                                             try:
                                                 res   = pg.pairwise_tests(
-                                                    data=df_ab, dv=param,
+                                                    data=df_ab, dv=f'{param}_median',
                                                     between=group_col,
                                                     parametric=False,
                                                     alternative='two-sided')

@@ -963,3 +963,368 @@ def eyes_ecc_size_pcm_plot(df, figure_info, rsq2use, df_ctrl=None):
                       margin_b=fig_margin[3])
 
     return fig
+
+def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
+    """
+    Plot pRF parameters per ROI grouped by eccentricity category (all / foveal / peripheral).
+    5 rows (params) × 3 columns (ecc categories).
+    x-axis: categorical ROI labels, axis line and ticks hidden.
+
+    Marker style:
+      FE / LE : filled square, ROI color
+      AE / RE : white square with ROI color border
+      CTRL    : filled gray square
+
+    Legend: top-right of first subplot (row 1 col 1).
+             7 ROI-colored filled square markers side by side, no lines.
+
+    Error bars: vertex-level 2.5/97.5 CI (individual) or subject-level CI (group).
+                n_vert: no error bar for individual, Plotly auto-scales y-axis.
+
+    Significance lines (group only): horizontal brackets per ROI at ~90% of y-axis max.
+
+    Parameters
+    ----------
+    df           : TSV dataframe
+    df_stats     : stats TSV (None for individual subjects)
+    figure_info  : dict with figure settings
+    eye_conditions : list of eye_condition values to plot
+    show_stats   : bool
+
+    Returns
+    -------
+    fig : plotly figure
+    """
+    # ---------------------------------------------------------------------------------
+    # Settings
+    # ---------------------------------------------------------------------------------
+    template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          rois_plot_width=1.5)
+    fig_template = plotly_template(template_specs)
+
+    rois          = figure_info['rois']
+    roi_colors    = figure_info['roi_colors']
+    subject_group = figure_info['subject_group']
+    fig_width     = figure_info['ecc_comp_fig_width']
+    fig_height    = figure_info['ecc_comp_fig_height']
+    marker_size   = figure_info['ecc_comp_marker_size']
+    roi_spacing   = figure_info['ecc_comp_roi_x_spacing']
+    marker_offsets = figure_info['ecc_comp_marker_offset']
+
+    # Enforce fixed plotting order: FE-LE → AE-RE → CTRL
+    fixed_order    = ['FE-LE', 'AE-RE', 'CTRL']
+    eye_conditions = [e for e in fixed_order if e in eye_conditions]
+
+    # Select offset based on number of conditions
+    marker_offset = marker_offsets[0] if len(eye_conditions) <= 2 else marker_offsets[1]
+
+    # Eye condition labels
+    if subject_group == 'patient':
+        eye_labels = {'AE-RE': 'AE', 'FE-LE': 'FE', 'CTRL': 'CTRL'}
+    else:
+        eye_labels = {'AE-RE': 'RE', 'FE-LE': 'LE', 'CTRL': 'CTRL'}
+
+    ctrl_grays = ['rgb(210,210,210)', 'rgb(180,180,180)', 'rgb(150,150,150)',
+                  'rgb(120,120,120)', 'rgb(90,90,90)', 'rgb(60,60,60)',
+                  'rgb(40,40,40)']
+
+    def get_marker(eye_cond, roi_color, roi_idx=0):
+        if eye_cond == 'FE-LE':
+            return dict(color=roi_color, symbol='square', size=marker_size,
+                        line=dict(color=roi_color, width=3))
+        elif eye_cond == 'AE-RE':
+            return dict(color='white', symbol='square', size=marker_size,
+                        line=dict(color=roi_color, width=3))
+        else:
+            ctrl_color = ctrl_grays[roi_idx % len(ctrl_grays)]
+            return dict(color=ctrl_color, symbol='square', size=marker_size,
+                        line=dict(color=ctrl_color, width=3))
+
+    def get_err_color(eye_cond, roi_color, roi_idx=0):
+        if eye_cond == 'CTRL':
+            return ctrl_grays[roi_idx % len(ctrl_grays)]
+        return roi_color
+
+    # ---------------------------------------------------------------------------------
+    # Parameters and y-axis settings
+    # Per param × per ecc_category range from figure_info
+    # n_vert: no range (Plotly auto-scales)
+    # ---------------------------------------------------------------------------------
+    ecc_categories = ['all', 'foveal', 'peripheral']
+    col_titles     = ['All pRF', 'Foveal pRF (ecc ≤ 2.5 dva)', 'Peripheral pRF (ecc > 2.5 dva)']
+
+    params_settings = [
+        {'param': 'prf_rsq',
+         'y_title': 'pRF R²',
+         'y_range': {'all':        figure_info['ecc_comp_rsq_all_range'],
+                     'foveal':     figure_info['ecc_comp_rsq_foveal_range'],
+                     'peripheral': figure_info['ecc_comp_rsq_peripheral_range']}},
+        {'param': 'prf_size',
+         'y_title': 'pRF size (dva)',
+         'y_range': {'all':        figure_info['ecc_comp_size_all_range'],
+                     'foveal':     figure_info['ecc_comp_size_foveal_range'],
+                     'peripheral': figure_info['ecc_comp_size_peripheral_range']}},
+        {'param': 'prf_ecc',
+         'y_title': 'pRF ecc (dva)',
+         'y_range': {'all':        figure_info['ecc_comp_ecc_all_range'],
+                     'foveal':     figure_info['ecc_comp_ecc_foveal_range'],
+                     'peripheral': figure_info['ecc_comp_ecc_peripheral_range']}},
+        {'param': 'pcm_median',
+         'y_title': 'pRF CM (mm/dva)',
+         'y_range': {'all':        figure_info['ecc_comp_pcm_all_range'],
+                     'foveal':     figure_info['ecc_comp_pcm_foveal_range'],
+                     'peripheral': figure_info['ecc_comp_pcm_peripheral_range']}},
+        {'param': 'n_vert',
+         'y_title': 'N vertices',
+         'y_range': None},  # Plotly auto-scales
+    ]
+
+    rows, cols = len(params_settings), len(ecc_categories)
+
+    fig = make_subplots(rows=rows, cols=cols,
+                        print_grid=False,
+                        vertical_spacing=0.07,
+                        horizontal_spacing=0.06)
+
+    # Column titles — centered on subplot domains, not bold
+    # Build after fig is created so domains are available
+    col_domain_centers = []
+    for c_idx in range(1, cols + 1):
+        axis_key = f'xaxis{c_idx}' if c_idx > 1 else 'xaxis'
+        domain   = fig.layout[axis_key].domain
+        if domain is None or len(domain) == 0:
+            # fallback to equal spacing
+            col_domain_centers.append((c_idx - 0.5) / cols)
+        else:
+            col_domain_centers.append((domain[0] + domain[1]) / 2)
+
+    for c_idx, col_title in enumerate(col_titles):
+        fig.add_annotation(
+            x=col_domain_centers[c_idx],
+            y=1.02,
+            xref='paper', yref='paper',
+            text=col_title,
+            showarrow=False,
+            font=dict(size=template_specs['title_font_size'],
+                      family=template_specs['font']),
+            xanchor='center', yanchor='bottom')
+
+    # ---------------------------------------------------------------------------------
+    # Fake continuous x-axis
+    # ---------------------------------------------------------------------------------
+    n_rois      = len(rois)
+    roi_centers = {roi: i * roi_spacing for i, roi in enumerate(rois)}
+    # cond_offsets: FE-LE leftmost, AE-RE middle, CTRL rightmost
+    n_conds = len(eye_conditions)
+    if n_conds == 1:
+        cond_offsets = {eye_conditions[0]: 0.0}
+    elif n_conds == 2:
+        cond_offsets = {eye_conditions[0]: -marker_offset,
+                        eye_conditions[1]:  marker_offset}
+    else:
+        cond_offsets = {eye_conditions[0]: -marker_offset,
+                        eye_conditions[1]:  0.0,
+                        eye_conditions[2]:  marker_offset}
+
+    x_min     = -roi_spacing * 0.5
+    x_max     = (n_rois - 1) * roi_spacing + roi_spacing * 0.5
+    tick_vals = [roi_centers[roi] for roi in rois]
+
+    # Significance comparisons ordered top→bottom, matching marker positions
+    if len(eye_conditions) == 2:
+        sig_comparisons = [('FE-LE', 'AE-RE')]
+    else:
+        sig_comparisons = [
+            ('FE-LE', 'CTRL'),
+            ('AE-RE', 'CTRL'),
+            ('FE-LE', 'AE-RE'),
+        ]
+
+    # ---------------------------------------------------------------------------------
+    # Plot
+    # ---------------------------------------------------------------------------------
+    for row_idx, ps in enumerate(params_settings, 1):
+        param   = ps['param']
+        y_title = ps['y_title']
+        col_med = 'n_vert_median' if param == 'n_vert' else f'{param}_median'
+        col_lo  = 'n_vert_ci_lo'  if param == 'n_vert' else f'{param}_ci_lo'
+        col_hi  = 'n_vert_ci_hi'  if param == 'n_vert' else f'{param}_ci_hi'
+
+        for col_idx, ecc_cat in enumerate(ecc_categories, 1):
+            y_range  = ps['y_range'][ecc_cat] if ps['y_range'] is not None else None
+            y_max    = y_range[1] if y_range is not None else None
+            sig_y_top  = y_max * 0.92  if y_max is not None else None
+            sig_y_step = y_max * 0.06  if y_max is not None else None
+
+            for j, roi in enumerate(rois):
+                roi_color = roi_colors[roi]
+                x_center  = roi_centers[roi]
+
+                for eye_cond in eye_conditions:
+                    x_pos = x_center + cond_offsets[eye_cond]
+
+                    df_row = df.loc[
+                        (df.roi == roi) &
+                        (df.ecc_category == ecc_cat) &
+                        (df.eye_condition == eye_cond)]
+
+                    if len(df_row) == 0:
+                        continue
+
+                    y_val = df_row[col_med].values[0]
+                    y_lo  = df_row[col_lo].values[0] if col_lo in df_row.columns else np.nan
+                    y_hi  = df_row[col_hi].values[0] if col_hi in df_row.columns else np.nan
+                    has_ci = not (np.isnan(y_lo) or np.isnan(y_hi))
+
+                    marker  = get_marker(eye_cond, roi_color, roi_idx=j)
+                    err_col = get_err_color(eye_cond, roi_color, roi_idx=j)
+
+                    fig.add_trace(go.Scatter(
+                        x=[x_pos], y=[y_val],
+                        mode='markers',
+                        marker=marker,
+                        error_y=dict(
+                            type='data',
+                            array=[y_hi - y_val] if has_ci else [0],
+                            arrayminus=[y_val - y_lo] if has_ci else [0],
+                            visible=has_ci,
+                            thickness=2, width=0,
+                            color=err_col),
+                        showlegend=False),
+                        row=row_idx, col=col_idx)
+
+                # Significance lines
+                if show_stats and df_stats is not None and sig_y_top is not None:
+                    for sig_lvl, (cond_a, cond_b) in enumerate(sig_comparisons):
+                        if cond_a not in eye_conditions or cond_b not in eye_conditions:
+                            continue
+
+                        stat_row = df_stats.loc[
+                            (df_stats.roi == roi) &
+                            (df_stats.ecc_category == ecc_cat) &
+                            (df_stats.param == param) &
+                            (df_stats.cond_A == cond_a) &
+                            (df_stats.cond_B == cond_b)]
+
+                        if len(stat_row) == 0:
+                            continue
+
+                        stars  = stat_row['stars'].values[0]
+                        x_a    = x_center + cond_offsets[cond_a]
+                        x_b    = x_center + cond_offsets[cond_b]
+                        sig_y  = sig_y_top - sig_lvl * sig_y_step
+                        line_color = 'rgba(0,0,0,0.7)'
+
+                        fig.add_trace(go.Scatter(
+                            x=[x_a, x_a, x_b, x_b],
+                            y=[sig_y - sig_y_step * 0.15,
+                               sig_y, sig_y,
+                               sig_y - sig_y_step * 0.15],
+                            mode='lines',
+                            line=dict(color=line_color, width=1.5),
+                            showlegend=False),
+                            row=row_idx, col=col_idx)
+
+                        fig.add_annotation(
+                            x=(x_a + x_b) / 2,
+                            y=sig_y + sig_y_step * 0.05,
+                            text=stars,
+                            showarrow=False,
+                            font=dict(size=13 if stars != 'ns' else 11,
+                                      family=template_specs['font'],
+                                      color=line_color),
+                            xanchor='center', yanchor='bottom',
+                            row=row_idx, col=col_idx)
+
+            # Axes
+            x_title      = 'ROI' if row_idx == rows else ''
+            y_title_show = y_title if col_idx == 1 else ''
+
+            # x-axis: hide line and ticks, keep ROI labels
+            fig.update_xaxes(
+                range=[x_min, x_max],
+                tickvals=tick_vals,
+                ticktext=rois,
+                tickangle=0,
+                ticklen=0,
+                linecolor='rgba(255,255,255,0)',
+                title_text=x_title,
+                row=row_idx, col=col_idx)
+
+            # y-axis
+            if y_range is not None:
+                fig.update_yaxes(range=y_range, showline=True, nticks=6,
+                                 title_text=y_title_show,
+                                 row=row_idx, col=col_idx)
+            else:
+                # n_vert: let Plotly auto-scale
+                fig.update_yaxes(showline=True,
+                                 title_text=y_title_show,
+                                 row=row_idx, col=col_idx)
+
+    # ---------------------------------------------------------------------------------
+    # Legend — top-right of first subplot (row 1, col 1)
+    # Row 1: 7 filled squares (ROI colors)    → "FE / LE"
+    # Row 2: 7 white squares (ROI color border) → "AE / RE"
+    # Row 3: 7 gray squares (light→dark)       → "CTRL" (only if in eye_conditions)
+    # ---------------------------------------------------------------------------------
+    first_y_range  = params_settings[0]['y_range']['all']
+    y_top          = first_y_range[1] - 0.04 * (first_y_range[1] - first_y_range[0])
+    legend_row_gap = 0.10 * (first_y_range[1] - first_y_range[0])
+    legend_x_step  = marker_offset * 2.2
+    # Anchor the legend block to the right of the subplot
+    legend_x_end   = x_max - 1.5 * roi_spacing
+    legend_x_start = legend_x_end - (len(rois) - 1) * legend_x_step
+
+    legend_label_x = legend_x_end + 0.3 * roi_spacing
+
+    # Determine which rows to draw
+    legend_rows = []
+    if 'FE-LE' in eye_conditions:
+        legend_rows.append(('FE-LE', eye_labels['FE-LE']))
+    if 'AE-RE' in eye_conditions:
+        legend_rows.append(('AE-RE', eye_labels['AE-RE']))
+    if 'CTRL' in eye_conditions:
+        legend_rows.append(('CTRL', 'CTRL'))
+
+    for col_leg in range(1, cols + 1):
+        for row_k, (eye_cond, row_label) in enumerate(legend_rows):
+            legend_y = y_top - row_k * legend_row_gap
+
+            for j, roi in enumerate(rois):
+                roi_color  = roi_colors[roi]
+                legend_x   = legend_x_start + j * legend_x_step
+                leg_marker = get_marker(eye_cond, roi_color, roi_idx=j)
+
+                fig.add_trace(go.Scatter(
+                    x=[legend_x], y=[legend_y],
+                    mode='markers',
+                    marker=leg_marker,
+                    showlegend=False),
+                    row=1, col=col_leg)
+
+            # Row label at the right end
+            fig.add_annotation(
+                x=legend_label_x,
+                y=legend_y,
+                text=row_label,
+                xanchor='left', yanchor='middle',
+                showarrow=False,
+                font=dict(color='rgba(0,0,0,1)',
+                          family=template_specs['font'],
+                          size=template_specs['axes_font_size']),
+                row=1, col=col_leg)
+
+    fig.update_layout(
+        height=fig_height,
+        width=fig_width,
+        template=fig_template,
+        showlegend=False,
+        margin_l=100, margin_t=120, margin_r=50, margin_b=80)
+
+    return fig
