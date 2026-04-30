@@ -83,4 +83,6 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make pRF parameters eye correlation figures [make_corr_fig.py](postproc/prf/postfit/make_corr_fig.py) or [make_corr_fig.sh](postproc/prf/postfit/make_corr_fig.sh)
 - [x] Make pRF ecc vs size/pCM per eye TSV [make_ecc_size_pcm_tsv.py](postproc/prf/postfit/make_ecc_size_pcm_tsv.py) or [make_ecc_size_pcm_tsv.sh](postproc/prf/postfit/make_ecc_size_pcm_tsv.sh)
 - [x] Make pRF ecc vs size/pCM per eye figures [make_ecc_size_pcm_fig.py](postproc/prf/postfit/make_ecc_size_pcm_fig.py) or [make_ecc_size_pcm_fig.sh](postproc/prf/postfit/make_ecc_size_pcm_fig.sh)
+- [x] Make pRF parameters eye comparison TSV [make_ecc_comp_tsv.py](postproc/prf/postfit/make_ecc_comp_tsv.py) or [make_ecc_comp_tsv.sh](postproc/prf/postfit/make_ecc_comp_tsv.sh)
+- [x] Make pRF parameters eye comparison figures [make_ecc_comp_fig.py](postproc/prf/postfit/make_ecc_comp_fig.py) or [make_ecc_comp_fig.sh](postproc/prf/postfit/make_ecc_comp_fig.sh)
 - [x] Copy subject figures to group folders [copy_subject_figs_to_group.py](postproc/prf/postfit/copy_subject_figs_to_group.py) or [copy_subject_figs_to_group.sh](postproc/prf/postfit/copy_subject_figs_to_group.sh)

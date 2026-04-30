@@ -357,11 +357,11 @@ for avg_method in avg_methods:
                     fn_pat_indiv = '{}/group-patient_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
                     df_pat_indiv.to_csv(fn_pat_indiv, sep='\t', na_rep='NaN', index=False)
 
-                # -- Fig 2: controls, AE-RE (RE) vs FE-LE (LE) --
+                # -- Fig 2: controls, AE-RE (RE) vs FE-LE (LE) + CTRL --
                 elif run_group == 'control':
                     df_ctrl      = df_all.loc[df_all.subject_group == 'control']
                     df_ctrl_grp  = aggregate_group(
-                        df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE'])],
+                        df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE', 'CTRL'])],
                         ['roi', 'ecc_category', 'eye_condition'])
                     fn_ctrl = '{}/group-control_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
                     print(f'Saving control group TSV: {fn_ctrl}')
@@ -469,25 +469,25 @@ for avg_method in avg_methods:
                     df_stats.to_csv(out_fn, sep='\t', na_rep='NaN', index=False)
                     return df_stats
 
-                # Fig 1 stats: AE vs FE (paired), AE vs CTRL and FE vs CTRL (unpaired)
+                # Fig 1 stats: FE vs AE (paired), FE vs CTRL, AE vs CTRL (unpaired)
                 if run_group == 'patient':
                     run_stats(
                         df_indiv    = df_pat_indiv,
-                        comparisons = [('AE-RE', 'FE-LE'), ('AE-RE', 'CTRL'), ('FE-LE', 'CTRL')],
+                        comparisons = [('FE-LE', 'AE-RE'), ('FE-LE', 'CTRL'), ('AE-RE', 'CTRL')],
                         paired_map  = {
-                            ('AE-RE', 'FE-LE'): True,
-                            ('AE-RE', 'CTRL'):  False,
+                            ('FE-LE', 'AE-RE'): True,
                             ('FE-LE', 'CTRL'):  False,
+                            ('AE-RE', 'CTRL'):  False,
                         },
                         group_col   = 'eye_condition',
                         out_fn      = '{}/group-patient_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
 
-                # Fig 2 stats: RE vs LE (paired, within controls)
+                # Fig 2 stats: RE vs LE only (paired, within controls)
                 elif run_group == 'control':
                     run_stats(
                         df_indiv    = df_ctrl_indiv,
-                        comparisons = [('AE-RE', 'FE-LE')],
-                        paired_map  = {('AE-RE', 'FE-LE'): True},
+                        comparisons = [('FE-LE', 'AE-RE')],
+                        paired_map  = {('FE-LE', 'AE-RE'): True},
                         group_col   = 'eye_condition',
                         out_fn      = '{}/group-control_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
 

@@ -1135,15 +1135,32 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
     x_max     = (n_rois - 1) * roi_spacing + roi_spacing * 0.5
     tick_vals = [roi_centers[roi] for roi in rois]
 
-    # Significance comparisons ordered top→bottom, matching marker positions
+    # Significance comparisons ordered top→bottom
+    # group-patient: FE vs AE (top), FE vs CTRL (middle), AE vs CTRL (bottom)
+    # group-control: FE vs LE only
     if len(eye_conditions) == 2:
         sig_comparisons = [('FE-LE', 'AE-RE')]
     else:
         sig_comparisons = [
+            ('FE-LE', 'AE-RE'),
             ('FE-LE', 'CTRL'),
             ('AE-RE', 'CTRL'),
-            ('FE-LE', 'AE-RE'),
         ]
+
+    # Pre-compute n_vert range from data (used in plot loop and legend)
+    # Pre-compute n_vert range per ecc_category (1.5x max, rounded to 100)
+    n_vert_ranges = {}
+    n_vert_ticks  = {}
+    for ecc_cat_ in ['all', 'foveal', 'peripheral']:
+        vals_      = df.loc[df.ecc_category == ecc_cat_, 'n_vert_median'].dropna()
+        y_max_     = np.ceil(vals_.max() * 1.5 / 100) * 100 if len(vals_) > 0 else 1000
+        tick_step_ = int(np.ceil(y_max_ / 4 / 100) * 100)
+        tick_vals_ = list(range(0, int(y_max_) + 1, tick_step_))
+        tick_text_ = [f'{v/1000:g}k' if v >= 1000 else str(v) for v in tick_vals_]
+        n_vert_ranges[ecc_cat_] = y_max_
+        n_vert_ticks[ecc_cat_]  = (tick_vals_, tick_text_)
+    # Use 'all' range for legend positioning
+    y_max_nvert = n_vert_ranges['all']
 
     # ---------------------------------------------------------------------------------
     # Plot
@@ -1158,8 +1175,8 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
         for col_idx, ecc_cat in enumerate(ecc_categories, 1):
             y_range  = ps['y_range'][ecc_cat] if ps['y_range'] is not None else None
             y_max    = y_range[1] if y_range is not None else None
-            sig_y_top  = y_max * 0.92  if y_max is not None else None
-            sig_y_step = y_max * 0.06  if y_max is not None else None
+            sig_y_top  = y_max * 0.90  if y_max is not None else None
+            sig_y_step = y_max * 0.09  if y_max is not None else None
 
             for j, roi in enumerate(rois):
                 roi_color = roi_colors[roi]
@@ -1208,8 +1225,8 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                             (df_stats.roi == roi) &
                             (df_stats.ecc_category == ecc_cat) &
                             (df_stats.param == param) &
-                            (df_stats.cond_A == cond_a) &
-                            (df_stats.cond_B == cond_b)]
+                            (((df_stats.cond_A == cond_a) & (df_stats.cond_B == cond_b)) |
+                             ((df_stats.cond_A == cond_b) & (df_stats.cond_B == cond_a)))]
 
                         if len(stat_row) == 0:
                             continue
@@ -1262,25 +1279,27 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                                  title_text=y_title_show,
                                  row=row_idx, col=col_idx)
             else:
-                # n_vert: let Plotly auto-scale
-                fig.update_yaxes(showline=True,
+                # n_vert: use computed range with round ticks
+                fig.update_yaxes(range=[0, n_vert_ranges[ecc_cat] + n_vert_ticks[ecc_cat][0][1]],
+                                 tickvals=n_vert_ticks[ecc_cat][0],
+                                 ticktext=n_vert_ticks[ecc_cat][1],
+                                 showline=True,
                                  title_text=y_title_show,
                                  row=row_idx, col=col_idx)
 
     # ---------------------------------------------------------------------------------
-    # Legend — top-right of first subplot (row 1, col 1)
-    # Row 1: 7 filled squares (ROI colors)    → "FE / LE"
-    # Row 2: 7 white squares (ROI color border) → "AE / RE"
-    # Row 3: 7 gray squares (light→dark)       → "CTRL" (only if in eye_conditions)
+    # Legend — top-right of row 4 (all 3 columns), n_vert row has no stats
+    # Row 1: 7 filled squares (ROI colors)      → "FE / LE"
+    # Row 2: 7 white squares (ROI color border)  → "AE / RE"
+    # Row 3: 7 gray squares (light→dark)         → "CTRL"
     # ---------------------------------------------------------------------------------
-    first_y_range  = params_settings[0]['y_range']['all']
-    y_top          = first_y_range[1] - 0.04 * (first_y_range[1] - first_y_range[0])
-    legend_row_gap = 0.10 * (first_y_range[1] - first_y_range[0])
-    legend_x_step  = marker_offset * 2.2
-    # Anchor the legend block to the right of the subplot
+    # Row 5 = n_vert — use pre-computed range for legend positioning
+    y_top          = y_max_nvert - 0.04 * y_max_nvert
+    legend_row_gap = 0.10 * y_max_nvert
+    legend_row_num = 5
+    legend_x_step  = marker_offset * 1.5
     legend_x_end   = x_max - 1.5 * roi_spacing
     legend_x_start = legend_x_end - (len(rois) - 1) * legend_x_step
-
     legend_label_x = legend_x_end + 0.3 * roi_spacing
 
     # Determine which rows to draw
@@ -1292,9 +1311,12 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
     if 'CTRL' in eye_conditions:
         legend_rows.append(('CTRL', 'CTRL'))
 
-    for col_leg in range(1, cols + 1):
+    for col_leg in [1]:  # legend only in first column
+        y_top_leg          = y_max_nvert - 0.04 * y_max_nvert
+        legend_row_gap_leg = 0.10 * y_max_nvert
+
         for row_k, (eye_cond, row_label) in enumerate(legend_rows):
-            legend_y = y_top - row_k * legend_row_gap
+            legend_y = y_top_leg - row_k * legend_row_gap_leg
 
             for j, roi in enumerate(rois):
                 roi_color  = roi_colors[roi]
@@ -1306,9 +1328,8 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                     mode='markers',
                     marker=leg_marker,
                     showlegend=False),
-                    row=1, col=col_leg)
+                    row=legend_row_num, col=col_leg)
 
-            # Row label at the right end
             fig.add_annotation(
                 x=legend_label_x,
                 y=legend_y,
@@ -1318,13 +1339,13 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                 font=dict(color='rgba(0,0,0,1)',
                           family=template_specs['font'],
                           size=template_specs['axes_font_size']),
-                row=1, col=col_leg)
+                row=legend_row_num, col=col_leg)
 
     fig.update_layout(
         height=fig_height,
         width=fig_width,
         template=fig_template,
         showlegend=False,
-        margin_l=100, margin_t=120, margin_r=50, margin_b=80)
+        margin_l=100, margin_t=120, margin_r=50, margin_b=120)
 
     return fig

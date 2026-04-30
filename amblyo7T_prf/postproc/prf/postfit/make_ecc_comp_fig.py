@@ -39,8 +39,6 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import ipdb
-deb = ipdb.set_trace
 
 sys.path.insert(0, "{}/../../../utils".format(os.getcwd()))
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
@@ -110,16 +108,16 @@ for avg_method in avg_methods:
                     indiv_subjects = [subject]
                     run_group      = None
                 elif subject == 'group-patient':
-                    indiv_subjects = analysis_info['group_patient']
+                    indiv_subjects = None
                     run_group      = 'patient'
                 elif subject == 'group-control':
-                    indiv_subjects = analysis_info['group_control']
+                    indiv_subjects = None
                     run_group      = 'control'
 
                 # ------------------------------------------------------------------
                 # INDIVIDUAL figures
                 # ------------------------------------------------------------------
-                for subj in indiv_subjects:
+                for subj in (indiv_subjects if indiv_subjects is not None else []):
                     subj_group = subject_groups_map[subj]
 
                     tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
