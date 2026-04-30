@@ -176,8 +176,7 @@ for avg_method in avg_methods:
                                  (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
                                  (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                                  (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
-                                 (data[rsq2use] < rsqr_threshold) |
-                                 (data[stats_col] > stats_threshold)] = np.nan
+                                 (data[rsq2use] < rsqr_threshold) | (data[stats_col] > stats_threshold)] = np.nan
                         data = data.dropna()
                         data = data.reset_index(drop=True)
 

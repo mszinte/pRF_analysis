@@ -61,7 +61,7 @@ size_th:
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
-  value: 0.10
+  value: 0.15
 
 n_th:
   description: "CSS n range threshold for pRF post-fit analysis"
@@ -73,7 +73,7 @@ prf_amp_th:
 
 stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"
-  value: 0.01
+  value: 0.05
 
 vertex_pcm_rad:
   description: "Radius (in mm) of vertex-vertex geodesic distance for population cortical magnification analysis"
