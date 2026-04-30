@@ -18,7 +18,7 @@ Output(s):
 -----------------------------------------------------------------------------------------
 Example:
 conda activate pRF_env
-cd projects/pRF_analysis/RetinoMaps/rest/correlations/
+cd projects/pRF_analysis/RetinoMaps/rest/quality_check
 python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 10:00:00
 --------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -39,8 +39,8 @@ group = sys.argv[3]
 server_project = sys.argv[4]
 proc_time = sys.argv[5] #
 
-memory_val = 20 # GB
-nb_procs = 16 # number of CPUs
+memory_val = 50 # GB
+nb_procs = 32 # number of CPUs
 cluster_name = 'skylake'
 job_suffix = "workbench_parcellated"
 corr_type = "full_corr"
