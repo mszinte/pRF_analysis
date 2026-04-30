@@ -17,6 +17,8 @@ sys.argv[6]: server_project
 Outputs: resting-state fMRI data denoised from motion artifacts with ICA-AROMA (aggressive, non-aggressive, or orthogonal)
 Test for aggressive denoising convergence because this is what we're applying with XCP-D
 Latest version of fMRIPostAroma with melodic seed set to ensure reproducibility
+Previous seed was 17 but we are using 33 to re run sub-17
+Who weirdly enough had no motion noise components found on run-02
 -----------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------
@@ -80,7 +82,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
         --mem-mb '50000' \
         --melodic-dimensionality -200 \
-        --random-seed 17 \
+        --random-seed 33 \
         --denoising-method aggr \
         -w /work_dir/temp/ \
         --error-on-warnings \
