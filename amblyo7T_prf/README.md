@@ -27,6 +27,7 @@ Adrien Chopin, Uriel Lascombes, Paul V McGraw, Denis Schluppek, Martin Szinte<br
 ```rsync -avuz --exclude='.git' --rsh='ssh -p 8822' --progress ~/temp_data/amblyopia-data-2025/ mszinte@login.mesocentre.univ-amu.fr:/scratch/mszinte/data/amblyo7T_prf/sourcedata/```
 - [x] Create participants.tsv [create_participants.sh](preproc/bids/create_participants.sh)
 - [x] Convert to bids [bids_conversion.py](preproc/bids/bids_conversion.py)
+- [x] Convert to bids subject with missing raw data [bids_conversion_special.py](preproc/bids/bids_conversion_special.py)
 - [x] Deface participants t1w image [bidsonym_sbatch.py](../analysis_code/preproc/bids/bidsonym_sbatch.py)
 - [x] Create manualy event_files for concatenated runswith screen settings
 
@@ -80,3 +81,8 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make active verices per eye TSV [make_active_vert_fig.py](postproc/prf/postfit/make_active_vert_fig.py) or [make_active_vert_fig.sh](postproc/prf/postfit/make_active_vert_fig.sh)
 - [x] Make pRF parameters eye correlation TSV [make_corr_tsv.py](postproc/prf/postfit/make_corr_tsv.py) or [make_corr_tsv.sh](postproc/prf/postfit/make_corr_tsv.sh)
 - [x] Make pRF parameters eye correlation figures [make_corr_fig.py](postproc/prf/postfit/make_corr_fig.py) or [make_corr_fig.sh](postproc/prf/postfit/make_corr_fig.sh)
+- [x] Make pRF ecc vs size/pCM per eye TSV [make_ecc_size_pcm_tsv.py](postproc/prf/postfit/make_ecc_size_pcm_tsv.py) or [make_ecc_size_pcm_tsv.sh](postproc/prf/postfit/make_ecc_size_pcm_tsv.sh)
+- [x] Make pRF ecc vs size/pCM per eye figures [make_ecc_size_pcm_fig.py](postproc/prf/postfit/make_ecc_size_pcm_fig.py) or [make_ecc_size_pcm_fig.sh](postproc/prf/postfit/make_ecc_size_pcm_fig.sh)
+- [x] Make pRF parameters eye comparison TSV [make_ecc_comp_tsv.py](postproc/prf/postfit/make_ecc_comp_tsv.py) or [make_ecc_comp_tsv.sh](postproc/prf/postfit/make_ecc_comp_tsv.sh)
+- [x] Make pRF parameters eye comparison figures [make_ecc_comp_fig.py](postproc/prf/postfit/make_ecc_comp_fig.py) or [make_ecc_comp_fig.sh](postproc/prf/postfit/make_ecc_comp_fig.sh)
+- [x] Copy subject figures to group folders [copy_subject_figs_to_group.py](postproc/prf/postfit/copy_subject_figs_to_group.py) or [copy_subject_figs_to_group.sh](postproc/prf/postfit/copy_subject_figs_to_group.sh)

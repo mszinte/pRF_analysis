@@ -14,10 +14,14 @@ For individual subjects:
 - Each eye condition is processed independently (no vertex merging)
 - Eccentricity bins are computed using equal-width bins from 0 to ecc_size_max
 - Weighted median and 25/75 CI for pRF size and pCM per bin
+- For control subjects only: a third eye_condition 'CTRL' is added, computed as the
+  weighted median (equal weights) of medians across AE-RE (RE) and FE-LE (LE) per roi/num_bins
 
 For group subjects (group-patient, group-control):
-- Individual subject TSVs are loaded and median across subjects per roi/eye_condition/bin
-- 2.5/97.5 CI bounds across subjects
+- Individual subject TSVs are loaded and weighted median (equal weights) across subjects
+  per roi/eye_condition/bin
+- 2.5/97.5 CI bounds across subjects using weighted percentile (equal weights)
+- CTRL rows aggregate naturally from individual TSVs (already present for controls)
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory (e.g. /home/mszinte/disks/meso_S/data)
@@ -172,8 +176,7 @@ for avg_method in avg_methods:
                                  (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
                                  (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                                  (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
-                                 (data[rsq2use] < rsqr_threshold) |
-                                 (data[stats_col] > stats_threshold)] = np.nan
+                                 (data[rsq2use] < rsqr_threshold) | (data[stats_col] > stats_threshold)] = np.nan
                         data = data.dropna()
                         data = data.reset_index(drop=True)
 
@@ -244,6 +247,23 @@ for avg_method in avg_methods:
                     # Combine both eye conditions
                     df_ecc_size_pcm = pd.concat(df_eyes, ignore_index=True)
 
+                    # For control subjects: add CTRL condition as weighted median (equal weights)
+                    # of medians across AE-RE (RE) and FE-LE (LE) per roi/num_bins
+                    if subject_group == 'control':
+                        median_cols = ['prf_ecc_bins',
+                                       'prf_size_bins_median', 'prf_size_bins_ci_upper_bound', 'prf_size_bins_ci_lower_bound',
+                                       'prf_pcm_bins_median', 'prf_pcm_bins_ci_upper_bound', 'prf_pcm_bins_ci_lower_bound',
+                                       f'{rsq2use}_bins_median', f'{rsq2use}_bins_ci_upper_bound', f'{rsq2use}_bins_ci_lower_bound',
+                                       'n_vert_bins']
+                        df_ctrl = (df_ecc_size_pcm
+                                   .groupby(['roi', 'num_bins'], sort=False)[median_cols]
+                                   .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
+                                                               for col in median_cols}))
+                                   .reset_index())
+                        df_ctrl['eye_condition'] = 'CTRL'
+                        df_ctrl['subject'] = subject
+                        df_ecc_size_pcm = pd.concat([df_ecc_size_pcm, df_ctrl], ignore_index=True)
+
                     # Save TSV
                     tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir, subject, fn_spec_combined)
                     print('Saving tsv: {}'.format(tsv_fn))
@@ -263,24 +283,29 @@ for avg_method in avg_methods:
                         if i == 0: df_all = df_indiv.copy()
                         else: df_all = pd.concat([df_all, df_indiv])
 
-                    # Median across subjects per roi/eye_condition/bin
+                    # Weighted median (equal weights) across subjects per roi/eye_condition/bin
+                    # For group-control this includes CTRL rows from each individual
                     median_cols = ['prf_ecc_bins',
                                    'prf_size_bins_median', 'prf_size_bins_ci_upper_bound', 'prf_size_bins_ci_lower_bound',
                                    'prf_pcm_bins_median', 'prf_pcm_bins_ci_upper_bound', 'prf_pcm_bins_ci_lower_bound',
                                    f'{rsq2use}_bins_median', f'{rsq2use}_bins_ci_upper_bound', f'{rsq2use}_bins_ci_lower_bound',
                                    'n_vert_bins']
-                    df_group = df_all.groupby(['roi', 'eye_condition', 'num_bins'],
-                                              sort=False)[median_cols].median().reset_index()
+                    df_group = (df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[median_cols]
+                                .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
+                                                            for col in median_cols}))
+                                .reset_index())
 
-                    # CI across subjects (2.5/97.5 percentiles)
+                    # CI across subjects using weighted percentile (equal weights, 2.5/97.5)
                     for col in ['prf_size_bins_median', 'prf_pcm_bins_median',
                                 f'{rsq2use}_bins_median', 'n_vert_bins']:
                         df_group[f'{col}_ci_lower'] = (
                             df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
-                            .quantile(0.025).reset_index()[col])
+                            .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 2.5))
+                            .reset_index()[col])
                         df_group[f'{col}_ci_upper'] = (
                             df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
-                            .quantile(0.975).reset_index()[col])
+                            .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 97.5))
+                            .reset_index()[col])
 
                     # Save group TSV
                     tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(

@@ -9,7 +9,7 @@ memory_sbatch:
 
 procs_hours:
   description: "Number of hours to allocate to fmriprep"
-  value : '8:00:00'
+  value : '15:00:00'
 
 procs_hours_anat:
   description: "Number of hours to allocate to fmriprep anat only steps"

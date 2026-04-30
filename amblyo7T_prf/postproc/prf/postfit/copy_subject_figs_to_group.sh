@@ -24,16 +24,20 @@
 #-----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 #-----------------------------------------------------------------------------------------
+
 # Check inputs
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <data_path> <project_name>"
     exit 1
 fi
+
 # Define inputs
 data_path="$1"
 project_name="$2"
+
 # cd to script location
 cd ~/projects/pRF_analysis/${project_name}/postproc/prf/postfit
+
 # Run for both groups
 for group_label in group-patient group-control
 do
