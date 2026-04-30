@@ -60,7 +60,7 @@ cluster_name  = 'skylake'
 singularity_img = "{main_dir}/{project_dir}/code/singularity/xcp_d-26.0.2.simg".format(
     main_dir=main_dir, project_dir=project_dir)
 nb_procs = 32
-memory_val = 20
+memory_val = 50
 log_dir = "{main_dir}/{project_dir}/derivatives/xcp-d/log_outputs".format(
     main_dir=main_dir, project_dir=project_dir)
 
@@ -86,7 +86,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
     	--mode 'linc' \
     	--bids-filter-file /work_dir/{project_dir}/derivatives/fmripost_aroma/filter_func_data.json \
         --nprocs {nb_procs} --omp-nthreads {nb_procs:.0f} \
-        --mem-mb '20000' -vvv \
+        --mem-mb '50000' -vvv \
         --input-type 'fmriprep' --file-format 'cifti' --smoothing 0 \
         --dummy-scans 'auto' --despike 'y' \
         --datasets aroma=/work_dir/{project_dir}/derivatives/fmripost_aroma \
