@@ -53,7 +53,7 @@ else:
         f"Got: {mode}"
     )
 
-memory_val = 10 # GB
+memory_val = 50 # GB
 nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
 

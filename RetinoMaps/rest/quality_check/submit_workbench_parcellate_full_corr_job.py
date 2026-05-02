@@ -39,8 +39,8 @@ group = sys.argv[3]
 server_project = sys.argv[4]
 proc_time = sys.argv[5] #
 
-memory_val = 20 # GB
-nb_procs = 16 # number of CPUs
+memory_val = 100 # GB
+nb_procs = 32 # number of CPUs
 cluster_name = 'skylake'
 job_suffix = "workbench_parcellated"
 corr_type = "full_corr"
