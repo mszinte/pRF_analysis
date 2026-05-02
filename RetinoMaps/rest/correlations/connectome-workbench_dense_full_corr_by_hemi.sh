@@ -4,7 +4,8 @@
 # Goal of the script:
 # Compute full correlation by vertex intra-hemispherically using Connectome Workbench v. 2.1
 # Outputs are parcellated using the mean method and masked for supplementary info visualizations
-# 
+# Now we also compute correlations for each run separately so we can exclude some runs at a later stage of the pipeline
+#
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 #####################################################
 
@@ -16,126 +17,141 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
 do
 
-SEED_DIR="$TASK_RESULTS/sub-${i}/91k/rest/seed"
-OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
+    SEED_DIR="$TASK_RESULTS/sub-${i}/91k/rest/seed"
+    OUT_DIR="$TASK_RESULTS/sub-${i}/91k/rest/corr/full_corr/by_hemi"
 
-## Make sure all files are accessible
-chmod -Rf 771 "$SEED_DIR"
-chgrp -Rf 327 "$SEED_DIR"
+    ## Make sure all files are accessible
+    chmod -Rf 771 "$SEED_DIR"
+    chgrp -Rf 327 "$SEED_DIR"
 
-mkdir -p "$OUT_DIR"
+    mkdir -p "$OUT_DIR"
 
-	for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1;
-	do
-	  for HEMI in lh rh;
-	  do
+    for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1;
+    do
+        for HEMI in lh rh;
+        do
+            # Loop over individual runs + concatenated run
+            for RUN in run-01 run-02 "";
+            do
 
-	    if [ "$HEMI" = "lh" ]; then
-	      ROI_FLAG="-left-roi"
-	    else
-	      ROI_FLAG="-right-roi"
-	    fi
+                # Build run-dependent filename tag
+                if [ -n "$RUN" ]; then
+                    RUN_TAG="_${RUN}"
+                else
+                    RUN_TAG=""
+                fi
 
-	    ROI_FILE="$SEED_DIR/sub-${i}_91k_intertask_Sac-Pur-pRF_${HEMI}_${ROI}.shape.gii"
+                if [ "$HEMI" = "lh" ]; then
+                    ROI_FLAG="-left-roi"
+                else
+                    ROI_FLAG="-right-roi"
+                fi
 
-	    # Full correlation
-	    wb_command -cifti-correlation \
-	    	"$TASK_RESULTS/sub-${i}/91k/rest/timeseries/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii" \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii" \
-	    	-roi-override $ROI_FLAG "$ROI_FILE" \
-	    	-mem-limit 20
+                ROI_FILE="$SEED_DIR/sub-${i}_91k_intertask_Sac-Pur-pRF_${HEMI}_${ROI}.shape.gii"
 
-	    # Fisher-z
-	    wb_command -cifti-correlation \
-	    	"$TASK_RESULTS/sub-${i}/91k/rest/timeseries/sub-${i}_ses-01_task-rest_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii" \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii" \
-	    	-roi-override $ROI_FLAG "$ROI_FILE" \
-	    	-fisher-z -mem-limit 20
+                TS_FILE="$TASK_RESULTS/sub-${i}/91k/rest/timeseries/sub-${i}_ses-01_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
 
-	    # Average within seed ROI
-	    wb_command -cifti-average-dense-roi \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-	    	$ROI_FLAG "$ROI_FILE" \
-	    	-cifti "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
+                # Full correlation
+                wb_command -cifti-correlation \
+                    "$TS_FILE" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii" \
+                    -roi-override $ROI_FLAG "$ROI_FILE" \
+                    -mem-limit 50
 
-	    wb_command -cifti-average-dense-roi \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-	    	$ROI_FLAG "$ROI_FILE" \
-	    	-cifti "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
+                # Fisher-z
+                wb_command -cifti-correlation \
+                    "$TS_FILE" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii" \
+                    -roi-override $ROI_FLAG "$ROI_FILE" \
+                    -fisher-z -mem-limit 50
 
-	    # Parcellate targets
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-	    	-method MEAN -only-numeric;
+                # Average within seed ROI
+                wb_command -cifti-average-dense-roi \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
+                    $ROI_FLAG "$ROI_FILE" \
+                    -cifti "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
 
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-	    	-method MEAN -only-numeric;
+                wb_command -cifti-average-dense-roi \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
+                    $ROI_FLAG "$ROI_FILE" \
+                    -cifti "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
 
-	    # Parcellate excluding outliers
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
-	    	-method MEAN -only-numeric -exclude-outliers 3 3;
+                # Parcellate targets
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated.pscalar.nii" \
+                    -method MEAN -only-numeric
 
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
-	    	-method MEAN -only-numeric -exclude-outliers 3 3;
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
+                    -method MEAN -only-numeric
 
-		# Parcellate targets using -legacy-mode (just to check if different behavior on sub-25 mPCS)
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-	    	-method MEAN -only-numeric -legacy-mode;
+                # Parcellate excluding outliers
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
+                    -method MEAN -only-numeric -exclude-outliers 3 3
 
-	    wb_command -cifti-parcellate \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-	    	"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-	    	-method MEAN -only-numeric -legacy-mode;
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
+                    -method MEAN -only-numeric -exclude-outliers 3 3
 
-		# Convert all parcellated outputs to TSV for visualizations
-        wb_command -cifti-convert -to-text \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.tsv"
+                # Parcellate targets using legacy mode
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+                    -method MEAN -only-numeric -legacy-mode
 
-		wb_command -cifti-convert -to-text \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.tsv"
+                wb_command -cifti-parcellate \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+                    -method MEAN -only-numeric -legacy-mode
 
-		wb_command -cifti-convert -to-text \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
-            "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.tsv"
-		
-		# Mask vertex-wise results for visualizations in supplementary information
-	    wb_command -cifti-restrict-dense-map "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_masked.dscalar.nii" \
-	    	-left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
-	    	-right-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii";
-		
-	    # Same step as previous with Fisher-z outputs
-	    wb_command -cifti-restrict-dense-map "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" COLUMN \
-	    	"$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_masked.dscalar.nii" \
-	    	-left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
-	    	-right-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii";
+                # Convert all parcellated outputs to TSV for visualizations
+                wb_command -cifti-convert -to-text \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.tsv"
 
-		# Remove files that occupy excessive memory space
-        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
-        rm "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
-		
-	  done
-	done
+                wb_command -cifti-convert -to-text \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.tsv"
 
-# Grant permissions to output files
-chmod -Rf 771 "$OUT_DIR"
-chgrp -Rf 327 "$OUT_DIR"
+                wb_command -cifti-convert -to-text \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.tsv"
+
+                # Mask vertex-wise results for supplementary visualizations
+                wb_command -cifti-restrict-dense-map \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_masked.dscalar.nii" \
+                    -left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
+                    -right-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii"
+
+                # Same step for Fisher-z outputs
+                wb_command -cifti-restrict-dense-map \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_masked.dscalar.nii" \
+                    -left-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
+                    -right-roi "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii"
+
+                # Remove files that occupy excessive memory space
+                rm "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
+                rm "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
+
+            done
+        done
+    done
+
+    # Grant permissions to output files
+    chmod -Rf 771 "$OUT_DIR"
+    chgrp -Rf 327 "$OUT_DIR"
 
 done
