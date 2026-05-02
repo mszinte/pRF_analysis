@@ -7,7 +7,7 @@
 #####################################################
 
 # Define some paths
-TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/xcp-d_w_atlas"
+TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/xcp-d"
 ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 OUT_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/quality_check"
 

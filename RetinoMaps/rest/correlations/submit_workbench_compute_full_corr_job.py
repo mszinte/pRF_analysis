@@ -53,8 +53,8 @@ else:
         f"Got: {mode}"
     )
 
-memory_val = 20 # GB
-nb_procs = 16 # number of CPUs
+memory_val = 50 # GB
+nb_procs = 32 # number of CPUs
 cluster_name = 'skylake'
 job_suffix = "workbench"
 corr_type = "full_corr"

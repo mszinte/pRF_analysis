@@ -66,7 +66,7 @@ slurm_cmd = """\
 #SBATCH -p {cluster_name}
 #SBATCH -A {server_project}
 #SBATCH --nodes=1
-#SBATCH --mem={memory_val}mb
+#SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_fmripost_aroma_%N_%j_%a.err
