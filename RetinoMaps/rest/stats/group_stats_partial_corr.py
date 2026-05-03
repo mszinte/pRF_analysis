@@ -3,9 +3,9 @@
 """
 Group-level statistics for intra-hemispheric partial correlations.
 
-Operates on per-subject Fisher-z matrices produced by the computation script.
+Operates on per-subject Fisher-z matrices produced by the computation script
 Averaging is always performed in Fisher-z space; Pearson r is recovered only
-at the final reporting stage via tanh().
+at the final reporting stage via tanh()
 
 This separation is intentional:
   - Fisher-z has approximately constant variance ~1/(n-3), making it the
