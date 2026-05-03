@@ -67,17 +67,15 @@ RUN02_EXCLUDED = {"sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"}
 # Four variants: (run_tag_in_filename, subject_filter_fn)
 # run_tag=None -> concatenated file (no run-XX in filename)
 # run-02 uses _all intentionally: bad subjects kept to show the artifact
-
-def _all(sub):
-    return True
+def _all(sub):      return True
+def _no_run02(sub): return sub not in RUN02_EXCLUDED
 
 VARIANTS = {
     "concat":       (None,     _all),
-    "concat_clean": (None,     _all),   # keep ALL subjects
+    "concat_clean": (None,     _no_run02),
     "run-01":       ("run-01", _all),
     "run-02":       ("run-02", _all),
 }
-
 
 # =========================
 # Cluster <-> parcel mapping
@@ -173,42 +171,6 @@ def load_npy_hemi(filepath):
         return None
     return arr
 
-def get_fname(sub_path, sub, variant, run_tag, hemi):
-    # type: (str, str, str, Optional[str], str) -> str
-    """
-    Return the partial-correlation .npy filepath.
-
-    Logic:
-    - concat       -> use concatenated file (all subjects)
-    - concat_clean -> use concatenated file EXCEPT bad run-02 subjects,
-                      which fall back to run-01
-    - run-01       -> run-01 file
-    - run-02       -> run-02 file
-    """
-
-    # concat_clean fallback:
-    # if run-02 is bad, use run-01 instead of excluding the subject
-    if variant == "concat_clean" and sub in RUN02_EXCLUDED:
-        effective_tag = "run-01"
-
-    else:
-        effective_tag = run_tag
-
-    # concatenated (default)
-    if effective_tag is None:
-        return os.path.join(
-            sub_path,
-            "cluster_by_mmp-parcel_partial_{}.npy".format(hemi)
-        )
-
-    # explicit run file
-    return os.path.join(
-        sub_path,
-        "cluster_by_mmp-parcel_partial_{}_{}.npy".format(
-            effective_tag,
-            hemi
-        )
-    )
 # =========================
 # Load data for all variants
 # =========================
