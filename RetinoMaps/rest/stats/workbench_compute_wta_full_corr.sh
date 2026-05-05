@@ -8,7 +8,7 @@
 #
 # Usage examples:
 #   ./workbench_compute_wta.sh full_corr bilateral default
-#   ./workbench_compute_wta.sh fisher-z by_hemi legacy
+#   ./workbench_compute_wta.sh fisher-z by_hemi default
 #####################################################
 
 # Parse command-line arguments

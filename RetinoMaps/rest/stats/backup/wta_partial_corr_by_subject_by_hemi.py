@@ -61,6 +61,25 @@ for cl in clusters:
 
 seed_to_number = {s: i+1 for i,s in enumerate(clusters)}
 
+# ============================================================
+# Run variants & exclusions
+# ============================================================
+
+# Subjects excluded from run-02 (bad data / registration error)
+RUN02_EXCLUDED = {"sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"}
+
+# Four variants: (run_tag_in_filename, subject_filter_fn)
+# run_tag=None  → concatenated file (no run-XX in filename)
+def _all(sub):
+    return True
+
+VARIANTS = {
+    "concat":       (None,     _all),
+    "concat_clean": (None,     _all),   # keep ALL subjects
+    "run-01":       ("run-01", _all),
+    "run-02":       ("run-02", _all),
+}
+
 # =============================================================================
 # Safe WTA function (no NaN/negative values or filtering)
 # =============================================================================
@@ -112,7 +131,7 @@ for hemi in hemispheres:
     for subject in subjects:
         subj_dir = main_data / subject / "91k/rest/corr/partial_corr/by_hemi"
         
-        csv_file = subj_dir / f"cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv"
+        csv_file = subj_dir / f"cluster_by_mmp-parcel_partial_{hemi}.csv"
         
         if not csv_file.exists():
             print(f"{subject}: WARNING - File not found: {csv_file}")
@@ -131,7 +150,7 @@ for hemi in hemispheres:
     # =============================================================================
     
     group_result_path = main_data / "group/91k/rest/partial_corr/by_hemi"
-    group_csv = group_result_path / f"group_median_cluster_by_mmp-parcel_partial_{hemi}_by_hemi.csv"
+    group_csv = group_result_path / f"group_median_cluster_by_mmp-parcel_partial_r_{hemi}.csv"
     
     if not group_csv.exists():
         print(f"WARNING: Group file not found: {group_csv}")

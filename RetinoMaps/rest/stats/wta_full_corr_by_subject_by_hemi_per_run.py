@@ -1,11 +1,11 @@
 """
-Created on April 12, 2025
+Created on May 3, 2025
 
 wta_full_corr_by_subject_by_hemi.py
 -----------------------------------------------------------------------------------------
 Goal:
     Compute winner-take-all (WTA) from per-subject per-ROI TSV files.
-    Outputs one combined table per hemisphere containing:
+    Outputs one combined table per hemisphere × variant containing:
         - one row per subject   (winner seed label per parcel)
         - one GROUP row         (modal winner across subjects per parcel)
         - one CONSISTENCY row   (% of subjects matching the group winner)
@@ -16,12 +16,25 @@ Goal:
                      rows 53–105 → left  hemisphere (LH_PARCEL_ORDER, keys 181–343)
         - 1 column : fisher-z correlation of that seed/ROI with each parcel
 
-Pipeline per hemisphere:
-    1. For each subject, load one TSV per seed/ROI and slice the hemi-specific rows.
-    2. Stack into a (n_seeds × n_parcels_hemi) DataFrame.
-    3. apply compute_winners() → winning seed label per parcel.
-    4. Collect across subjects → compute GROUP (mode) and CONSISTENCY rows.
-    5. Save combined table.
+Pipeline per hemisphere × variant:
+    1. For each subject, resolve which TSV file to load (varies by variant).
+    2. Load one TSV per seed/ROI and slice the hemi-specific rows.
+    3. Stack into a (n_seeds × n_parcels_hemi) DataFrame.
+    4. Apply compute_winners() → winning seed label per parcel.
+    5. Collect across subjects → compute GROUP (mode) and CONSISTENCY rows.
+    6. Save combined table.
+-----------------------------------------------------------------------------------------
+Run variants:
+    concat       — concatenated-run TSV, all subjects
+    concat_clean — best available run per subject:
+                     · RUN02_EXCLUDED subjects → run-01 TSV
+                     · all other subjects      → concatenated-run TSV
+    run-01       — run-01 TSV, all subjects
+    run-02       — run-02 TSV, RUN02_EXCLUDED subjects skipped with WARNING
+
+Filename convention:
+    concat / concat_clean : sub-XX_task-rest_space-fsLR_den-91k_desc-fisher-z_...
+    run-01 / run-02       : sub-XX_task-rest_run-XX_space-fsLR_den-91k_desc-fisher-z_...
 -----------------------------------------------------------------------------------------
 Inputs (sys.argv):
     1: main project directory   (e.g. /scratch/mszinte/data)
@@ -34,11 +47,13 @@ Inputs (sys.argv):
            "no_outliers" → _parcellated_no_outliers.tsv
 
 Output:
-    Per hemisphere, one CSV: subjects + GROUP + CONSISTENCY rows × parcel columns.
+    Per hemisphere × variant, one CSV:
+        winning_seeds_by_subject_full_corr_{hemi}_{variant}_{mode}.csv
+    Rows: subjects + GROUP + CONSISTENCY; columns: parcel names.
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python wta_full_corr_by_subject_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327 default
+    $ python wta_full_corr_by_subject_by_hemi_per_run.py /scratch/mszinte/data RetinoMaps 327 b327 default
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -72,7 +87,7 @@ MODE_SUFFIX: Dict[str, str] = {
 }
 
 USAGE = (
-    "Usage: python wta_full_corr_by_subject_by_hemi.py "
+    "Usage: python wta_full_corr_by_subject_by_hemi_per_run.py "
     "<main_dir> <project_dir> <group> <server> <mode>\n"
     f"  <mode> must be one of: {', '.join(MODE_SUFFIX)}"
 )
@@ -120,6 +135,31 @@ subjects          = analysis_info["subjects"]
 main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
 output_folder = main_data / "group/91k/rest/wta/workbench"
 output_folder.mkdir(parents=True, exist_ok=True)
+
+# ============================================================
+# Run variants
+#
+# Subjects excluded from run-02 (bad data / registration error).
+# For concat_clean these subjects fall back to their run-01 file instead.
+# ============================================================
+RUN02_EXCLUDED: set = {"sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"}
+
+# Variant definitions ─────────────────────────────────────────────────────────
+# Each entry:  variant_tag → (run_tag_for_normal_subjects,
+#                             run_tag_for_RUN02_EXCLUDED_subjects,
+#                             skip_RUN02_EXCLUDED)
+#
+#   run_tag = None   → concatenated file (no run-XX in filename)
+#   run_tag = str    → per-run file  (run-XX inserted after task-rest in filename)
+#   skip_RUN02_EXCLUDED = True → those subjects are skipped with a WARNING
+#
+# variant        normal_tag  excluded_tag  skip_excluded
+VARIANTS: Dict[str, tuple] = {
+    "concat":       (None,     None,     False),  # concat file, all subjects
+    "concat_clean": (None,     "run-01", False),  # concat for good, run-01 for bad
+    "run-01":       ("run-01", "run-01", False),  # run-01 file, all subjects
+    "run-02":       ("run-02", None,     True),   # run-02 file, skip bad subjects
+}
 
 # ============================================================
 # Atlas parcel keys
@@ -188,21 +228,34 @@ seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
 # Helpers
 # ============================================================
 
-def tsv_path(subject: str, hemi: str, roi: str) -> Path:
-    """Return expected path for one subject / hemi / ROI TSV file."""
-    subj_dir = main_data / subject / "91k/rest/corr/full_corr/workbench_full_corr/by_hemi"
-    fname    = (
-        f"{subject}_task-rest_space-fsLR_den-91k"
+def tsv_path(subject: str, hemi: str, roi: str, run_tag: Optional[str]) -> Path:
+    """
+    Return expected path for one subject / hemi / ROI TSV file.
+
+    run_tag = None  → concatenated file, no run entity in filename:
+        sub-XX_task-rest_space-fsLR_den-91k_desc-fisher-z_{hemi}_{roi}_parcellated{suffix}.tsv
+    run_tag = str   → per-run file, run entity inserted after task-rest:
+        sub-XX_task-rest_{run_tag}_space-fsLR_den-91k_desc-fisher-z_{hemi}_{roi}_parcellated{suffix}.tsv
+    """
+    subj_dir = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
+
+    run_entity = f"_{run_tag}" if run_tag is not None else ""
+    fname = (
+        f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
         f"_desc-fisher-z_{hemi}_{roi}"
         f"_parcellated{tsv_suffix}.tsv"
     )
     return subj_dir / fname
 
 
-def load_corr_matrix(subject: str, hemi: str) -> Optional[pd.DataFrame]:
+def load_corr_matrix(
+    subject: str,
+    hemi: str,
+    run_tag: Optional[str],
+) -> Optional[pd.DataFrame]:
     """
-    Load one TSV per seed/ROI, slice the hemi-specific rows, and stack into
-    a DataFrame of shape (n_seeds × n_parcels_hemi).
+    Load one TSV per seed/ROI for a given run_tag, slice the hemi-specific
+    rows (53 of 106), and stack into a DataFrame (n_seeds × n_parcels_hemi).
 
     Returns None if any seed file is missing (all missing files are reported).
     """
@@ -212,7 +265,7 @@ def load_corr_matrix(subject: str, hemi: str) -> Optional[pd.DataFrame]:
     missing: List[Path] = []
 
     for seed in clusters:
-        fpath = tsv_path(subject, hemi, seed)
+        fpath = tsv_path(subject, hemi, seed, run_tag)
         if not fpath.exists():
             missing.append(fpath)
             continue
@@ -266,24 +319,14 @@ def compute_winners(df_corr: pd.DataFrame) -> np.ndarray:
 
 def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Compute and append two summary rows to the subject winner table:
+    Append GROUP and CONSISTENCY rows to the subject winner table.
 
     GROUP row:
-        Modal winner per parcel across subjects (ignoring NaN).
-        Ties are broken by lowest seed number (scipy default behaviour).
+        Modal winner per parcel across subjects (NaN ignored).
+        Ties broken by lowest seed number (scipy default).
 
     CONSISTENCY row:
-        Percentage of subjects whose winner matches the GROUP winner.
-        NaN where the GROUP winner is NaN.
-
-    Parameters
-    ----------
-    subject_df : DataFrame, shape (n_subjects × n_parcels)
-        Integer winner labels (or NaN) per subject per parcel.
-
-    Returns
-    -------
-    DataFrame with GROUP and CONSISTENCY appended as the last two rows.
+        % of subjects whose winner matches GROUP (NaN where GROUP is NaN).
     """
     group_winners = []
     for parcel in subject_df.columns:
@@ -291,7 +334,6 @@ def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
         if col.empty:
             group_winners.append(np.nan)
         else:
-            # keepdims=True avoids deprecation warning in newer scipy versions
             group_winners.append(float(scipy_stats.mode(col, keepdims=True).mode[0]))
 
     group_series = pd.Series(group_winners, index=subject_df.columns, name="GROUP")
@@ -306,14 +348,16 @@ def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
                 100.0 * (subject_df[parcel] == gw).sum() / len(subject_df)
             )
 
-    consistency_series = pd.Series(consistency, index=subject_df.columns, name="CONSISTENCY_%")
+    consistency_series = pd.Series(
+        consistency, index=subject_df.columns, name="CONSISTENCY_%"
+    )
 
     return pd.concat(
         [subject_df, group_series.to_frame().T, consistency_series.to_frame().T]
     )
 
 # ============================================================
-# Main loop
+# Main loop — hemisphere × variant
 # ============================================================
 
 for hemi in ("lh", "rh"):
@@ -321,40 +365,60 @@ for hemi in ("lh", "rh"):
     print(f"Processing hemisphere: {hemi.upper()}")
     print("=" * 80)
 
-    parcel_order  = HEMI_PARCEL_ORDER[hemi]
-    all_winners:  List[np.ndarray] = []
-    subject_ids:  List[str]        = []
+    parcel_order = HEMI_PARCEL_ORDER[hemi]
 
-    print("Processing subjects...")
-    for subject in subjects:
-        df_corr = load_corr_matrix(subject, hemi)
-        if df_corr is None:
-            print(f"  {subject}: SKIPPED")
+    for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
+        print(f"\n  --- Variant: {variant} ---")
+
+        all_winners: List[np.ndarray] = []
+        subject_ids: List[str]        = []
+
+        for subject in subjects:
+            is_excluded = subject in RUN02_EXCLUDED
+
+            # Decide what to do with excluded subjects for this variant
+            if is_excluded and skip_excluded:
+                print(f"    WARNING [{variant}]: {subject} is in RUN02_EXCLUDED — SKIPPED")
+                continue
+
+            # Resolve which run_tag to use for this subject
+            run_tag = excluded_tag if is_excluded else normal_tag
+
+            df_corr = load_corr_matrix(subject, hemi, run_tag)
+            if df_corr is None:
+                print(f"    {subject}: SKIPPED (missing files)")
+                continue
+
+            # For concat_clean, note when a subject falls back to run-01
+            if variant == "concat_clean" and is_excluded:
+                print(f"    {subject}: OK (fallback → run-01)")
+            else:
+                print(f"    {subject}: OK")
+
+            all_winners.append(compute_winners(df_corr))
+            subject_ids.append(subject)
+
+        if not all_winners:
+            print(f"    ERROR: no valid subjects for {hemi} / {variant} — skipping.")
             continue
 
-        all_winners.append(compute_winners(df_corr))
-        subject_ids.append(subject)
-        print(f"  {subject}: OK")
+        subject_df = pd.DataFrame(all_winners, index=subject_ids, columns=parcel_order)
 
-    if not all_winners:
-        print(f"  ERROR: no valid subjects for {hemi} — skipping hemisphere.")
-        continue
+        missing_parcels = set(parcel_order) - set(subject_df.columns)
+        if missing_parcels:
+            print(f"    WARNING: parcels absent from winner table: {sorted(missing_parcels)}")
 
-    # Build subject winner table and append GROUP + CONSISTENCY
-    subject_df  = pd.DataFrame(all_winners, index=subject_ids, columns=parcel_order)
+        combined_df = append_group_and_consistency(subject_df)
 
-    missing_parcels = set(parcel_order) - set(subject_df.columns)
-    if missing_parcels:
-        print(f"  WARNING: parcels absent from winner table: {sorted(missing_parcels)}")
-
-    combined_df = append_group_and_consistency(subject_df)
-
-    out_csv = output_folder / f"winning_seeds_by_subject_full_corr_{hemi}_{mode}.csv"
-    combined_df.to_csv(out_csv)
-    print(f"\n  Saved: {out_csv}")
-    print(f"  Rows : {list(combined_df.index)}")
+        out_csv = (
+            output_folder
+            / f"winning_seeds_by_subject_full_corr_{hemi}_{variant}_{mode}.csv"
+        )
+        combined_df.to_csv(out_csv)
+        print(f"    Saved: {out_csv.name}")
+        print(f"    Rows : {list(combined_df.index)}")
 
 print("\n" + "=" * 80)
-print("ALL HEMISPHERES COMPLETE")
+print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")

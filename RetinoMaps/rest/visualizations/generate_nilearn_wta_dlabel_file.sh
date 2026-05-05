@@ -1,22 +1,16 @@
 #!/bin/bash
 #####################################################
-# Generate label file with winner-take-all colors from TSV
+# Generate label file with winner-take-all colors from Nilearn CSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 # Example use for main output of interest
-# $ ./generate_workbench_wta_dlabel_file.sh fisher-z by_hemi
+# $ ./generate_nilearn_wta_dlabel_file.sh by_hemi
 #####################################################
 
 # Parse command-line arguments
-CORR_TYPE="${1:-full_corr}"      # full_corr or fisher-z
-HEMI_TYPE="${2:-bilateral}"      # bilateral or by_hemi
-PARC_MODE="${3:-default}"        # default or legacy
+HEMI_TYPE="${1:-bilateral}"      # bilateral or by_hemi
+
 
 # Validate inputs
-if [[ "$CORR_TYPE" != "full_corr" ]] && [[ "$CORR_TYPE" != "fisher-z" ]]; then
-    echo "Error: CORR_TYPE must be 'full_corr' or 'fisher-z'"
-    echo "Usage: $0 [full_corr|fisher-z] [bilateral|by_hemi] [default|legacy]"
-    exit 1
-fi
 
 if [[ "$HEMI_TYPE" != "bilateral" ]] && [[ "$HEMI_TYPE" != "by_hemi" ]]; then
     echo "Error: HEMI_TYPE must be 'bilateral' or 'by_hemi'"
@@ -24,31 +18,21 @@ if [[ "$HEMI_TYPE" != "bilateral" ]] && [[ "$HEMI_TYPE" != "by_hemi" ]]; then
     exit 1
 fi
 
-if [[ "$PARC_MODE" != "default" ]] && [[ "$PARC_MODE" != "legacy" ]]; then
-    echo "Error: PARC_MODE must be 'default' or 'legacy'"
-    echo "Usage: $0 [full_corr|fisher-z] [bilateral|by_hemi] [default|legacy]"
-    exit 1
-fi
-
 echo "============================================"
-echo "WTA LABEL GENERATION"
+echo "WTA LABEL GENERATION (Nilearn)"
 echo "============================================"
-echo "Correlation type:  ${CORR_TYPE}"
 echo "Hemisphere type:   ${HEMI_TYPE}"
-echo "Parcellation mode: ${PARC_MODE}"
 echo "============================================"
 echo ""
 
-# Construct file suffix based on options
-FILE_SUFFIX="${CORR_TYPE}"
-[[ "$HEMI_TYPE" == "by_hemi" ]] && FILE_SUFFIX="${FILE_SUFFIX}_by_hemi"
-[[ "$PARC_MODE" == "legacy"  ]] && FILE_SUFFIX="${FILE_SUFFIX}_legacy"
-
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
-OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/workbench"
-OUTPUT_FILE="${ATLAS_DIR}/wta_mmp1_labels.txt"
-OUTPUT_FILE_PCEF_IPEF="${ATLAS_DIR}/wta_mmp1_labels_pcef-ipef.txt"
+INPUT_PATH="${BASE_PATH}/group/91k/rest/wta/nilearn"
+OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/nilearn/dlabel"
+OUTPUT_FILE="${ATLAS_DIR}/wta_mmp1_labels_nilearn.txt"
+OUTPUT_FILE_PCEF_IPEF="${ATLAS_DIR}/wta_mmp1_labels_nilearn_pcef-ipef.txt"
+
+mkdir -p "${OUTPUT_PATH}"
 
 # Winner colors (seed number -> RGB + alpha)
 # Seed numbers correspond to ROI order: 1=mPCS ... 12=V1
@@ -96,7 +80,7 @@ CLUSTER_TO_WINNER["V3"]=10
 CLUSTER_TO_WINNER["V2"]=11
 CLUSTER_TO_WINNER["V1"]=12
 
-# Parcel order (must match TSV row order: 53 parcels per hemisphere)
+# Parcel order expected by write_hemi_labels (must match atlas key order)
 declare -a PARCELS=(
     "V1" "MST" "V2" "V3" "V4" "V8"
     "FEF" "PEF" "55b" "V3A" "V7" "IPS1"
@@ -108,6 +92,34 @@ declare -a PARCELS=(
     "IP1" "IP0" "V6A" "VMV1" "VMV3" "V4t"
     "FST" "V3CD" "LO3" "VMV2" "VVC"
 )
+
+# Column order as they appear left-to-right in the Nilearn CSV header
+# Verified against the image pasted in the manuscript notes
+declare -a CSV_COL_ORDER=(
+    "SCEF" "p32pr" "24dv" "FEF" "i6-8" "6a" "6d" "6mp" "6ma" "PEF"
+    "IFJp" "6v" "6r" "IFJa" "55b" "VIP" "LIPv" "LIPd" "IP2" "7PC"
+    "AIP" "7AL" "7Am" "7Pm" "IP0" "IPS1" "V7" "MIP" "IP1" "V6A"
+    "7PL" "V4t" "MST" "MT" "FST" "V8" "PIT" "PH" "FFC" "VMV1"
+    "VMV2" "VMV3" "VVC" "LO1" "LO2" "LO3" "V3A" "V3B" "V3CD" "V3"
+    "V4" "V2" "V1"
+)
+
+# Pre-compute reindex map: PARCEL_TO_CSV_COL[i] = column index in CSV for PARCELS[i]
+# Built at startup so the CSV row extraction is a simple indexed lookup
+declare -A _CSV_COL_IDX   # parcel name -> 0-based CSV column index
+for _ci in "${!CSV_COL_ORDER[@]}"; do
+    _CSV_COL_IDX["${CSV_COL_ORDER[$_ci]}"]="$_ci"
+done
+
+declare -a PARCEL_TO_CSV_COL=()
+for _pi in "${!PARCELS[@]}"; do
+    _parcel="${PARCELS[$_pi]}"
+    if [[ -z "${_CSV_COL_IDX[$_parcel]+x}" ]]; then
+        echo "FATAL: PARCELS entry '${_parcel}' not found in CSV_COL_ORDER. Check column definitions." >&2
+        exit 1
+    fi
+    PARCEL_TO_CSV_COL[$_pi]="${_CSV_COL_IDX[$_parcel]}"
+done
 
 # Atlas keys - Right hemisphere
 declare -A R_KEYS
@@ -188,31 +200,24 @@ write_hemi_labels() {
     for i in "${!PARCELS[@]}"; do
         parcel="${PARCELS[$i]}"
 
-        # Retrieve winner value via eval indirection: ${ArrayName[index]}
         eval "winner=\"\${${winners_arr_name}[$i]:-}\""
 
-        # Skip missing or NaN
         [[ -z "$winner" || "$winner" == "nan" ]] && continue
 
-        # Sanitize: strip whitespace, round to integer
         winner=$(echo "$winner" | tr -d '[:space:]')
         winner=$(printf "%.0f" "$winner" 2>/dev/null)
 
-        # Validate range
         if ! validate_winner "$winner"; then
             echo "  WARNING: Parcel '${hemi_char}_${parcel}' has invalid winner '$winner' — skipping" >&2
             continue
         fi
 
-        # Self-win check
         if check_self_win "$parcel" "$winner"; then
             echo "  WARNING: Parcel '${hemi_char}_${parcel}' won its own cluster (winner=$winner)!" >&2
             eval "${warn_var}=$(( ${!warn_var} + 1 ))"
         fi
 
         color="${WINNER_COLORS[$winner]}"
-
-        # Retrieve atlas key via eval indirection
         eval "key=\"\${${keys_arr_name}[$parcel]:-}\""
 
         if [[ -z "$key" ]]; then
@@ -223,137 +228,6 @@ write_hemi_labels() {
         printf '%s\n%s %s\n' "${hemi_char}_${parcel}_ROI" "${key} ${color}" >> "$output_file"
         eval "${count_var}=$(( ${!count_var} + 1 ))"
     done
-}
-
-# ============================================
-# HELPER: read a TSV file into a named array variable
-# Uses eval for bash 3.2 compatibility
-# Arguments:
-#   $1  path to TSV file
-#   $2  name of array variable to populate
-#   $3  (optional) start row, 0-indexed (default: 0)
-#   $4  (optional) number of rows to read (default: all from start_row)
-# Returns 1 on error
-# ============================================
-read_tsv_into_array() {
-    local tsv_path="$1"
-    local arr_name="$2"
-    local start_row="${3:-0}"
-    local num_rows="${4:-}"
-
-    if [[ ! -f "$tsv_path" ]]; then
-        echo "Error: TSV file not found: $tsv_path" >&2
-        return 1
-    fi
-
-    # Read all lines first so we can validate total count
-    local -a _tmp_arr=()
-    mapfile -t _tmp_arr < "$tsv_path"
-    local total_rows="${#_tmp_arr[@]}"
-
-    # Default: read all rows from start_row onward
-    [[ -z "$num_rows" ]] && num_rows=$(( total_rows - start_row ))
-
-    local end_row=$(( start_row + num_rows ))
-
-    # Defensive: verify requested slice is within bounds
-    if [[ "$start_row" -lt 0 ]] || [[ "$end_row" -gt "$total_rows" ]]; then
-        echo "Error: Requested slice [${start_row}:${end_row}) exceeds TSV row count (${total_rows}): $tsv_path" >&2
-        return 1
-    fi
-
-    # Serialize the requested slice into the named array in caller scope
-    eval "${arr_name}=()"
-    local idx out_idx=0
-    for (( idx = start_row; idx < end_row; idx++ )); do
-        eval "${arr_name}[$out_idx]=\"\${_tmp_arr[$idx]}\""
-        (( out_idx++ ))
-    done
-}
-
-# ============================================
-# HELPER: read winners for group or a subject
-#
-# For bilateral: reads a single TSV, copies it to both rh and lh arrays.
-# For by_hemi:   reads two TSVs (one per hemisphere).
-#                Group TSVs already exist from compute script:
-#                  group_wta_{FILE_SUFFIX}_lh.tsv / _rh.tsv
-#                Subject pscalars are converted to TSV on the fly if needed.
-#
-# Arguments:
-#   $1  entity_prefix: "group_wta" or "sub-XX_indexmax_wta"
-#   $2  name of rh winners array to populate
-#   $3  name of lh winners array to populate
-# Returns 1 on error
-# ============================================
-read_all_winners() {
-    local entity_prefix="$1"
-    local rh_arr_name="$2"
-    local lh_arr_name="$3"
-
-    local tsv_path pscalar_path hemi idx
-
-    # Expected parcels per hemisphere (defined at top of script)
-    local n_parcels="${#PARCELS[@]}"   # 53
-
-    if [[ "$HEMI_TYPE" == "by_hemi" ]]; then
-        for hemi in rh lh; do
-            tsv_path="${OUTPUT_PATH}/${entity_prefix}_${FILE_SUFFIX}_${hemi}.tsv"
-
-            if [[ ! -f "$tsv_path" ]]; then
-                pscalar_path="${OUTPUT_PATH}/${entity_prefix}_${FILE_SUFFIX}_${hemi}.pscalar.nii"
-                if [[ ! -f "$pscalar_path" ]]; then
-                    echo "Error: Neither TSV nor pscalar found for '${entity_prefix}' hemi=${hemi}" >&2
-                    echo "  Tried TSV:     $tsv_path" >&2
-                    echo "  Tried pscalar: $pscalar_path" >&2
-                    return 1
-                fi
-                echo "  Converting pscalar to TSV: $(basename "$pscalar_path")"
-                wb_command -cifti-convert -to-text "$pscalar_path" "$tsv_path"
-            fi
-
-            # The pscalar covers the full atlas (106 rows: RH rows 0-52, LH rows 53-105).
-            # Detect and slice the correct half; guard against unexpected row counts.
-            local tsv_rows
-            tsv_rows=$(wc -l < "$tsv_path")
-
-            if [[ "$tsv_rows" -eq "$n_parcels" ]]; then
-                # Already hemisphere-specific (53 rows) — read as-is
-                if [[ "$hemi" == "rh" ]]; then
-                    read_tsv_into_array "$tsv_path" "$rh_arr_name" || return 1
-                else
-                    read_tsv_into_array "$tsv_path" "$lh_arr_name" || return 1
-                fi
-
-            elif [[ "$tsv_rows" -eq $(( n_parcels * 2 )) ]]; then
-                # Full bilateral layout (106 rows): slice by hemisphere
-                echo "  INFO: TSV has $tsv_rows rows — slicing ${hemi} half (n_parcels=${n_parcels})"
-                if [[ "$hemi" == "rh" ]]; then
-                    read_tsv_into_array "$tsv_path" "$rh_arr_name" 0 "$n_parcels" || return 1
-                else
-                    read_tsv_into_array "$tsv_path" "$lh_arr_name" "$n_parcels" "$n_parcels" || return 1
-                fi
-
-            else
-                echo "Error: Unexpected row count ($tsv_rows) in $tsv_path" >&2
-                echo "  Expected $n_parcels (hemi-specific) or $(( n_parcels * 2 )) (bilateral layout)" >&2
-                return 1
-            fi
-        done
-
-    else
-        # Bilateral: single TSV feeds both hemispheres
-        tsv_path="${OUTPUT_PATH}/${entity_prefix}_${FILE_SUFFIX}.tsv"
-        read_tsv_into_array "$tsv_path" "$rh_arr_name" || return 1
-
-        # Copy rh array into lh array
-        local rh_len
-        eval "rh_len=\${#${rh_arr_name}[@]}"
-        eval "${lh_arr_name}=()"
-        for idx in $(seq 0 $(( rh_len - 1 ))); do
-            eval "${lh_arr_name}[$idx]=\"\${${rh_arr_name}[$idx]}\""
-        done
-    fi
 }
 
 # ============================================
@@ -443,6 +317,144 @@ build_label_file_pcef_ipef() {
 }
 
 # ============================================
+# HELPER: read one row from a Nilearn CSV into a winners array
+# The CSV has a header row then one row per subject; the last data row
+# is the group result. Columns are in CSV_COL_ORDER; values are
+# reindexed into PARCELS order using PARCEL_TO_CSV_COL.
+#
+# Arguments:
+#   $1  path to CSV file
+#   $2  row to extract: "group" (last data row) or a subject ID e.g. "sub-01"
+#       Subject rows are matched on the first column (row label).
+#   $3  name of winners array to populate
+# Returns 1 on error
+# ============================================
+read_csv_row_into_array() {
+    local csv_path="$1"
+    local row_id="$2"
+    local arr_name="$3"
+
+    if [[ ! -f "$csv_path" ]]; then
+        echo "Error: CSV file not found: $csv_path" >&2
+        return 1
+    fi
+
+    # Load all lines (skip header row 0)
+    local -a _all_lines=()
+    mapfile -t _all_lines < "$csv_path"
+    local n_lines="${#_all_lines[@]}"
+
+    # Validate: need at least header + 1 data row
+    if [[ "$n_lines" -lt 2 ]]; then
+        echo "Error: CSV has fewer than 2 lines (no data rows): $csv_path" >&2
+        return 1
+    fi
+
+    # Locate the target data row
+    local _target_line=""
+    if [[ "$row_id" == "group" ]]; then
+        # Last line is always the group result
+        _target_line="${_all_lines[$(( n_lines - 1 ))]}"
+    else
+        # Match on first field (subject ID)
+        local _line
+        for _line in "${_all_lines[@]:1}"; do   # skip header
+            local _first_field
+            _first_field=$(echo "$_line" | cut -d',' -f1)
+            if [[ "$_first_field" == "$row_id" ]]; then
+                _target_line="$_line"
+                break
+            fi
+        done
+        if [[ -z "$_target_line" ]]; then
+            echo "Error: Row '${row_id}' not found in ${csv_path}" >&2
+            return 1
+        fi
+    fi
+
+    # Split the target line into fields (comma-separated)
+    local -a _fields=()
+    IFS=',' read -r -a _fields <<< "$_target_line"
+
+    # Validate field count: expect 1 label column + 53 parcel columns
+    local expected_fields=$(( 1 + ${#PARCELS[@]} ))
+    if [[ "${#_fields[@]}" -ne "$expected_fields" ]]; then
+        echo "Error: Expected $expected_fields fields (1 label + ${#PARCELS[@]} parcels) but got ${#_fields[@]} in row '${row_id}': $csv_path" >&2
+        return 1
+    fi
+
+    # Reindex: map each PARCELS[i] position to its CSV column
+    # CSV data starts at field index 1 (field 0 is the row label)
+    eval "${arr_name}=()"
+    local _pi
+    for _pi in "${!PARCELS[@]}"; do
+        local _csv_col="${PARCEL_TO_CSV_COL[$_pi]}"
+        local _field_idx=$(( _csv_col + 1 ))   # +1 to skip row-label field
+        eval "${arr_name}[$_pi]=\"\${_fields[$_field_idx]}\""
+    done
+}
+
+# ============================================
+# HELPER: read winners for group or a subject from Nilearn CSVs
+#
+# For bilateral: reads a single CSV, copies winners to both rh and lh arrays.
+# For by_hemi:   reads two CSVs (one per hemisphere).
+#
+# CSV naming convention (current):
+#   bilateral: winning_seeds_by_subject_partial_corr_bilateral.csv
+#   by_hemi:   winning_seeds_by_subject_partial_corr_lh.csv / _rh.csv
+#
+# Arguments:
+#   $1  row_id: "group" or subject ID (e.g. "sub-01")
+#   $2  name of rh winners array to populate
+#   $3  name of lh winners array to populate
+# Returns 1 on error
+# ============================================
+read_all_winners() {
+    local row_id="$1"
+    local rh_arr_name="$2"
+    local lh_arr_name="$3"
+
+    local csv_path hemi idx
+
+    if [[ "$HEMI_TYPE" == "by_hemi" ]]; then
+        for hemi in rh lh; do
+            csv_path="${INPUT_PATH}/winning_seeds_by_subject_partial_corr_${hemi}_concat_clean.csv"
+
+            if [[ ! -f "$csv_path" ]]; then
+                echo "Error: CSV not found: $csv_path" >&2
+                return 1
+            fi
+
+            if [[ "$hemi" == "rh" ]]; then
+                read_csv_row_into_array "$csv_path" "$row_id" "$rh_arr_name" || return 1
+            else
+                read_csv_row_into_array "$csv_path" "$row_id" "$lh_arr_name" || return 1
+            fi
+        done
+
+    else
+        # Bilateral: single CSV, same winners for both hemispheres
+        csv_path="${INPUT_PATH}/winning_seeds_by_subject_partial_corr_bilateral.csv"
+
+        if [[ ! -f "$csv_path" ]]; then
+            echo "Error: CSV not found: $csv_path" >&2
+            return 1
+        fi
+
+        read_csv_row_into_array "$csv_path" "$row_id" "$rh_arr_name" || return 1
+
+        # Copy rh into lh
+        local rh_len
+        eval "rh_len=\${#${rh_arr_name}[@]}"
+        eval "${lh_arr_name}=()"
+        for idx in $(seq 0 $(( rh_len - 1 ))); do
+            eval "${lh_arr_name}[$idx]=\"\${${rh_arr_name}[$idx]}\""
+        done
+    fi
+}
+
+# ============================================
 # GROUP-LEVEL PROCESSING
 # ============================================
 
@@ -453,10 +465,8 @@ echo "============================================"
 declare -a group_rh_winners=()
 declare -a group_lh_winners=()
 
-# Group file naming from compute script:
-#   bilateral: group_wta_{CORR_TYPE}.tsv
-#   by_hemi:   group_wta_{CORR_TYPE}_by_hemi_lh.tsv / _rh.tsv
-if ! read_all_winners "group_wta" "group_rh_winners" "group_lh_winners"; then
+# Group result is always the last row of the CSV
+if ! read_all_winners "group" "group_rh_winners" "group_lh_winners"; then
     echo "Error: Failed to read group winners. Aborting." >&2
     exit 1
 fi
@@ -484,10 +494,10 @@ echo ""
 wb_command -cifti-label-import \
     "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
     "${OUTPUT_FILE}" \
-    "${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii" \
+    "${OUTPUT_PATH}/group_wta_partial_corr.dlabel.nii" \
     -discard-others
 
-echo "CIFTI file: ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii"
+echo "CIFTI file: ${OUTPUT_PATH}/group_wta_partial_corr.dlabel.nii"
 echo ""
 
 # --- PCEF/IPEF filtered map (winners 1–5 only) ---
@@ -501,11 +511,11 @@ build_label_file_pcef_ipef "$OUTPUT_FILE_PCEF_IPEF" \
 wb_command -cifti-label-import \
     "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
     "${OUTPUT_FILE_PCEF_IPEF}" \
-    "${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}_pcef-ipef.dlabel.nii" \
+    "${OUTPUT_PATH}/group_wta_partial_corr_pcef-ipef.dlabel.nii" \
     -discard-others
 
 echo "PCEF/IPEF labels: $group_pcef_ipef_count"
-echo "CIFTI file: ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}_pcef-ipef.dlabel.nii"
+echo "CIFTI file: ${OUTPUT_PATH}/group_wta_partial_corr_pcef-ipef.dlabel.nii"
 echo ""
 
 # ============================================
@@ -525,16 +535,14 @@ for sub in "${subjects[@]}"; do
     declare -a sub_rh_winners=()
     declare -a sub_lh_winners=()
 
-    # Subject file naming from compute script:
-    #   bilateral: sub-XX_indexmax_wta_{CORR_TYPE}.pscalar.nii
-    #   by_hemi:   sub-XX_indexmax_wta_{CORR_TYPE}_by_hemi_lh.pscalar.nii / _rh.pscalar.nii
-    if ! read_all_winners "sub-${sub}_indexmax_wta" "sub_rh_winners" "sub_lh_winners"; then
+    # Row label in the CSV matches the subject folder name
+    if ! read_all_winners "sub-${sub}" "sub_rh_winners" "sub_lh_winners"; then
         echo "  ERROR: Skipping sub-${sub} (failed to read winners)" >&2
         unset sub_rh_winners sub_lh_winners
         continue
     fi
 
-    SUB_LABELS="${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}_labels.txt"
+    SUB_LABELS="${OUTPUT_PATH}/sub-${sub}_wta_partial_corr_labels.txt"
     sub_parcel_count=0
     sub_warning_count=0
 
@@ -545,11 +553,11 @@ for sub in "${subjects[@]}"; do
     wb_command -cifti-label-import \
         "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
         "${SUB_LABELS}" \
-        "${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}.dlabel.nii" \
+        "${OUTPUT_PATH}/sub-${sub}_wta_partial_corr.dlabel.nii" \
         -discard-others
 
     # --- PCEF/IPEF filtered map (winners 1–5 only) ---
-    SUB_LABELS_PCEF_IPEF="${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}_pcef-ipef_labels.txt"
+    SUB_LABELS_PCEF_IPEF="${OUTPUT_PATH}/sub-${sub}_wta_partial_corr_pcef-ipef_labels.txt"
     sub_pcef_ipef_count=0
     sub_pcef_ipef_warn=0
 
@@ -560,7 +568,7 @@ for sub in "${subjects[@]}"; do
     wb_command -cifti-label-import \
         "${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" \
         "${SUB_LABELS_PCEF_IPEF}" \
-        "${OUTPUT_PATH}/sub-${sub}_wta_${FILE_SUFFIX}_pcef-ipef.dlabel.nii" \
+        "${OUTPUT_PATH}/sub-${sub}_wta_partial_corr_pcef-ipef.dlabel.nii" \
         -discard-others
 
     if [[ $sub_warning_count -gt 0 ]]; then
@@ -575,12 +583,13 @@ done
 chmod -Rf 771 /scratch/mszinte/data/RetinoMaps
 chgrp -Rf 327 /scratch/mszinte/data/RetinoMaps
 
+
 echo ""
 echo "============================================"
 echo "ALL PROCESSING COMPLETE"
 echo "============================================"
-echo "Group (full):        ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}.dlabel.nii"
-echo "Group (PCEF/IPEF):   ${OUTPUT_PATH}/group_wta_${FILE_SUFFIX}_pcef-ipef.dlabel.nii"
-echo "Subjects (full):     ${OUTPUT_PATH}/sub-*_wta_${FILE_SUFFIX}.dlabel.nii"
-echo "Subjects (PCEF/IPEF):${OUTPUT_PATH}/sub-*_wta_${FILE_SUFFIX}_pcef-ipef.dlabel.nii"
+echo "Group (full):         ${OUTPUT_PATH}/group_wta_partial_corr.dlabel.nii"
+echo "Group (PCEF/IPEF):    ${OUTPUT_PATH}/group_wta_partial_corr_pcef-ipef.dlabel.nii"
+echo "Subjects (full):      ${OUTPUT_PATH}/sub-*_wta_partial_corr.dlabel.nii"
+echo "Subjects (PCEF/IPEF): ${OUTPUT_PATH}/sub-*_wta_partial_corr_pcef-ipef.dlabel.nii"
 echo ""
