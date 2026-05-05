@@ -23,12 +23,12 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
 	wb_command -cifti-parcellate \
-	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" ROW \
 	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr_parcellated.pconn.nii" \
 	    -method MEAN
@@ -44,12 +44,12 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
 	wb_command -cifti-parcellate \
-	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" ROW \
 	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.pconn.nii" \
 	    -method MEAN
@@ -66,12 +66,12 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.dpconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
 	wb_command -cifti-parcellate \
-	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" ROW \
 	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.pconn.nii" \
 	    -method MEAN
