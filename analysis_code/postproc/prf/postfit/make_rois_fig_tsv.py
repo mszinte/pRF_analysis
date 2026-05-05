@@ -236,7 +236,7 @@ for avg_method in avg_methods:
                     
                     # Ecc.size
                     # --------
-                    ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
+                    ecc_bins = np.linspace(0, ecc_size_max[0], ecc_size_num_bins+1) 
                     for num_roi, roi in enumerate(rois):
                         df_roi = data.loc[(data.roi == roi)]
                         df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
@@ -261,7 +261,7 @@ for avg_method in avg_methods:
                     # Ecc.pCM
                     # --------
                     data_pcm = data
-                    ecc_bins = np.linspace(0, ecc_pcm_max[1], ecc_pcm_num_bins+1) 
+                    ecc_bins = np.linspace(0, ecc_pcm_max[0], ecc_pcm_num_bins+1) 
                     for num_roi, roi in enumerate(rois):
                         df_roi = data_pcm.loc[(data.roi == roi)]
                         df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
