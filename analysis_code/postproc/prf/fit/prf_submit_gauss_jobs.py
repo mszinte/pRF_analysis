@@ -104,7 +104,8 @@ for avg_method in avg_methods:
         # Accumulate the results
         pp_fns.extend(glob.glob(dct_avg_gii_fns))
         pp_fns.extend(glob.glob(dct_avg_nii_fns))
-                
+
+
 for fit_num, pp_fn in enumerate(pp_fns):
 
     if pp_fn.endswith('.nii'):

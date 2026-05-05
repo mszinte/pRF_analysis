@@ -9,11 +9,11 @@ flatmap_rsq_scale:
 
 flatmap_ecc_scale: 
   description: "pRF eccentricity flatmap colorscale"
-  value: [0, 10]
+  value: [0, 8]
   
 flatmap_size_scale:
   description: "pRF size flatmap colorscale"
-  value: [0, 10]
+  value: [0, 4]
 
 flatmap_alpha_range:
   description: "Flatmap colorscale transparency range (min=transparent, max:fully opaque)"
@@ -25,7 +25,7 @@ flatmap_n_scale:
 
 flatmap_pcm_scale: 
   description: "pRF cortical magnification flatmap colorscale"
-  value: [0, 10]
+  value: [0, 30]
 
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
@@ -108,11 +108,15 @@ ecc_size_num_bins:
 
 ecc_size_max: 
   description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
-  value: [6, 4]
+  value: [6, 6]
+
+ecc_pcm_axis: 
+  description: "Eccentricity and pCM bounds in the violin plot axis"
+  value: [0, 30]
 
 ecc_size_axis: 
-  description: "Eccentricity and pCM bounds in the violin plot axis"
-  value: [0, 15]
+  description: "Eccentricity and size bounds in the violin plot axis"
+  value: [0, 6]
   
 ecc_pcm_num_bins: 
   description: "Number of bins for eccentricity vs pcm plot"
@@ -120,7 +124,7 @@ ecc_pcm_num_bins:
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
-  value: [6, 20]
+  value: [6, 30]
 
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
@@ -140,15 +144,15 @@ violin_rsq_range:
   
 violin_size_range: 
   description: "Size range in the violin plot"
-  value: [0, 20]
+  value: [0, 6]
   
 violin_ecc_range: 
   description: "Eccentricity range in the violin plot"
-  value: [0, 20]
+  value: [0, 6]
   
 violin_pcm_range: 
   description: "pRF CM range in the violin plot"
-  value: [0, 20]
+  value: [0, 30]
   
 params_median_rsq_range:
   description: "R-square range in the median parameters plot"
@@ -156,15 +160,15 @@ params_median_rsq_range:
   
 params_median_size_range: 
   description: "Size range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 6]
 
 params_median_ecc_range: 
   description: "Eccentricity range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 6]
   
 params_median_pcm_range: 
   description: "PRF CM range in the median parameters plot"
-  value: [0, 20]
+  value: [0, 30]
   
 distribution_max_ecc: 
   description: "Maximum eccentricity in the pRF spatial distribution plot"
