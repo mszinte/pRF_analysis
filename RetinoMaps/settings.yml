@@ -43,6 +43,10 @@ prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
   value: ["pRF"]
 
+n_runs_prf: 
+  description: "Numbers of runs of the pRF task"
+  value: 5
+
 partial_scan: 
   description: "Dataset including non whole-head recording"
   value: False
@@ -132,3 +136,12 @@ fdr_alpha:
 corr_stats_th: 
   description: "p value minimum threshold for inter-run correlation analysis"
   value: 0.05
+
+# pRF behaviour 
+outlier_prf_beh: 
+  description: "subjects take as outliers for pRF behaviour analysis"
+  value: ["sub-07", "sub-12"]
+
+num_steps_kappa_pRF: 
+  description: "Number ok kappa steps used in pRF task"
+  value: 15

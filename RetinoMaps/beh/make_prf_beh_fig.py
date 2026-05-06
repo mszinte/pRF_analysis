@@ -40,15 +40,15 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Personal import
 sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
 from plot_utils import plotly_template
+from settings_utils import load_settings
+
 
 # Inputs
 main_dir = sys.argv[1]
@@ -56,28 +56,26 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 
+
 # Load settings
-with open('../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0] 
+ 
 if 'group' not in subject: subjects=[subject]
 else: subjects = analysis_info['subjects']
 subject_excluded = analysis_info['outlier_prf_beh']
 
-# Load figure settings
-with open('../figure_settings.json') as f:
-    json_s = f.read()
-    figure_info = json.loads(json_s)
-fig_width = figure_info['fig_width']
-
 # Template settings
 template_specs = dict(axes_color="rgba(0, 0, 0, 1)",
-                      axes_width=2,
-                      axes_font_size=15,
-                      bg_col="rgba(255, 255, 255, 1)",
-                      font='Arial',
-                      title_font_size=15,
-                      plot_width=1.5)
+                          axes_width=2,
+                          axes_font_size=15,
+                          bg_col="rgba(255, 255, 255, 1)",
+                          font='Arial',
+                          title_font_size=15,
+                          rois_plot_width=1.5)
+    
 fig_template = plotly_template(template_specs)
 
 # color_map
@@ -173,7 +171,7 @@ fig.update_xaxes(showline=True, range=[0,x_max],
 fig.update_yaxes(showline=True, range=[0,10], title='Kappa (a.u.)', row=2, col=1)
 # Update layout
 fig.update_layout(template=fig_template, 
-                  width=fig_width, 
+                  width=1440, 
                   height=800, 
                   showlegend=True, 
                   legend=dict(orientation="v", 
@@ -377,7 +375,7 @@ if 'group' in subject:
     
     # Update layout
     fig.update_layout(template=fig_template, 
-                      width=fig_width, 
+                      width=1440, 
                       height=800, 
                       showlegend=True)
 
@@ -386,8 +384,8 @@ if 'group' in subject:
     print('Export {}'.format(prf_beh_fig_fn))
     fig.write_image(prf_beh_fig_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))    
     
