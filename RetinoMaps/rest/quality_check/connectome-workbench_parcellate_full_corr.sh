@@ -7,7 +7,6 @@
 #####################################################
 
 # Define some paths
-TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/xcp-d"
 ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 OUT_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/quality_check"
 
@@ -23,7 +22,7 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-01_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
@@ -44,7 +43,7 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_run-02_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
@@ -66,7 +65,7 @@ do
 	wb_command -cifti-parcellate \
 	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.dconn.nii" \
 	    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" COLUMN \
-	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr_parcellated.pdconn.nii" \
+	    "$OUT_DIR/sub-${i}_task-rest_space-fsLR_den-91k_desc-full_corr.pdconn.nii" \
 	    -method MEAN
 
 	# Parcellate targets
