@@ -40,9 +40,12 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import json
 import numpy as np
 import pandas as pd
+
+# Personal imports
+sys.path.append("{}/../../analysis_code/utils".format(os.getcwd()))
+from settings_utils import load_settings
 
 # Inputs
 main_dir = sys.argv[1]
@@ -51,15 +54,18 @@ subject = sys.argv[3]
 group = sys.argv[4]
 
 # Load settings
-with open('../settings.json') as f:
-    json_s = f.read()
-    analysis_info = json.loads(json_s)
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../"))
+settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([settings_path])
+analysis_info = settings[0]  
+
 subjects = analysis_info['subjects']
 n_runs_prf = analysis_info['n_runs_prf']
 subject_excluded = analysis_info['outlier_prf_beh']
 num_steps_kappa_pRF = analysis_info['num_steps_kappa_pRF']
 
 kappa_values = np.concatenate(([0], 10 ** np.linspace(-1, 1.5, num_steps_kappa_pRF - 1)))
+
 
 if 'group' not in subject:
     print('{} is processing...'.format(subject))
@@ -209,10 +215,10 @@ else :
     prf_beh_trials_df_median_group.to_csv(prf_beh_trials_group_median_tsv_fn, sep="\t", na_rep='NaN', index=False)
     prf_beh_df_median_subject.to_csv(prf_beh_median_group_median_tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))  
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))  
 
         
        
