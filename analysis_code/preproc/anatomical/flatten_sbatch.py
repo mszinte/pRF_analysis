@@ -23,6 +23,7 @@ python flatten_sbatch.py [main directory] [project name] [subject] [group] [serv
 -----------------------------------------------------------------------------------------
 Example:
 python flatten_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python flatten_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-15_ses-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -49,7 +50,7 @@ server_project = sys.argv[5]
 cluster_name  = 'skylake'
 nb_procs = 8
 memory_val = 48
-hour_proc = 20
+hour_proc = 10
 hemis = ['rh', 'lh']
 
 # Load input

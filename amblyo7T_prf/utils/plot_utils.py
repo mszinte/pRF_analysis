@@ -1079,9 +1079,14 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
          'y_range': {'all':        figure_info['ecc_comp_pcm_all_range'],
                      'foveal':     figure_info['ecc_comp_pcm_foveal_range'],
                      'peripheral': figure_info['ecc_comp_pcm_peripheral_range']}},
+        {'param': 'prf_n',
+         'y_title': 'pRF n',
+         'y_range': {'all':        figure_info['ecc_comp_n_all_range'],
+                     'foveal':     figure_info['ecc_comp_n_foveal_range'],
+                     'peripheral': figure_info['ecc_comp_n_peripheral_range']}},
         {'param': 'n_vert',
          'y_title': 'N vertices',
-         'y_range': None},  # Plotly auto-scales
+         'y_range': None},
     ]
 
     rows, cols = len(params_settings), len(ecc_categories)
@@ -1296,7 +1301,7 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
     # Row 5 = n_vert — use pre-computed range for legend positioning
     y_top          = y_max_nvert - 0.04 * y_max_nvert
     legend_row_gap = 0.10 * y_max_nvert
-    legend_row_num = 5
+    legend_row_num = 6
     legend_x_step  = marker_offset * 1.5
     legend_x_end   = x_max - 1.5 * roi_spacing
     legend_x_start = legend_x_end - (len(rois) - 1) * legend_x_step

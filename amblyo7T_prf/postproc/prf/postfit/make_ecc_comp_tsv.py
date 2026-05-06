@@ -249,6 +249,9 @@ for avg_method in avg_methods:
                                     'pcm_median_median':    weighted_nan_median(df_cat['pcm_median'].values, w)           if has else np.nan,
                                     'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 2.5)  if has else np.nan,
                                     'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 97.5) if has else np.nan,
+                                    'prf_n_median':         weighted_nan_median(df_cat['prf_n'].values, w)           if has else np.nan,
+                                    'prf_n_ci_lo':          weighted_nan_percentile(df_cat['prf_n'].values, w, 2.5)  if has else np.nan,
+                                    'prf_n_ci_hi':          weighted_nan_percentile(df_cat['prf_n'].values, w, 97.5) if has else np.nan,
                                 }
                                 rows_list.append(row)
 
