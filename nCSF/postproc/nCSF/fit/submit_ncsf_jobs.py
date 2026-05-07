@@ -85,13 +85,13 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 # Define fns (filenames)
 pp_fns = []
 for avg_method in avg_methods:
-    dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
+    # dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+    #     pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
     dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
         pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
 
     # Accumulate the results
-    pp_fns.extend(glob.glob(dct_avg_gii_fns))
+    # pp_fns.extend(glob.glob(dct_avg_gii_fns))
     pp_fns.extend(glob.glob(dct_avg_nii_fns))
 
 for fit_num, pp_fn in enumerate(pp_fns):

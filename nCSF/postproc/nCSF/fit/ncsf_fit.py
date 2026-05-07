@@ -41,6 +41,7 @@ deb = ipdb.set_trace
 
 # General imports
 import os
+import re
 import sys
 import datetime
 import numpy as np
@@ -57,7 +58,7 @@ from prfpy_csenf.stimulus import CSenFStimulus
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
-# from pycortex_utils import set_pycortex_config_file
+from pycortex_utils import set_pycortex_config_file, get_rois
 from surface_utils import load_surface, make_surface_image
 
 
@@ -76,9 +77,9 @@ n_batches = n_jobs
 verbose = True
 
 
-# # Set pycortex db and colormaps
-# cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
-# set_pycortex_config_file(cortex_dir)
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -88,9 +89,18 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
+pycortex_subject_template = analysis_info['pycortex_subject_template']
+
+
 nCSF_ses = 'ses-01'
 nCSF_task_name = 'nCSF'
-format_ = 'fsnative'
+rois_method_format = 'rois-group-mmp'
+if rois_method_format == 'rois-drawn':
+    rois = analysis_info[rois_method_format]
+elif rois_method_format == 'rois-group-mmp':
+    rois = list(analysis_info[rois_method_format].keys())
+
+
 ncsf_grid_nr = 5
 rsq_threshold = 0.1 
 ncsf_params_num = 10
@@ -110,6 +120,19 @@ contNum = 12
 
 sf_filtCenters = np.concatenate([np.round(np.logspace(np.log10(0.05), np.log10(16), sf_filtNum), 2), [0]])
 contValues = np.concatenate([np.logspace(np.log10(minCont), np.log10(maxCont), contNum), [0]])
+
+
+if input_fn.endswith('.nii'):
+   format_ = '170k'
+   pycortex_subject =  pycortex_subject_template
+   hemi = None
+
+    
+elif input_fn.endswith('.gii'):
+   format_ = 'fsnative'
+   pycortex_subject =  subject
+   match = re.search(r'hemi-[LR]', input_fn)
+   hemi = match.group()
 
 # Create Stimulus object
 # Load events to have stim sequence
@@ -138,9 +161,24 @@ csenf_stim = CSenFStimulus(
 # load data
 img, raw_data = load_surface(fn=input_fn)
 
+# Extract data from rois 
+roi_verts_dict = get_rois(pycortex_subject, 
+                          surf_format=format_, 
+                          rois_type=rois_method_format,
+                          mask=False, 
+                          rois=rois, 
+                          hemis=hemi)
+
+
+
+
 # exlude nan voxel from the analysis 
+# valid_vertices = ~np.isnan(raw_data).any(axis=0)
+# valid_vertices_idx = np.where(valid_vertices)[0]
+
 valid_vertices = ~np.isnan(raw_data).any(axis=0)
-valid_vertices_idx = np.where(valid_vertices)[0]
+roi_vertices_idx = np.unique(np.concatenate(list(roi_verts_dict.values())))
+valid_vertices_idx = roi_vertices_idx[valid_vertices[roi_vertices_idx]]
 data = raw_data[:,valid_vertices]
 
 # Dermine nCSF model
@@ -154,23 +192,23 @@ csenf_fitter = CSenFFitter(data=data.T,
 
 # nCSF bounds
 ncsf_bounds = {
-    'width_r' : [0,10],          
+    'width_r' : [0,1.5],          
     'SFp' : [0, 20],
     'CSp' : [0, 200] ,
     'width_l' : [0.68, 0.68],
     'crf_exp' : [0, 10],
-    'amp_1' : [0, 6],
+    'amp_1' : [0, 1000],
     'bold_baseline' : [-1,1] ,
     'hrf_1' : [1, 1],
     'hrf_2' : [0,0],
 }
 
 
-width_r_grid        = np.linspace(ncsf_bounds['width_r'][0], ncsf_bounds['width_r'][1], ncsf_grid_nr)     
-SFp_grid            = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], ncsf_grid_nr)     
-CSp_grid            = np.linspace(ncsf_bounds['CSp'][0], ncsf_bounds['CSp'][1], ncsf_grid_nr)
-width_l_grid        = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)     
-crf_exp_grid        = np.linspace(ncsf_bounds['crf_exp'][0], ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
+width_r_grid = np.linspace(ncsf_bounds['width_r'][0], ncsf_bounds['width_r'][1], ncsf_grid_nr)     
+SFp_grid = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], ncsf_grid_nr)     
+CSp_grid = np.linspace(ncsf_bounds['CSp'][0], ncsf_bounds['CSp'][1], ncsf_grid_nr)
+width_l_grid = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)     
+crf_exp_grid = np.linspace(ncsf_bounds['crf_exp'][0], ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
 # hrf_1_grid = None
 # hrf_2_grid = None
 hrf_1_grid = np.zeros(len(width_r_grid))
