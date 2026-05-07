@@ -271,11 +271,9 @@ size_range:
 
 pmc_range:
   description: "PRF CM axis range in the ecc-size-pcm eye condition plot"
-  value: [0, 25]
+  value: [0, 30]
 
-ecc_comp_params:
-  description: "Parameters to compare across pRF eccentricity (foveal vs periphery"
-  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median', 'n_vert']
+
 
 foveal_ecc_bound:
   description: "Eccentricity boundary (dva) separating foveal (<= bound) from peripheral (> bound) pRFs"
@@ -290,7 +288,7 @@ ecc_comp_fig_width:
 
 ecc_comp_fig_height:
   description: "Height of each ecc-comp figure in pixels"
-  value: 1400
+  value: 1680
 
 ecc_comp_marker_size:
   description: "Marker size in ecc-comp figures"
@@ -356,7 +354,19 @@ ecc_comp_pcm_peripheral_range:
   description: "pRF CM axis range for peripheral pRF in ecc-comp figure"
   value: [0, 10]
 
+ecc_comp_n_all_range:
+  description: "pRF n axis range for all pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_n_foveal_range:
+  description: "pRF n axis range for foveal pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_n_peripheral_range:
+  description: "pRF n axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 2]
+
 # ecc_comp_params: parameters with CI (excludes n_vert)
 ecc_comp_params:
   description: "Parameters computed in the ecc comparison analysis (excludes n_vert which has no CI)"
-  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median']
+  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median', 'prf_n']

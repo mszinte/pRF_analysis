@@ -1,7 +1,7 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["concat"]
+  value: ["single-run"]
   levels: ["avg", "loo-avg", "concat", "single-run"]
   level-description: 
     avg: "averaging across runs"
