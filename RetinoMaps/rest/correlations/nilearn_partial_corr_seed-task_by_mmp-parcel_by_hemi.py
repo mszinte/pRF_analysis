@@ -321,7 +321,8 @@ for subject in subjects:
                         parcel_ts[:, conditioning_idx],
                     ])
 
-                    conn = ConnectivityMeasure(kind="partial correlation")
+                    # After updating XCP-D concatenated timeseries are already z-scored
+                    conn = ConnectivityMeasure(kind="partial correlation", standardize=False)
                     C = conn.fit_transform([X])[0]
 
                     val = C[0, 1]

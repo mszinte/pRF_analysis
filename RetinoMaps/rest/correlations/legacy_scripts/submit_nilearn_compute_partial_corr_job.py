@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-submit_workbench_compute_full_corr_job.py
+submit_nilearn_compute_partial_corr_job.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Submit the compute dtseries correlation scripts to SLURM queue
+Submit the nilearn partial correlation script to SLURM queue
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -11,8 +11,8 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: script name to run:
-              - connectome-workbench_dense_full_corr_bilateral.sh
-              - connectome-workbench_dense_full_corr_by_hemi.sh
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py
+              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py
 sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -21,8 +21,8 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 2:00:00
---------------------------------------------------------------------------------------------------------------
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 0:30:00
+-----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
 
@@ -39,14 +39,14 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-mode = sys.argv[5] # "bilateral" or "by_hemi"
+mode = sys.argv[5]   # "bilateral" or "by_hemi"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
-if mode == "task-free":
-    script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
-elif mode == "task-constrained":
-    script_name = "connectome-workbench_dense_full_corr_by_hemi.sh"
+if mode == "bilateral":
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py"
+elif mode == "by_hemi":
+    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py"
 else:
     raise ValueError(
         "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
@@ -54,10 +54,8 @@ else:
     )
 
 memory_val = 50 # GB
-nb_procs = 32 # number of CPUs
+nb_procs = 16 # number of CPUs
 cluster_name = 'skylake'
-job_suffix = "workbench"
-corr_type = "full_corr"
 
 # Define permission commands
 chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
@@ -80,22 +78,21 @@ slurm_cmd = f"""#!/bin/bash
 #SBATCH --time={proc_time}
 #SBATCH -e {logs_dir}/job_%N_%j_%a.err
 #SBATCH -o {logs_dir}/job_%N_%j_%a.out
-#SBATCH -J all_{job_suffix}
 """
 
 # Assuming scripts are in the same directory as this Python script
 script_dir = os.path.dirname(os.path.abspath(__file__))
 your_script_path = os.path.join(script_dir, script_name)
 
-main_cmd = "bash {}".format(your_script_path)
+main_cmd = f"python3 {your_script_path}"
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
 # Create job script
-sh_fn = f"{job_dir}/all_{job_suffix}.sh"
+sh_fn = f"{job_dir}/all_nilearn_partial_corr.sh"
 with open(sh_fn, 'w') as of:
     of.write(f"{slurm_cmd}\n{main_cmd}\n{chmod_cmd}\n{chgrp_cmd}\n")
 
 # Submit job
-print("Submitting {} ({}) to queue".format(sh_fn, corr_type))
+print("Submitting ({}) to queue".format(sh_fn))
 os.system("sbatch {}".format(sh_fn))

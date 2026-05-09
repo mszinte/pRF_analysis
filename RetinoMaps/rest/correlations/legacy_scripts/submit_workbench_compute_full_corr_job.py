@@ -43,9 +43,9 @@ mode = sys.argv[5] # "bilateral" or "by_hemi"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
-if mode == "task-free":
+if mode == "bilateral":
     script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
-elif mode == "task-constrained":
+elif mode == "by_hemi":
     script_name = "connectome-workbench_dense_full_corr_by_hemi.sh"
 else:
     raise ValueError(
