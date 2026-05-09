@@ -2,7 +2,7 @@
 
 #####################################################
 # Goal of the script:
-# Compute full correlation by vertex intra-hemispherically using Connectome Workbench v. 2.1
+# Compute full correlation by vertex ('dense') intra-hemispherically using Connectome Workbench v. 2.1
 # Outputs are parcellated using the mean method and masked for supplementary info visualizations
 # Now we also compute correlations for each run separately so we can exclude some runs at a later stage of the pipeline
 #
