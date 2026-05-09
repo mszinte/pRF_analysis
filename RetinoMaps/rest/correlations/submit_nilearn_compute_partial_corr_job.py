@@ -21,7 +21,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 0:30:00
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-constrained 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -43,13 +43,13 @@ mode = sys.argv[5]   # "bilateral" or "by_hemi"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
-if mode == "bilateral":
-    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py"
-elif mode == "by_hemi":
-    script_name = "nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py"
+if mode == "task-free":
+    script_name = "nilearn_partial_corr_seed-task_by_mmp-parcel_bilateral.py"
+elif mode == "task-constrained":
+    script_name = "nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py"
 else:
     raise ValueError(
-        "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
+        "Invalid mode. Use either 'task-free' or 'task-constrained'. "
         f"Got: {mode}"
     )
 

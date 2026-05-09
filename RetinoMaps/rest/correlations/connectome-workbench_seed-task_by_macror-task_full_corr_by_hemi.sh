@@ -76,7 +76,9 @@ do
                     $ROI_FLAG "$ROI_FILE" \
                     -cifti "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
 
-                # Parcellate targets
+                # Mask by merged conjunction maps from all the macro-regions except the seed
+                
+                # Parcellate targets by macro-region
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
                     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
