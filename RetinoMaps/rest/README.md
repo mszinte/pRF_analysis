@@ -13,12 +13,12 @@ The primary steps of the pipeline are:
 
 - 1. Selecting the clusters from the MMP1 atlas (Glasser et al. 2016) on the fsLR 32k mesh
 - 2. Downsampling the task-based results from the 170k to the 91k fsLR resolution
-- 3. Masking the conjunction maps from the vision pursuit and saccade tasks using the MMP1 clusters
-- 4. Computing full and partial correlations using each masked task result
-- 5. Averaging the connectivity matrices across subjects
+- 3. Masking the conjunction maps from the vision, saccade and pursuit tasks using the MMP1 clusters
+- 4. Computing full and partial correlations using each masked task result intra-hemispherically
+- 5. Averaging the 12 seed x 53 targets connectivity matrices across subjects
 - 6. Preparing the files to make nice visualizations in wb_view and PyCortex:
-	- Winner-take-all flatmaps
-	- Violin plots of cluster's averaged r values
+	- Winner-take-all flat maps by subject and at the group-level
+	- Violin plots of macro-regions's averaged fisher-z values (reconverted to pearson r) by hemisphere (stacked)
 
 Each step is described in more detail below.
 
@@ -50,62 +50,50 @@ $ ./get_mmp1_clusters_metric_files.sh
 ```bash
 $ ./leave_one_out_mmp1_clusters.sh
 ```
-### 2. Downsampling the task-based results from the 170k to the 91k resolution of the fsLR template
+### 2. Downsampling the tasks results from the 170k to the 91k resolution of the fsLR template
 
-Missing a step to describe how we obtained the left and right shape files for the filtered MMP1 ROIs.
-
-Just run this script to perform all the steps required (see the comments in the script itself):
+Run this script to perform all the steps required (see the comments in the script itself):
 ```bash
-$ ./resample_to_91k.sh
+$ ./resample_to_fsLR91k_adap-bary.sh
 ```
-### 3. Masking the conjunction maps using the MMP1 macro-regions (by cluster or parcel)
+### 3. Masking the conjunction maps using the MMP1 macro-regions
 
-Check the two scripts in the masking folder:
+Check the script in the masking folder:
 ```bash
-$ ./mask_task_results_by_cluster.sh
-
-$ ./mask_task_results_by_parcel.sh
+$ ./mask_task_results_by_macro-region.sh
 ```
-### 4. Computing correlations using each masked task result separately for all vertices active in each cluster and averaging these values bilaterally
+### 4. Computing functional connectivity using each macro-region separately by hemisphere (and per run)
 
-Here we have two scripts, one for the full correlation and the other to compute the Fisher-Z transformed values of the full correlation:
+The relevant scripts live in the correlation folder.
+
+Full correlation are computed with connectome-workbench to obtain outputs as Pearson r and Fisher-z transformed values:
 ```bash
-$ ./compute_dtseries_corr_bilateral.sh
-$ ./compute_dtseries_corr_fisher-z_bilateral.sh
+$ ./connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh
 ```
-Computing the partial correlations using Nilearn (importantly, the targets are defined by the MMP parcellation and not the task-defined vertices):
+Partial correlations are computed using Nilearn mirroring the workbench approach (except timeseries are averaged within macro-regions and targets):
 
-nilearn_partial_corr_cluster-task_by_mmp-parcel.py
+nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py
 
-We also have a script for full correlations using Nilearn as a sanity check
+### 5. Averaging the parcellated connectivity matrices across subjects:
 
-nilearn_full_corr_cluster-task_by_mmp-parcel.py
+Two scripts in the stats folder that by default run on fisher-z outputs:
+group_stats_full_corr.py
+group_stats_partial_corr.py
 
-### 5. Averaging the connectivity matrices across subjects in the case of the Workbench outputs
+### 6. Preparing the files to make visualizations in PyCortex
 
-First, we need to stack all individual outputs:
+In the visualization folder, two scripts handle the winner-take-all subject-wise and per run computation for full and partial correlation parcellated results.
+
+wta_full_corr_by_subject_by_hemi_per_run.py
+wta_partial_corr_by_subject_by_hemi_per_run.py
+
+For inspecting these results using wb_view, you can run the following bash scripts to produce the appropriate dlabel files:
 ```bash
-$ ./cifti_stack_and_stats.sh
+$ ./generate_full_corr_wta_dlabel_file.sh
+$ ./generate_partial_corr_wta_dlabel_file.sh
 ```
-Then, we can average across subjects using the median method:
-```bash
-$ ./cifti_compute_median.sh
-```
-### 6. Preparing the files to make visualizations in wb_view and eventually, PyCortex
+Some example visualizations are going to be released soon as a .scene file.
 
-We focus on two main plots: the winner-take-all flatmaps for full and partial correlation parcellated results, and the violin plots with averaged r values within the MMP1 clusters.
-
-Some examples are below, divided by the type of plot.
-
-Winner-take-all files for dense vertex-wise full correlation results - These files are generated from these two scripts that only use Workbench commands:
-```bash
-$ ./workbench_compute_wta_full_corr.sh
-$ ./workbench_compute_wta_fisher-z.sh
-```
-
-You can submit each job and then use the following script to remap the output to our color code convention:
-```bash
-$ ./generate_wta_dlabel_cmap.sh
-```
-
-Some example visualizations are saved in this wb_view scene file for now: retinomaps_group.scene
+Violin plots are instead created using these two scripts:
+violin_plots_workbench_full_corr_seeds_by_target.py
+violin_plots_nilearn_partial_corr_seeds_by_target.py

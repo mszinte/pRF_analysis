@@ -50,7 +50,7 @@ Output:
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python wta_partial_corr_by_subject_by_hemi_per_run.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python wta_partial_corr_by_subject_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ from settings_utils import load_settings
 # Parse and validate arguments
 # ============================================================
 USAGE = (
-    "Usage: python wta_partial_corr_by_subject_by_hemi_per_run.py "
+    "Usage: python wta_partial_corr_by_subject_by_hemi.py "
     "<main_dir> <project_dir> <group> <server>"
 )
 

@@ -8,7 +8,7 @@
 # so the CONSISTENCY_% row appended after GROUP does not interfere.
 #
 # Usage:
-#   $ ./generate_nilearn_wta_dlabel_file.sh
+#   $ ./generate_partial_corr_wta_dlabel_file.sh
 #####################################################
 
 echo "============================================"
