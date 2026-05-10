@@ -3,7 +3,7 @@
 # Generate label file with winner-take-all colors from TSV
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
 # Example use for main output of interest
-# $ ./generate_workbench_wta_dlabel_file.sh full_corr by_hemi default
+# $ ./generate_full_corr_wta_dlabel_file.sh full_corr by_hemi default
 
 # Note: we will remove fisher-z as now the wta function takes them as inputs by default
 #####################################################

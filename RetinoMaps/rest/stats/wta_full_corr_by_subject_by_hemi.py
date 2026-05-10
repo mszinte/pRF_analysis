@@ -4,22 +4,19 @@ Created on May 3, 2025
 wta_full_corr_by_subject_by_hemi.py
 -----------------------------------------------------------------------------------------
 Goal:
-    Compute winner-take-all (WTA) from per-subject per-ROI TSV files.
+    Compute winner-take-all (WTA) from per-subject full-correlation TSV files.
     Outputs one combined table per hemisphere × variant containing:
         - one row per subject   (winner seed label per parcel)
         - one GROUP row         (modal winner across subjects per parcel)
         - one CONSISTENCY row   (% of subjects matching the group winner)
 
-    Each input TSV has:
-        - 106 rows : parcels in atlas-key order
-                     rows  0–52  → right hemisphere (RH_PARCEL_ORDER, keys 1–163)
-                     rows 53–105 → left  hemisphere (LH_PARCEL_ORDER, keys 181–343)
-        - 1 column : fisher-z correlation of that seed/ROI with each parcel
+    Input TSVs are already parcellated; each file covers one seed × one hemi.
+    The atlas-key row order is remapped to canonical YAML parcel order on load.
 
 Pipeline per hemisphere × variant:
-    1. For each subject, resolve which TSV file to load (varies by variant).
-    2. Load one TSV per seed/ROI and slice the hemi-specific rows.
-    3. Stack into a (n_seeds × n_parcels_hemi) DataFrame.
+    1. For each subject, resolve which TSV files to load (varies by variant).
+    2. Load one TSV per seed, slice hemi rows, remap to canonical parcel order.
+    3. Stack into a (n_seeds × n_parcels) DataFrame.
     4. Apply compute_winners() → winning seed label per parcel.
     5. Collect across subjects → compute GROUP (mode) and CONSISTENCY rows.
     6. Save combined table.
@@ -31,10 +28,6 @@ Run variants:
                      · all other subjects      → concatenated-run TSV
     run-01       — run-01 TSV, all subjects
     run-02       — run-02 TSV, RUN02_EXCLUDED subjects skipped with WARNING
-
-Filename convention:
-    concat / concat_clean : sub-XX_task-rest_space-fsLR_den-91k_desc-fisher-z_...
-    run-01 / run-02       : sub-XX_task-rest_run-XX_space-fsLR_den-91k_desc-fisher-z_...
 -----------------------------------------------------------------------------------------
 Inputs (sys.argv):
     1: main project directory   (e.g. /scratch/mszinte/data)
@@ -49,11 +42,11 @@ Inputs (sys.argv):
 Output:
     Per hemisphere × variant, one CSV:
         winning_seeds_by_subject_full_corr_{hemi}_{variant}_{mode}.csv
-    Rows: subjects + GROUP + CONSISTENCY; columns: parcel names.
+    Rows: subjects + GROUP + CONSISTENCY_%; columns: parcel names (YAML order).
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python wta_full_corr_by_subject_by_hemi_per_run.py /scratch/mszinte/data RetinoMaps 327 b327 default
+    $ python wta_full_corr_by_subject_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327 default
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -67,7 +60,7 @@ import sys
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from scipy import stats as scipy_stats
 
 # ============================================================
@@ -87,7 +80,7 @@ MODE_SUFFIX: Dict[str, str] = {
 }
 
 USAGE = (
-    "Usage: python wta_full_corr_by_subject_by_hemi_per_run.py "
+    "Usage: python wta_full_corr_by_subject_by_hemi.py "
     "<main_dir> <project_dir> <group> <server> <mode>\n"
     f"  <mode> must be one of: {', '.join(MODE_SUFFIX)}"
 )
@@ -130,6 +123,22 @@ analysis_info     = settings[0]
 subjects          = analysis_info["subjects"]
 
 # ============================================================
+# ROIs — canonical order from YAML config
+# ============================================================
+clusters        = list(analysis_info["rois-drawn"])
+seed_to_parcels = analysis_info["rois-group-mmp"]   # {seed_name: [parcel_names]}
+clusters.reverse()                                   # mPCS first
+
+parcels: List[str] = []
+for cl in clusters:
+    parcels.extend(seed_to_parcels[cl])
+
+seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
+
+n_clusters = len(clusters)
+n_parcels  = len(parcels)
+
+# ============================================================
 # Paths
 # ============================================================
 main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
@@ -141,32 +150,29 @@ output_folder.mkdir(parents=True, exist_ok=True)
 #
 # Subjects excluded from run-02 (bad data / registration error).
 # For concat_clean these subjects fall back to their run-01 file instead.
+# run-02 skips excluded subjects with a WARNING (TSV data is unusable for them).
 # ============================================================
 RUN02_EXCLUDED: set = {"sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"}
 
-# Variant definitions ─────────────────────────────────────────────────────────
-# Each entry:  variant_tag → (run_tag_for_normal_subjects,
-#                             run_tag_for_RUN02_EXCLUDED_subjects,
-#                             skip_RUN02_EXCLUDED)
-#
-#   run_tag = None   → concatenated file (no run-XX in filename)
-#   run_tag = str    → per-run file  (run-XX inserted after task-rest in filename)
-#   skip_RUN02_EXCLUDED = True → those subjects are skipped with a WARNING
-#
-# variant        normal_tag  excluded_tag  skip_excluded
+# variant → (normal_tag, excluded_tag, skip_excluded)
+#   run_tag = None → concatenated file (no run-XX in filename)
+#   run_tag = str  → per-run file (run-XX inserted after task-rest)
+#   skip_excluded  → excluded subjects skipped with WARNING (run-02 only)
 VARIANTS: Dict[str, tuple] = {
-    "concat":       (None,     None,     False),  # concat file, all subjects
-    "concat_clean": (None,     "run-01", False),  # concat for good, run-01 for bad
-    "run-01":       ("run-01", "run-01", False),  # run-01 file, all subjects
-    "run-02":       ("run-02", None,     True),   # run-02 file, skip bad subjects
+    "concat":       (None,     None,     False),
+    "concat_clean": (None,     "run-01", False),
+    "run-01":       ("run-01", "run-01", False),
+    "run-02":       ("run-02", None,     True),
 }
 
 # ============================================================
-# Atlas parcel keys
-# RH keys: 1–163   → TSV rows  0–52
-# LH keys: 181–343 → TSV rows 53–105
+# Atlas parcel keys — define the row order inside the TSV files.
+#
+# Each TSV has 106 rows total:
+#   rows  0–52  → RH parcels sorted by atlas key (1–163)
+#   rows 53–105 → LH parcels sorted by atlas key (181–343)
 # ============================================================
-R_KEYS: Dict[str, int] = {
+_R_KEYS: Dict[str, int] = {
     "V1":1,    "MST":2,   "V2":4,    "V3":5,    "V4":6,
     "V8":7,    "FEF":10,  "PEF":11,  "55b":12,  "V3A":13,
     "V7":16,   "IPS1":17, "FFC":18,  "V3B":19,  "LO1":20,
@@ -180,49 +186,99 @@ R_KEYS: Dict[str, int] = {
     "LO3":159, "VMV2":160,"VVC":163,
 }
 
-L_KEYS: Dict[str, int] = {
+_L_KEYS: Dict[str, int] = {
     "V1":181,  "MST":182, "V2":184,  "V3":185,  "V4":186,
     "V8":187,  "FEF":190, "PEF":191, "55b":192, "V3A":193,
     "V7":196,  "IPS1":197,"FFC":198, "V3B":199, "LO1":200,
     "LO2":201, "PIT":202, "MT":203,  "7Pm":209, "24dv":221,
     "7AL":222, "SCEF":223,"6ma":224, "7Am":225, "7PL":226,
     "7PC":227, "LIPv":228,"VIP":229, "MIP":230, "6d":234,
-    "6mp":235, "6v":236,  "p32pr":240,"6r":258,  "IFJa":259,
+    "6mp":235, "6v":236,  "p32pr":240,"6r":258, "IFJa":259,
     "IFJp":260,"LIPd":275,"6a":276,  "i6-8":277,"AIP":297,
     "PH":318,  "IP2":324, "IP1":325, "IP0":326, "V6A":332,
     "VMV1":333,"VMV3":334,"V4t":336, "FST":337, "V3CD":338,
     "LO3":339, "VMV2":340,"VVC":343,
 }
 
-RH_PARCEL_ORDER: List[str] = [n for n, _ in sorted(R_KEYS.items(), key=lambda x: x[1])]
-LH_PARCEL_ORDER: List[str] = [n for n, _ in sorted(L_KEYS.items(), key=lambda x: x[1])]
-
 N_PARCELS_PER_HEMI = 53
 N_PARCELS_TOTAL    = 106
 
-assert len(RH_PARCEL_ORDER) == N_PARCELS_PER_HEMI
-assert len(LH_PARCEL_ORDER) == N_PARCELS_PER_HEMI
-assert RH_PARCEL_ORDER == LH_PARCEL_ORDER, (
-    "Parcel name order differs between hemispheres — check key tables."
+_RH_ATLAS_ORDER: List[str] = [
+    n for n, _ in sorted(_R_KEYS.items(), key=lambda x: x[1])
+]
+_LH_ATLAS_ORDER: List[str] = [
+    n for n, _ in sorted(_L_KEYS.items(), key=lambda x: x[1])
+]
+
+assert len(_RH_ATLAS_ORDER) == N_PARCELS_PER_HEMI
+assert len(_LH_ATLAS_ORDER) == N_PARCELS_PER_HEMI
+assert _RH_ATLAS_ORDER == _LH_ATLAS_ORDER, (
+    "Parcel name order differs between hemispheres — check atlas key dicts."
 )
 
-HEMI_ROW_SLICE: Dict[str, slice] = {
+_HEMI_ROW_SLICE: Dict[str, slice] = {
     "rh": slice(0, N_PARCELS_PER_HEMI),
     "lh": slice(N_PARCELS_PER_HEMI, N_PARCELS_TOTAL),
 }
-HEMI_PARCEL_ORDER: Dict[str, List[str]] = {
-    "rh": RH_PARCEL_ORDER,
-    "lh": LH_PARCEL_ORDER,
+_HEMI_ATLAS_ORDER: Dict[str, List[str]] = {
+    "rh": _RH_ATLAS_ORDER,
+    "lh": _LH_ATLAS_ORDER,
 }
 
 # ============================================================
-# ROI / cluster settings
+# Build remap index: atlas-key order → canonical YAML parcel order
+#
+# Computed once at startup; used in load_corr_matrix() for every subject.
+# Raises immediately if the atlas key tables and the YAML are inconsistent.
 # ============================================================
-clusters        = list(analysis_info["rois-drawn"])
-seed_to_parcels = analysis_info["rois-group-mmp"]   # {seed_name: [parcel_names]}
-clusters.reverse()                                   # mPCS first, same as original
+def _build_remap(
+    atlas_order: List[str],
+    canonical_order: List[str],
+    hemi: str,
+) -> Tuple[List[int], List[str]]:
+    """
+    Return (remap_idx, present) where:
+        remap_idx : indices into atlas_order that select and reorder values
+                    to match canonical_order
+        present   : the subset of canonical_order that exists in the TSV
+    """
+    atlas_set     = set(atlas_order)
+    canonical_set = set(canonical_order)
 
-seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
+    extra_in_tsv = atlas_set - canonical_set
+    if extra_in_tsv:
+        raise ValueError(
+            f"[{hemi.upper()}] Atlas key table contains parcels absent from YAML "
+            f"rois-group-mmp: {sorted(extra_in_tsv)}\n"
+            "  → Update the atlas key dicts or the YAML."
+        )
+
+    missing_in_tsv = canonical_set - atlas_set
+    if missing_in_tsv:
+        print(
+            f"  WARNING [{hemi.upper()}]: {len(missing_in_tsv)} YAML parcel(s) absent "
+            f"from atlas key table (will be NaN in output): {sorted(missing_in_tsv)}"
+        )
+
+    atlas_index = {name: i for i, name in enumerate(atlas_order)}
+    remap_idx: List[int] = []
+    present:   List[str] = []
+    for name in canonical_order:
+        if name in atlas_index:
+            remap_idx.append(atlas_index[name])
+            present.append(name)
+
+    return remap_idx, present
+
+
+_REMAP: Dict[str, Tuple[List[int], List[str]]] = {}
+for _hemi in ("rh", "lh"):
+    _remap_idx, _present = _build_remap(_HEMI_ATLAS_ORDER[_hemi], parcels, _hemi)
+    _REMAP[_hemi] = (_remap_idx, _present)
+    print(
+        f"  Remap [{_hemi.upper()}]: {len(_present)}/{n_parcels} canonical parcels "
+        "found in atlas key table."
+    )
 
 # ============================================================
 # Helpers
@@ -230,15 +286,14 @@ seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
 
 def tsv_path(subject: str, hemi: str, roi: str, run_tag: Optional[str]) -> Path:
     """
-    Return expected path for one subject / hemi / ROI TSV file.
+    Return expected path for one subject / hemi / seed TSV file.
 
-    run_tag = None  → concatenated file, no run entity in filename:
+    run_tag = None → concatenated file (no run entity):
         sub-XX_task-rest_space-fsLR_den-91k_desc-fisher-z_{hemi}_{roi}_parcellated{suffix}.tsv
-    run_tag = str   → per-run file, run entity inserted after task-rest:
+    run_tag = str  → per-run file (run entity after task-rest):
         sub-XX_task-rest_{run_tag}_space-fsLR_den-91k_desc-fisher-z_{hemi}_{roi}_parcellated{suffix}.tsv
     """
-    subj_dir = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
-
+    subj_dir   = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
     run_entity = f"_{run_tag}" if run_tag is not None else ""
     fname = (
         f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
@@ -254,52 +309,60 @@ def load_corr_matrix(
     run_tag: Optional[str],
 ) -> Optional[pd.DataFrame]:
     """
-    Load one TSV per seed/ROI for a given run_tag, slice the hemi-specific
-    rows (53 of 106), and stack into a DataFrame (n_seeds × n_parcels_hemi).
+    Load one TSV per seed, slice hemi rows, remap to canonical YAML parcel
+    order, and return a (n_seeds × n_parcels) DataFrame.
 
-    Returns None if any seed file is missing (all missing files are reported).
+    Returns None if any seed file is missing (all missing paths reported).
+    Raises ValueError on unexpected TSV shape.
     """
-    row_slice    = HEMI_ROW_SLICE[hemi]
-    parcel_order = HEMI_PARCEL_ORDER[hemi]
-    seed_series: Dict[str, pd.Series] = {}
-    missing: List[Path] = []
+    row_slice          = _HEMI_ROW_SLICE[hemi]
+    remap_idx, present = _REMAP[hemi]
+    present_col_idx    = [parcels.index(p) for p in present]
+
+    seed_rows: Dict[str, np.ndarray] = {}
+    missing:   List[Path]            = []
 
     for seed in clusters:
         fpath = tsv_path(subject, hemi, seed, run_tag)
+
         if not fpath.exists():
             missing.append(fpath)
             continue
 
         raw = pd.read_csv(fpath, header=None, sep="\t")
+
         if raw.shape != (N_PARCELS_TOTAL, 1):
             raise ValueError(
-                f"Unexpected shape {raw.shape} in {fpath.name} "
+                f"[{subject} {hemi}] Unexpected shape {raw.shape} in {fpath.name} "
                 f"(expected ({N_PARCELS_TOTAL}, 1))."
             )
 
-        seed_series[seed] = pd.Series(
-            raw.iloc[row_slice, 0].values,
-            index=parcel_order,
-            name=seed,
-            dtype=float,
-        )
+        hemi_values = raw.iloc[row_slice, 0].values.astype(float)
+
+        # Remap from atlas-key order to canonical YAML parcel order
+        row = np.full(n_parcels, np.nan, dtype=float)
+        row[present_col_idx] = hemi_values[remap_idx]
+        seed_rows[seed] = row
 
     if missing:
         for f in missing:
             print(f"  WARNING [{subject} {hemi}]: missing {f.name}")
         return None
 
-    df_corr = pd.DataFrame(seed_series).T
-    assert df_corr.shape == (len(clusters), N_PARCELS_PER_HEMI), (
-        f"Unexpected matrix shape {df_corr.shape} for {subject} {hemi}."
+    df = pd.DataFrame(seed_rows, index=parcels).T   # (n_seeds × n_parcels)
+    df.index.name   = None
+    df.columns.name = None
+
+    assert df.shape == (n_clusters, n_parcels), (
+        f"[{subject} {hemi}] Unexpected matrix shape {df.shape}."
     )
-    return df_corr
+    return df
 
 
 def compute_winners(df_corr: pd.DataFrame) -> np.ndarray:
     """
     Return a 1-D array of winning seed labels (1-based int) per parcel.
-    Self-seed parcels are masked to NaN before the argmax.
+    Self-seed parcels are masked to NaN before argmax.
     Parcels where all seeds are NaN receive NaN.
     """
     df = df_corr.copy()
@@ -312,7 +375,10 @@ def compute_winners(df_corr: pd.DataFrame) -> np.ndarray:
     winners = []
     for parcel in df.columns:
         col = df[parcel]
-        winners.append(np.nan if col.isna().all() else seed_to_number[col.idxmax()])
+        # col.isna().all() guard is essential — col.idxmax() raises on all-NaN
+        winners.append(
+            np.nan if col.isna().all() else seed_to_number[col.idxmax()]
+        )
 
     return np.array(winners)
 
@@ -365,8 +431,6 @@ for hemi in ("lh", "rh"):
     print(f"Processing hemisphere: {hemi.upper()}")
     print("=" * 80)
 
-    parcel_order = HEMI_PARCEL_ORDER[hemi]
-
     for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
         print(f"\n  --- Variant: {variant} ---")
 
@@ -376,12 +440,10 @@ for hemi in ("lh", "rh"):
         for subject in subjects:
             is_excluded = subject in RUN02_EXCLUDED
 
-            # Decide what to do with excluded subjects for this variant
             if is_excluded and skip_excluded:
                 print(f"    WARNING [{variant}]: {subject} is in RUN02_EXCLUDED — SKIPPED")
                 continue
 
-            # Resolve which run_tag to use for this subject
             run_tag = excluded_tag if is_excluded else normal_tag
 
             df_corr = load_corr_matrix(subject, hemi, run_tag)
@@ -389,7 +451,6 @@ for hemi in ("lh", "rh"):
                 print(f"    {subject}: SKIPPED (missing files)")
                 continue
 
-            # For concat_clean, note when a subject falls back to run-01
             if variant == "concat_clean" and is_excluded:
                 print(f"    {subject}: OK (fallback → run-01)")
             else:
@@ -402,12 +463,7 @@ for hemi in ("lh", "rh"):
             print(f"    ERROR: no valid subjects for {hemi} / {variant} — skipping.")
             continue
 
-        subject_df = pd.DataFrame(all_winners, index=subject_ids, columns=parcel_order)
-
-        missing_parcels = set(parcel_order) - set(subject_df.columns)
-        if missing_parcels:
-            print(f"    WARNING: parcels absent from winner table: {sorted(missing_parcels)}")
-
+        subject_df  = pd.DataFrame(all_winners, index=subject_ids, columns=parcels)
         combined_df = append_group_and_consistency(subject_df)
 
         out_csv = (
