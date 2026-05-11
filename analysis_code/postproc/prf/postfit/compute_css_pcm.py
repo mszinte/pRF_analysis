@@ -244,15 +244,15 @@ if subject != 'template_avg':
                     lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
                     vert_num = lh_vert_num + rh_vert_num
                     
-                    # Derivatives settings        
-                    vert_rsq_data = deriv_mat[rsq_idx2use, ...]
-                    vert_x_data = deriv_mat[prf_x_idx, ...]
-                    vert_y_data = deriv_mat[prf_y_idx, ...]
-                    vert_size_data = deriv_mat[prf_size_idx, ...]
-                    vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
+                    # # Derivatives settings        
+                    # vert_rsq_data = deriv_mat[rsq_idx2use, ...]
+                    # vert_x_data = deriv_mat[prf_x_idx, ...]
+                    # vert_y_data = deriv_mat[prf_y_idx, ...]
+                    # vert_size_data = deriv_mat[prf_size_idx, ...]
+                    # vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
                     
-                    # Create empty results
-                    vert_cm = np.zeros((4,vert_num))*np.nan
+                    # # Create empty results
+                    # vert_cm = np.zeros((4,vert_num))*np.nan
                     
                     for roi in rois:
                         # Find ROI vertex
