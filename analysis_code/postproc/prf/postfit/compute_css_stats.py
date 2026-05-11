@@ -134,7 +134,7 @@ if subject != 'template_avg':
                             prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
                                 prf_func_dir, prf_task_name, avg_method, extension))[0]
     
-                        
+                     
                     # load data  
                     print(f'Loading pred: {prf_pred_fn}') 
                     bold_img, bold_data = load_surface(prf_bold_fn)
@@ -153,7 +153,7 @@ if subject != 'template_avg':
                     prf_stats_img = make_surface_image(data=results, 
                                                        source_img=pred_img, 
                                                        maps_names=maps_names)
-                    
+
                     print('Saving: {}/{}'.format(prf_deriv_dir, prf_stats_fn))
                     nb.save(prf_stats_img, '{}/{}'.format(prf_deriv_dir, prf_stats_fn))
             
