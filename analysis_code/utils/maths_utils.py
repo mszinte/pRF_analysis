@@ -569,6 +569,66 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
         
     return df_distribution
 
+def gaussian_2d(x0, y0, sigma, screen_side, grain):
+    import numpy as np
+    
+    # create grid
+    coords = np.linspace(-screen_side/2, screen_side/2, grain)
+    x, y = np.meshgrid(coords, coords)
+    
+    # 2D Gaussian
+    z = np.exp(-((x - x0)**2 + (y - y0)**2) / (2 * sigma**2))
+    
+    return coords, coords, z
+    
+
+def make_gauss_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
+    import pandas as pd
+    import numpy as np
+
+    df_distribution = pd.DataFrame()
+    
+    for roi_num, roi in enumerate(rois):
+        df_roi = data.loc[data.roi == roi].reset_index()
+        
+        if df_roi.empty:
+            print(f"[WARNING] No data for ROI: {roi}")
+            continue
+
+        z_tot = np.zeros((grain, grain)) 
+
+        for vert in range(len(df_roi)):
+            x, y, z = gaussian_2d(
+                x0=df_roi.prf_x[vert],
+                y0=df_roi.prf_y[vert],
+                sigma=df_roi.prf_size[vert],
+                screen_side=max_ecc * 2,
+                grain=grain
+            )
+            
+            # weight by rsq
+            z_tot += z * df_roi[rsq2use][vert]
+            
+        # normalize safely
+        if z_tot.max() != z_tot.min():
+            z_tot = (z_tot - z_tot.min()) / (z_tot.max() - z_tot.min())
+
+        df_distribution_roi = pd.DataFrame({
+            'roi': [roi] * grain,
+            'x': x,
+            'y': y
+        })
+        
+        z_tot_df = pd.DataFrame(z_tot)
+        df_distribution_roi = pd.concat([df_distribution_roi, z_tot_df], axis=1)
+        
+        df_distribution = (
+            pd.concat([df_distribution, df_distribution_roi])
+            if not df_distribution.empty else df_distribution_roi
+        )
+        
+    return df_distribution
+
 def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_percent=0.01):
     """
     Compute the pRF hot zone barycentre

@@ -70,7 +70,7 @@ if input_type not in ('residuals', 'bold'):
     raise ValueError(f"input_type must be 'residuals' or 'bold', got '{input_type}'")
 
 memory_val = 30
-hour_proc  = 6
+hour_proc  = 8
 nb_procs   = 8
 
 # Load settings
