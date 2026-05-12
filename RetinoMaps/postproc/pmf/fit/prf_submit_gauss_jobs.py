@@ -58,7 +58,7 @@ group = sys.argv[4]
 server_project = sys.argv[5]
 
 memory_val = 30
-hour_proc = 6
+hour_proc = 8
 nb_procs = 8
 
 # Load settings

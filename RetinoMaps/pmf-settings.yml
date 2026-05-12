@@ -120,6 +120,34 @@ maps_names_corr:
   description: "Inter-run correlation maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
+maps_names_stats: 
+  description: "PRF gauss stats maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
+
+# Postfit settings
+ecc_th:
+  description: "Eccentricity range threshold for pRF post-fit analysis"
+  units: "dva"
+  value: [0.05, 20]
+
+size_th:
+  description: "Size range threshold for pRF post-fit analysis"
+  units: "dva"
+  value: [0.05, 20.0]
+
+rsqr_th:
+  description: "R-square minimum threshold for pRF post-fit analysis"
+  value: 0
+
+prf_amp_th: 
+  description: "pRF amplitude range threshold for pRF post-fit analysis"
+  value: [0, 6]
+
+stats_th: 
+  description: "p value minimum threshold for pRF post-fit analysis"
+  value: 0.05
+
+
 # Stats
 fdr_alpha: 
   description: "P value level list for FDR corrected statistics"
@@ -128,3 +156,37 @@ fdr_alpha:
 corr_stats_th: 
   description: "p value minimum threshold for inter-run correlation analysis"
   value: 0.05
+
+
+stats_th: 
+  description: "p value minimum threshold for pRF post-fit analysis"
+  value: 0.05
+
+  
+# ROIS
+rois_methods:
+  description: "Method use to define ROIS, defined for each format"
+  value: 
+    fsnative: ["rois-group-mmp"]
+    170k: ["rois-group-mmp"]
+  levels: ["rois-drawn", "rois-group-mmp"]
+  level-description: 
+    rois-drawn: "ROIs hand-drawn using Inskape as defined in rois-drawn (see below)"
+    rois-group-mmp: "ROIS based on grouped mmp glasser atlas parcelations as defined in rois_mmp_groups (see below)"
+
+
+rois-group-mmp: 
+  description: "List of Glasser MMP atlas parcelations grouped to form an ROI"
+  value: 
+    V1: ["V1"]
+    V2: ["V2"]
+    V3: ["V3", "V4"]
+    V3AB: ["V3A", "V3B", "V3CD"]
+    LO: ["LO1", "LO2", "LO3"] 
+    VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
+    hMT+: ["V4t", "MST", "MT", "FST"]
+    iIPS: ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7PL"]
+    sIPS: ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
+    iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
+    sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
+    mPCS: ["SCEF", "p32pr", "24dv"]

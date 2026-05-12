@@ -124,10 +124,10 @@ elif input_fn.endswith('.gii'):
         main_dir, project_dir, subject)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
-# Output filenmaes based on type
+# Output filenames based on type
 if input_type == 'residuals':
-    gauss_fit_fn  = base_fn.replace('pmf-gauss_resid', 'pmf-resid-gauss_fit')
-    gauss_pred_fn = base_fn.replace('pmf-gauss_resid', 'pmf-resid-gauss_pred')
+    gauss_fit_fn  = base_fn.replace('pmf-residuals', 'pmf-residuals-gauss_fit')
+    gauss_pred_fn = base_fn.replace('pmf-residuals', 'pmf-residuals-gauss_pred')
 
 elif input_type == 'bold':
     gauss_fit_fn  = base_fn.replace('bold', 'pmf2-gauss_fit')
