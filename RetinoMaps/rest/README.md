@@ -71,29 +71,35 @@ Full correlation are computed with connectome-workbench to obtain outputs as Pea
 $ ./connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh
 ```
 Partial correlations are computed using Nilearn mirroring the workbench approach (except timeseries are averaged within macro-regions and targets):
-
-nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py
+```bash
+$ python nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py
+```
 
 ### 5. Averaging the parcellated connectivity matrices across subjects:
 
 Two scripts in the stats folder that by default run on fisher-z outputs:
-group_stats_full_corr.py
-group_stats_partial_corr.py
+```bash
+$ python group_stats_full_corr.py
+$ python group_stats_partial_corr.py
+```
 
 ### 6. Preparing the files to make visualizations in PyCortex
 
 In the visualization folder, two scripts handle the winner-take-all subject-wise and per run computation for full and partial correlation parcellated results.
-
-wta_full_corr_by_subject_by_hemi_per_run.py
-wta_partial_corr_by_subject_by_hemi_per_run.py
+```bash
+$ python wta_full_corr_by_subject_by_hemi_per_run.py
+$ python wta_partial_corr_by_subject_by_hemi_per_run.py
+```
 
 For inspecting these results using wb_view, you can run the following bash scripts to produce the appropriate dlabel files:
 ```bash
 $ ./generate_full_corr_wta_dlabel_file.sh
 $ ./generate_partial_corr_wta_dlabel_file.sh
 ```
-Some example visualizations are going to be released soon as a .scene file.
+Some example visualizations are going to be released soon as a .scene file for workbench view.
 
 Violin plots are instead created using these two scripts:
-violin_plots_workbench_full_corr_seeds_by_target.py
-violin_plots_nilearn_partial_corr_seeds_by_target.py
+```bash
+$ python violin_plots_workbench_full_corr_seeds_by_target.py
+$ python violin_plots_nilearn_partial_corr_seeds_by_target.py
+```
