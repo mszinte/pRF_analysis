@@ -3,13 +3,13 @@
 """
 
 Goal of the script:
-Partial correlation violin plots split by hemisphere.
-Seeds are on the y-axis, one figure per TARGET cluster.
+Partial correlation violin plots split by hemisphere
+Seeds are on the y-axis, one figure per TARGET cluster
 This makes it easy to compare correlation strength across seeds
-for a given target (winner-take-all inspection).
+for a given target (winner-take-all inspection)
 
 The target's own row is muted (self-correlation), preserving
-the same logic as the seed-figure version.
+the same logic as the seed-figure version
 
 Produces figures for four data variants:
   - concat        : both runs concatenated, all subjects
@@ -401,7 +401,7 @@ def plot_target_figure(target, variant, res):
                        edgecolor="none", zorder=3)
 
     # legend deliberately omitted -- hemisphere distinction is LH (dark) / RH (light)
-    # within each violin body; a manual legend can be added externally if needed.
+    # within each violin body; a manual legend can be added externally if needed
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
     ax.set_xlabel("Partial Correlation", fontsize=18, fontweight="bold")
