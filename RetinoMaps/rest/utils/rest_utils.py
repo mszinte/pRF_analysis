@@ -5,7 +5,9 @@ rest_utils.py
 -----------------------------------------------------------------------------
 Shared utilities for the RetinoMaps resting-state pipeline
 
-Example import:
+Location: RetinoMaps/rest/utils/rest_utils.py
+
+Import from any script in rest/stats/ (run as `cd rest/stats/ && python script.py`):
 
     import os, sys
     base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -332,14 +334,132 @@ def compute_winners(
     return np.array(winners)
 
 
-def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
+def break_ties_wta(
+    vote_col: pd.Series,
+    parcel: str,
+    clusters: List[str],
+    seed_to_number: Dict[str, int],
+    group_median: Optional[np.ndarray],
+    parcel_index: Optional[int],
+) -> float:
+    """
+    Resolve a tied vote for one parcel using a three-level cascade:
+
+        1. Vote count   — if one seed has strictly more votes, return it.
+        2. Fisher-z     — among tied seeds, return the one with the highest
+                          group-median Fisher-z correlation with this parcel.
+        3. Seed number  — final fallback: return the lowest seed number
+                          (explicit, documented, deterministic).
+
+    Level 2 requires ``group_median`` (n_clusters × n_parcels array, rows in
+    ``clusters`` order) and ``parcel_index`` (column index of this parcel).
+    If either is None the cascade skips straight to level 3.
+
+    Parameters
+    ----------
+    vote_col      : Series of per-subject winner labels for one parcel
+                    (NaN already dropped by the caller).
+    parcel        : parcel name — used only for the WARNING log message.
+    clusters      : seed names in canonical order (row order of group_median).
+    seed_to_number: {seed_name: 1-based integer label}.
+    group_median  : (n_clusters × n_parcels) Fisher-z array, or None.
+    parcel_index  : column index of this parcel in group_median, or None.
+
+    Returns
+    -------
+    float
+        The winning seed label (1-based int, returned as float for Series
+        compatibility).
+
+    Notes
+    -----
+    Ties at the subject-level (inside compute_winners) are essentially
+    impossible with floating-point correlation data.  Ties arise only in the
+    GROUP MODE step when two or more seeds each won the same number of subjects.
+    With n=20 subjects a tie means at least two seeds each won ≥4 subjects —
+    not rare enough to ignore.
+    """
+    counts = vote_col.value_counts()
+    max_count = counts.max()
+    tied_labels = counts[counts == max_count].index.tolist()
+
+    # Level 1 — unique winner
+    if len(tied_labels) == 1:
+        return float(tied_labels[0])
+
+    # Level 2 — Fisher-z tiebreaker
+    if group_median is not None and parcel_index is not None:
+        number_to_seed = {v: k for k, v in seed_to_number.items()}
+        tied_seeds     = [number_to_seed[lbl] for lbl in tied_labels
+                          if lbl in number_to_seed]
+
+        best_seed    = None
+        best_fz      = -np.inf
+        still_tied   = []
+
+        for seed in tied_seeds:
+            if seed not in clusters:
+                continue
+            row_idx = clusters.index(seed)
+            fz_val  = group_median[row_idx, parcel_index]
+            if np.isnan(fz_val):
+                continue
+            if fz_val > best_fz:
+                best_fz    = fz_val
+                best_seed  = seed
+                still_tied = [seed]
+            elif fz_val == best_fz:
+                still_tied.append(seed)
+
+        if best_seed is not None and len(still_tied) == 1:
+            print(
+                f"  TIE-BREAK [{parcel}]: seeds {tied_seeds} tied on votes "
+                f"({max_count} each) → resolved by Fisher-z → {best_seed}"
+            )
+            return float(seed_to_number[best_seed])
+
+        # Fisher-z also tied (astronomically unlikely) — fall through
+        print(
+            f"  TIE-BREAK [{parcel}]: Fisher-z also tied among {still_tied} "
+            f"→ falling back to lowest seed number"
+        )
+
+    else:
+        # No group_median available — warn and fall through to level 3
+        print(
+            f"  TIE-BREAK [{parcel}]: {len(tied_labels)} seeds tied on votes "
+            f"({max_count} each), no group_median provided "
+            f"→ falling back to lowest seed number"
+        )
+
+    # Level 3 — lowest seed number (explicit, deterministic fallback)
+    return float(min(tied_labels))
+
+
+def append_group_and_consistency(
+    subject_df: pd.DataFrame,
+    clusters: Optional[List[str]] = None,
+    seed_to_number: Optional[Dict[str, int]] = None,
+    group_median: Optional[np.ndarray] = None,
+    parcels: Optional[List[str]] = None,
+) -> pd.DataFrame:
     """
     Append GROUP and CONSISTENCY_% rows to a per-subject winner table.
 
     Parameters
     ----------
-    subject_df : DataFrame with one row per subject, one column per parcel,
-                 values are 1-based winner seed integers (or NaN).
+    subject_df     : DataFrame, one row per subject, one column per parcel,
+                     values are 1-based winner seed integers (or NaN).
+    clusters       : seed names in canonical order — required when
+                     group_median is provided.
+    seed_to_number : {seed_name: 1-based int} — required when group_median
+                     is provided.
+    group_median   : (n_clusters × n_parcels) Fisher-z array used to break
+                     voting ties at the GROUP level.  Pass None (default) to
+                     fall back to lowest-seed-number tiebreaking.
+    parcels        : parcel names in canonical order — used to look up
+                     column indices in group_median.  If None, column position
+                     in subject_df is used directly.
 
     Returns
     -------
@@ -347,21 +467,38 @@ def append_group_and_consistency(subject_df: pd.DataFrame) -> pd.DataFrame:
 
     GROUP
         Modal winner per parcel across subjects (NaN ignored).
-        Ties broken by lowest seed number (scipy.stats.mode default).
+        Ties resolved by break_ties_wta() — see that function's docstring
+        for the three-level cascade (votes → Fisher-z → seed number).
 
     CONSISTENCY_%
         Percentage of subjects whose winner matches GROUP.
         NaN where GROUP is NaN.
     """
+    # Build parcel → group_median column index map once
+    parcel_col_idx: Optional[Dict[str, int]] = None
+    if group_median is not None and parcels is not None:
+        parcel_col_idx = {p: i for i, p in enumerate(parcels)}
+
     group_winners = []
     for parcel in subject_df.columns:
         col = subject_df[parcel].dropna()
         if col.empty:
             group_winners.append(np.nan)
-        else:
-            group_winners.append(
-                float(scipy_stats.mode(col, keepdims=True).mode[0])
+            continue
+
+        # Resolve parcel index in group_median (None if unavailable)
+        p_idx = parcel_col_idx.get(parcel) if parcel_col_idx is not None else None
+
+        group_winners.append(
+            break_ties_wta(
+                vote_col     = col,
+                parcel       = parcel,
+                clusters     = clusters or [],
+                seed_to_number = seed_to_number or {},
+                group_median = group_median,
+                parcel_index = p_idx,
             )
+        )
 
     group_series = pd.Series(
         group_winners, index=subject_df.columns, name="GROUP"
