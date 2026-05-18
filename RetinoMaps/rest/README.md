@@ -11,7 +11,7 @@ Please don't forget to activate your environment with conda activate pRF_env.
 
 The primary steps of the pipeline are:
 
-- 1. Selecting the clusters from the MMP1 atlas (Glasser et al. 2016) on the fsLR 32k mesh
+- 1. Selecting the macro-regions from the MMP1 atlas (Glasser et al. 2016) on the fsLR 32k mesh
 - 2. Downsampling the task-based results from the 170k to the 91k fsLR resolution
 - 3. Masking the conjunction maps from the vision, saccade and pursuit tasks using the MMP1 clusters
 - 4. Computing full and partial correlations using each masked task result intra-hemispherically
@@ -22,9 +22,9 @@ The primary steps of the pipeline are:
 
 Each step is described in more detail below.
 
-### 1. Selecting the clusters from the Glasser MMP1 atlas on the fsLR 32k mesh
+### 1. Selecting the macro-regions from the Glasser MMP1 atlas on the fsLR 32k mesh
 
-For this step, you’ll find the scripts within the mmp1_clusters folder.
+For this step, you’ll find the scripts within the atlas folder.
 
 ##### 1.1 Get a text file with all the label indices and RGB values
 ```bash
@@ -42,7 +42,7 @@ $ wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.ni
 ```bash
 $ ./get_mmp1_clusters_labels_text.sh
 ```
-#### 1.5 Merge labels for all the macro-regions and convert them to metric files (run the script below)
+#### 1.5 Merge labels for all the macro-regions and convert them to metric files
 ```bash
 $ ./get_mmp1_clusters_metric_files.sh
 ```
@@ -70,7 +70,7 @@ Full correlation are computed with connectome-workbench to obtain outputs as Pea
 ```bash
 $ ./connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh
 ```
-Partial correlations are computed using Nilearn mirroring the workbench approach (except timeseries are averaged within macro-regions and targets):
+Partial correlations are computed using Nilearn mirroring the workbench approach (except timeseries are averaged within macro-regions seeds and targets):
 ```bash
 $ python nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py
 ```

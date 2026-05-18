@@ -145,18 +145,20 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 
 # Resting-state postprocessing
 ---
-- [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/fmripost_aroma_sbatch.py)
-- [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/xcp-d_aroma_sbatch.py)
+- [x] Extract motion components with ICA-AROMA using fMRIPost-AROMA [fmripost_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/denoising/fmripost_aroma_sbatch.py)
+- [x] Post-process and denoise the data using XCP-D [xcp-d_aroma_sbatch.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/denoising/xcp-d_aroma_sbatch.py)
 
-# Resting-state analysis
+# Resting-state functional connectivity analysis
 ---
-- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity on the dense timeseries with connectome workbench: Pearson correlation ([compute_dtseries_corr_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/) and Fisher-z transformed Pearson correlation ([compute_dtseries_corr_fisher-z_bilateral.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/compute_dtseries_corr_fisher-z_bilateral.sh)
-- [ ] Compute seed-based partial correlation
-- [ ] Compute winner-take-all results
+- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity with connectome-workbench: full correlation [connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/)
+- [x] Compute seed-based partial correlation using Nilearn [nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/)
+- [x] Compute group-level stats using Fisher-z transformed correlation values excluding bad runs [group_stats_full_corr.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats) & [group_stats_partial_corr.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats)
+- [x] Compute winner-take-all results for full and partial correlation results [wta_full_corr_by_subject_by_hemi_per_run.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats) & [wta_partial_corr_by_subject_by_hemi_per_run.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats)
 
-# Resting-state results visualization
+# Resting-state results visualizations
 ---
-TO DO
+- [x] Generate dlabel files that can be displayed in wb_view [generate_full_corr_wta_dlabel_file.s] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations) & [generate_partial_corr_wta_dlabel_file.sh] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations)
+- [x] Make violin plots of averaged full and partial correlations per macro-region split by hemisphere [violin_plots_workbench_full_corr_seeds_by_target.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations) & [violin_plots_nilearn_partial_corr_seeds_by_target.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations)
 
 # WEBGL
 ---
