@@ -141,7 +141,7 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 
 # Resting-state preprocessing
 ---
-- [x] Preprocess the resting-state data and output it in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
+- [x] Preprocess the resting-state data and output timeseries in the fsLR-91k resolution [fmriprep_sbatch_ica-aroma.py](https://github.com/mszinte/pRF_analysis/blob/main/analysis_code/preproc/functional/fmriprep_sbatch_ica-aroma.py)
 
 # Resting-state postprocessing
 ---
