@@ -149,3 +149,4 @@ done
 
 # Permissions
 chmod -Rf 771 "$OUTDIR"
+chgrp -Rf 327 "$OUTDIR"

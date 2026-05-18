@@ -37,4 +37,4 @@ done
 
 # Change permissions
 chmod -Rf 771 *
-chgrp -Rf 771 *
+chgrp -Rf 327 *

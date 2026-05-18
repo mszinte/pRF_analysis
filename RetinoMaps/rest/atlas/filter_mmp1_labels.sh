@@ -5,7 +5,7 @@
 #####################################################
 
 # Define the file containing the label table
-label_file="Glasser_labels.txt"
+label_file="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/mmp1_labels.txt"
 
 # Specify the labels you want to filter (without L_ or R_)
 labels_to_keep=("SCEF" "24dv" "p32pr" "FEF" "i6-8" "6a" "6d" "6mp" "6ma" "PEF" "IFJp" 
@@ -14,7 +14,7 @@ labels_to_keep=("SCEF" "24dv" "p32pr" "FEF" "i6-8" "6a" "6d" "6mp" "6ma" "PEF" "
 "VMV3" "VVC" "LO1" "LO2" "LO3" "V3A" "V3B" "V3CD" "V3" "V4" "V2" "V1")
 
 # Redirect the filtered output to Glasser_filtered_labels.txt
-output_file="Glasser_filtered_labels.txt"
+output_file="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/mmp1_filtered_labels.txt"
 > "$output_file"  # Clear the output file before appending new lines
 
 # Read the file line by line, and process pairs of label and RGB line
@@ -33,4 +33,4 @@ echo "Filtered labels and RGB values have been written to $output_file"
 
 # Change permissions
 chmod -Rf 771 *
-chgrp -Rf 771 *
+chgrp -Rf 327 *

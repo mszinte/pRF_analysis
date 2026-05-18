@@ -18,7 +18,7 @@ The primary steps of the pipeline are:
 - 5. Averaging the 12 seed x 53 targets connectivity matrices across subjects
 - 6. Preparing the files to make nice visualizations in wb_view and PyCortex:
 	- Winner-take-all flat maps by subject and at the group-level
-	- Violin plots of macro-regions's averaged fisher-z values (reconverted to pearson r) by hemisphere (stacked)
+	- Violin plots of macro-regions's averaged r values by hemisphere (stacked)
 
 Each step is described in more detail below.
 
@@ -28,27 +28,27 @@ For this step, you’ll find the scripts within the atlas folder.
 
 ##### 1.1 Get a text file with all the label indices and RGB values
 ```bash
-$ wb_command -cifti-label-export-table atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii INDEXMAX Glasser_labels.txt
+$ wb_command -cifti-label-export-table /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii INDEXMAX /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/mmp1_labels.txt
 ```
-#### 1.2 Run this bash script to match all labels you are interested in and export a txt file
+#### 1.2 Go to the atlas folder and run this bash script to match all labels you are interested in and export a txt file
 ```bash
 $ ./filter_labels.sh
 ```
 #### 1.3 Filter for the labels we are interested in
 ```bash
-$ wb_command -cifti-label-import atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii Glasser_filtered_labels.txt atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii -discard-others;
+$ wb_command -cifti-label-import /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/Glasser_filtered_labels.txt /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii -discard-others;
 ```
 #### 1.4 Match the filtered labels to each macro-region to generate label txt files
 ```bash
-$ ./get_mmp1_clusters_labels_text.sh
+$ ./get_mmp1_macro-regions_labels_text.sh
 ```
 #### 1.5 Merge labels for all the macro-regions and convert them to metric files
 ```bash
-$ ./get_mmp1_clusters_metric_files.sh
+$ ./get_mmp1_macro-regions_metric_files.sh
 ```
 #### 1.6 Run this to get the hollow seed files for visualization and stats
 ```bash
-$ ./leave_one_out_mmp1_clusters.sh
+$ ./leave_one_out_mmp1_macro-regions.sh
 ```
 ### 2. Downsampling the tasks results from the 170k to the 91k resolution of the fsLR template
 

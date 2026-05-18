@@ -22,6 +22,15 @@ Import from any script in rest/stats/ (run as `cd rest/stats/ && python script.p
         load_full_corr_matrix,
         compute_winners,
         append_group_and_consistency,
+        # plotting
+        MACRO_COLORS,
+        SHADE_FACTORS,
+        SEED_COLOR,
+        MEDIAN_COLORS,
+        MEDIAN_HALF_LEN,
+        derive_hemi_color,
+        load_tsv_hemi,
+        load_npy_hemi,
     )
 
 Design principles
@@ -42,6 +51,7 @@ Written by Marco Bedini (marco.bedini@univ-amu.fr)
 
 import numpy as np
 import pandas as pd
+import matplotlib.colors as mcolors
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from scipy import stats as scipy_stats
@@ -291,6 +301,126 @@ def load_full_corr_matrix(
 
 
 # ============================================================
+# Violin-plot I/O helpers
+# ============================================================
+
+def load_tsv_hemi(filepath: str, hemi: str) -> Optional[np.ndarray]:
+    """Load a 106-row full-correlation TSV and return the 53 values for *hemi*.
+
+    Rows 0–52 are RH parcels; rows 53–105 are LH parcels, matching the
+    workbench parcellation convention in HEMI_ROW_SLICE.
+
+    Parameters
+    ----------
+    filepath : path to the TSV file
+    hemi     : "lh" or "rh"
+
+    Returns
+    -------
+    np.ndarray of shape (53,) on success, or None with a printed WARNING on
+    file-not-found, read failure, or unexpected shape.
+    """
+    import os
+    if not os.path.isfile(filepath):
+        print(f"  WARNING: missing — {filepath}")
+        return None
+    try:
+        values = (
+            pd.read_csv(filepath, header=None, sep="\t")
+            .squeeze()
+            .to_numpy(dtype=float)
+        )
+    except Exception as e:
+        print(f"  WARNING: could not read {filepath} — {e}")
+        return None
+
+    if values.ndim != 1 or len(values) != N_PARCELS_TOTAL:
+        print(
+            f"  WARNING: unexpected shape {values.shape} in {filepath} — skipping"
+        )
+        return None
+
+    return values[HEMI_ROW_SLICE[hemi]]
+
+
+def load_npy_hemi(filepath: str) -> Optional[np.ndarray]:
+    """Load a partial-correlation .npy matrix, returning None on any problem.
+
+    Parameters
+    ----------
+    filepath : path to the .npy file
+
+    Returns
+    -------
+    2-D np.ndarray on success, or None with a printed WARNING on
+    file-not-found, load failure, or non-2D shape.
+    """
+    import os
+    if not os.path.isfile(filepath):
+        print(f"  WARNING: missing — {filepath}")
+        return None
+    try:
+        arr = np.load(filepath)
+    except Exception as e:
+        print(f"  WARNING: could not load {filepath} — {e}")
+        return None
+    if arr.ndim != 2:
+        print(
+            f"  WARNING: expected 2D array, got shape {arr.shape} "
+            f"in {filepath} — skipping"
+        )
+        return None
+    return arr
+
+
+# ============================================================
+# Violin-plot visual constants
+# ============================================================
+
+# Cluster colours used in all violin and heatmap figures.
+# Keys must match the cluster names in settings.yml rois-drawn.
+MACRO_COLORS: Dict[str, str] = {
+    "mPCS": "#FF6F00",
+    "sPCS": "#FFEA00",
+    "iPCS": "#97FF00",
+    "sIPS": "#2CFF96",
+    "iIPS": "#0098FF",
+}
+
+# Hemisphere shading: LH darkened (factor < 1), RH lightened (factor > 1)
+SHADE_FACTORS: Dict[str, float] = {"LH": 0.75, "RH": 1.25}
+
+# Background colour for the self-seed (target) row in violin plots
+SEED_COLOR: str = "#F5F5F5"
+
+# Median line colours per hemisphere (dark for LH, muted for RH)
+MEDIAN_COLORS: Dict[str, str] = {"lh": "#222222", "rh": "#888888"}
+
+# Half-length of the median tick in data units
+MEDIAN_HALF_LEN: float = 0.08
+
+
+def derive_hemi_color(base_hex: str, hemi: str) -> np.ndarray:
+    """Return an RGB array for *hemi* derived from *base_hex*.
+
+    Applies SHADE_FACTORS: LH is darkened (factor 0.75), RH is lightened
+    (factor 1.25).  Output is clipped to [0, 1].
+
+    Parameters
+    ----------
+    base_hex : hex colour string, e.g. "#FF6F00"
+    hemi     : "LH" or "RH"
+
+    Returns
+    -------
+    np.ndarray of shape (3,) with RGB values in [0, 1]
+    """
+    factor = SHADE_FACTORS[hemi]
+    rgb    = np.array(mcolors.to_rgb(base_hex))
+    return np.clip(rgb * factor, 0, 1)
+
+
+# ============================================================
 # Winner-take-all
 # ============================================================
 
@@ -491,12 +621,12 @@ def append_group_and_consistency(
 
         group_winners.append(
             break_ties_wta(
-                vote_col     = col,
-                parcel       = parcel,
-                clusters     = clusters or [],
+                vote_col       = col,
+                parcel         = parcel,
+                clusters       = clusters or [],
                 seed_to_number = seed_to_number or {},
-                group_median = group_median,
-                parcel_index = p_idx,
+                group_median   = group_median,
+                parcel_index   = p_idx,
             )
         )
 
