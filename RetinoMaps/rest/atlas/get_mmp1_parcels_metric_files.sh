@@ -8,7 +8,7 @@
 ATLAS_FILE="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii"
 
 # Output directory
-OUTDIR="ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/parcels"
+OUTDIR="ATLAS=/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/parcels"
 mkdir -p "$OUTDIR"
 
 # List of ROI names with corresponding numeric label IDs

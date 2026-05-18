@@ -5,6 +5,7 @@
 #####################################################
 
 # Define base paths
+ATLAS_DIR=ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 LABELS_DIR="label_files"
 CLUSTERS_DIR="clusters"
 
