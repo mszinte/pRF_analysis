@@ -97,4 +97,4 @@ done
 echo "✅ All label, metric, ROI, and binary mask files created!"
 # Change permissions
 chmod -Rf 771 *
-chgrp -Rf 771 *
+chgrp -Rf 327 *

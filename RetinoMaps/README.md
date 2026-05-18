@@ -150,15 +150,15 @@ Analysis are run on the template of the HCP cifti format (**170k**) in which ind
 
 # Resting-state functional connectivity analysis
 ---
-- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity with connectome-workbench: full correlation [connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/)
-- [x] Compute seed-based partial correlation using Nilearn [nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/)
-- [x] Compute group-level stats using Fisher-z transformed correlation values excluding bad runs [group_stats_full_corr.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats) & [group_stats_partial_corr.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats)
-- [x] Compute winner-take-all results for full and partial correlation results [wta_full_corr_by_subject_by_hemi_per_run.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats) & [wta_partial_corr_by_subject_by_hemi_per_run.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats)
+- [x] Compute seed-based (from the tasks' conjunction results) functional connectivity with connectome-workbench: dense and parcellated full correlation [connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh)
+- [x] Compute seed-based partial correlation using Nilearn [nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/correlations/nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py)
+- [x] Compute group-level stats using Fisher-z transformed correlation values excluding bad runs [group_stats_full_corr.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats/group_stats_full_corr.py) & [group_stats_partial_corr.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats/group_stats_partial_corr.py)
+- [x] Compute winner-take-all results for full and partial correlation results [wta_full_corr_by_subject_by_hemi_per_run.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats/wta_full_corr_by_subject_by_hemi_per_run.py) & [wta_partial_corr_by_subject_by_hemi_per_run.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/stats/wta_partial_corr_by_subject_by_hemi_per_run.py)
 
 # Resting-state results visualizations
 ---
-- [x] Generate dlabel files that can be displayed in wb_view [generate_full_corr_wta_dlabel_file.s] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations) & [generate_partial_corr_wta_dlabel_file.sh] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations)
-- [x] Make violin plots of averaged full and partial correlations per macro-region split by hemisphere [violin_plots_workbench_full_corr_seeds_by_target.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations) & [violin_plots_nilearn_partial_corr_seeds_by_target.py] (https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations)
+- [x] Generate dlabel files that can be displayed in wb_view [generate_full_corr_wta_dlabel_file.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations/generate_full_corr_wta_dlabel_file.sh) & [generate_partial_corr_wta_dlabel_file.sh](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations/generate_partial_corr_wta_dlabel_file.sh)
+- [x] Make violin plots of averaged full and partial correlations per macro-region split by hemisphere [violin_plots_workbench_full_corr_seeds_by_target.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations/violin_plots_workbench_full_corr_seeds_by_target.py) & [violin_plots_nilearn_partial_corr_seeds_by_target.py](https://github.com/mszinte/pRF_analysis/blob/main/RetinoMaps/rest/visualizations/violin_plots_nilearn_partial_corr_seeds_by_target.py)
 
 # WEBGL
 ---
