@@ -5,21 +5,21 @@
 #####################################################
 
 # Define base paths
-ATLAS_DIR=ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
-LABELS_DIR="label_files"
-CLUSTERS_DIR="clusters"
+ATLAS_DIR="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1"
+LABELS_DIR="$ATLAS_DIR/label_files"
+CLUSTERS_DIR="$ATLAS_DIR/macro-regions"
 
 # Input file
-ATLAS_FILE="atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii"
+ATLAS_FILE="$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii"
 
 # Output dir
-LEAVEOUT_DIR="leaveout"
+LEAVEOUT_DIR="$ATLAS_DIR/leaveout"
 
 # Define the clusters and hemisphere suffix
 CLUSTERS=(mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1)
 HEMISPHERES=(lh rh)
 
-# 1a. Generate "leave-one-out" cluster label per hemisphere
+# 1a. Generate "leave-one-out" macro-region label per hemisphere
 mkdir -p "$LEAVEOUT_DIR"
 for hemi in "${HEMISPHERES[@]}"; do
   for leave_out in "${CLUSTERS[@]}"; do

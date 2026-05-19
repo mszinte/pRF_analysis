@@ -5,13 +5,14 @@
 #####################################################
 
 # Input file
-input_file="Glasser_filtered_labels.txt"
+input_file="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/mmp1_filtered_labels.txt"
 
 # Output dir
-mkdir label_files
+out_dir="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/label_files"
+mkdir -p $out_dir
 
 # Declare associative array of macro-regions
-declare -A macro-regions=(
+declare -A macro_regions=(
   ["mPCS"]="SCEF 24dv p32pr"
   ["sPCS"]="FEF i6-8 6a 6d 6mp 6ma"
   ["iPCS"]="PEF IFJp 6v 6r IFJa 55b"
@@ -23,8 +24,7 @@ declare -A macro-regions=(
   ["V3AB"]="V3A V3B V3CD"
   ["V3"]="V3 V4"
   ["V2"]="V2"
-  ["V1"]="V1"
-)
+  ["V1"]="V1")
 
 # Read the input file line-by-line
 while read -r label && read -r values; do
@@ -36,11 +36,11 @@ while read -r label && read -r values; do
     [[ $hemi == "L" ]] && prefix="lh"
 
     # Check which cluster this ROI belongs to
-    for cluster in "${!macro-regions[@]}"; do
-      for roi_match in ${macro-regions[$cluster]}; do
+    for cluster in "${!macro_regions[@]}"; do
+      for roi_match in ${macro_regions[$cluster]}; do
         if [[ "$roi" == "$roi_match" ]]; then
           # Append to appropriate output file
-          output_file="label_files/${prefix}_${cluster}_labels.txt"
+          output_file="$out_dir/${prefix}_${cluster}_labels.txt"
           echo "$label" >> "$output_file"
           echo "$values" >> "$output_file"
         fi
