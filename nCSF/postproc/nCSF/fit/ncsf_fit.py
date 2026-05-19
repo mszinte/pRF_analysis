@@ -53,16 +53,15 @@ from prfpy_csenf.fit import CSenFFitter
 from prfpy_csenf.model import CSenFModel
 from prfpy_csenf.stimulus import CSenFStimulus
 # from prfpy_csenf.rf import * 
-# from prfpy_csenf.csenf_plot_functions import *
+from prfpy_csenf.csenf_plot_functions import ncsf_calculate_sfmax, ncsf_calculate_aulcsf
 
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
+from maths_utils import r2_score_surf
 from settings_utils import load_settings
 from pycortex_utils import set_pycortex_config_file, get_rois
 from surface_utils import load_surface, make_surface_image
 
-
-# Get inputs cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
 start_time = datetime.datetime.now()
 
 # Inputs
@@ -76,7 +75,6 @@ n_jobs = int(sys.argv[5])
 n_batches = n_jobs
 verbose = True
 
-
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
@@ -85,59 +83,38 @@ set_pycortex_config_file(cortex_dir)
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+nCSF_settings_path = os.path.join(base_dir, project_dir, "nCSF-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path, nCSF_settings_path])
+settings = load_settings([settings_path, nCSF_settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
+nCSF_session = analysis_info['nCSF_session']
+rois_methods = analysis_info['rois_methods']
+ncsf_grid_nr = analysis_info['ncsf_grid_nr']
+nCSF_task_name = analysis_info['nCSF_task_name']
+run_ncsf_fit_on_rois = analysis_info['run_ncsf_fit_on_rois']
+rsq_threshold = analysis_info['ncsf_iterative_rsq_threshold']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 
-
-nCSF_ses = 'ses-01'
-nCSF_task_name = 'nCSF'
-rois_method_format = 'rois-group-mmp'
-if rois_method_format == 'rois-drawn':
-    rois = analysis_info[rois_method_format]
-elif rois_method_format == 'rois-group-mmp':
-    rois = list(analysis_info[rois_method_format].keys())
-
-
-ncsf_grid_nr = 5
-rsq_threshold = 0.1 
-ncsf_params_num = 10
-
-ncsf_maps_names = ['width_r', 'SFp', 'CSp', 'width_l', 'crf_exp', 'amp_1', 
-                   'bold_baseline', 'hrf_1', 'hrf_2', 'r_squared']
-
-n_jobs = 32
-
-sf_minFreq = 0.05
-sf_maxFreq = 16
-sf_filtNum = 6 
-
-minCont = 0.25
-maxCont = 80
-contNum = 12
+sf_minFreq = analysis_info['sf_minFreq']
+sf_maxFreq = analysis_info['sf_maxFreq']
+sf_filtNum = analysis_info['sf_filtNum']
+minCont = analysis_info['minCont']
+maxCont = analysis_info['maxCont']
+contNum = analysis_info['contNum']
 
 sf_filtCenters = np.concatenate([np.round(np.logspace(np.log10(0.05), np.log10(16), sf_filtNum), 2), [0]])
 contValues = np.concatenate([np.logspace(np.log10(minCont), np.log10(maxCont), contNum), [0]])
 
-
-if input_fn.endswith('.nii'):
-   format_ = '170k'
-   pycortex_subject =  pycortex_subject_template
-   hemi = None
-
-    
-elif input_fn.endswith('.gii'):
-   format_ = 'fsnative'
-   pycortex_subject =  subject
-   match = re.search(r'hemi-[LR]', input_fn)
-   hemi = match.group()
+ncsf_maps_names = analysis_info['ncsf_maps_names']
+for idx, col_name in enumerate(ncsf_maps_names):
+    exec("{}_idx = idx".format(col_name))
 
 # Create Stimulus object
 # Load events to have stim sequence
-events_dir = '{}/{}/{}/{}/func'.format(main_dir, project_dir, subject, nCSF_ses)
-events_fn = '{}/{}_{}_task-{}_dir-PA_run-01_events.tsv'.format(events_dir, subject, nCSF_ses, nCSF_task_name)
+events_dir = '{}/{}/{}/{}/func'.format(main_dir, project_dir, subject, nCSF_session)
+events_fn = '{}/{}_{}_task-{}_dir-PA_run-01_events.tsv'.format(events_dir, subject, nCSF_session, nCSF_task_name)
 events_df = pd.read_table(events_fn, sep="\t")
 
 # Create mapping betwen SF, MC numbers and real values
@@ -157,29 +134,48 @@ csenf_stim = CSenFStimulus(
     discrete_levels=True, # To Check !!!!!! 
     )
 
-
 # load data
 img, raw_data = load_surface(fn=input_fn)
 
-# Extract data from rois 
-roi_verts_dict = get_rois(pycortex_subject, 
-                          surf_format=format_, 
-                          rois_type=rois_method_format,
-                          mask=False, 
-                          rois=rois, 
-                          hemis=hemi)
+# Extract data from rois if partial fitting
+if run_ncsf_fit_on_rois : 
+    if input_fn.endswith('.nii'):
+       format_ = '170k'
+       pycortex_subject =  pycortex_subject_template
+       hemi = None
+    
+        
+    elif input_fn.endswith('.gii'):
+       format_ = 'fsnative'
+       pycortex_subject =  subject
+       match = re.search(r'hemi-[LR]', input_fn)
+       hemi = match.group()
+    
+    rois_method_format = rois_methods[format_][0]
+    if rois_method_format == 'rois-drawn':
+        rois = analysis_info[rois_method_format]
+    elif rois_method_format == 'rois-group-mmp':
+        rois = list(analysis_info[rois_method_format].keys())
+   
+    print('Running fit only on: {}'.format(rois))
+    roi_verts_dict = get_rois(pycortex_subject, 
+                              surf_format=format_, 
+                              rois_type=rois_method_format,
+                              mask=False, 
+                              rois=rois, 
+                              hemis=hemi)
+    
+    valid_vertices = ~np.isnan(raw_data).any(axis=0)
+    roi_vertices_idx = np.unique(np.concatenate(list(roi_verts_dict.values())))
+    valid_vertices_idx = roi_vertices_idx[valid_vertices[roi_vertices_idx]]
+    data = raw_data[:,valid_vertices_idx]
 
+else:
+    len_data = raw_data.shape[1]
+    valid_mask = ~np.isnan(raw_data).any(axis=0)
+    valid_vertices_idx = np.where(valid_mask)[0]
+    data = raw_data[:, valid_mask]
 
-
-
-# exlude nan voxel from the analysis 
-# valid_vertices = ~np.isnan(raw_data).any(axis=0)
-# valid_vertices_idx = np.where(valid_vertices)[0]
-
-valid_vertices = ~np.isnan(raw_data).any(axis=0)
-roi_vertices_idx = np.unique(np.concatenate(list(roi_verts_dict.values())))
-valid_vertices_idx = roi_vertices_idx[valid_vertices[roi_vertices_idx]]
-data = raw_data[:,valid_vertices]
 
 # Dermine nCSF model
 csenf_model = CSenFModel(stimulus=csenf_stim, 
@@ -193,41 +189,37 @@ csenf_fitter = CSenFFitter(data=data.T,
 # nCSF bounds
 ncsf_bounds = {
     'width_r' : [0,1.5],          
-    'SFp' : [0, 20],
+    'SFp' : [0, 16],
     'CSp' : [0, 200] ,
     'width_l' : [0.68, 0.68],
     'crf_exp' : [0, 10],
-    'amp_1' : [0, 1000],
+    'amp_1' : [0, 6],
     'bold_baseline' : [-1,1] ,
     'hrf_1' : [1, 1],
     'hrf_2' : [0,0],
 }
-
 
 width_r_grid = np.linspace(ncsf_bounds['width_r'][0], ncsf_bounds['width_r'][1], ncsf_grid_nr)     
 SFp_grid = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], ncsf_grid_nr)     
 CSp_grid = np.linspace(ncsf_bounds['CSp'][0], ncsf_bounds['CSp'][1], ncsf_grid_nr)
 width_l_grid = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)     
 crf_exp_grid = np.linspace(ncsf_bounds['crf_exp'][0], ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
-# hrf_1_grid = None
-# hrf_2_grid = None
 hrf_1_grid = np.zeros(len(width_r_grid))
 hrf_2_grid = np.zeros(len(width_r_grid))
 
 grid_bounds = [ncsf_bounds['amp_1']]
 fixed_grid_baseline=False
 
-
 bounds_list = [
-    (ncsf_bounds['width_r']),     # width_r
-    (ncsf_bounds['SFp']),     # SFp
-    (ncsf_bounds['CSp']),    # CSp
-    (ncsf_bounds['width_l']),     # width_l
-    (ncsf_bounds['crf_exp']),     # crf_exp
-    (ncsf_bounds['amp_1']),   # amp_1
-    (ncsf_bounds['bold_baseline']),      # baseline
-    (ncsf_bounds['hrf_1']),      # baseline
-    (ncsf_bounds['hrf_2']),      # baseline
+    (ncsf_bounds['width_r']),
+    (ncsf_bounds['SFp']),
+    (ncsf_bounds['CSp']),
+    (ncsf_bounds['width_l']),
+    (ncsf_bounds['crf_exp']),
+    (ncsf_bounds['amp_1']),
+    (ncsf_bounds['bold_baseline']),
+    (ncsf_bounds['hrf_1']),
+    (ncsf_bounds['hrf_2']),
 ]
 
 # Grid fit
@@ -238,7 +230,7 @@ csenf_fitter.grid_fit(width_r_grid=width_r_grid,
                       crf_exp_grid=crf_exp_grid, 
                       hrf_1_grid=hrf_1_grid, 
                       hrf_2_grid=hrf_2_grid, 
-                      verbose=True,
+                      verbose=verbose,
                       fixed_grid_baseline=fixed_grid_baseline, 
                       grid_bounds=grid_bounds, 
                       n_batches=n_jobs)
@@ -246,37 +238,71 @@ csenf_fitter.grid_fit(width_r_grid=width_r_grid,
 # Iterative fit
 csenf_fitter.iterative_fit(
     rsq_threshold = rsq_threshold,
-    verbose = False,
+    verbose = verbose,
     bounds = bounds_list,
     # constraints = csf_constraints,
     # xtol=xtol,   
     # ftol=ftol,           
     )
 
-
 ncsf_fit = csenf_fitter.iterative_search_params
 
+# compute AUC and normalise auc and add them to ncsf_fit
+auc = ncsf_calculate_aulcsf(width_r=ncsf_fit[:, width_r_idx], 
+                            SFp=ncsf_fit[:, SFp_idx], 
+                            CSp=ncsf_fit[:, CSp_idx], 
+                            width_l=ncsf_fit[:, width_l_idx], 
+                            normalize_AUC=False, 
+                            SF_levels=sf_filtCenters[:-1]) 
 
-# rearange result of Gauss model 
+normalise_auc = ncsf_calculate_aulcsf(width_r=ncsf_fit[:, width_r_idx], 
+                                      SFp=ncsf_fit[:, SFp_idx], 
+                                      CSp=ncsf_fit[:, CSp_idx], 
+                                      width_l=ncsf_fit[:, width_l_idx], 
+                                      normalize_AUC=True, 
+                                      SF_levels=sf_filtCenters[:-1]) 
+
+SFmax = ncsf_calculate_sfmax(width_r=ncsf_fit[:, width_r_idx], 
+                             SFp=ncsf_fit[:, SFp_idx], 
+                             CSp=ncsf_fit[:, CSp_idx], 
+                             max_sfmax=50)
+
+ncsf_fit_extend = np.hstack([ncsf_fit, auc.reshape(-1,1), 
+                             normalise_auc.reshape(-1,1), 
+                             SFmax.reshape(-1,1)])
+
+# rearange result of nCSF model 
 #gauss_fit = gauss_fitter.gridsearch_params
-ncsf_fit_mat = np.zeros((raw_data.shape[1], ncsf_params_num))
+ncsf_fit_mat = np.zeros((raw_data.shape[1], ncsf_fit_extend.shape[1]))
 ncsf_pred_mat = np.zeros_like(raw_data) 
 
 for est, vert in enumerate(valid_vertices_idx):
-    ncsf_fit_mat[vert] = ncsf_fit[est]
-    ncsf_pred_mat[:,vert] = csenf_model.return_prediction(width_r=ncsf_fit[est][0], 
-                                                          SFp=ncsf_fit[est][1], 
-                                                          CSp=ncsf_fit[est][2], 
-                                                          width_l=ncsf_fit[est][3], 
-                                                          crf_exp=ncsf_fit[est][4],
-                                                          beta=ncsf_fit[est][5],
-                                                          baseline=ncsf_fit[est][6],
-                                                          hrf_1=ncsf_fit[est][7],
-                                                          hrf_2=ncsf_fit[est][8])
-
+    ncsf_fit_mat[vert] = ncsf_fit_extend[est]
+    ncsf_pred_mat[:,vert] = csenf_model.return_prediction(width_r=ncsf_fit[est][width_r_idx], 
+                                                          SFp=ncsf_fit[est][SFp_idx], 
+                                                          CSp=ncsf_fit[est][CSp_idx], 
+                                                          width_l=ncsf_fit[est][width_l_idx], 
+                                                          crf_exp=ncsf_fit[est][crf_exp_idx],
+                                                          beta=ncsf_fit[est][amp_1_idx],
+                                                          baseline=ncsf_fit[est][bold_baseline_idx],
+                                                          hrf_1=ncsf_fit[est][hrf_1_idx],
+                                                          hrf_2=ncsf_fit[est][hrf_2_idx])
 
 ncsf_fit_mat = np.where(ncsf_fit_mat == 0, np.nan, ncsf_fit_mat)
 ncsf_pred_mat = np.where(ncsf_pred_mat == 0, np.nan, ncsf_pred_mat)
+
+# Compute LOO r2 
+if 'loo-avg' in input_fn:
+    # Compute loo r2
+    loo_bold_fn = input_fn.replace('loo-avg-', 'loo-')
+    loo_img, loo_bold = load_surface(fn=loo_bold_fn)
+    loo_r2 = r2_score_surf(bold_signal=loo_bold, model_prediction=ncsf_pred_mat)
+    
+    # Add loo r2 css_fit_mat
+    ncsf_fit_mat = np.column_stack((ncsf_fit_mat, loo_r2))
+
+    # Export data
+    ncsf_maps_names = ncsf_maps_names + ['r_squared']
 
 #export data from gauss model fit
 
@@ -296,7 +322,6 @@ ncsf_fit_fn = ncsf_fit_fn.replace('bold', 'ncsf_fit')
 
 ncsf_pred_fn = input_fn.split('/')[-1]
 ncsf_pred_fn = ncsf_pred_fn.replace('bold', 'ncsf_pred')
-
 
 # export fit
 img_ncsf_fit_mat = make_surface_image(data=ncsf_fit_mat.T, source_img=img, maps_names=ncsf_maps_names)

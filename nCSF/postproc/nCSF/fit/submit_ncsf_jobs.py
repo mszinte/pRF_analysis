@@ -47,7 +47,7 @@ import glob
 # Personal imports
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
-# from pycortex_utils import set_pycortex_config_file
+from pycortex_utils import set_pycortex_config_file
 
 # Inputs
 main_dir = sys.argv[1]
@@ -55,9 +55,9 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
-memory_val = 30
-nb_procs = 8
-hour_proc = 10
+memory_val = 128
+nb_procs = 16
+hour_proc = 15
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -69,15 +69,15 @@ analysis_info = settings[0]
 cluster_name  = analysis_info['cluster_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-nCSF_task_names = analysis_info['nCSF_task_names'][0]
+nCSF_task_names = analysis_info['nCSF_task_name']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
-# # Set pycortex db and colormaps
-# cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
-# set_pycortex_config_file(cortex_dir)
+# Set pycortex db and colormaps
+cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
+set_pycortex_config_file(cortex_dir)
 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
@@ -85,13 +85,13 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 # Define fns (filenames)
 pp_fns = []
 for avg_method in avg_methods:
-    # dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-    #     pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
+    dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
     dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
         pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
 
     # Accumulate the results
-    # pp_fns.extend(glob.glob(dct_avg_gii_fns))
+    pp_fns.extend(glob.glob(dct_avg_gii_fns))
     pp_fns.extend(glob.glob(dct_avg_nii_fns))
 
 for fit_num, pp_fn in enumerate(pp_fns):
@@ -144,4 +144,4 @@ for fit_num, pp_fn in enumerate(pp_fns):
     # # Submit jobs
     print("Submitting {} to queue".format(sh_fn))
     os.system("sbatch {}".format(sh_fn))
-    stop
+    
