@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-
 Goal of the script:
-Partial correlation violin plots split by hemisphere
-Seeds are on the y-axis, one figure per TARGET cluster
-This makes it easy to compare correlation strength across seeds
-for a given target (winner-take-all inspection)
-
-The target's own row is muted (self-correlation), preserving
-the same logic as the seed-figure version
+Partial correlation violin plots split by hemisphere.
+Seeds are on the y-axis, one figure per TARGET cluster.
 
 Produces figures for four data variants:
   - concat        : both runs concatenated, all subjects
@@ -17,7 +11,7 @@ Produces figures for four data variants:
   - run-01        : run-01 only, all subjects
   - run-02        : run-02 only, ALL subjects (including bad ones, to show artifact)
 
-Missing files are always skipped with a warning; the script runs to completion.
+Missing files are always skipped with a warning
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -28,14 +22,13 @@ import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import seaborn as sns
 import pandas as pd
 from pathlib import Path
 from typing import Optional
 
 # ============================================================
-# Paths
+# Paths & settings
 # ============================================================
 USER = os.environ["USER"]
 
@@ -46,6 +39,19 @@ output_folder.mkdir(parents=True, exist_ok=True)
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
+
+sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
+from rest_utils import (
+    RUN02_EXCLUDED,
+    VARIANTS,
+    MACRO_COLORS,
+    SHADE_FACTORS,
+    SEED_COLOR,
+    MEDIAN_COLORS,
+    MEDIAN_HALF_LEN,
+    derive_hemi_color,
+    load_npy_hemi,
+)
 
 project_dir       = "RetinoMaps"
 settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
@@ -58,30 +64,8 @@ fig_dir = os.path.join(output_folder, "figures/violin_plots")
 os.makedirs(fig_dir, exist_ok=True)
 
 # ============================================================
-# Run variants & exclusions
+# Cluster ↔ parcel mapping
 # ============================================================
-
-# Subjects excluded from run-02 (bad data / registration error)
-RUN02_EXCLUDED = {"sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"}
-
-# Four variants: (run_tag_in_filename, subject_filter_fn)
-# run_tag=None -> concatenated file (no run-XX in filename)
-# run-02 uses _all intentionally: bad subjects kept to show the artifact
-
-def _all(sub):
-    return True
-
-VARIANTS = {
-    "concat":       (None,     _all),
-    "concat_clean": (None,     _all),   # keep ALL subjects
-    "run-01":       ("run-01", _all),
-    "run-02":       ("run-02", _all),
-}
-
-
-# =========================
-# Cluster <-> parcel mapping
-# =========================
 
 clusters_all = analysis_info["rois-drawn"]
 clusters_all.reverse()   # mPCS, sPCS, iPCS, sIPS, iIPS, hMT+, ...
@@ -94,42 +78,17 @@ target_clusters = seed_clusters.copy()
 for cl in seed_clusters:
     if cl not in cluster_to_parcels:
         raise KeyError(
-            "Seed cluster '{}' has no entry in 'rois-group-mmp' -- "
-            "check settings.yml".format(cl)
+            f"Seed cluster '{cl}' has no entry in 'rois-group-mmp' — "
+            "check settings.yml"
         )
     if len(cluster_to_parcels[cl]) == 0:
-        raise ValueError("Seed cluster '{}' maps to an empty parcel list".format(cl))
+        raise ValueError(f"Seed cluster '{cl}' maps to an empty parcel list")
 
-# =============================
-# Colors
-# =============================
-
-macro_colors = {
-    "mPCS": "#FF6F00",
-    "sPCS": "#FFEA00",
-    "iPCS": "#97FF00",
-    "sIPS": "#2CFF96",
-    "iIPS": "#0098FF",
-}
-
-SHADE_FACTORS = {"LH": 0.75, "RH": 1.25}
-SEED_COLOR    = "#F5F5F5"
-
-def derive_hemi_color(base_hex, hemi):
-    # type: (str, str) -> np.ndarray
-    """Return RGB array for hemi ('LH'/'RH') derived from base_hex.
-
-    LH darkened (factor < 1), RH lightened (factor > 1), clipped to [0, 1].
-    """
-    factor = SHADE_FACTORS[hemi]
-    rgb    = np.array(mcolors.to_rgb(base_hex))
-    return np.clip(rgb * factor, 0, 1)
-
-# =========================
+# ============================================================
 # Build parcel indices
-# =========================
+# ============================================================
 
-clusters = clusters_all   # alias -- row order matches .npy matrix files
+clusters = clusters_all   # alias — row order matches .npy matrix files
 
 parcels = []
 for cl in clusters_all:
@@ -140,82 +99,56 @@ cluster_to_parcel_idx = {
     for cl, plist in cluster_to_parcels.items()
 }
 
-print("\nParcels from YAML: {} | first: {}".format(len(parcels), parcels[0]))
-print("Clusters from YAML: {}".format(clusters))
-print("\nCluster -> parcel indices:")
+print(f"\nParcels from YAML: {len(parcels)} | first: {parcels[0]}")
+print(f"Clusters from YAML: {clusters}")
+print("\nCluster → parcel indices:")
 for cl in seed_clusters:
-    print("  {:5s} -> {}".format(cl, [parcels[i] for i in cluster_to_parcel_idx[cl]]))
+    print(f"  {cl:5s} → {[parcels[i] for i in cluster_to_parcel_idx[cl]]}")
     if len(cluster_to_parcel_idx[cl]) == 0:
-        raise RuntimeError("No parcels found for cluster '{}'".format(cl))
+        raise RuntimeError(f"No parcels found for cluster '{cl}'")
 
-# =========================
-# .npy loader (robust)
-# =========================
+# ============================================================
+# BIDS path builder
+# ============================================================
 
-def load_npy_hemi(filepath):
-    # type: (str) -> Optional[np.ndarray]
-    """Load a partial-corr .npy matrix, returning None on any problem.
+def get_fname(
+    sub_path: str,
+    sub: str,
+    variant: str,
+    normal_tag: Optional[str],
+    excluded_tag: Optional[str],
+    hemi: str,
+) -> str:
+    """Return the partial-correlation .npy filepath for one subject/hemi.
 
-    Returns None (with a warning) on file-not-found or shape/read errors
-    so the caller can skip gracefully without crashing.
+    For concat_clean, subjects with bad run-02 fall back to excluded_tag
+    ("run-01") instead of being dropped.  For all other variants every
+    subject uses normal_tag — including run-02 bad subjects, so their
+    missing file produces a WARNING and they are skipped, preserving the
+    artifact-visibility intent of that variant.
     """
-    if not os.path.isfile(filepath):
-        print("  WARNING: missing -- {}".format(filepath))
-        return None
-    try:
-        arr = np.load(filepath)
-    except Exception as e:
-        print("  WARNING: could not load {} -- {}".format(filepath, e))
-        return None
-    if arr.ndim != 2:
-        print("  WARNING: expected 2D array, got shape {} in {} -- skipping".format(
-            arr.shape, filepath))
-        return None
-    return arr
-
-def get_fname(sub_path, sub, variant, run_tag, hemi):
-    # type: (str, str, str, Optional[str], str) -> str
-    """
-    Return the partial-correlation .npy filepath.
-
-    Logic:
-    - concat       -> use concatenated file (all subjects)
-    - concat_clean -> use concatenated file EXCEPT bad run-02 subjects,
-                      which fall back to run-01
-    - run-01       -> run-01 file
-    - run-02       -> run-02 file
-    """
-
-    # concat_clean fallback:
-    # if run-02 is bad, use run-01 instead of excluding the subject
     if variant == "concat_clean" and sub in RUN02_EXCLUDED:
-        effective_tag = "run-01"
-
+        effective_tag = excluded_tag
     else:
-        effective_tag = run_tag
+        effective_tag = normal_tag
 
-    # concatenated (default)
     if effective_tag is None:
         return os.path.join(
             sub_path,
-            "cluster_by_mmp-parcel_partial_{}.npy".format(hemi)
+            f"cluster_by_mmp-parcel_partial_{hemi}.npy"
         )
-
-    # explicit run file
     return os.path.join(
         sub_path,
-        "cluster_by_mmp-parcel_partial_{}_{}.npy".format(
-            effective_tag,
-            hemi
-        )
+        f"cluster_by_mmp-parcel_partial_{effective_tag}_{hemi}.npy"
     )
-# =========================
+
+# ============================================================
 # Load data for all variants
-# =========================
+# ============================================================
 
 hemis = ["lh", "rh"]
 
-# results[variant][seed][tc][hemi] = list of per-subject values
+# results[variant][seed][tc][hemi] = list of per-subject scalar values
 results = {
     variant: {
         seed: {
@@ -227,66 +160,66 @@ results = {
     for variant in VARIANTS
 }
 
-missing_files = []   # global log -- reported at end
+missing_files = []   # global log — reported at end
 
-# Loading loop — replace the existing one in the partial corr script
-for variant, (run_tag, subject_filter) in VARIANTS.items():
- 
-    variant_subjects = [s for s in subjects if subject_filter(s)]
-    print("\n=== Loading variant: {} | {} subjects ===".format(
-        variant, len(variant_subjects)))
- 
-    for sub in variant_subjects:
- 
+for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
+
+    print(f"\n=== Loading variant: {variant} | {len(subjects)} subjects ===")
+
+    for sub in subjects:
+
+        if skip_excluded and sub in RUN02_EXCLUDED:
+            print(f"  SKIP (excluded): {sub} [{variant}]")
+            continue
+
         sub_path = os.path.join(
-            main_data,
-            "{}/91k/rest/corr/partial_corr/by_hemi".format(sub)
+            main_data, f"{sub}/91k/rest/corr/partial_corr/by_hemi"
         )
- 
+
         for hemi in hemis:
- 
-            fname = get_fname(sub_path, sub, variant, run_tag, hemi)
- 
+
+            fname = get_fname(
+                sub_path=sub_path,
+                sub=sub,
+                variant=variant,
+                normal_tag=normal_tag,
+                excluded_tag=excluded_tag,
+                hemi=hemi,
+            )
+
             cluster_partial = load_npy_hemi(fname)
- 
+
             if cluster_partial is None:
                 missing_files.append((variant, fname))
                 continue
- 
-            print("  {} ({}, {}): {}".format(sub, variant, hemi,
-                                              cluster_partial.shape))
- 
+
+            print(f"  {sub} ({variant}, {hemi}): {cluster_partial.shape}")
+
             for seed in seed_clusters:
                 seed_idx = clusters.index(seed)
- 
+
                 for tc in target_clusters:
                     if tc == seed:
                         continue
- 
                     parcel_idx = cluster_to_parcel_idx[tc]
                     vals = cluster_partial[seed_idx, parcel_idx]
-                    results[variant][seed][tc][hemi].append(float(np.nanmean(vals)))
+                    results[variant][seed][tc][hemi].append(
+                        float(np.nanmean(vals))
+                    )
 
-
-# Summary of all missing files
 if missing_files:
-    print("\n" + "=" * 60)
-    print("WARNING: {} file(s) could not be loaded:".format(len(missing_files)))
-    for v, f in missing_files:
-        print("  [{}] {}".format(v, f))
-    print("=" * 60 + "\n")
+    print(f"\n{'='*60}")
+    print(f"WARNING: {len(missing_files)} file(s) could not be loaded:")
+    for variant, f in missing_files:
+        print(f"  [{variant}] {f}")
+    print(f"{'='*60}\n")
 
-# =========================
-# Plotting helper
-# =========================
+# ============================================================
+# Plotting
+# ============================================================
 
-MEDIAN_COLORS   = {"lh": "#222222", "rh": "#888888"}
-MEDIAN_HALF_LEN = 0.08
-
-
-def plot_target_figure(target, variant, res):
-    # type: (str, str, dict) -> None
-    """Draw and save one violin figure for target x variant."""
+def plot_target_figure(target: str, variant: str, res: dict) -> None:
+    """Draw and save one violin figure for *target* × *variant*."""
 
     target_row_idx = seed_clusters.index(target)
 
@@ -294,25 +227,20 @@ def plot_target_figure(target, variant, res):
     for seed in seed_clusters:
         if seed == target:
             for hemi_label in ["LH", "RH"]:
-                plot_rows.append({
-                    "Seed":        seed,
-                    "Correlation": np.nan,
-                    "Hemisphere":  hemi_label,
-                })
+                plot_rows.append(
+                    {"Seed": seed, "Correlation": np.nan, "Hemisphere": hemi_label}
+                )
             continue
         for hemi in hemis:
             for val in res[seed][target][hemi]:
-                plot_rows.append({
-                    "Seed":        seed,
-                    "Correlation": val,
-                    "Hemisphere":  hemi.upper(),
-                })
+                plot_rows.append(
+                    {"Seed": seed, "Correlation": val, "Hemisphere": hemi.upper()}
+                )
 
     df = pd.DataFrame(plot_rows)
 
-    # Skip entirely if no data at all for this target x variant
     if df.loc[df["Seed"] != target, "Correlation"].dropna().empty:
-        print("  SKIP (no data): target={}, variant={}".format(target, variant))
+        print(f"  SKIP (no data): target={target}, variant={variant}")
         return
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -334,30 +262,31 @@ def plot_target_figure(target, variant, res):
 
     new_collections = ax.collections[n_before:]
 
-    # Validate collection count -- seaborn skips all-NaN rows (the target row)
+    # seaborn skips all-NaN rows (the target row), so expect one pair per
+    # non-target seed
     n_plottable_rows     = len(seed_clusters) - 1
     expected_collections = n_plottable_rows * 2
 
     assert len(new_collections) == expected_collections, (
-        "[{}, target={}] Expected {} PolyCollections but got {}. "
-        "seaborn layout may have changed -- check version.".format(
-            variant, target, expected_collections, len(new_collections))
+        f"[{variant}, target={target}] Expected {expected_collections} "
+        f"PolyCollections but got {len(new_collections)}. "
+        "seaborn layout may have changed — check version."
     )
 
-    # Colour violin halves by seed
+    # Colour violin halves
     collection_idx = 0
     for seed in seed_clusters:
         if seed == target:
             continue
         for hemi_label in ["LH", "RH"]:
             artist = new_collections[collection_idx]
-            rgb    = derive_hemi_color(macro_colors[seed], hemi_label)
+            rgb    = derive_hemi_color(MACRO_COLORS[seed], hemi_label)
             artist.set_facecolor(rgb)
             artist.set_edgecolor(rgb)
             artist.set_alpha(0.85)
             collection_idx += 1
 
-    # Muted band for target row
+    # Muted band for target (self-seed) row
     ax.axhspan(
         target_row_idx - 0.45,
         target_row_idx + 0.45,
@@ -366,7 +295,7 @@ def plot_target_figure(target, variant, res):
         label="_nolegend_",
     )
 
-    # Median lines
+    # Median ticks
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
@@ -383,7 +312,7 @@ def plot_target_figure(target, variant, res):
                 zorder=4,
             )
 
-    # Subject dots
+    # Per-subject dots
     rng = np.random.default_rng(seed=42)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
@@ -400,14 +329,12 @@ def plot_target_figure(target, variant, res):
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
-    # legend deliberately omitted -- hemisphere distinction is LH (dark) / RH (light)
-    # within each violin body; a manual legend can be added externally if needed
-
+    # hemisphere distinction is LH (dark) / RH (light) within each violin
+    # body; a manual legend can be added externally if needed
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
     ax.set_xlabel("Partial Correlation", fontsize=18, fontweight="bold")
     ax.set_ylabel("Seed Cluster",        fontsize=18, fontweight="bold")
-    ax.set_title("{} target -- {}".format(target, variant),
-                 fontsize=18, fontweight="bold")
+    ax.set_title(f"{target} target — {variant}", fontsize=18, fontweight="bold")
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
     ax.set_xlim(-0.25, 0.55)
@@ -416,18 +343,18 @@ def plot_target_figure(target, variant, res):
 
     outname = os.path.join(
         fig_dir,
-        "violin_target-{}_partial_corr_{}.png".format(target, variant)
+        f"violin_target-{target}_partial_corr_{variant}.png"
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
-    print("  Saved: {}".format(outname))
+    print(f"  Saved: {outname}")
     plt.show()
     plt.close(fig)
 
-# =========================
-# Main plotting loop
-# =========================
+# ============================================================
+# Main loop
+# ============================================================
 
 for variant in VARIANTS:
-    print("\n=== Plotting variant: {} ===".format(variant))
+    print(f"\n=== Plotting variant: {variant} ===")
     for target in target_clusters:
         plot_target_figure(target, variant, results[variant])

@@ -32,19 +32,20 @@ $ wb_command -cifti-label-export-table /scratch/mszinte/data/RetinoMaps/derivati
 ```
 #### 1.2 Go to the atlas folder and run this bash script to match all labels you are interested in and export a txt file
 ```bash
-$ ./filter_labels.sh
+$ ./filter_mmp1_labels.sh
 ```
 #### 1.3 Filter for the labels we are interested in
 ```bash
-$ wb_command -cifti-label-import /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/Glasser_filtered_labels.txt /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii -discard-others;
+$ wb_command -cifti-label-import /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/mmp1_filtered_labels.txt /scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii -discard-others
 ```
 #### 1.4 Match the filtered labels to each macro-region to generate label txt files
 ```bash
 $ ./get_mmp1_macro-regions_labels_text.sh
 ```
-#### 1.5 Merge labels for all the macro-regions and convert them to metric files
+#### 1.5 Merge labels for all the macro-regions and convert them to metric files. Get files for parcels as well.
 ```bash
 $ ./get_mmp1_macro-regions_metric_files.sh
+$ ./get_mmp1_parcels_metric_files.sh
 ```
 #### 1.6 Run this to get the hollow seed files for visualization and stats
 ```bash
