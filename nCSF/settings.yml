@@ -40,9 +40,9 @@ prf_task_names:
   description: "Names of the tasks analysed with pRF methods"
   value: ["pRF"]
 
-nCSF_task_names:
+nCSF_task_name:
   description: "Names of the tasks analysed with nCSF methods"
-  value: ["nCSF"]
+  value: "nCSF"
 
 partial_scan: 
   description: "Dataset including non whole-head recording"
