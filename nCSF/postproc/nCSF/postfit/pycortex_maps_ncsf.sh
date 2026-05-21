@@ -1,0 +1,74 @@
+#!/bin/bash
+#-----------------------------------------------------------------------------------------
+# pycortex_maps_css.sh
+# -----------------------------------------------------------------------------------------
+# Goal of the script:
+# Launch across subjects the function pycortex_maps_rois.py
+# -----------------------------------------------------------------------------------------
+# Input(s):
+# input[1]: project code directory
+# input[2]: project name (correspond to directory)
+# input[3]: main data directory (correspond to directory)
+# input[4]: Save maps in the overlay (y/n)
+# input[5]: OPTIONAL main analysis folder (e.g. prf_em_ctrl)
+# -----------------------------------------------------------------------------------------
+# Output(s):
+# All pycortex maps for CSS
+# -----------------------------------------------------------------------------------------
+# To run:
+# 0. TO RUN ON INVIBE SERVER (with Inkscape)
+# 1. cd to function
+# >> cd ~/disks/meso_H/projects/[PROJECT]/analysis_code/postproc/prf/postfit
+# 2. run python command
+# >> sh pycortex_maps_css.sh [code directory] [project name] 
+#                            [main directory] [save_in_overlay] [analysis folder]
+# -----------------------------------------------------------------------------------------
+# Exemple:
+# cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
+# sh pycortex_maps_css.sh ~/disks/meso_H/projects MotConf ~/disks/meso_S/data n
+# sh pycortex_maps_css.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_shared n
+# sh pycortex_maps_css.sh ~/disks/meso_H/projects amblyo_prf ~/disks/meso_S/data n
+# -----------------------------------------------------------------------------------------
+# Written by Martin Szinte (martin.szinte@gmail.com)
+# Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
+# -----------------------------------------------------------------------------------------
+
+# Check if the base path, project name, and data path are provided as arguments
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <base_path> <project_name> <data_path> <save_in_overlay> [output_folder]"
+    exit 1
+fi
+
+# Define the base path, project name, and data path
+base_path="$1"
+project_name="$2"
+data_path="$3"
+save_in_overlay="$4"
+
+# Define optional argument (5th) with default = "prf"
+if [ -n "$5" ]; then
+    output_folder="$5"
+else
+    output_folder="prf"
+fi
+
+# Define the path to the settings.yml file
+settings_file="${base_path}/pRF_analysis/${project_name}/settings.yml"
+
+# Define current directory
+cd "${base_path}/pRF_analysis/analysis_code/postproc/prf/postfit"
+
+# Read the subjects from settings.yml using Python
+subjects=$(python -c "
+import yaml
+with open('$settings_file', 'r') as file:
+    data = yaml.safe_load(file)
+    print('\n'.join(data['subjects']['value']))
+")
+
+# Loop through each subject and run the Python code
+for subject in $subjects
+do
+    echo "Processing pycortex_maps_css.py for: $subject"
+    python pycortex_maps_css.py "$data_path" "$project_name" "$subject" "$save_in_overlay" "$output_folder"
+done

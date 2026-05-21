@@ -1,8 +1,9 @@
-# Flatmaps
+# Correlations Flatmaps
 flatmap_corr_scale: 
   description: "Inter-run correlation r-square flatmap colorscale"
   value: [-1, 1]
 
+# pRF Flatmaps
 flatmap_rsq_scale:
   description: "pRF r-square flatmap colorscale"
   value: [0, 1]
@@ -26,6 +27,31 @@ flatmap_n_scale:
 flatmap_pcm_scale: 
   description: "pRF cortical magnification flatmap colorscale"
   value: [0, 10]
+
+# nCSF Flatmaps
+flatmap_ncsf_rsq_scale:
+  description: "nCSF r-square flatmap colorscale"
+  value: [0, 1]
+
+flatmap_ncsf_SFp_scale:
+  description: "nCSF SFp flatmap colorscale"
+  value: [0, 5]
+
+flatmap_ncsf_CSp_scale:
+  description: "nCSF CSp flatmap colorscale"
+  value: [0, 230]
+
+flatmap_ncsf_auc_scale:
+  description: "nCSF auc flatmap colorscale"
+  value: [0, 5]
+
+flatmap_ncsf_normalize_auc_scale:
+  description: "nCSF normalize auc flatmap colorscale"
+  value: [0, 250]
+
+flatmap_ncsf_SFmax_scale:
+  description: "nCSF SFmax flatmap colorscale"
+  value: [0, 50]
 
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
