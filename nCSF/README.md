@@ -85,3 +85,18 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Make ROIs figure specific TSV with CSS pRF fit derivatives, statistics and CM [make_rois_fig_tsv.py](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.py) or [make_rois_fig_tsv.sh](../analysis_code/postproc/prf/postfit/make_rois_fig_tsv.sh)
 - [x] Make ROIs figure of CSS pRF fit derivatives, statistics and CM [make_rois_fig.py](../analysis_code/postproc/prf/postfit/make_rois_fig.py) or [make_rois_fig.sh](../analysis_code/postproc/prf/postfit/make_rois_fig.sh)
 - [x] Merge all figures [merge_fig_prf.py](../analysis_code/postproc/prf/postfit/merge_fig_prf.py)
+
+# nCSF 
+---
+### *Subject-level analysis*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format
+
+#### PRF nCSF fit
+- [ ] nCSF fit [submit_nCSF_jobs.py](postproc/nCSF/fit/submit_ncsf_jobs.py)
+- [ ] Compute nCSF statistics [ncsf_stats_sbatch.py](postproc/nCSF/postfit/ncsf_stats_sbatch.py)
+- [ ] Compute nCSF fit derivatives [compute_ncsf_derivatives.py](postproc/nCSF/postfit/compute_css_derivatives.py)
+- [ ] Make maps with pycortex [pycortex_maps_ncsf.py](postproc/nCSF/postfit/pycortex_maps_css.py) or [pycortex_maps_ncsf.sh](postproc/nCSF/postfit/pycortex_maps_css.sh)
+- [ ] Make general TSV with nCSF fit derivatives and statistics [make_ncsf_tsv.py](postproc/nCSF/postfit/make_ncsf_tsv.py)
+- [ ] Make ROIs figure specific TSV with nCSF fit derivatives and statistics [make_ncsf_rois_fig_tsv.py](postproc/nCSF/postfit/make_ncsf_rois_fig_tsv.py) or [make_ncsf_rois_fig_tsv.sh](postproc/nCSF/postfit/make_ncsf_rois_fig_tsv.sh)
+- [ ] Make ROIs figure of nCSF fit derivatives and statistics [make_ncsf_rois_fig.py](postproc/nCSF/postfit/make_ncsf_rois_fig.py) or [make_rois_fig.sh](postproc/nCSF/postfit/make_ncsf_rois_fig.sh)
+- [ ] Merge all figures [merge_fig_ncsf.py](postproc/nCSF/postfit/merge_fig_ncsf.py)

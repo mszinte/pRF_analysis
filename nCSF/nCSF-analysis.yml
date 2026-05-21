@@ -42,9 +42,13 @@ ncsf_iterative_rsq_threshold:
   description: "rsq threshold for nCSF iterative fit"
   value: 0.1
 
-ncsf_maps_names:
+maps_names_ncsf:
   description: "map names for nCSF fit object"
-  value: ['width_r', 'SFp', 'CSp', 'width_l', 'crf_exp', 'amp_1', 'bold_baseline', 'hrf_1', 'hrf_2', 'r_squared', 'auc', 'normalize_auc', 'SFmax']
+  value: ['width_r', 'SFp', 'CSp', 'width_l', 'crf_exp', 'amp_1', 'bold_baseline', 'hrf_1', 'hrf_2', 'ncsf_rsq', 'auc', 'normalize_auc', 'SFmax']
+
+maps_names_ncsf_stats: 
+  description: "nCSF stats maps names of gifti files"
+  value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
 run_ncsf_fit_on_rois:
   description: "Run nCSF fit only on roi (True) or on full brain (False)"

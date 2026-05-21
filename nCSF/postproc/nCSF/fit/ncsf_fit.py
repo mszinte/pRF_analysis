@@ -107,8 +107,8 @@ contNum = analysis_info['contNum']
 sf_filtCenters = np.concatenate([np.round(np.logspace(np.log10(0.05), np.log10(16), sf_filtNum), 2), [0]])
 contValues = np.concatenate([np.logspace(np.log10(minCont), np.log10(maxCont), contNum), [0]])
 
-ncsf_maps_names = analysis_info['ncsf_maps_names']
-for idx, col_name in enumerate(ncsf_maps_names):
+maps_names_ncsf = analysis_info['maps_names_ncsf']
+for idx, col_name in enumerate(maps_names_ncsf):
     exec("{}_idx = idx".format(col_name))
 
 # Create Stimulus object
@@ -143,8 +143,7 @@ if run_ncsf_fit_on_rois :
        format_ = '170k'
        pycortex_subject =  pycortex_subject_template
        hemi = None
-    
-        
+       
     elif input_fn.endswith('.gii'):
        format_ = 'fsnative'
        pycortex_subject =  subject
@@ -302,7 +301,7 @@ if 'loo-avg' in input_fn:
     ncsf_fit_mat = np.column_stack((ncsf_fit_mat, loo_r2))
 
     # Export data
-    ncsf_maps_names = ncsf_maps_names + ['r_squared']
+    maps_names_ncsf = maps_names_ncsf + ['ncsf_loo_rsq']
 
 #export data from gauss model fit
 
@@ -324,7 +323,7 @@ ncsf_pred_fn = input_fn.split('/')[-1]
 ncsf_pred_fn = ncsf_pred_fn.replace('bold', 'ncsf_pred')
 
 # export fit
-img_ncsf_fit_mat = make_surface_image(data=ncsf_fit_mat.T, source_img=img, maps_names=ncsf_maps_names)
+img_ncsf_fit_mat = make_surface_image(data=ncsf_fit_mat.T, source_img=img, maps_names=maps_names_ncsf)
 nb.save(img_ncsf_fit_mat,'{}/{}'.format(ncsf_fit_dir, ncsf_fit_fn)) 
 
 # export pred

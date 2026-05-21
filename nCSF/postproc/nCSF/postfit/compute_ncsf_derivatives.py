@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-compute_css_derivatives.py
+compute_ncsf_derivatives.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Compute ncsf derivatives from the ncsf grid gauss fit
+Compute ncsf derivatives (averaging between loo)
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -16,19 +16,16 @@ Combined estimate nifti file and ncsf derivative nifti file
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/ncsf_analysis/analysis_code/postproc/ncsf/postfit/
+>> cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/postfit/
 2. run python command
->> python compute_css_derivatives.py [main directory] [project name] 
+>> python compute_ncsf_derivatives.py [main directory] [project name] 
                                      [subject num] [group] [analysis folder - optional]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/ncsf_analysis/analysis_code/postproc/ncsf/postfit/
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
-python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_ncsf sub-01 327
+cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/postfit/
+python compute_ncsf_derivatives.py /scratch/mszinte/data nCSF sub-01 327
 -----------------------------------------------------------------------------------------
-Written by Martin Szinte (martin.szinte@gmail.com)
-and Uriel Lascombes (uriel.lascombes@laposte.net)
+Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -47,7 +44,7 @@ import numpy as np
 import nibabel as nb
 
 # Personal imports
-sys.path.append("{}/../../../utils".format(os.getcwd()))
+sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
 from maths_utils import  median_subject_template
 from pycortex_utils import set_pycortex_config_file
@@ -62,8 +59,9 @@ group = sys.argv[4]
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-ncsf_settings_path = os.path.join(base_dir, project_dir, "ncsf-analysis.yml")
-settings = load_settings([settings_path, ncsf_settings_path])
+nCSF_settings_path = os.path.join(base_dir, project_dir, "nCSF-analysis.yml")
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, nCSF_settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
@@ -73,10 +71,12 @@ extensions = analysis_info['extensions']
 avg_methods = analysis_info['avg_methods']
 preproc_prep = analysis_info['preproc_prep']
 normalization = analysis_info['normalization']
-ncsf_task_name = analysis_info['ncsf_task_name']
-ncsf_maps_names = analysis_info['ncsf_maps_names']
+ncsf_task_name = analysis_info['nCSF_task_name']
+maps_names_ncsf = analysis_info['maps_names_ncsf']
 averaging_templates = analysis_info['averaging_templates']
 
+# formats = ['170k']
+# extensions = ['dtseries.nii']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -90,10 +90,10 @@ if subject != 'template_avg':
     for avg_method in avg_methods:
         if 'loo' in avg_method:
             is_loo_r2 = True
-            ncsf_maps_names = ncsf_maps_names + ['r_squared']
+            maps_names_ncsf = maps_names_ncsf + ['ncsf_loo_rsq']
         else: 
             is_loo_r2 = False
-            ncsf_maps_names = ncsf_maps_names
+            maps_names_ncsf = maps_names_ncsf
             
         for format_, extension in zip(formats, extensions):
 
@@ -102,14 +102,31 @@ if subject != 'template_avg':
                     pp_dir, subject, format_)
             ncsf_deriv_dir = "{}/{}/{}/ncsf/ncsf_derivatives".format(
                 pp_dir, subject, format_)
+            os.makedirs(ncsf_deriv_dir, exist_ok=True)
+            
+            if 'loo' not in avg_method:
+                # Get avg files sub-01_task-nCSF_fmriprep_dct_z-score_avg_ncsf_fit.dtseries.nii
+                avg_ncsf_deriv_fns = glob.glob("{}/*task-{}_*_avg_ncsf_fit.{}".format(ncsf_fit_dir, ncsf_task_name, extension))
+                for avg_ncsf_deriv_fn in avg_ncsf_deriv_fns:
+                    avg_ncsf_deriv_img, avg_ncsf_deriv_data = load_surface(avg_ncsf_deriv_fn)
+                    avg_ncsf_deriv_fn = avg_ncsf_deriv_fn.replace('ncsf_fit', 'ncsf_deriv')
 
+                    avg_ncsf_deriv_fn = avg_ncsf_deriv_fn.replace('ncsf/fit', 'ncsf/ncsf_derivatives')
+
+                    try :                    
+                        avg_ncsf_deriv_img = make_surface_image(avg_ncsf_deriv_data, avg_ncsf_deriv_img, maps_names_ncsf)
+                    except:
+                            deb()
+                    nb.save(avg_ncsf_deriv_img, avg_ncsf_deriv_fn)
+                    print(f"Saving : {avg_ncsf_deriv_fn}")
+                
             # Compute median across leave-one-out fit
             if 'loo-avg' in avg_method:
                 print('Compute median across LOO')                
                 
                 # Get LOO files (excluding any with "median" in the name)
-                loo_ncsf_deriv_fns = glob.glob(f"{ncsf_deriv_dir}/*task-{ncsf_task_name}_*loo-avg-*_ncsf_deriv.{extension}")
-
+                loo_ncsf_deriv_fns = glob.glob("{}/*task-{}_*loo-avg-*_ncsf_fit.{}".format(ncsf_fit_dir, ncsf_task_name, extension))
+                
                 # Group files by hemisphere/format
                 loo_ncsf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_ncsf_deriv_fns if "hemi-L" in fn]
                 loo_ncsf_deriv_fsnative_hemi_R_fns = [fn for fn in loo_ncsf_deriv_fns if "hemi-R" in fn]
@@ -124,22 +141,29 @@ if subject != 'template_avg':
                         # Load first file to initialize median array and define fn
                         ncsf_deriv_img, ncsf_deriv_data = load_surface(group_files[0])
                         loo_ncsf_deriv = np.zeros_like(ncsf_deriv_data)
-                        loo_ncsf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_ncsf-css_deriv.{}'.format(
+                        loo_ncsf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_ncsf_deriv.{}'.format(
                             ncsf_deriv_dir, subject, ncsf_task_name, hemi, 
                             preproc_prep, filtering, normalization, extension)
                         
                         # Compute median across LOO runs
                         for n_run, loo_deriv_fn in enumerate(group_files):
                             print(f'Loadding loo deriv: {loo_deriv_fn}')
-                            _, loo_ncsf_deriv_run_data = load_surface(loo_deriv_fn)
+                            loo_ncsf_deriv_run_img, loo_ncsf_deriv_run_data = load_surface(loo_deriv_fn)
+                            
+                            # Save fit as derive 
+                            loo_ncsf_deriv_run_fn = loo_deriv_fn.replace('ncsf_fit', 'ncsf_deriv')
+                            loo_ncsf_deriv_run_fn = loo_deriv_fn.replace('ncsf/fit', 'ncsf/ncsf_derivatives')
+                            loo_ncsf_deriv_run_img = make_surface_image(loo_ncsf_deriv_run_data, loo_ncsf_deriv_run_img, maps_names_ncsf)
+                            nb.save(loo_ncsf_deriv_run_img, loo_ncsf_deriv_run_fn)
+                            print(f"Saving : {loo_ncsf_deriv_run_fn}")
+                            
                             if n_run == 0: loo_ncsf_deriv = np.copy(loo_ncsf_deriv_run_data)
                             else: loo_ncsf_deriv = np.nanmedian(np.array([loo_ncsf_deriv, loo_ncsf_deriv_run_data]), axis=0)
                         
                         # Save median results
-                        loo_ncsf_deriv_img = make_surface_image(loo_ncsf_deriv, ncsf_deriv_img, ncsf_maps_names)
+                        loo_ncsf_deriv_img = make_surface_image(loo_ncsf_deriv, ncsf_deriv_img, maps_names_ncsf)
                         nb.save(loo_ncsf_deriv_img, loo_ncsf_deriv_fn)
                         print(f"Saving median: {loo_ncsf_deriv_fn}")
-
 
 # template_avg median          
 elif subject == 'template_avg':
@@ -148,16 +172,16 @@ elif subject == 'template_avg':
     
         for avg_method in avg_methods:
             if 'loo' in avg_method:
-                ncsf_maps_names = ncsf_maps_names + ['r_squared']
+                maps_names_ncsf = maps_names_ncsf + ['ncsf_loo_rsq']
             else: 
-                ncsf_maps_names = ncsf_maps_names
+                maps_names_ncsf = maps_names_ncsf
             
             # find all the subject ncsf deriv
             ncsf_deriv_fns = []
             for subject in subjects:
                 ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
                     main_dir, project_dir, subject, averaging_template_format)
-                ncsf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf-css_deriv.dtseries.nii".format(
+                ncsf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf_deriv.dtseries.nii".format(
                     ncsf_deriv_dir, subject, ncsf_task_name,
                     preproc_prep, filtering, normalization, avg_method)]
 
@@ -176,7 +200,7 @@ elif subject == 'template_avg':
             print("save: {}".format(template_deriv_fn))
             template_deriv_img = make_surface_image(data=data_deriv_median, 
                                                     source_img=img, 
-                                                    ncsf_maps_names=ncsf_maps_names)
+                                                    maps_names_ncsf=maps_names_ncsf)
             nb.save(template_deriv_img, template_deriv_fn)
 
 # # Define permission cmd
