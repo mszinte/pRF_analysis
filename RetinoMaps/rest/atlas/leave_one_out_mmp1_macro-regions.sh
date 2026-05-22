@@ -25,7 +25,7 @@ for hemi in "${HEMISPHERES[@]}"; do
   for leave_out in "${CLUSTERS[@]}"; do
     COMBINED_LABEL_FILE=$(mktemp)
     
-    echo "💡 Creating label file excluding $leave_out for hemisphere $hemi"
+    echo "Creating label file excluding $leave_out for hemisphere $hemi"
     for region in "${CLUSTERS[@]}"; do
       if [ "$region" != "$leave_out" ]; then
         cat "$LABELS_DIR/${hemi}_${region}_labels.txt" >> "$COMBINED_LABEL_FILE"
@@ -40,7 +40,7 @@ done
 # 1b. Generate "leave-one-out" bilateral cluster
 for leave_out in "${CLUSTERS[@]}"; do
   COMBINED_LABEL_FILE=$(mktemp)
-  echo "💡 Creating BILATERAL label file excluding $leave_out"
+  echo "Creating BILATERAL label file excluding $leave_out"
   for hemi in "${HEMISPHERES[@]}"; do
     for region in "${CLUSTERS[@]}"; do
       if [ "$region" != "$leave_out" ]; then
@@ -71,7 +71,7 @@ for leave_out in "${CLUSTERS[@]}"; do
 done
 
 # 4. Convert all labels to ROIs (dscalar format)
-echo "💡 Converting labels to ROIs..."
+echo "Converting labels to ROIs"
 for leave_out in "${CLUSTERS[@]}"; do
   DLABEL_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dlabel.nii"
   DSCALAR_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dscalar.nii"
@@ -80,7 +80,7 @@ for leave_out in "${CLUSTERS[@]}"; do
 done
 
 # 5. Create binary masks from ROIs
-echo "💡 Creating binary masks..."
+echo "Creating binary masks"
 for leave_out in "${CLUSTERS[@]}"; do
   DSCALAR_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}.dscalar.nii"
   BIN_FILE="${LEAVEOUT_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_leaveout_${leave_out}_bin.dscalar.nii"

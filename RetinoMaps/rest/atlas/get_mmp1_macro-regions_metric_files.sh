@@ -22,8 +22,16 @@ for region in "${REGIONS[@]}"; do
 
 	wb_command -cifti-label-import "$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii" "$LABELS_DIR/rh_${region}_labels.txt" \
     	"$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_${region}.dlabel.nii" -discard-others
-  
-# 2. Get the corresponding metric files and binarize outputs
+
+# 2. Get the dscalar files (useful later to make new dlabel files for macro-regions)
+
+	wb_command -cifti-reduce "$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_${region}.dlabel.nii" \
+	COUNT_NONZERO "$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_${region}.dscalar.nii"
+
+	wb_command -cifti-reduce "$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_${region}.dlabel.nii" \
+	COUNT_NONZERO "$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_rh_${region}.dscalar.nii"
+
+# 3. Get the corresponding metric files and binarize outputs
 
 	# Separate metric files
 	wb_command -cifti-separate "$ATLAS_DIR/macro_regions/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_lh_${region}.dlabel.nii" COLUMN \

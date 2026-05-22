@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # Uncomment to switch on debugging
 # set -e 
 # set -x

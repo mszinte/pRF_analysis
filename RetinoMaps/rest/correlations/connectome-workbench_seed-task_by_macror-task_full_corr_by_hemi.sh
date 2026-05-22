@@ -11,7 +11,7 @@
 
 # Define some paths
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
+ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1"
 
 # Iterate through subjects
 for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
@@ -81,67 +81,67 @@ do
                 # Parcellate targets by macro-region
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro.pscalar.nii" \
                     -method MEAN -only-numeric
 
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro.pscalar.nii" \
                     -method MEAN -only-numeric
 
                 # Parcellate excluding outliers
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.pscalar.nii" \
                     -method MEAN -exclude-outliers 3 3
 
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.pscalar.nii" \
                     -method MEAN -exclude-outliers 3 3
 
                 # Parcellate targets using legacy mode
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.pscalar.nii" \
                     -method MEAN -only-numeric -legacy-mode
 
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dscalar.nii" \
-                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii" COLUMN \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
+                    "$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii" COLUMN \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.pscalar.nii" \
                     -method MEAN -only-numeric -legacy-mode
 
                 # Convert all parcellated outputs to TSV for visualizations
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro.tsv"
 
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_legacy-mode.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.tsv"
 
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_no_outliers.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.tsv"
 
                 # Fisher-z outputs for stats
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro.tsv"
 
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_legacy-mode.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_legacy-mode.tsv"
 
                 wb_command -cifti-convert -to-text \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.pscalar.nii" \
-                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_no_outliers.tsv"
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.pscalar.nii" \
+                    "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_parcellated_by_macro_no_outliers.tsv"
 
                 # Mask vertex-wise results for supplementary visualizations
                 wb_command -cifti-restrict-dense-map \
