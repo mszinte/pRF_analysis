@@ -257,7 +257,7 @@ for hemi in ("lh", "rh"):
 
         # Save group median
         stem_median = (
-            f"cluster_by_mmp-parcel_full-corr_fisherz_median"
+            f"seed-task_by_mmp-parcel_full-corr_fisherz_median"
             f"_{run_label}_{hemi}_{mode}"
         )
         np.save(output_folder / f"{stem_median}.npy", group_median)
@@ -267,7 +267,7 @@ for hemi in ("lh", "rh"):
 
         # Save group std
         stem_std = (
-            f"cluster_by_mmp-parcel_full-corr_fisherz_std"
+            f"seed-task_by_mmp-parcel_full-corr_fisherz_std"
             f"_{run_label}_{hemi}_{mode}"
         )
         np.save(output_folder / f"{stem_std}.npy", group_std)

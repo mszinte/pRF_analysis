@@ -41,6 +41,7 @@ proc_time = sys.argv[6] #
 
 # Define which way you want to resample
 # Adap-bary is recommended for this scenario
+# Largest flag is applied by default because is the only way to get discrete values
 if mode == "adap-bary":
     script_name = "resample_to_fsLR91k_adap-bary.sh -largest"
 elif mode == "bary":

@@ -10,7 +10,7 @@ MACRO_DIR="$ATLAS_DIR/macro_regions"
 TEMPLATE="$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_dseg.dlabel.nii"
 
 PARCEL="$MACRO_DIR/atlas-Glasser_space-fsLR_den-32k_macro-regions_parcellation.dscalar.nii"
-OUTPUT="$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_discarded_macro-regions.dlabel.nii"
+OUTPUT="$ATLAS_DIR/atlas-Glasser_space-fsLR_den-32k_macro-regions.dlabel.nii"
 COMBINED_LABELS="$LABELS_DIR/all_macro-regions_label.txt"
 
 # Output dir
@@ -77,8 +77,7 @@ done
 wb_command -cifti-label-import \
     "$PARCEL" \
     "$COMBINED_LABELS" \
-    "$OUTPUT" \
-    -discard-others
+    "$OUTPUT"
 
 # Fix permissions
 chmod -Rf 771 "$ATLAS_DIR"

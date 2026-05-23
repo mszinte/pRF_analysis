@@ -11,8 +11,6 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: script name to run:
-              - connectome-workbench_dense_full_corr_bilateral.sh
-              - connectome-workbench_dense_full_corr_by_hemi.sh
 sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -21,7 +19,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-free 2:00:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-free 10:00:00
 --------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
