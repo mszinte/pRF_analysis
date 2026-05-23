@@ -11,8 +11,6 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
 sys.argv[5]: script name to run:
-              - connectome-workbench_dense_full_corr_bilateral.sh
-              - connectome-workbench_dense_full_corr_by_hemi.sh
 sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -21,7 +19,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 by_hemi 2:00:00
+python submit_workbench_compute_full_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-free 10:00:00
 --------------------------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """
@@ -39,17 +37,17 @@ main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 group = sys.argv[3]
 server_project = sys.argv[4]
-mode = sys.argv[5] # "bilateral" or "by_hemi"
+mode = sys.argv[5] # "task-free" or "task-constrained"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
 if mode == "task-free":
-    script_name = "connectome-workbench_dense_full_corr_bilateral.sh"
+    script_name = "connectome-workbench_seed-task_by_macror-task_full_corr_by_hemi.sh"
 elif mode == "task-constrained":
-    script_name = "connectome-workbench_dense_full_corr_by_hemi.sh"
+    script_name = "connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh"
 else:
     raise ValueError(
-        "Invalid mode. Use either 'bilateral' or 'by_hemi'. "
+        "Invalid mode. Use either 'task-free' or 'task-constrained'. "
         f"Got: {mode}"
     )
 

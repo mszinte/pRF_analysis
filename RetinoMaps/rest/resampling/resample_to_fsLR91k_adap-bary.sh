@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # Uncomment to switch on debugging
 # set -e 
 # set -x
@@ -41,10 +39,12 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 	do
 	
 	# Output dirs for every subject
-	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
+	mkdir -p "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/source_170k"
 	OUT_DIR1="$TASK_RESULTS/sub-${i}/91k/rest/seed/source_170k"
-	mkdir "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
+	mkdir -p "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/seed/target_91k"
 	OUT_DIR2="$TASK_RESULTS/sub-${i}/91k/rest/seed/target_91k"
+	mkdir -p "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/sub-${i}/91k/rest/target"
+	OUT_DIR3="$TASK_RESULTS/sub-${i}/91k/rest/target"
 
 		### 1. Separate the results by hemisphere
 		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii" \
@@ -85,14 +85,14 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 		### 4. Mask the GLM results with the Glasser macro-regions (simply comment out these steps if you want to keep the results unmasked)
 		wb_command -label-mask "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
+			"$ATLAS/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_left_hemi.shape.gii" \
 			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii";
 
 		wb_command -label-mask "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_cmap${LARGEST_SUFFIX}.label.gii" \
-			"$ATLAS/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii" \
+			"$ATLAS/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_right_hemi.shape.gii" \
 			"$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii";
 
-		### 5. Loop over each label to generate separate metric files (useful to mask the timeseries)
+		### 5. Loop over each label to generate separate metric files
 
 		# Pursuit
 		wb_command -gifti-label-to-roi "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh_renamed_masked_cmap${LARGEST_SUFFIX}.label.gii" \
@@ -141,6 +141,10 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 			"$ATLAS/pRF-Sac-Pur_label_import.txt" "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.label.gii";
 		wb_command -metric-label-import "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" \
 			"$ATLAS/pRF-Sac-Pur_label_import.txt" "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.label.gii";
+		
+		### 7. Copy main outputs in the target directory
+		cp "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_lh${LARGEST_SUFFIX}.shape.gii" "$OUT_DIR3/sub-${i}_91k_intertask_Sac-Pur-pRF_lh.shape.gii"
+		cp "$OUT_DIR2/sub-${i}_91k_intertask_Sac-Pur-pRF_rh${LARGEST_SUFFIX}.shape.gii" "$OUT_DIR3//sub-${i}_91k_intertask_Sac-Pur-pRF_rh.shape.gii"
 
 	done
 
