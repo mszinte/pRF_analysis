@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-residuals_submit_gauss_jobs.py
+pmf_fit_submit_jobs.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Create and submit jobscript to make a prf gaussian fit on PMF residuals or original BOLD
@@ -27,13 +27,13 @@ Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/postfit
 
 # single subject, residuals (default)
-python residuals_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python pmf_fit_submit_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 
 # multiple subjects, residuals
-python residuals_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02,sub-03" 327 b327
+python pmf_fit_submit_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02,sub-03" 327 b327
 
 # multiple subjects, original bold
-python residuals_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02" 327 b327 bold
+python pmf_fit_submit_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02" 327 b327 bold
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------

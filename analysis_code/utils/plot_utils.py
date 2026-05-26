@@ -329,18 +329,18 @@ def prf_violins_plot(df, figure_info, rsq2use):
                       row=2, col=1)
         
         # pcm
-        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
-                                y=df_roi.pcm_median, 
-                                name=roi, 
-                                opacity=1,
-                                showlegend=False, 
-                                points=False, 
-                                spanmode='manual', 
-                                span=figure_info['violin_pcm_range'],
-                                scalemode='width', 
-                                fillcolor=roi_colors[roi],
-                                line_color=roi_colors[roi]), 
-                      row=2, col=2)
+        # fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+        #                         y=df_roi.pcm_median, 
+        #                         name=roi, 
+        #                         opacity=1,
+        #                         showlegend=False, 
+        #                         points=False, 
+        #                         spanmode='manual', 
+        #                         span=figure_info['violin_pcm_range'],
+        #                         scalemode='width', 
+        #                         fillcolor=roi_colors[roi],
+        #                         line_color=roi_colors[roi]), 
+        #               row=2, col=2)
         
         # Set axis titles only for the left-most column and bottom-most row
         if 'loo' in rsq2use:
@@ -521,29 +521,29 @@ def prf_params_median_plot(df, figure_info, rsq2use):
                           row=2, col=1)
         
         # pcm
-        weighted_median = df_roi.pcm_median_weighted_median
-        ci_up = df_roi.pcm_median_ci_up
-        ci_down = df_roi.pcm_median_ci_down
+        # weighted_median = df_roi.pcm_median_weighted_median
+        # ci_up = df_roi.pcm_median_ci_up
+        # ci_down = df_roi.pcm_median_ci_down
         
-        fig.add_trace(go.Scatter(x=[roi],
-                                 y=tuple(weighted_median),
-                                 mode='markers', 
-                                 name=roi,
-                                 error_y=dict(type='data', 
-                                              array=[ci_up-weighted_median], 
-                                              arrayminus=[weighted_median-ci_down],
-                                              visible=True, 
-                                              thickness=3,
-                                              width=0, 
-                                              color=roi_colors[roi]),
-                                 marker=dict(symbol="square",
-                                             color=roi_colors[roi],
-                                             size=12, 
-                                             line=dict(color=roi_colors[roi], 
-                                                       width=3)),
-                                 legendgroup='pcm',
-                                 showlegend=False), 
-                          row=2, col=2)
+        # fig.add_trace(go.Scatter(x=[roi],
+        #                          y=tuple(weighted_median),
+        #                          mode='markers', 
+        #                          name=roi,
+        #                          error_y=dict(type='data', 
+        #                                       array=[ci_up-weighted_median], 
+        #                                       arrayminus=[weighted_median-ci_down],
+        #                                       visible=True, 
+        #                                       thickness=3,
+        #                                       width=0, 
+        #                                       color=roi_colors[roi]),
+        #                          marker=dict(symbol="square",
+        #                                      color=roi_colors[roi],
+        #                                      size=12, 
+        #                                      line=dict(color=roi_colors[roi], 
+        #                                                width=3)),
+        #                          legendgroup='pcm',
+        #                          showlegend=False), 
+        #                   row=2, col=2)
 
         
         # Set axis titles only for the left-most column and bottom-most row

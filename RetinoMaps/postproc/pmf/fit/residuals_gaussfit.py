@@ -138,7 +138,7 @@ print(f"Output pred: {gauss_pred_fn}")
 
 # Find vdm: check subject-specific directory first, then general vdm directory
 vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_saccade_mdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #use retinal space saccade movement mdm
+vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_blob_saccade_mdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name) #use retinal space saccade movement mdm
 vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
 
 if os.path.isfile(vdm_fn_subject):

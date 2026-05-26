@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-pmf_submit_gauss_jobs.py
+prf_fit_submit_jobs.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Create and submit jobscript to make a prf gaussian fit
@@ -19,12 +19,12 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
 2. run python command
-python pmf_submit_gauss_jobs.py [main directory] [project name] [subject]
+python prf_fit_submit_jobs.py [main directory] [project name] [subject]
                                 [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
-python pmf_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+python prf_fit_submit_jobs.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

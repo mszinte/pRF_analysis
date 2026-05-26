@@ -167,7 +167,7 @@ violin_pcm_range:
   
 params_median_rsq_range:
   description: "R-square range in the median parameters plot"
-  value: [0, 1.0]
+  value: [0, 0.5]
   
 params_median_size_range: 
   description: "Size range in the median parameters plot"
