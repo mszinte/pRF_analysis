@@ -112,8 +112,6 @@ cfg        = fit_type_config[deriv_condition]
 deriv_tag  = cfg['deriv_tag']
 output_tag = cfg['output_tag']
 
-# NOTE: No stats threshold, no pCM — Gaussian fit only uses rsq, ecc, size, amplitude
-
 # rsq column is always 'prf_rsq' for Gaussian (no loo variant stored separately)
 rsq2use = 'prf_rsq'
 

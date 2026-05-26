@@ -34,7 +34,7 @@ import h5py
 sys.path.append("{}/../../../../analysis_code/utils".format(os.getcwd()))
 from settings_utils import load_settings
 from sac_utils import add_missing_sac_rows
-from pmf_utils import make_vdm_from_saccades, save_vdm_video
+from pmf_utils import make_vdm_from_saccades_gaussian, make_vdm_from_saccades_blob, save_vdm_video
 
 main_dir    = sys.argv[1]
 project_dir = sys.argv[2]
@@ -110,20 +110,30 @@ for run_idx in range(n_runs):
         df['sac_t_offset'] = (df['sac_t_offset'] - initial_timestamp) / 1000
 
     # Build VDM for this run
-    vdm, log = make_vdm_from_saccades(
-        sacc_out=sacc_out,
-        sacc_in=sacc_in,
-        scan_start=0.0,
-        n_TRs=n_TRs,
-        TR=TR,
-        canvas_size=100,
-        dva_range=10.0,
-        sigma_scale=0.3
-    )
+    # vdm, log = make_vdm_from_saccades_gaussian(
+    #     sacc_out=sacc_out,
+    #     sacc_in=sacc_in,
+    #     scan_start=0.0,
+    #     n_TRs=n_TRs,
+    #     TR=TR,
+    #     canvas_size=100,
+    #     dva_range=15.0,
+    #     sigma_scale=0.3
+    # )
+    
+    vdm, log = make_vdm_from_saccades_blob(
+         sacc_out=sacc_out,
+         sacc_in=sacc_in,
+         scan_start=0.0,
+         n_TRs=n_TRs,
+         TR=TR,
+         canvas_size=100,
+         dva_range=15.0
+     )
     vdm_runs.append(vdm)
 
     # Save per-run video
-    video_fn = f"{save_fn}/{subject}_task-SacLoc_saccade_vdm_run_{run_num:02d}.mp4"
+    video_fn = f"{save_fn}/{subject}_task-SacLoc_blob_saccade_mdm_run_{run_num:02d}.mp4"
 
     save_vdm_video(vdm, log, output_path=video_fn)
     print(f"Saved video: {video_fn}")
@@ -132,5 +142,5 @@ for run_idx in range(n_runs):
 vdm_concat = np.concatenate(vdm_runs, axis=-1)   
 print(vdm_concat.shape)
 
-np.save(f"{save_fn}/{subject}_task-SacLoc_saccade_mdm.npy", vdm_concat)
+np.save(f"{save_fn}/{subject}_task-SacLoc_blob_saccade_mdm.npy", vdm_concat)
 print(f"Saved concatenated VDM: {save_fn}  shape={vdm_concat.shape}")

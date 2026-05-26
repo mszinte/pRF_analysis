@@ -38,7 +38,7 @@ def make_rotated_gaussian_2d(
 
 
     
-def make_vdm_from_saccades(
+def make_vdm_from_saccades_gaussian(
     sacc_out,
     sacc_in,
     scan_start,
@@ -146,6 +146,116 @@ def make_vdm_from_saccades(
 
     return vdm, pd.DataFrame(log)
 
+def make_vdm_from_saccades_blob(
+    sacc_out,
+    sacc_in,
+    scan_start,
+    n_TRs,
+    TR=1.2,
+    canvas_size=100,
+    dva_range=15.0,
+    dot_dva=0.5,        # radius of the dot in dva
+):
+    vdm = np.zeros((canvas_size, canvas_size, n_TRs))
+    log = []
+
+    # pre-compute pixel-per-dva scale
+    px_per_dva = canvas_size / (2 * dva_range)
+
+    sacc_out = sacc_out.copy(); sacc_out['direction'] = 'out'
+    sacc_in  = sacc_in.copy();  sacc_in['direction']  = 'in'
+    saccades = pd.concat([sacc_out, sacc_in], ignore_index=True)
+
+    for tr_idx in range(n_TRs):
+        tr_start = scan_start + tr_idx * TR
+        tr_end   = tr_start + TR
+
+        tr_sacc = saccades[
+            (saccades['sac_t_onset'] >= tr_start) &
+            (saccades['sac_t_onset'] <  tr_end)
+        ]
+        if len(tr_sacc) == 0:
+            continue
+
+        draw_tr = tr_idx + 1
+        if draw_tr >= n_TRs:
+            continue
+
+        amplitudes = tr_sacc.apply(
+            lambda r: np.sqrt(
+                (r['sac_x_offset'] - r['sac_x_onset'])**2 +
+                (r['sac_y_offset'] - r['sac_y_onset'])**2
+            ), axis=1
+        )
+        sac = tr_sacc.loc[amplitudes.idxmax()]
+
+        dx = sac['sac_x_offset'] - sac['sac_x_onset']
+        dy = sac['sac_y_offset'] - sac['sac_y_onset']
+        theta = np.degrees(np.arctan2(dy, dx))
+        amp   = np.sqrt(dx**2 + dy**2)
+
+        if sac['direction'] == 'out':
+            gx = sac['sac_x_offset']
+            gy = sac['sac_y_offset']
+        else:
+            gx = -sac['sac_x_onset']
+            gy = -sac['sac_y_onset']
+
+        cx = int(round((gx + dva_range) / (2 * dva_range) * (canvas_size - 1)))
+        cy = int(round((gy + dva_range) / (2 * dva_range) * (canvas_size - 1)))
+
+        r_px = dot_dva * px_per_dva
+        ys, xs = np.ogrid[:canvas_size, :canvas_size]
+        mask = (xs - cx)**2 + (ys - cy)**2 <= r_px**2
+        vdm[mask, tr_idx] = 1.0
+
+        log.append({
+            'tr':        tr_idx,
+            'tr_start':  tr_start,
+            'tr_end':    tr_end,
+            'direction': sac['direction'],
+            'gx':        gx,
+            'gy':        gy,
+            'theta':     theta,
+            'amp':       amp,
+            't_onset':   sac['sac_t_onset'],
+            't_offset':  sac['sac_t_offset'],
+        })
+    return vdm, pd.DataFrame(log)
+
+# def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
+#                    dva_range=15.0, preview_fps=60, TR=1.2):
+#     n_trs = vdm.shape[2]
+#     n_total_frames = int(round(n_trs * TR * preview_fps))
+#     frame_dur = 1.0 / preview_fps
+
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     writer = cv2.VideoWriter(output_path, fourcc, preview_fps,
+#                              (vdm.shape[1], vdm.shape[0]), False)
+
+#     for frame_idx in range(n_total_frames):
+#         t_frame_start = scan_start + frame_idx * frame_dur
+#         t_frame_end   = t_frame_start + frame_dur
+
+#         # Fixed: offset by scan_start before floor-dividing
+#         tr_idx = min(int((t_frame_start - scan_start) / TR), n_trs - 1)
+
+#         active = log_df[
+#             (log_df['t_onset']  < t_frame_end) &
+#             (log_df['t_offset'] > t_frame_start)
+#         ]
+
+#         if len(active) > 0:
+#             frame = vdm[:, :, tr_idx]
+#             frame_uint8 = np.uint8(np.clip(frame, 0, 1) * 255)
+#         else:
+#             frame_uint8 = np.zeros((vdm.shape[0], vdm.shape[1]), dtype=np.uint8)
+
+#         writer.write(np.flipud(frame_uint8))
+
+#     writer.release()
+#     size_mb = os.path.getsize(output_path) / 1e6
+#     print(f"Saved {output_path}  ({n_trs * TR:.1f}s, {n_total_frames} frames, {size_mb:.1f} MB)")
 
 def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
                    dva_range=15.0, preview_fps=60, TR=1.2):
@@ -159,17 +269,11 @@ def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
 
     for frame_idx in range(n_total_frames):
         t_frame_start = scan_start + frame_idx * frame_dur
-        t_frame_end   = t_frame_start + frame_dur
 
-        # Fixed: offset by scan_start before floor-dividing
         tr_idx = min(int((t_frame_start - scan_start) / TR), n_trs - 1)
 
-        active = log_df[
-            (log_df['t_onset']  < t_frame_end) &
-            (log_df['t_offset'] > t_frame_start)
-        ]
-
-        if len(active) > 0:
+        # Show the dot for the entire TR if any saccade was logged in it
+        if np.any(vdm[:, :, tr_idx]):
             frame = vdm[:, :, tr_idx]
             frame_uint8 = np.uint8(np.clip(frame, 0, 1) * 255)
         else:
@@ -180,5 +284,3 @@ def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
     writer.release()
     size_mb = os.path.getsize(output_path) / 1e6
     print(f"Saved {output_path}  ({n_trs * TR:.1f}s, {n_total_frames} frames, {size_mb:.1f} MB)")
-
-

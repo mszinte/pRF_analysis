@@ -1,6 +1,6 @@
 """
 -----------------------------------------------------------------------------------------
-pmf_submit_pred_jobs.py
+prf_predict_timecourse_submit_jobs.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Create and submit jobscript to make a prf gaussian fit
@@ -19,17 +19,17 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
-python pmf_submit_pred_jobs.py [main directory] [project name] [subject(s)]
+python prf_predict_timecourse_submit_jobs.py [main directory] [project name] [subject(s)]
                                 [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
 
 # Single subject:
-python pmf_submit_pred_jobs.py /scratch/mszinte/data RetinoMaps sub-02 327 b327
+python prf_predict_timecourse_submit_jobs.py /scratch/mszinte/data RetinoMaps sub-02 327 b327
 
 # Multiple subjects (comma-separated):
-python pmf_submit_pred_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02,sub-03" 327 b327
+python prf_predict_timecourse_submit_jobs.py /scratch/mszinte/data RetinoMaps "sub-01,sub-02,sub-03" 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)

@@ -191,18 +191,18 @@ https://invibe.nohost.me/predicteye/
 Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
 
 #### PMF Gaussian fit
-Preprocessing: 
+### Preprocessing: 
 - [x] Create the visual matrix design with eye movements (retinal view vdm) & target vdm [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
 - [x] Create the motion design matrix for saccades [mdm_builder_sac_dir.py](postproc/pmf/fit/mdm_builder_sac_dir.py)
 - [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
-Fitting Level 1: 
-- [x] Fit retinal visual pRF model [prf_submit_gauss_jobs.py](postproc/pmf/fitprf_submit_gauss_jobs.py)
-- [x] Predict SacLoc timecourse from pRF parameters [pmf_submit_pred_jobs.py](postproc/pmf/fit/pmf_submit_pred_jobs.py)
-- [x] Fit retinal motor pMF model with bold baseline [residuals_submit_gauss_jobs.py](postproc/pmf/fit/residuals_submit_gauss_jobs.py)
-Fitting Level 2: 
+### Fitting Level 1: 
+- [x] Fit retinal visual pRF model [prf_fit_submit_jobs.py](postproc/pmf/fit/prf_fit_submit_jobs.py)
+- [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
 - [x] Compute residuals [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
-- [x] Fit retinal motor pMF model with residuals [residuals_submit_gauss_jobs.py](postproc/pmf/fit/residuals_submit_gauss_jobs.py)
-Postprocessing: 
+### Fitting Level 2: 
+- [x] Fit retinal motor pMF model with bold baseline (--input bold) [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
+- [x] Fit retinal motor pMF model with residuals [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
+### Postprocessing: 
 - [x] Compute stats [gauss_stats.py](postproc/pmf/postfit/gauss_stats.py)
 - [x] Compute derivatives [compute_gauss_derivatives.py](postproc/pmf/postfit/compute_gauss_derivatives.py)
 - [x] Make maps with pycortex [pycortex_maps_gauss.py](postproc/pmf/postfit/pycortex_maps_gauss.py)
