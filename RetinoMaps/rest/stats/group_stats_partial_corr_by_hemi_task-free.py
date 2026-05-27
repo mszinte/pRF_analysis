@@ -141,7 +141,7 @@ print(f"  Parcels (n={n_parcels}): {parcels[:5]} ... {parcels[-5:]}")
 # Paths
 # ============================================================
 main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder = main_data / "group/91k/rest/partial_corr/by_hemi"
+output_folder = main_data / "group/91k/rest/partial_corr/by_hemi/task-free"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================

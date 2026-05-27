@@ -1,28 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-group_partial_corr_by_hemi.py
+group_partial_corr_by_hemi_task-constrained.py
 ------------------------------------------------------------------------------------------
 Goal:
     Compute group-level Fisher-z statistics from per-subject partial-correlation
-    matrices produced by Nilearn
+    matrices produced by partial_corr_hemi_task_constrained.py
 
-    Operates on per-subject .npy files (already in seeds × parcels format,
-    YAML canonical parcel order). No TSV loading or atlas-key remapping needed.
+    Operates on per-subject .npy files in (n_clusters × n_clusters) format
+    (macro-region × macro-region, ipsilateral only).
 
     For each hemisphere × variant the script:
-        1. Resolves which .npy file to load for each subject (run variant logic,
+        1. Resolves which .npy file to load per subject (run variant logic,
            including concat_clean fallback for RUN02_EXCLUDED subjects).
-        2. Stacks the (n_clusters × n_parcels) matrices across subjects.
-        3. Computes group mean, median in Fisher-z space, and back-converts to r.
+        2. Stacks the (n_clusters × n_clusters) matrices across subjects.
+        3. Computes group mean and median in Fisher-z space, back-converts to r.
         4. Saves .npy, .csv and a compressed .npz archive per hemisphere × variant.
 
     Averaging is always in Fisher-z space; Pearson r is recovered only at the
-    final reporting stage via tanh().  This is intentional:
-      - Fisher-z has approximately constant variance ~1/(n-3), making it the
-        correct space for averaging and any subsequent parametric tests.
-      - Raw Pearson r values have r-dependent variance and must never be
-        averaged directly.
+    final reporting stage via tanh().
+
 ------------------------------------------------------------------------------------------
 Run variants:
     concat       — concatenated-run .npy, all subjects
@@ -30,8 +27,8 @@ Run variants:
                      · RUN02_EXCLUDED subjects → run-01 .npy
                      · all other subjects      → concatenated-run .npy
     run-01       — run-01 .npy, all subjects
-    run-02       — run-02 .npy, all subjects (bad subjects kept intentionally
-                   to expose the registration artifact in group plots)
+    run-02       — run-02 .npy, all subjects
+
 ------------------------------------------------------------------------------------------
 Inputs (sys.argv):
     1: main project directory   (e.g. /scratch/mszinte/data)
@@ -40,18 +37,18 @@ Inputs (sys.argv):
     4: server project           (e.g. b327)
 
 Outputs (per hemisphere × variant):
-    group_mean_cluster_by_mmp-parcel_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_median_cluster_by_mmp-parcel_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_mean_cluster_by_mmp-parcel_partial_r_{run_label}_{hemi}.npy / .csv
-    group_median_cluster_by_mmp-parcel_partial_r_{run_label}_{hemi}.npy / .csv
-    group_partial_corr_{run_label}_{hemi}.npz   (all four arrays + metadata)
+    group_mean_seed-task_by_macror-task_partial_fisherz_{run_label}_{hemi}.npy / .csv
+    group_median_seed-task_by_macror-task_partial_fisherz_{run_label}_{hemi}.npy / .csv
+    group_mean_seed-task_by_macror-task_partial_r_{run_label}_{hemi}.npy / .csv
+    group_median_seed-task_by_macror-task_partial_r_{run_label}_{hemi}.npy / .csv
+    group_partial_corr_task-constrained_{run_label}_{hemi}.npz
 
-    Rows    : seed/cluster names  (n_clusters)
-    Columns : parcel names in YAML-derived canonical order  (n_parcels)
+    Rows    : seed macro-region names   (n_clusters)
+    Columns : target macro-region names (n_clusters)
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_partial_corr_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_stats_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -76,10 +73,10 @@ sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils"))
 from rest_utils import RUN02_EXCLUDED, VARIANTS
 
 # ============================================================
-# Parse and validate arguments
+# Parse arguments
 # ============================================================
 USAGE = (
-    "Usage: python group_partial_corr_by_hemi.py "
+    "Usage: python group_partial_corr_by_hemi_task-constrained.py "
     "<main_dir> <project_dir> <group> <server>"
 )
 
@@ -93,7 +90,7 @@ group       = sys.argv[3]
 server      = sys.argv[4]
 
 print("=" * 80)
-print("GROUP PARTIAL CORRELATION — Fisher-z statistics (Nilearn .npy files)")
+print("GROUP PARTIAL CORRELATION (task-constrained) — Fisher-z statistics")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
@@ -112,41 +109,46 @@ subjects          = analysis_info["subjects"]
 # ============================================================
 # ROIs — canonical order from YAML config
 # ============================================================
-clusters        = list(analysis_info["rois-drawn"])
-seed_to_parcels = analysis_info["rois-group-mmp"]   # {seed_name: [parcel_names]}
-clusters.reverse()                                   # mPCS first
-
-parcels: List[str] = []
-for cl in clusters:
-    parcels.extend(seed_to_parcels[cl])
+clusters = list(analysis_info["rois-drawn"])
+clusters.reverse()   # mPCS first
 
 n_clusters = len(clusters)
-n_parcels  = len(parcels)
 
-print(f"\n  Seeds   (n={n_clusters}): {clusters}")
-print(f"  Parcels (n={n_parcels}): {parcels[:5]} ... {parcels[-5:]}")
+print(f"\n  Macro-regions (n={n_clusters}): {clusters}")
 
 # ============================================================
 # Paths
 # ============================================================
 main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder = main_data / "group/91k/rest/partial_corr/by_hemi"
+output_folder = main_data / "group/91k/rest/partial_corr/by_hemi/task-constrained"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
 # Helper: resolve per-subject .npy path
 #
-# Input file naming convention (from the Nilearn computation script):
-#   cluster_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy
-#   run_entity = ""         → concatenated run
-#   run_entity = "_run-01"  → run-01
-#   run_entity = "_run-02"  → run-02
+# Subject-level files live under:
+#   {subject}/91k/rest/corr/partial_corr/by_hemi/task-constrained/
+#       seed-task_by_macror-task_partial_fisherz{run_tag}_{hemi}.npy
+#
+# run_tag mapping:
+#   run-01     → "_run-01"
+#   run-02     → "_run-02"
+#   concat     → "_concat"      (full concatenated session)
+#   concat_clean uses "_run-01" for RUN02_EXCLUDED, "_concat" for others
 # ============================================================
-def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
-    run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = f"cluster_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy"
-    return main_data / subject / "91k/rest/corr/partial_corr/by_hemi" / fname
 
+def npy_path(subject: str, hemi: str, run_tag: str) -> Path:
+    fname = f"seed-task_by_macror-task_partial_fisherz{run_tag}_{hemi}.npy"
+    return (
+        main_data / subject
+        / "91k/rest/corr/partial_corr/by_hemi/task-constrained"
+        / fname
+    )
+
+# Map VARIANTS normal_tag / excluded_tag (None = concat) to filename run_tag
+def to_run_tag(tag: Optional[str]) -> str:
+    """Convert VARIANTS run_tag (None = concat, str = run-XX) to filename tag."""
+    return f"_{tag}" if tag is not None else "_concat"
 
 # ============================================================
 # Main loop — hemisphere × variant
@@ -158,8 +160,7 @@ for hemi in ("lh", "rh"):
     print("=" * 80)
 
     for variant, (normal_tag, excluded_tag, _skip) in VARIANTS.items():
-        # run-02 intentionally keeps all subjects here (group QC strategy),
-        # regardless of the skip_excluded flag used in the WTA script.
+
         print(f"\n  --- Variant: {variant} ---")
 
         fz_stack:    List[np.ndarray] = []
@@ -168,7 +169,8 @@ for hemi in ("lh", "rh"):
 
         for subject in subjects:
             is_excluded = subject in RUN02_EXCLUDED
-            run_tag     = excluded_tag if is_excluded else normal_tag
+            tag         = excluded_tag if is_excluded else normal_tag
+            run_tag     = to_run_tag(tag)
 
             fpath = npy_path(subject, hemi, run_tag)
 
@@ -179,10 +181,11 @@ for hemi in ("lh", "rh"):
 
             mat = np.load(fpath)
 
-            if mat.shape != (n_clusters, n_parcels):
+            # Expected shape: (n_clusters × n_clusters)
+            if mat.shape != (n_clusters, n_clusters):
                 raise ValueError(
                     f"[{subject} {hemi} {variant}] Unexpected shape {mat.shape} "
-                    f"in {fpath.name} (expected ({n_clusters}, {n_parcels}))."
+                    f"in {fpath.name} (expected ({n_clusters}, {n_clusters}))."
                 )
 
             if variant == "concat_clean" and is_excluded:
@@ -202,30 +205,29 @@ for hemi in ("lh", "rh"):
         if missing:
             print(f"    Missing       : {missing}")
 
-        # Stack → (n_subjects × n_clusters × n_parcels)
+        # Stack → (n_subjects × n_clusters × n_clusters)
         stacked_fz = np.stack(fz_stack, axis=0)
-        assert stacked_fz.shape == (n_valid, n_clusters, n_parcels), (
+        assert stacked_fz.shape == (n_valid, n_clusters, n_clusters), (
             f"Unexpected stack shape {stacked_fz.shape}."
         )
 
         # ── Group statistics in Fisher-z space ───────────────────────────────
-        mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (n_clusters × n_parcels)
+        mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (n_clusters × n_clusters)
         median_fz = np.nanmedian(stacked_fz, axis=0)
 
         # ── Back-convert to Pearson r at reporting stage only ─────────────────
         mean_r   = np.tanh(mean_fz)
         median_r = np.tanh(median_fz)
 
-        print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},   {np.nanmax(mean_fz):.4f}]")
+        print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},  {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
 
         # ── Output filename run-label ─────────────────────────────────────────
-        # None normal_tag → use variant name (e.g. "concat", "concat_clean")
         run_label = normal_tag if normal_tag is not None else variant
 
         def _stem(stat: str, space: str) -> str:
             return (
-                f"group_{stat}_cluster_by_mmp-parcel_partial"
+                f"group_{stat}_seed-task_by_macror-task_partial"
                 f"_{space}_{run_label}_{hemi}"
             )
 
@@ -233,7 +235,7 @@ for hemi in ("lh", "rh"):
         for stat, arr in (("mean", mean_fz), ("median", median_fz)):
             stem = _stem(stat, "fisherz")
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=clusters, columns=parcels).to_csv(
+            pd.DataFrame(arr, index=clusters, columns=clusters).to_csv(
                 output_folder / f"{stem}.csv"
             )
 
@@ -241,12 +243,12 @@ for hemi in ("lh", "rh"):
         for stat, arr in (("mean", mean_r), ("median", median_r)):
             stem = _stem(stat, "r")
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=clusters, columns=parcels).to_csv(
+            pd.DataFrame(arr, index=clusters, columns=clusters).to_csv(
                 output_folder / f"{stem}.csv"
             )
 
-        # ── Compressed archive with all four arrays + metadata ────────────────
-        npz_stem = f"group_partial_corr_{run_label}_{hemi}"
+        # ── Compressed archive ────────────────────────────────────────────────
+        npz_stem = f"group_partial_corr_task-constrained_{run_label}_{hemi}"
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
@@ -257,7 +259,6 @@ for hemi in ("lh", "rh"):
             subjects_loaded   = np.array(subject_ids),
             subjects_missing  = np.array(missing),
             clusters          = np.array(clusters),
-            parcels           = np.array(parcels),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
         )

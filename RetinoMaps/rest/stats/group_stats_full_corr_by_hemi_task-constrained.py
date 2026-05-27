@@ -31,8 +31,7 @@ Goal:
         4. Computes group median and std in Fisher-z space.
         5. Saves one .npy + one .csv per statistic per hemisphere × variant.
 
-    Averaging is always in Fisher-z space; apply np.tanh() only at the final
-    reporting or plotting stage.
+    Averaging is always in Fisher-z space; apply np.tanh() only at the final reporting or plotting stage
 ------------------------------------------------------------------------------------------
 Run variants (identical to task-free pipeline):
     concat       — concatenated-run TSV, all subjects
@@ -56,6 +55,9 @@ Outputs (per hemisphere × variant, written to
 
     Rows    : seed/cluster names in canonical order (mPCS first)  (n = 12)
     Columns : macro-region names in canonical order (mPCS first)  (n = 12)
+
+Note: filenames have always the suffix legacy because is the only mode that runs correctly
+When parcellating by macro-regions (some files have missing vertices)
 
 Filename example (input TSV, run-01, lh seed hMT+):
     sub-05_task-rest_run-01_space-fsLR_den-91k_desc-fisher-z_lh_hMT+
