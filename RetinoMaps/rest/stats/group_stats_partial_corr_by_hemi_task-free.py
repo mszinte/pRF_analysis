@@ -5,7 +5,7 @@ group_partial_corr_by_hemi.py
 ------------------------------------------------------------------------------------------
 Goal:
     Compute group-level Fisher-z statistics from per-subject partial-correlation
-    matrices produced by Nilearn
+    matrices produced by Nilearn.
 
     Operates on per-subject .npy files (already in seeds × parcels format,
     YAML canonical parcel order). No TSV loading or atlas-key remapping needed.
@@ -14,7 +14,7 @@ Goal:
         1. Resolves which .npy file to load for each subject (run variant logic,
            including concat_clean fallback for RUN02_EXCLUDED subjects).
         2. Stacks the (n_clusters × n_parcels) matrices across subjects.
-        3. Computes group mean, median in Fisher-z space, and back-converts to r.
+        3. Computes group mean and median in Fisher-z space, back-converts to r.
         4. Saves .npy, .csv and a compressed .npz archive per hemisphere × variant.
 
     Averaging is always in Fisher-z space; Pearson r is recovered only at the
@@ -23,6 +23,17 @@ Goal:
         correct space for averaging and any subsequent parametric tests.
       - Raw Pearson r values have r-dependent variance and must never be
         averaged directly.
+------------------------------------------------------------------------------------------
+Output filename convention (harmonized with full-corr group stats):
+
+    seed-task_by_mmp-parcel_partial-corr_fisherz_{stat}_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_r_{stat}_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}.npz
+
+    where stat ∈ {mean, median}, run_label ∈ {concat, concat_clean, run-01, run-02}
+
+    Full-corr equivalent for reference:
+    seed-task_by_mmp-parcel_full-corr_fisherz_median_{run_label}_{hemi}_{mode}.npy
 ------------------------------------------------------------------------------------------
 Run variants:
     concat       — concatenated-run .npy, all subjects
@@ -40,18 +51,18 @@ Inputs (sys.argv):
     4: server project           (e.g. b327)
 
 Outputs (per hemisphere × variant):
-    group_mean_cluster_by_mmp-parcel_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_median_cluster_by_mmp-parcel_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_mean_cluster_by_mmp-parcel_partial_r_{run_label}_{hemi}.npy / .csv
-    group_median_cluster_by_mmp-parcel_partial_r_{run_label}_{hemi}.npy / .csv
-    group_partial_corr_{run_label}_{hemi}.npz   (all four arrays + metadata)
+    seed-task_by_mmp-parcel_partial-corr_fisherz_mean_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_fisherz_median_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_r_mean_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_r_median_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}.npz
 
     Rows    : seed/cluster names  (n_clusters)
     Columns : parcel names in YAML-derived canonical order  (n_parcels)
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_partial_corr_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_stats_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -136,16 +147,32 @@ output_folder.mkdir(parents=True, exist_ok=True)
 # ============================================================
 # Helper: resolve per-subject .npy path
 #
-# Input file naming convention (from the Nilearn computation script):
-#   cluster_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy
-#   run_entity = ""         → concatenated run
-#   run_entity = "_run-01"  → run-01
-#   run_entity = "_run-02"  → run-02
+# Input files live under the task-free subfolder:
+#   {subject}/91k/rest/corr/partial_corr/by_hemi/task-free/
+#       seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy
 # ============================================================
 def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
     run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = f"cluster_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy"
-    return main_data / subject / "91k/rest/corr/partial_corr/by_hemi" / fname
+    fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy"
+    return (
+        main_data / subject
+        / "91k/rest/corr/partial_corr/by_hemi/task-free"
+        / fname
+    )
+
+
+# ============================================================
+# Output filename stem builder
+#
+# Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}
+# Matches full-corr convention: seed-task_by_mmp-parcel_full-corr_fisherz_{stat}_{run_label}_{hemi}_{mode}
+# (partial corr has no mode token — there is only one parcellation variant)
+# ============================================================
+def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
+    return (
+        f"seed-task_by_mmp-parcel_partial-corr"
+        f"_{space}_{stat}_{run_label}_{hemi}"
+    )
 
 
 # ============================================================
@@ -208,45 +235,40 @@ for hemi in ("lh", "rh"):
             f"Unexpected stack shape {stacked_fz.shape}."
         )
 
-        # ── Group statistics in Fisher-z space ───────────────────────────────
+        # Group statistics in Fisher-z space
         mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (n_clusters × n_parcels)
         median_fz = np.nanmedian(stacked_fz, axis=0)
 
-        # ── Back-convert to Pearson r at reporting stage only ─────────────────
+        # Back-convert to Pearson r at reporting stage only
         mean_r   = np.tanh(mean_fz)
         median_r = np.tanh(median_fz)
 
         print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},   {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
 
-        # ── Output filename run-label ─────────────────────────────────────────
-        # None normal_tag → use variant name (e.g. "concat", "concat_clean")
+        # run_label: None normal_tag → use variant name (e.g. "concat", "concat_clean")
         run_label = normal_tag if normal_tag is not None else variant
 
-        def _stem(stat: str, space: str) -> str:
-            return (
-                f"group_{stat}_cluster_by_mmp-parcel_partial"
-                f"_{space}_{run_label}_{hemi}"
-            )
-
-        # ── Save Fisher-z arrays ──────────────────────────────────────────────
+        # Save Fisher-z arrays
         for stat, arr in (("mean", mean_fz), ("median", median_fz)):
-            stem = _stem(stat, "fisherz")
+            stem = _stem(stat, "fisherz", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
             pd.DataFrame(arr, index=clusters, columns=parcels).to_csv(
                 output_folder / f"{stem}.csv"
             )
+            print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Save Pearson r arrays ─────────────────────────────────────────────
+        # Save Pearson r arrays
         for stat, arr in (("mean", mean_r), ("median", median_r)):
-            stem = _stem(stat, "r")
+            stem = _stem(stat, "r", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
             pd.DataFrame(arr, index=clusters, columns=parcels).to_csv(
                 output_folder / f"{stem}.csv"
             )
+            print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Compressed archive with all four arrays + metadata ────────────────
-        npz_stem = f"group_partial_corr_{run_label}_{hemi}"
+        # Compressed archive with all four arrays + metadata
+        npz_stem = f"seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}"
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
@@ -261,11 +283,6 @@ for hemi in ("lh", "rh"):
             hemi              = np.array(hemi),
             variant           = np.array(variant),
         )
-
-        print(f"    Saved: {_stem('mean',   'fisherz')}.npy / .csv")
-        print(f"    Saved: {_stem('median', 'fisherz')}.npy / .csv")
-        print(f"    Saved: {_stem('mean',   'r')}.npy / .csv")
-        print(f"    Saved: {_stem('median', 'r')}.npy / .csv")
         print(f"    Saved: {npz_stem}.npz")
 
 print("\n" + "=" * 80)

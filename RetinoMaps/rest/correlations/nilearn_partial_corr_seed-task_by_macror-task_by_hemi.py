@@ -1,23 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Compute TASK-CONSTRAINED INTRA-HEMISPHERIC PARTIAL correlations between
+ROI macro-regions (seeds) and TASK-DEFINED macro-region targets using
+Nilearn ConnectivityMeasure.
 
-Compute INTRA-HEMISPHERIC PARTIAL correlations between clusters (seeds)
-and parcels (targets) using Nilearn partial correlation.
+Differs from the parcel-level (task-free) script in two key respects:
 
-Left-hemisphere seeds are correlated only with left-hemisphere parcels,
-and right-hemisphere seeds with right-hemisphere parcels.
+1. Targets are task-defined macro-regions (same binary masks as seeds,
+   loaded from the /target/ folder), not atlas MMP parcels
+   Output matrix shape: (n_clusters × n_clusters)
 
-Important note: the conditioning set now includes all other parcels
-Whether intra or inter-hemispheric 
-Matching Dawson et al. (2016) and Genç et al. (2016) 
+2. Conditioning set = the OTHER macro-region timeseries within the same
+   task-defined network (excluding seed and target)
+   This mirrors the logic of the task-free script exactly:
+     - Task-free:        condition on all MMP parcels except seed's own + target
+     - Task-constrained: condition on all task macro-regions except seed + target
+   Full vs partial correlations are therefore directly comparable within
+   each analysis variant (task-free / task-constrained)
 
-For each cluster:
-  - parcels belonging to that cluster are EXCLUDED from the conditioning set
-  - output shape per hemisphere = (n_clusters, n_parcels)
+   Note: conditioning on atlas parcels outside the task network would change
+   what is being measured and break the symmetry with the task-free analysis
 
-Outputs are also computed by run so we can exclude some based on the quality check info
-(Either eye tracking data or denoising or preproc bugs)
+Design decisions
+----------------
+Seed timeseries   : ipsilateral hemisphere only (macro-region mask → mean vertex signal)
+Target timeseries : ipsilateral (primary output) + contralateral (bilateral output)
+Conditioning set  : remaining task macro-regions, ipsilateral only
+                    (same hemisphere restriction as in the task-free script)
+
+Self-correlation masking
+  Seed == target entries are left as NaN (diagonal of the output matrix).
+
+Standardize flag
+  'zscore_sample' throughout: safe on already-z-scored XCP-D data (near-no-op
+  since mean≈0, std≈1) and correct on non-z-scored individual runs
+  Forward-compatible with Nilearn ≥ 0.15
+
+Outputs (per subject, per run, per hemisphere)
+  seed-task_by_macror-task_partial_{run}_{hemi}.npy / .csv           — Pearson r
+  seed-task_by_macror-task_partial_fisherz_{run}_{hemi}.npy / .csv   — Fisher z
+  seed-task_by_macror-task_partial_{run}_{hemi}_bilateral.npy / .csv — bilateral
+
+Group aggregation: run group_stats_partial_corr.py (Fisher-z space throughout)
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -28,75 +53,34 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from nilearn.connectome import ConnectivityMeasure
 
 # ============================================================
 # Paths
 # ============================================================
-USER = os.environ["USER"]
 
-main_data = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-seed_folder = main_data
-atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
-partial_output_folder = (
-    "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-    "/group/91k/rest/partial_corr/by_hemi"
-)
-os.makedirs(partial_output_folder, exist_ok=True)
+main_data    = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
 
-# Personal imports
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
 from surface_utils import load_surface
 from cifti_utils import from_91k_to_32k
 
+sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
+from rest_utils import impute_nan_columns
+
 # ============================================================
-# Helpers
+# Settings
 # ============================================================
 
-def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
-    """Replace NaN values in a (n_time × n_signals) matrix before passing to
-    Nilearn's ConnectivityMeasure, which cannot handle NaNs.
-    """
-    X_clean = X.copy()
-    n_signals = X_clean.shape[1]
-
-    for j in range(n_signals):
-        col = X_clean[:, j]
-        nan_mask = np.isnan(col)
-
-        if not nan_mask.any():
-            continue
-
-        n_nan = int(nan_mask.sum())
-
-        if nan_mask.all():
-            print(
-                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
-                f"ALL {n_nan} timepoints are NaN — replacing with zeros"
-            )
-            X_clean[:, j] = 0.0
-        else:
-            col_mean = np.nanmean(col)
-            print(
-                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
-                f"{n_nan}/{len(col)} NaN timepoints — imputing with column mean "
-                f"({col_mean:.4f})"
-            )
-            X_clean[nan_mask, j] = col_mean
-
-    return X_clean
-
-
-# Load settings
-project_dir = "RetinoMaps"
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+project_dir       = "RetinoMaps"
+settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
-analysis_info = settings[0]
-subjects = analysis_info["subjects"]
+settings          = load_settings([settings_path, prf_settings_path])
+analysis_info     = settings[0]
+subjects          = analysis_info["subjects"]
 
 # ============================================================
 # ROIs
@@ -105,12 +89,8 @@ subjects = analysis_info["subjects"]
 clusters = analysis_info["rois-drawn"]
 seed_to_parcels = analysis_info["rois-group-mmp"]
 
-# mPCS first
+# Reverse so mPCS is first (matches downstream visualisation scripts)
 clusters.reverse()
-
-parcels = []
-for cl in clusters:
-    parcels.extend(seed_to_parcels[cl])
 
 # ============================================================
 # Hemisphere configuration
@@ -125,25 +105,11 @@ HEMIS = [
 # Runs
 # ============================================================
 
-RUNS = ["run-01", "run-02", ""]
+RUNS = ["run-01", "run-02", ""]   # "" = full concatenated session
 
-# =========================
-# STORAGE (run × hemisphere)
-# =========================
-
-all_subject_partial = {
-    run: {h["label"]: [] for h in HEMIS}
-    for run in RUNS
-}
-
-all_subject_partial_fz = {
-    run: {h["label"]: [] for h in HEMIS}
-    for run in RUNS
-}
-
-# =========================
-# SUBJECT LOOP
-# =========================
+# ============================================================
+# Subject loop
+# ============================================================
 
 for subject in subjects:
 
@@ -161,245 +127,262 @@ for subject in subjects:
         ts_img, ts_data_raw = load_surface(timeseries_fn)
 
         res = from_91k_to_32k(
-            ts_img,
-            ts_data_raw,
+            ts_img, ts_data_raw,
             return_concat_hemis=False,
             return_32k_mask=True,
         )
 
         mask_32k = res["mask_32k"]
-        print(
-            f"  mask_32k: {int(np.sum(~mask_32k))} medial-wall vertices masked per hemi"
-        )
+        print(f"  mask_32k: {int(np.sum(~mask_32k))} medial-wall vertices per hemi")
+
+        # ----------------------------------------------------------
+        # Hemisphere loop
+        # ----------------------------------------------------------
 
         for h in HEMIS:
-            label = h["label"]
-            seed_key = h["seed_key"]
-            atlas_key = h["atlas_key"]
-            ts_key = h["ts_key"]
+            label      = h["label"]     # "LH" or "RH"
+            seed_key   = h["seed_key"]  # "lh" or "rh"
+            atlas_key  = h["atlas_key"] # "L"  or "R"
+            ts_key     = h["ts_key"]    # "data_L" or "data_R"
+            contra_key = "rh" if seed_key == "lh" else "lh"
+            ts_key_contra = "data_R" if ts_key == "data_L" else "data_L"
 
-            ts_data = res[ts_key]
-
+            ts_data       = res[ts_key]        # (n_time, n_vertices_ipsi)
+            ts_data_contra = res[ts_key_contra] # (n_time, n_vertices_contra)
             print(f"\n  [{label}] Timeseries shape: {ts_data.shape}")
 
-            # -------------------------
-            # Cluster timeseries
-            # -------------------------
+            # ------------------------------------------------------
+            # Step 1 — Load ALL task macro-region timeseries
+            #
+            # Seeds, ipsilateral targets, and contralateral targets are all
+            # loaded up front into a single dict so the conditioning set
+            # can be assembled cleanly in Step 4.
+            #
+            # Both /seed/ and /target/ use the same file naming convention;
+            # they are loaded from separate folders to keep the analysis
+            # intent explicit.
+            # ------------------------------------------------------
 
-            cluster_ts_list = []
-            cluster_names_used = []
+            # macro_ts[roi] = ipsilateral timeseries for that macro-region
+            macro_ts        = {}
+            macro_ts_contra = {}   # contralateral timeseries
+            loaded_rois     = []
+            loaded_rois_contra = []
 
             for roi in clusters:
-                mask_img, mask_data = load_surface(
+
+                # Ipsilateral seed
+                _, mask_data = load_surface(
                     f"{main_data}/{subject}/91k/rest/seed/"
-                    f"{subject}_91k_intertask_Sac-Pur-pRF"
-                    f"_{seed_key}_{roi}.shape.gii"
+                    f"{subject}_91k_intertask_Sac-Pur-pRF_{seed_key}_{roi}.shape.gii"
                 )
-
                 mask = mask_data.ravel()
+                if np.any(mask):
+                    macro_ts[roi] = ts_data[:, mask > 0].mean(axis=1)
+                    loaded_rois.append(roi)
+                else:
+                    print(f"  [{label}] ⚠️  Empty ipsi mask for {roi} — skipping")
 
-                if not np.any(mask):
-                    print(f"  [{label}] ⚠️  Empty seed mask for {roi} — skipping")
-                    continue
-
-                cluster_ts_list.append(ts_data[:, mask > 0].mean(axis=1))
-                cluster_names_used.append(roi)
-
-            if not cluster_ts_list:
-                print(
-                    f"  [{label}] ⚠️  No valid cluster timeseries — skipping hemisphere"
+                # Contralateral target
+                _, mask_data = load_surface(
+                    f"{main_data}/{subject}/91k/rest/target/"
+                    f"{subject}_91k_intertask_Sac-Pur-pRF_{contra_key}_{roi}.shape.gii"
                 )
+                mask = mask_data.ravel()
+                if np.any(mask):
+                    macro_ts_contra[roi] = ts_data_contra[:, mask > 0].mean(axis=1)
+                    loaded_rois_contra.append(roi)
+                else:
+                    print(f"  [{label}] ⚠️  Empty contra mask for {roi} — skipping")
+
+            if not loaded_rois:
+                print(f"  [{label}] ⚠️  No valid macro-region timeseries — skipping hemisphere")
                 continue
 
-            cluster_ts = np.column_stack(cluster_ts_list)
-            print(f"  [{label}] Clusters used: {cluster_names_used}")
+            print(f"  [{label}] Ipsi macro-regions: {loaded_rois}")
+            print(f"  [{label}] Contra macro-regions: {loaded_rois_contra}")
 
-            # -------------------------
-            # Parcel timeseries (bilateral conditioning)
-            # -------------------------
+            # ------------------------------------------------------
+            # Step 2 — NaN imputation
+            # ------------------------------------------------------
 
-            ATLAS_KEYS_BILATERAL = {"L": ["L", "R"], "R": ["R", "L"]}
-            atlas_keys_ordered = ATLAS_KEYS_BILATERAL[atlas_key]
-
-            parcel_ts_list = []
-            parcel_names_used = []
-            parcel_hemi_used = []
-            ipsi_col_idx = []
-
-            for ak in atlas_keys_ordered:
-                ts_source = res["data_L" if ak == "L" else "data_R"]
-
-                for parcel in parcels:
-                    mask_img, mask_data = load_surface(
-                        f"{atlas_folder}/parcels/{ak}_{parcel}_ROI.shape.gii"
-                    )
-
-                    mask = mask_data.ravel()
-
-                    if not np.any(mask):
-                        continue
-
-                    col_idx = len(parcel_ts_list)
-
-                    parcel_ts_list.append(ts_source[:, mask > 0].mean(axis=1))
-                    parcel_names_used.append(parcel)
-                    parcel_hemi_used.append(ak)
-
-                    if ak == atlas_key:
-                        ipsi_col_idx.append(col_idx)
-
-            if not parcel_ts_list:
-                print(
-                    f"  [{label}] ⚠️  No valid parcel timeseries — skipping hemisphere"
+            for roi in list(macro_ts.keys()):
+                clean = impute_nan_columns(
+                    macro_ts[roi][:, np.newaxis],
+                    label=f"{subject}{run_tag} {label} {roi}"
                 )
-                continue
+                macro_ts[roi] = clean[:, 0]
 
-            parcel_ts = np.column_stack(parcel_ts_list)
+            for roi in list(macro_ts_contra.keys()):
+                clean = impute_nan_columns(
+                    macro_ts_contra[roi][:, np.newaxis],
+                    label=f"{subject}{run_tag} {label} contra {roi}"
+                )
+                macro_ts_contra[roi] = clean[:, 0]
 
-            n_ipsi = sum(1 for h_ in parcel_hemi_used if h_ == atlas_key)
-            n_contra = sum(1 for h_ in parcel_hemi_used if h_ != atlas_key)
+            # ------------------------------------------------------
+            # Step 3 — Partial correlations
+            #
+            # For every (seed, target) macro-region pair:
+            #
+            #   X = [seed | target | other_macro-regions]
+            #   C = partial_corr(X)
+            #   result = C[0, 1]   ← seed ↔ target, all others partialled out
+            #
+            # Conditioning set = all other ipsilateral macro-regions
+            # (i.e. loaded_rois excluding seed and target).
+            # This directly mirrors the task-free script where all MMP parcels
+            # except seed-own and target are used as conditioning signals
+            #
+            # Diagonal (seed == target) is left as NaN.
+            # Contralateral targets use the same conditioning set — no
+            # self-correlation risk across hemispheres
+            #
+            # standardize='zscore_sample': safe on already-z-scored data
+            # (near-no-op) and correct on non-z-scored individual runs
+            # ------------------------------------------------------
 
-            print(
-                f"  [{label}] Loaded bilateral parcel matrix: "
-                f"{parcel_ts.shape[1]} columns before exclusions "
-                f"({n_ipsi} ipsi [{atlas_key}] + {n_contra} contra)"
-            )
+            n_rois         = len(clusters)
+            partial_r_ipsi  = np.full((n_rois, n_rois), np.nan)
+            partial_fz_ipsi = np.full_like(partial_r_ipsi, np.nan)
+            partial_r_contra  = np.full((n_rois, n_rois), np.nan)
+            partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
-            cluster_ts = impute_nan_columns(
-                cluster_ts, label=f"{subject}{run_tag} {label} seed"
-            )
-            parcel_ts = impute_nan_columns(
-                parcel_ts, label=f"{subject}{run_tag} {label} parcel"
-            )
+            conn = ConnectivityMeasure(kind="partial correlation", standardize="zscore_sample")
 
-            # -------------------------
-            # Partial correlation
-            # -------------------------
+            for seed_name in loaded_rois:
+                i_seed = clusters.index(seed_name)
 
-            n_clusters_used = cluster_ts.shape[1]
+                # --- Ipsilateral targets ---
+                for tgt_name in loaded_rois:
 
-            partial_matrix = np.full(
-                (n_clusters_used, len(ipsi_col_idx)),
-                np.nan
-            )
-            partial_matrix_fz = np.full_like(partial_matrix, np.nan)
+                    if seed_name == tgt_name:
+                        continue   # diagonal: leave as NaN
 
-            ipsi_parcel_names = [parcel_names_used[j] for j in ipsi_col_idx]
+                    i_tgt = clusters.index(tgt_name)
 
-            for i_cl, cl_name in enumerate(cluster_names_used):
-
-                seed_own_parcels = set(seed_to_parcels.get(cl_name, []))
-
-                for i_target, target_parcel in enumerate(ipsi_parcel_names):
-
-                    exclude_cols = set()
-
-                    for j, (pname, phemi) in enumerate(
-                        zip(parcel_names_used, parcel_hemi_used)
-                    ):
-                        if phemi == atlas_key and (
-                            pname in seed_own_parcels or pname == target_parcel
-                        ):
-                            exclude_cols.add(j)
-
-                    conditioning_idx = [
-                        j for j in range(len(parcel_names_used))
-                        if j not in exclude_cols
-                        and j != ipsi_col_idx[i_target]
+                    # Conditioning = all other ipsilateral macro-regions
+                    other_rois = [
+                        r for r in loaded_rois
+                        if r != seed_name and r != tgt_name
                     ]
 
-                    if not conditioning_idx:
+                    if not other_rois:
+                        # Only 2 macro-regions loaded — no conditioning possible;
+                        # result degenerates to full (Pearson) correlation
                         print(
-                            f"  [{label}] ⚠️  No conditioning parcels left "
-                            f"for seed {cl_name} → target {target_parcel}"
+                            f"  [{label}] ⚠️  No conditioning regions for "
+                            f"{seed_name} → {tgt_name}; computing full correlation"
                         )
-                        continue
 
-                    X = np.column_stack([
-                        cluster_ts[:, i_cl],
-                        parcel_ts[:, ipsi_col_idx[i_target]],
-                        parcel_ts[:, conditioning_idx],
-                    ])
+                    X_cols = [macro_ts[seed_name], macro_ts[tgt_name]] + \
+                             [macro_ts[r] for r in other_rois]
+                    X = np.column_stack(X_cols)
 
-                    conn = ConnectivityMeasure(kind="partial correlation")
                     C = conn.fit_transform([X])[0]
+                    r = C[0, 1]
+                    partial_r_ipsi[i_seed,  i_tgt] = r
+                    partial_fz_ipsi[i_seed, i_tgt] = np.arctanh(r)
 
-                    val = C[0, 1]
+                # --- Contralateral targets ---
+                for tgt_name in loaded_rois_contra:
 
-                    partial_matrix[i_cl, i_target] = val
-                    partial_matrix_fz[i_cl, i_target] = np.arctanh(val)
+                    i_tgt = clusters.index(tgt_name)
+
+                    # Same conditioning set: all ipsilateral macro-regions
+                    # except the seed (no target exclusion needed contra-laterally)
+                    other_rois = [r for r in loaded_rois if r != seed_name]
+
+                    X_cols = [macro_ts[seed_name], macro_ts_contra[tgt_name]] + \
+                             [macro_ts[r] for r in other_rois]
+                    X = np.column_stack(X_cols)
+
+                    C = conn.fit_transform([X])[0]
+                    r = C[0, 1]
+                    partial_r_contra[i_seed,  i_tgt] = r
+                    partial_fz_contra[i_seed, i_tgt] = np.arctanh(r)
 
             print(
-                f"  [{label}] Partial corr matrix: "
-                f"{partial_matrix.shape[0]} clusters × "
-                f"{partial_matrix.shape[1]} ipsi parcels"
+                f"  [{label}] Partial corr: "
+                f"{len(loaded_rois)} × {len(loaded_rois)} ipsi  |  "
+                f"{len(loaded_rois)} × {len(loaded_rois_contra)} contra"
             )
 
-            # -------------------------
-            # Map back to full grid
-            # -------------------------
+            # ------------------------------------------------------
+            # Step 4 — Map to full output grids
+            #
+            # Primary:   (n_clusters × n_clusters), ipsilateral only
+            # Bilateral: (n_clusters × 2*n_clusters), [ipsi | contra]
+            #            ipsi half always recoverable as [:, :n_clusters]
+            #            column labels: {cluster}_ipsi / {cluster}_contra
+            # ------------------------------------------------------
 
-            filled = np.full((len(clusters), len(parcels)), np.nan)
-            filled_fz = filled.copy()
+            n_cl = len(clusters)
 
-            for i_cl, cl in enumerate(cluster_names_used):
-                gr = clusters.index(cl)
+            filled_r  = partial_r_ipsi.copy()    # already (n_cl × n_cl)
+            filled_fz = partial_fz_ipsi.copy()
 
-                for i_target, pa in enumerate(ipsi_parcel_names):
-                    gc = parcels.index(pa)
+            filled_r_bilateral  = np.full((n_cl, 2 * n_cl), np.nan)
+            filled_fz_bilateral = np.full_like(filled_r_bilateral, np.nan)
 
-                    filled[gr, gc] = partial_matrix[i_cl, i_target]
-                    filled_fz[gr, gc] = partial_matrix_fz[i_cl, i_target]
+            # Ipsi half
+            filled_r_bilateral[:,  :n_cl] = partial_r_ipsi
+            filled_fz_bilateral[:, :n_cl] = partial_fz_ipsi
 
-            # -------------------------
-            # Save subject-level results
-            # -------------------------
+            # Contra half
+            filled_r_bilateral[:,  n_cl:] = partial_r_contra
+            filled_fz_bilateral[:, n_cl:] = partial_fz_contra
 
-            sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi"
+            clusters_bilateral = (
+                [f"{c}_ipsi"  for c in clusters] +
+                [f"{c}_contra" for c in clusters]
+            )
+
+            # ------------------------------------------------------
+            # Step 5 — Save subject-level outputs
+            # ------------------------------------------------------
+
+            sub_out = (
+                f"{main_data}/{subject}/91k/rest/corr/partial_corr"
+                f"/by_hemi/task-constrained"
+            )
             os.makedirs(sub_out, exist_ok=True)
 
-            tag = label.lower()
+            tag = label.lower()   # "lh" or "rh"
 
+            # Ipsilateral outputs (primary; consumed by downstream scripts)
             np.save(
-                os.path.join(
-                    sub_out,
-                    f"cluster_by_mmp-parcel_partial{run_tag}_{tag}.npy"
-                ),
-                filled,
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}.npy"),
+                filled_r,
             )
-
             np.save(
-                os.path.join(
-                    sub_out,
-                    f"cluster_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.npy"
-                ),
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}.npy"),
                 filled_fz,
             )
-
-            pd.DataFrame(
-                filled,
-                index=clusters,
-                columns=parcels
-            ).to_csv(
-                os.path.join(
-                    sub_out,
-                    f"cluster_by_mmp-parcel_partial{run_tag}_{tag}.csv"
-                )
+            pd.DataFrame(filled_r,  index=clusters, columns=clusters).to_csv(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}.csv")
+            )
+            pd.DataFrame(filled_fz, index=clusters, columns=clusters).to_csv(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}.csv")
             )
 
-            pd.DataFrame(
-                filled_fz,
-                index=clusters,
-                columns=parcels
-            ).to_csv(
-                os.path.join(
-                    sub_out,
-                    f"cluster_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.csv"
-                )
+            # Bilateral outputs ([ipsi | contra]; ipsi half = [:, :n_clusters])
+            np.save(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}_bilateral.npy"),
+                filled_r_bilateral,
+            )
+            np.save(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}_bilateral.npy"),
+                filled_fz_bilateral,
+            )
+            pd.DataFrame(filled_r_bilateral,  index=clusters, columns=clusters_bilateral).to_csv(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}_bilateral.csv")
+            )
+            pd.DataFrame(filled_fz_bilateral, index=clusters, columns=clusters_bilateral).to_csv(
+                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}_bilateral.csv")
             )
 
-            all_subject_partial[run][label].append(filled)
-            all_subject_partial_fz[run][label].append(filled_fz)
+            print(f"  [{label}] Saved to {sub_out}")
 
-print("\nDone.")
+print("\nDone. Run group_stats_partial_corr.py to aggregate across subjects.")
 # ============================================================

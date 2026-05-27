@@ -57,7 +57,7 @@ Outputs (per hemisphere × variant):
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_full_corr_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327 default
+    $ python group_stats_full_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327 default
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
