@@ -75,9 +75,6 @@ ncsf_task_name = analysis_info['nCSF_task_name']
 maps_names_ncsf = analysis_info['maps_names_ncsf']
 averaging_templates = analysis_info['averaging_templates']
 
-# formats = ['170k']
-# extensions = ['dtseries.nii']
-
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)

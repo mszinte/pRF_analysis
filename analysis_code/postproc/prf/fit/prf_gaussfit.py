@@ -209,7 +209,6 @@ gauss_fitter.iterative_fit(rsq_threshold=rsq_iterative_th,
 gauss_fit = gauss_fitter.iterative_search_params
 
 # rearange result of Gauss model 
-#gauss_fit = gauss_fitter.gridsearch_params
 gauss_fit_mat = np.zeros((raw_data.shape[1],gauss_params_num))
 gauss_pred_mat = np.zeros_like(raw_data) 
 
@@ -223,8 +222,8 @@ for est,vert in enumerate(valid_vertices_idx):
                                                           hrf_1=gauss_fit[est][5],
                                                           hrf_2=gauss_fit[est][6])
 
-gauss_fit_mat = np.where(gauss_fit_mat == 0, np.nan, gauss_fit_mat)
-gauss_pred_mat = np.where(gauss_pred_mat == 0, np.nan, gauss_pred_mat)
+# gauss_fit_mat = np.where(gauss_fit_mat == 0, np.nan, gauss_fit_mat)
+# gauss_pred_mat = np.where(gauss_pred_mat == 0, np.nan, gauss_pred_mat)
 
 #export data from gauss model fit
 maps_names = ['mu_x', 'mu_y', 'prf_size', 'prf_amplitude', 'bold_baseline', 

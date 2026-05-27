@@ -66,12 +66,8 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, nCSF_settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-# formats = analysis_info['formats']
-# extensions = analysis_info['extensions']
-formats = ['170k']
-extensions = ['dtseries.nii']
-
-
+formats = analysis_info['formats']
+extensions = analysis_info['extensions']
 ncsf_task_name = analysis_info['nCSF_task_name']
 maps_names_ncsf = analysis_info['maps_names_ncsf']
 maps_names_ncsf_stats = analysis_info['maps_names_ncsf_stats']
@@ -87,6 +83,7 @@ rsq_scale = analysis_info['flatmap_ncsf_rsq_scale']
 SFp_scale = analysis_info['flatmap_ncsf_SFp_scale']
 CSp_scale = analysis_info['flatmap_ncsf_CSp_scale']
 auc_scale = analysis_info['flatmap_ncsf_auc_scale']
+CRFsplope_scale = analysis_info['flatmap_ncsf_CRFsplope']
 normalize_auc_scale = analysis_info['flatmap_ncsf_normalize_auc_scale']
 SFmax_scale = analysis_info['flatmap_ncsf_SFmax_scale']
 alpha_range = analysis_info["flatmap_alpha_range"]
@@ -175,7 +172,7 @@ for avg_method in avg_methods:
                         preproc_prep, filtering, normalization, avg_method)
                     stats_results = load_surface_pycortex(L_fn=deriv_avg_fn_L, 
                                                     R_fn=deriv_avg_fn_R)
-                    sats_mat = stats_results['data_concat']
+                    stats_mat = stats_results['data_concat']
                     
                 elif format_ == '170k':
                     pycortex_subject = pycortex_subject_template
@@ -314,6 +311,24 @@ for avg_method in avg_methods:
                               'overlay_fn': overlay_fn,
                               'with_labels': True}
                 maps_names.append('SFmax')
+                
+                # CRFsplope
+                crf_exp_data = all_deriv_mat[crf_exp_idx,...]
+                param_crf_exp = {'data': SFmax_data, 
+                              'cmap': cmap_SFp_CSp_SFmax,
+                              'alpha': alpha, 
+                              'vmin': CRFsplope_scale[0],
+                              'vmax': CRFsplope_scale[1],
+                              'cbar': 'discrete', 
+                              'cortex_type': 'VertexRGB',
+                              'description': 'CRF slope', 
+                              'curv_brightness': 1,
+                              'curv_contrast': 0.1,
+                              'add_roi': False,
+                              'cbar_label': 'CRF slope',
+                              'overlay_fn': overlay_fn,
+                              'with_labels': True}
+                maps_names.append('crf_exp')
                 
                 # draw flatmaps
                 volumes = {}

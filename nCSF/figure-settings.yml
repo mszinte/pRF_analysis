@@ -39,7 +39,7 @@ flatmap_ncsf_SFp_scale:
 
 flatmap_ncsf_CSp_scale:
   description: "nCSF CSp flatmap colorscale"
-  value: [0, 230]
+  value: [0, 200]
 
 flatmap_ncsf_auc_scale:
   description: "nCSF auc flatmap colorscale"
@@ -47,11 +47,15 @@ flatmap_ncsf_auc_scale:
 
 flatmap_ncsf_normalize_auc_scale:
   description: "nCSF normalize auc flatmap colorscale"
-  value: [0, 250]
+  value: [0, 200]
 
 flatmap_ncsf_SFmax_scale:
   description: "nCSF SFmax flatmap colorscale"
   value: [0, 50]
+
+flatmap_ncsf_CRFsplope:
+  description: "nCSF SFmax flatmap colorscale"
+  value: [0, 20]
 
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
