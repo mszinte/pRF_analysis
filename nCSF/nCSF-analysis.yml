@@ -23,12 +23,12 @@ sf_filtOverlap:
   value: 0.6
 
 minCont:
-  description: "lowest contrast"
-  value: 0.0025
+  description: "lowest contrast in % Michelson contrast"
+  value: 0.25
 
 maxCont:
-  description: "highest contrast"
-  value: 0.8
+  description: "highest contrast in % Michelson contrast"
+  value: 80
 
 contNum:
   description: "number of contrast steps"

@@ -24,7 +24,7 @@ python ncsf_fit.py [main directory] [project name] [subject name]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
-python ncsf_fit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+python ncsf_fit.py /scratch/mszinte/data nCSF sub-01 /scratch/mszinte/data/nCSF/derivatives/pp_data/sub-01/fsnative/func/fmriprep_dct_z-score_avg/sub-01_task-nCSF_hemi-R_fmriprep_dct_z-score_avg_bold.func.gii 16  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -73,7 +73,7 @@ input_fn = sys.argv[4]
 n_jobs = int(sys.argv[5])
 
 n_batches = n_jobs
-verbose = True
+verbose = False
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -185,26 +185,25 @@ csenf_fitter = CSenFFitter(data=data.T,
                            model=csenf_model, 
                            n_jobs=n_jobs)
 
-# nCSF bounds
 ncsf_bounds = {
-    'width_r' : [0,1.5],          
-    'SFp' : [0, 16],
-    'CSp' : [0, 200] ,
-    'width_l' : [0.68, 0.68],
-    'crf_exp' : [0, 10],
-    'amp_1' : [0, 6],
-    'bold_baseline' : [-1,1] ,
-    'hrf_1' : [1, 1],
-    'hrf_2' : [0,0],
+    'width_r'       : [0, 1.5],          
+    'SFp'           : [sf_filtCenters[1], sf_maxFreq],
+    'CSp'           : [100/maxCont, 200],
+    'width_l'       : [0.5, 1],
+    'crf_exp'       : [0, 4],
+    'amp_1'         : [0, 6],
+    'bold_baseline' : [-1, 1],
+    'hrf_1'         : [1, 1],
+    'hrf_2'         : [0, 0],
 }
 
-width_r_grid = np.linspace(ncsf_bounds['width_r'][0], ncsf_bounds['width_r'][1], ncsf_grid_nr)     
-SFp_grid = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], ncsf_grid_nr)     
-CSp_grid = np.linspace(ncsf_bounds['CSp'][0], ncsf_bounds['CSp'][1], ncsf_grid_nr)
-width_l_grid = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)     
-crf_exp_grid = np.linspace(ncsf_bounds['crf_exp'][0], ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
-hrf_1_grid = np.zeros(len(width_r_grid))
-hrf_2_grid = np.zeros(len(width_r_grid))
+width_r_grid  = np.linspace(max(ncsf_bounds['width_r'][0], 0.1), ncsf_bounds['width_r'][1], ncsf_grid_nr)
+SFp_grid      = np.logspace(np.log10(ncsf_bounds['SFp'][0]), np.log10(ncsf_bounds['SFp'][1]), ncsf_grid_nr)
+CSp_grid      = np.logspace(np.log10(ncsf_bounds['CSp'][0]), np.log10(ncsf_bounds['CSp'][1]), ncsf_grid_nr)
+width_l_grid  = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)
+crf_exp_grid  = np.linspace(max(ncsf_bounds['crf_exp'][0], 0.1), ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
+hrf_1_grid    = np.zeros(len(width_r_grid))
+hrf_2_grid    = np.zeros(len(width_r_grid))
 
 grid_bounds = [ncsf_bounds['amp_1']]
 fixed_grid_baseline=False
@@ -287,8 +286,8 @@ for est, vert in enumerate(valid_vertices_idx):
                                                           hrf_1=ncsf_fit[est][hrf_1_idx],
                                                           hrf_2=ncsf_fit[est][hrf_2_idx])
 
-ncsf_fit_mat = np.where(ncsf_fit_mat == 0, np.nan, ncsf_fit_mat)
-ncsf_pred_mat = np.where(ncsf_pred_mat == 0, np.nan, ncsf_pred_mat)
+# ncsf_fit_mat = np.where(ncsf_fit_mat == 0, np.nan, ncsf_fit_mat)
+# ncsf_pred_mat = np.where(ncsf_pred_mat == 0, np.nan, ncsf_pred_mat)
 
 # Compute LOO r2 
 if 'loo-avg' in input_fn:
