@@ -30,14 +30,14 @@ source "${SCRIPT_DIR}/../utils/rest_utils.sh"
 # Paths
 # ============================================================
 BASE_PATH="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-ATLAS_DIR="${BASE_PATH}/atlas/mmp1_clusters"
+ATLAS_DIR="${BASE_PATH}/atlas"
 INPUT_PATH="${BASE_PATH}/group/91k/rest/wta/nilearn"
 OUTPUT_PATH="${BASE_PATH}/group/91k/rest/wta/nilearn/dlabel"
-ATLAS_DLABEL="${ATLAS_DIR}/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii"
+ATLAS_DLABEL="${ATLAS_DIR}/mmp1/atlas-Glasser_space-fsLR_den-32k_filtered_ROIs_dseg.dlabel.nii"
 
 # Temporary label text files (overwritten on each wb_command call)
-_LABEL_FILE="${ATLAS_DIR}/wta_mmp1_labels_partial_corr.txt"
-_LABEL_FILE_PCEF="${ATLAS_DIR}/wta_mmp1_labels_partial_corr_pcef-ipef.txt"
+_LABEL_FILE="${ATLAS_DIR}/mmp1/wta_mmp1_labels_partial_corr.txt"
+_LABEL_FILE_PCEF="${ATLAS_DIR}/mmp1/wta_mmp1_labels_partial_corr_pcef-ipef.txt"
 
 mkdir -p "${OUTPUT_PATH}"
 

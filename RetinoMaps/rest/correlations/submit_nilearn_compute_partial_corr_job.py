@@ -44,7 +44,7 @@ proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations regarding the target regions
 if mode == "task-free":
-    script_name = "nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi_DEV.py"
+    script_name = "nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py"
 elif mode == "task-constrained":
     script_name = "nilearn_partial_corr_seed-task_by_macror-task_by_hemi.py"
 else:
