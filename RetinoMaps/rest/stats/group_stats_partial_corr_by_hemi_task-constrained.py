@@ -62,17 +62,6 @@ from pathlib import Path
 from typing import List, Optional
 
 # ============================================================
-# Personal imports
-# ============================================================
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-
-sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
-from settings_utils import load_settings
-
-sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
-from rest_utils import RUN02_EXCLUDED, VARIANTS
-
-# ============================================================
 # Parse arguments
 # ============================================================
 USAGE = (
@@ -103,8 +92,25 @@ print(f"  server      : {server}")
 settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
+rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings      = load_settings([rest_settings_path])[0]
 analysis_info     = settings[0]
 subjects          = analysis_info["subjects"]
+
+# ============================================================
+# Personal imports
+# ============================================================
+base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+
+sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
+from settings_utils import load_settings
+
+sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
+from rest_utils import VARIANTS
+
+# Load rest-specific settings (runs, exclusions)
+RUNS          = rest_settings["runs"]["value"]
+RUN02_EXCLUDED = frozenset(rest_settings["run02_excluded"]["value"])
 
 # ============================================================
 # ROIs — canonical order from YAML config
@@ -225,11 +231,18 @@ for hemi in ("lh", "rh"):
         # ── Output filename run-label ─────────────────────────────────────────
         run_label = normal_tag if normal_tag is not None else variant
 
-        def _stem(stat: str, space: str) -> str:
+        # ============================================================
+        # Output filename stem builder
+        #
+        # Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}
+        # Matches full-corr convention: seed-task_by_macro_full-corr_fisherz_{stat}_{run_label}_{hemi}
+        # ============================================================
+        def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
             return (
-                f"group_{stat}_seed-task_by_macror-task_partial"
-                f"_{space}_{run_label}_{hemi}"
-            )
+                f"seed-task_by_macror-task_partial-corr"
+                f"_{space}_{stat}_{run_label}_{hemi}"
+        )
+
 
         # ── Save Fisher-z arrays ──────────────────────────────────────────────
         for stat, arr in (("mean", mean_fz), ("median", median_fz)):

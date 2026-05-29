@@ -68,11 +68,19 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 # ============================================================
-# Personal imports — settings utils
+# Personal imports
 # ============================================================
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
+
+# Load rest-specific settings (runs, exclusions)
+rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings      = load_settings([rest_settings_path])[0]
+
+RUNS          = rest_settings["runs"]["value"]
+RUN02_EXCLUDED = frozenset(rest_settings["run02_excluded"]["value"])
 
 # ============================================================
 # rest_utils — shared pipeline constants and functions

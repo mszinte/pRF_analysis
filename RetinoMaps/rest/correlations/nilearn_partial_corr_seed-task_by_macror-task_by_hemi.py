@@ -102,10 +102,12 @@ HEMIS = [
 ]
 
 # ============================================================
-# Runs
+# # Load rest-specific settings
 # ============================================================
 
-RUNS = ["run-01", "run-02", ""]   # "" = full concatenated session
+rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings      = load_settings([rest_settings_path])[0]
+RUNS          = rest_settings["runs"]["value"]
 
 # ============================================================
 # Subject loop
