@@ -8,19 +8,19 @@ Nilearn ConnectivityMeasure.
 Differs from the parcel-level (task-free) script in two key respects:
 
 1. Targets are task-defined macro-regions (same binary masks as seeds,
-   loaded from the /target/ folder), not atlas MMP parcels
-   Output matrix shape: (n_clusters × n_clusters)
+   loaded from the /target/ folder), not atlas MMP parcels.
+   Output matrix shape: (n_clusters × n_clusters).
 
 2. Conditioning set = the OTHER macro-region timeseries within the same
-   task-defined network (excluding seed and target)
+   task-defined network (excluding seed and target).
    This mirrors the logic of the task-free script exactly:
      - Task-free:        condition on all MMP parcels except seed's own + target
      - Task-constrained: condition on all task macro-regions except seed + target
    Full vs partial correlations are therefore directly comparable within
-   each analysis variant (task-free / task-constrained)
+   each analysis variant (task-free / task-constrained).
 
    Note: conditioning on atlas parcels outside the task network would change
-   what is being measured and break the symmetry with the task-free analysis
+   what is being measured and break the symmetry with the task-free analysis.
 
 Design decisions
 ----------------
@@ -34,15 +34,15 @@ Self-correlation masking
 
 Standardize flag
   'zscore_sample' throughout: safe on already-z-scored XCP-D data (near-no-op
-  since mean≈0, std≈1) and correct on non-z-scored individual runs
-  Forward-compatible with Nilearn ≥ 0.15
+  since mean≈0, std≈1) and correct on non-z-scored individual runs.
+  Forward-compatible with Nilearn ≥ 0.15.
 
 Outputs (per subject, per run, per hemisphere)
   seed-task_by_macror-task_partial_{run}_{hemi}.npy / .csv           — Pearson r
   seed-task_by_macror-task_partial_fisherz_{run}_{hemi}.npy / .csv   — Fisher z
   seed-task_by_macror-task_partial_{run}_{hemi}_bilateral.npy / .csv — bilateral
 
-Group aggregation: run group_stats_partial_corr.py (Fisher-z space throughout)
+Group aggregation: run group_stats_partial_corr.py (Fisher-z space throughout).
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -102,10 +102,12 @@ HEMIS = [
 ]
 
 # ============================================================
-# Runs
+# # Load rest-specific settings
 # ============================================================
 
-RUNS = ["run-01", "run-02", ""]   # "" = full concatenated session
+rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings      = load_settings([rest_settings_path])[0]
+RUNS          = rest_settings["runs"]["value"]
 
 # ============================================================
 # Subject loop
@@ -115,13 +117,14 @@ for subject in subjects:
 
     for run in RUNS:
 
-        run_tag = f"_{run}" if run else ""
+        run_tag      = f"_{run}" if run else "_concat"   # "" → "_concat" in filenames
+        run_tag_ts   = f"_{run}" if run else ""          # "" for timeseries filename (no tag)
 
         print(f"\n=== Processing {subject}{run_tag} ===")
-
+        
         timeseries_fn = (
             f"{main_data}/{subject}/91k/rest/timeseries/"
-            f"{subject}_ses-01_task-rest{run_tag}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
+            f"{subject}_ses-01_task-rest{run_tag_ts}_space-fsLR_den-91k_desc-denoised_bold.dtseries.nii"
         )
 
         ts_img, ts_data_raw = load_surface(timeseries_fn)
@@ -166,12 +169,12 @@ for subject in subjects:
             # macro_ts[roi] = ipsilateral timeseries for that macro-region
             macro_ts        = {}
             macro_ts_contra = {}   # contralateral timeseries
-            loaded_rois     = []
+            loaded_rois        = []
             loaded_rois_contra = []
 
             for roi in clusters:
 
-                # Ipsilateral seed
+                # Ipsilateral (used as seed and ipsilateral conditioning)
                 _, mask_data = load_surface(
                     f"{main_data}/{subject}/91k/rest/seed/"
                     f"{subject}_91k_intertask_Sac-Pur-pRF_{seed_key}_{roi}.shape.gii"
@@ -183,7 +186,7 @@ for subject in subjects:
                 else:
                     print(f"  [{label}] ⚠️  Empty ipsi mask for {roi} — skipping")
 
-                # Contralateral target
+                # Contralateral (used as contra target and contralateral conditioning)
                 _, mask_data = load_surface(
                     f"{main_data}/{subject}/91k/rest/target/"
                     f"{subject}_91k_intertask_Sac-Pur-pRF_{contra_key}_{roi}.shape.gii"
@@ -199,7 +202,7 @@ for subject in subjects:
                 print(f"  [{label}] ⚠️  No valid macro-region timeseries — skipping hemisphere")
                 continue
 
-            print(f"  [{label}] Ipsi macro-regions: {loaded_rois}")
+            print(f"  [{label}] Ipsi macro-regions:  {loaded_rois}")
             print(f"  [{label}] Contra macro-regions: {loaded_rois_contra}")
 
             # ------------------------------------------------------
@@ -225,26 +228,31 @@ for subject in subjects:
             #
             # For every (seed, target) macro-region pair:
             #
-            #   X = [seed | target | other_macro-regions]
+            #   X = [seed | target | conditioning_macro-regions]
             #   C = partial_corr(X)
             #   result = C[0, 1]   ← seed ↔ target, all others partialled out
             #
-            # Conditioning set = all other ipsilateral macro-regions
-            # (i.e. loaded_rois excluding seed and target).
-            # This directly mirrors the task-free script where all MMP parcels
-            # except seed-own and target are used as conditioning signals
+            # Conditioning set = ALL OTHER macro-region timeseries, both
+            # ipsilateral and contralateral, excluding seed and target.
+            # This mirrors the task-free script where the bilateral MMP parcel
+            # set is used as conditioning — inter-hemispheric confounds within
+            # the task network are removed in the same way.
+            #
+            # Ipsilateral pairs:
+            #   conditioning = remaining ipsi (excl. seed + target) + all contra
+            #
+            # Contralateral pairs:
+            #   seed is ipsi, target is contra
+            #   conditioning = remaining ipsi (excl. seed) + remaining contra (excl. target)
             #
             # Diagonal (seed == target) is left as NaN.
-            # Contralateral targets use the same conditioning set — no
-            # self-correlation risk across hemispheres
-            #
             # standardize='zscore_sample': safe on already-z-scored data
-            # (near-no-op) and correct on non-z-scored individual runs
+            # (near-no-op) and correct on non-z-scored individual runs.
             # ------------------------------------------------------
 
-            n_rois         = len(clusters)
-            partial_r_ipsi  = np.full((n_rois, n_rois), np.nan)
-            partial_fz_ipsi = np.full_like(partial_r_ipsi, np.nan)
+            n_rois            = len(clusters)
+            partial_r_ipsi    = np.full((n_rois, n_rois), np.nan)
+            partial_fz_ipsi   = np.full_like(partial_r_ipsi, np.nan)
             partial_r_contra  = np.full((n_rois, n_rois), np.nan)
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
@@ -261,23 +269,15 @@ for subject in subjects:
 
                     i_tgt = clusters.index(tgt_name)
 
-                    # Conditioning = all other ipsilateral macro-regions
-                    other_rois = [
-                        r for r in loaded_rois
-                        if r != seed_name and r != tgt_name
-                    ]
+                    # Conditioning: remaining ipsi (excl. seed + target) + all contra
+                    ipsi_cond  = [macro_ts[r]        for r in loaded_rois        if r not in (seed_name, tgt_name)]
+                    contra_cond = [macro_ts_contra[r] for r in loaded_rois_contra]
+                    conditioning = ipsi_cond + contra_cond
 
-                    if not other_rois:
-                        # Only 2 macro-regions loaded — no conditioning possible;
-                        # result degenerates to full (Pearson) correlation
-                        print(
-                            f"  [{label}] ⚠️  No conditioning regions for "
-                            f"{seed_name} → {tgt_name}; computing full correlation"
-                        )
+                    if not conditioning:
+                        print(f"  [{label}] ⚠️  No conditioning regions for {seed_name} → {tgt_name}; computing full correlation")
 
-                    X_cols = [macro_ts[seed_name], macro_ts[tgt_name]] + \
-                             [macro_ts[r] for r in other_rois]
-                    X = np.column_stack(X_cols)
+                    X = np.column_stack([macro_ts[seed_name], macro_ts[tgt_name]] + conditioning)
 
                     C = conn.fit_transform([X])[0]
                     r = C[0, 1]
@@ -289,13 +289,15 @@ for subject in subjects:
 
                     i_tgt = clusters.index(tgt_name)
 
-                    # Same conditioning set: all ipsilateral macro-regions
-                    # except the seed (no target exclusion needed contra-laterally)
-                    other_rois = [r for r in loaded_rois if r != seed_name]
+                    # Conditioning: remaining ipsi (excl. seed) + remaining contra (excl. target)
+                    ipsi_cond   = [macro_ts[r]        for r in loaded_rois        if r != seed_name]
+                    contra_cond = [macro_ts_contra[r] for r in loaded_rois_contra if r != tgt_name]
+                    conditioning = ipsi_cond + contra_cond
 
-                    X_cols = [macro_ts[seed_name], macro_ts_contra[tgt_name]] + \
-                             [macro_ts[r] for r in other_rois]
-                    X = np.column_stack(X_cols)
+                    if not conditioning:
+                        print(f"  [{label}] ⚠️  No conditioning regions for {seed_name} → contra {tgt_name}; computing full correlation")
+
+                    X = np.column_stack([macro_ts[seed_name], macro_ts_contra[tgt_name]] + conditioning)
 
                     C = conn.fit_transform([X])[0]
                     r = C[0, 1]

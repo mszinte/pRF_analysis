@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-group_partial_corr_by_hemi.py
+group_partial_corr_by_hemi_task-free.py
 ------------------------------------------------------------------------------------------
 Goal:
     Compute group-level Fisher-z statistics from per-subject partial-correlation
@@ -26,14 +26,15 @@ Goal:
 ------------------------------------------------------------------------------------------
 Output filename convention (harmonized with full-corr group stats):
 
-    seed-task_by_mmp-parcel_partial-corr_fisherz_{stat}_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_r_{stat}_{run_label}_{hemi}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}.npy / .csv
     seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}.npz
 
-    where stat ∈ {mean, median}, run_label ∈ {concat, concat_clean, run-01, run-02}
+    e.g. seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_rh.npy
 
     Full-corr equivalent for reference:
-    seed-task_by_mmp-parcel_full-corr_fisherz_median_{run_label}_{hemi}_{mode}.npy
+    seed-task_by_macro_full-corr_fisherz_median_{run_label}_{hemi}.npy
+
+    (partial corr has no mode token — there is only one parcellation variant)
 ------------------------------------------------------------------------------------------
 Run variants:
     concat       — concatenated-run .npy, all subjects
@@ -62,7 +63,7 @@ Outputs (per hemisphere × variant):
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -76,21 +77,10 @@ from pathlib import Path
 from typing import List, Optional
 
 # ============================================================
-# Personal imports
-# ============================================================
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-
-sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
-from settings_utils import load_settings
-
-sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
-from rest_utils import RUN02_EXCLUDED, VARIANTS
-
-# ============================================================
 # Parse and validate arguments
 # ============================================================
 USAGE = (
-    "Usage: python group_partial_corr_by_hemi.py "
+    "Usage: python group_partial_corr_by_hemi_task-free.py "
     "<main_dir> <project_dir> <group> <server>"
 )
 
@@ -104,7 +94,7 @@ group       = sys.argv[3]
 server      = sys.argv[4]
 
 print("=" * 80)
-print("GROUP PARTIAL CORRELATION — Fisher-z statistics (Nilearn .npy files)")
+print("GROUP PARTIAL CORRELATION (task-free) — Fisher-z statistics")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
@@ -114,18 +104,28 @@ print(f"  server      : {server}")
 # ============================================================
 # Load settings
 # ============================================================
-settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings          = load_settings([settings_path, prf_settings_path])
-analysis_info     = settings[0]
-subjects          = analysis_info["subjects"]
+base_dir            = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
+from settings_utils import load_settings
+sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
+from rest_utils import VARIANTS
+
+settings_path       = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path   = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings            = load_settings([settings_path, prf_settings_path])
+rest_settings_path  = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings       = load_settings([rest_settings_path])[0]
+analysis_info       = settings[0]
+subjects            = analysis_info["subjects"]
+RUNS                = rest_settings["runs"][0]
+RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
 
 # ============================================================
 # ROIs — canonical order from YAML config
 # ============================================================
 clusters        = list(analysis_info["rois-drawn"])
-seed_to_parcels = analysis_info["rois-group-mmp"]   # {seed_name: [parcel_names]}
-clusters.reverse()                                   # mPCS first
+seed_to_parcels = analysis_info["rois-group-mmp"]
+clusters.reverse()   # mPCS first
 
 parcels: List[str] = []
 for cl in clusters:
@@ -141,18 +141,21 @@ print(f"  Parcels (n={n_parcels}): {parcels[:5]} ... {parcels[-5:]}")
 # Paths
 # ============================================================
 main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder = main_data / "group/91k/rest/partial_corr/by_hemi"
+output_folder = main_data / "group/91k/rest/partial_corr/by_hemi/task-free"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
 # Helper: resolve per-subject .npy path
 #
-# Input files live under the task-free subfolder:
+# Subject-level files live under:
 #   {subject}/91k/rest/corr/partial_corr/by_hemi/task-free/
 #       seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy
+#
+# Note: subject-level files use "partial" (no hyphen), not "partial-corr".
+#       The hyphenated form is only used in group output filenames.
 # ============================================================
 def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
-    run_entity = f"_{run_tag}" if run_tag is not None else ""
+    run_entity = f"_{run_tag}" if run_tag is not None else "_concat"
     fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy"
     return (
         main_data / subject
@@ -160,20 +163,17 @@ def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
         / fname
     )
 
-
 # ============================================================
 # Output filename stem builder
 #
 # Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}
-# Matches full-corr convention: seed-task_by_mmp-parcel_full-corr_fisherz_{stat}_{run_label}_{hemi}_{mode}
-# (partial corr has no mode token — there is only one parcellation variant)
+# Matches full-corr convention: seed-task_by_macro_full-corr_fisherz_{stat}_{run_label}_{hemi}
 # ============================================================
 def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
     return (
         f"seed-task_by_mmp-parcel_partial-corr"
         f"_{space}_{stat}_{run_label}_{hemi}"
     )
-
 
 # ============================================================
 # Main loop — hemisphere × variant
@@ -185,7 +185,7 @@ for hemi in ("lh", "rh"):
     print("=" * 80)
 
     for variant, (normal_tag, excluded_tag, _skip) in VARIANTS.items():
-        # run-02 intentionally keeps all subjects here (group QC strategy),
+        # run-02 intentionally keeps all subjects (group QC strategy),
         # regardless of the skip_excluded flag used in the WTA script.
         print(f"\n  --- Variant: {variant} ---")
 
@@ -235,18 +235,18 @@ for hemi in ("lh", "rh"):
             f"Unexpected stack shape {stacked_fz.shape}."
         )
 
-        # Group statistics in Fisher-z space
+        # Group statistics — always in Fisher-z space
         mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (n_clusters × n_parcels)
         median_fz = np.nanmedian(stacked_fz, axis=0)
 
-        # Back-convert to Pearson r at reporting stage only
+        # Back-convert to Pearson r only at reporting stage
         mean_r   = np.tanh(mean_fz)
         median_r = np.tanh(median_fz)
 
         print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},   {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
 
-        # run_label: None normal_tag → use variant name (e.g. "concat", "concat_clean")
+        # run_label: None normal_tag → variant name (e.g. "concat", "concat_clean")
         run_label = normal_tag if normal_tag is not None else variant
 
         # Save Fisher-z arrays

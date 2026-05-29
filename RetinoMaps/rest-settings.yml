@@ -1,12 +1,10 @@
 # rest-settings.yml
 # Settings specific to the resting-state connectivity pipeline
-# Paths and subjects are inherited from settings.yml and prf-analysis.yml
-# via yq reads in each script.
+# Paths and subjects are inherited from settings.yml and prf-analysis.yml via yq reads in each script
 
 runs:
   description: "names of the runs - empty string = concatenated timeseries (no run tag in filename)"
-  value: ["run-01", "run-02", ""]         
-
+  value: ["run-01", "run-02", ""]
 run02_excluded:
   description: "subjects with bad data / registration errors in run-02"
   value: ["sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"]
