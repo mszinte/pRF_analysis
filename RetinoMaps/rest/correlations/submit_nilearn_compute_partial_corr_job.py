@@ -10,9 +10,7 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: group (e.g. 327)
 sys.argv[4]: server project (e.g. b327)
-sys.argv[5]: script name to run:
-              - nilearn_partial_corr_cluster-task_by_mmp-parcel_bilateral.py
-              - nilearn_partial_corr_cluster-task_by_mmp-parcel_by_hemi.py
+sys.argv[5]: script name to run
 sys.argv[6]: runtime (e.g. 1:00:00)
 -----------------------------------------------------------------------------------------
 Output(s):
