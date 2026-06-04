@@ -20,7 +20,7 @@ def load_gifti_image(gii_fn):
 
     return img_hemi, data_hemi
 
-def make_gifti_image(data, source_img) : 
+def make_gifti_image(data, source_img, maps_names=None) : 
     """
     make a gifti image with data
 
@@ -29,7 +29,7 @@ def make_gifti_image(data, source_img) :
     data_to_write : data you want to write on your image 
                     numpy darray 2 dim (time x vertices)
     source_img : image from with new data derives
-
+    maps_names : list of the names if first dimension is not time (ex: ['runs_correlations'])
     
     Returns
     -------
@@ -51,14 +51,24 @@ def make_gifti_image(data, source_img) :
                                     labeltable=labeltable)
     
     # fill final image
+
     for i in range(data.shape[0]):
         time_point = data[i,:]
-        darray = nb.gifti.GiftiDataArray(time_point, datatype='NIFTI_TYPE_FLOAT32',
-                                         intent=source_img.darrays[i].intent, 
-                                         meta=source_img.darrays[i].meta, 
-                                         coordsys=source_img.darrays[i].coordsys)
+        darray = nb.gifti.GiftiDataArray(time_point, datatype='NIFTI_TYPE_FLOAT32')
+
+
         final_img.add_gifti_data_array(darray)
     
+
+
+    if maps_names :
+        if len(maps_names) == len(final_img.darrays):
+            for map_num, map_name in enumerate(maps_names):
+                final_img.darrays[map_num].meta['Name'] = map_name
+        else : raise ValueError("maps_names doesn't have the same length as the first dimension of the data.")
+            
+
+        
     return final_img
 
 def make_cifti_image(data, source_img):
@@ -133,7 +143,7 @@ def load_surface(fn):
 
     return img, data
 
-def make_surface_image(data, source_img):
+def make_surface_image(data, source_img,maps_names=None):
     """
     write a surface image inndependently if it's CIFTI or GIFTI
 
@@ -157,9 +167,33 @@ def make_surface_image(data, source_img):
         
 
     elif type(source_img) == nb.gifti.gifti.GiftiImage:
-        img = make_gifti_image(data=data, source_img=source_img)
+        img = make_gifti_image(data=data, source_img=source_img,maps_names=maps_names)
         
     else:
          raise ValueError("The type of source_img is neither Cifti2Image nor GiftiImage")
          
     return img
+
+def compute_tsnr(timeseries):
+    """
+    Standard tSNR: mean / std
+    Input: (n_timepoints, n_vertices)
+    Output: (n_vertices,)
+    """
+    import numpy as np
+    mean = np.mean(timeseries, axis=0)
+    std = np.std(timeseries, axis=0)
+    return np.where(std > 0, mean / std, 0.0)
+
+
+def compute_tsnr_robust(timeseries):
+    """
+    Robust tSNR: median / (IQR / 1.35)
+    Input: (n_timepoints, n_vertices)
+    Output: (n_vertices,)
+    """
+    import numpy as np
+    median = np.median(timeseries, axis=0)
+    q75, q25 = np.percentile(timeseries, [75, 25], axis=0)
+    robust_std = (q75 - q25) / 1.35
+    return np.where(robust_std > 0, median / robust_std, 0.0)
