@@ -66,8 +66,12 @@ figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml"
 settings = load_settings([settings_path, nCSF_settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
-formats = analysis_info['formats']
-extensions = analysis_info['extensions']
+# formats = analysis_info['formats']
+# extensions = analysis_info['extensions']
+
+formats = [analysis_info['formats'][0]] #######################################
+extensions = [analysis_info['extensions'][0]]
+
 ncsf_task_name = analysis_info['nCSF_task_name']
 maps_names_ncsf = analysis_info['maps_names_ncsf']
 maps_names_ncsf_stats = analysis_info['maps_names_ncsf_stats']
@@ -83,7 +87,7 @@ rsq_scale = analysis_info['flatmap_ncsf_rsq_scale']
 SFp_scale = analysis_info['flatmap_ncsf_SFp_scale']
 CSp_scale = analysis_info['flatmap_ncsf_CSp_scale']
 auc_scale = analysis_info['flatmap_ncsf_auc_scale']
-CRFsplope_scale = analysis_info['flatmap_ncsf_CRFsplope']
+crf_exp_scale = analysis_info['flatmap_ncsf_crf_exp_scale']
 normalize_auc_scale = analysis_info['flatmap_ncsf_normalize_auc_scale']
 SFmax_scale = analysis_info['flatmap_ncsf_SFmax_scale']
 alpha_range = analysis_info["flatmap_alpha_range"]
@@ -314,11 +318,11 @@ for avg_method in avg_methods:
                 
                 # CRFsplope
                 crf_exp_data = all_deriv_mat[crf_exp_idx,...]
-                param_crf_exp = {'data': SFmax_data, 
+                param_crf_exp = {'data': crf_exp_data, 
                               'cmap': cmap_SFp_CSp_SFmax,
                               'alpha': alpha, 
-                              'vmin': CRFsplope_scale[0],
-                              'vmax': CRFsplope_scale[1],
+                              'vmin': crf_exp_scale[0],
+                              'vmax': crf_exp_scale[1],
                               'cbar': 'discrete', 
                               'cortex_type': 'VertexRGB',
                               'description': 'CRF slope', 

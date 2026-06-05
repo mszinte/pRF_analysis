@@ -1,9 +1,11 @@
 # Correlations Flatmaps
+# ---------------------
 flatmap_corr_scale: 
   description: "Inter-run correlation r-square flatmap colorscale"
   value: [-1, 1]
 
 # pRF Flatmaps
+# ------------
 flatmap_rsq_scale:
   description: "pRF r-square flatmap colorscale"
   value: [0, 1]
@@ -29,6 +31,7 @@ flatmap_pcm_scale:
   value: [0, 10]
 
 # nCSF Flatmaps
+# -------------
 flatmap_ncsf_rsq_scale:
   description: "nCSF r-square flatmap colorscale"
   value: [0, 1]
@@ -39,7 +42,7 @@ flatmap_ncsf_SFp_scale:
 
 flatmap_ncsf_CSp_scale:
   description: "nCSF CSp flatmap colorscale"
-  value: [0, 200]
+  value: [0, 400]
 
 flatmap_ncsf_auc_scale:
   description: "nCSF auc flatmap colorscale"
@@ -47,16 +50,18 @@ flatmap_ncsf_auc_scale:
 
 flatmap_ncsf_normalize_auc_scale:
   description: "nCSF normalize auc flatmap colorscale"
-  value: [0, 200]
+  value: [0, 120]
 
 flatmap_ncsf_SFmax_scale:
   description: "nCSF SFmax flatmap colorscale"
   value: [0, 50]
 
-flatmap_ncsf_CRFsplope:
+flatmap_ncsf_crf_exp_scale:
   description: "nCSF SFmax flatmap colorscale"
-  value: [0, 20]
+  value: [0, 2]
 
+# Rois Figures settings
+# ---------------------
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
   value:
@@ -74,7 +79,6 @@ rois_colors:
     sPCS: [255, 234, 0]
     mPCS: [255, 111, 0]
 
-# Main figures
 roi_colors:
   description: "Colors to use for each ROI"
   value:
@@ -99,6 +103,7 @@ rois_groups_plot:
     - ["hMT+", "iIPS", "sIPS"]
     - ["iPCS", "sPCS", "mPCS"]
 
+# Rois figures sizes
 rois_fig_margin: 
   description: "Margin for figure with multiple ROIs"
   value: [100, 50, 50, 75]
@@ -143,6 +148,8 @@ roi_plot_width:
   description: "Figure width of figure with individual ROI"
   value: 100
 
+# pRF
+# ---
 ecc_size_num_bins: 
   description: "Number of bins for eccentricity vs size plot"
   value: 6
@@ -178,7 +185,8 @@ active_vert_fsnative_range:
 active_vert_170k_range:
   description: "Range of number of active vertex plot with 170k format"
   value: [0, 10000]
-  
+
+# Violons
 violin_rsq_range:
   description: "R-square range in the violin plot"
   value: [0, 1]
@@ -194,7 +202,8 @@ violin_ecc_range:
 violin_pcm_range: 
   description: "pRF CM range in the violin plot"
   value: [0, 15]
-  
+
+# Params median
 params_median_rsq_range:
   description: "R-square range in the median parameters plot"
   value: [0, 1]
@@ -211,6 +220,7 @@ params_median_pcm_range:
   description: "PRF CM range in the median parameters plot"
   value: [0, 15]
   
+# pRF distibution
 distribution_max_ecc: 
   description: "Maximum eccentricity in the pRF spatial distribution plot"
   value: 20
@@ -226,3 +236,108 @@ distribution_screen_side:
 hot_zone_percent: 
   description: "Hot zone percent in the barycentre plot"
   value: 0.01
+
+# nCSF
+# ----
+ecc_SFp_num_bins: 
+  description: "Number of bins for eccentricity vs SFp plot"
+  value: 6
+
+ecc_SFp_max: 
+  description: "Max value of eccentricity [0] and SFp [1] for ecc/SFp plot"
+  value: [12, 5]
+
+ecc_auc_max: 
+  description: "Max value of eccentricity [0] and auc [1] for ecc/auc plot"
+  value: [12, 5]
+
+ecc_SFp_x_axis: 
+  description: "Bounds for x axis in the ecc SFp plot"
+  value: [0, 15]
+
+ecc_SFp_y_axis: 
+  description: "Bounds for y axis in the ecc SFp plot"
+  value: [0, 5]
+
+ecc_auc_y_axis: 
+  description: "Bounds for y axis in the ecc auc plot"
+  value: [0, 10]
+
+size_SFp_x_axis: 
+  description: "Bounds for x axis in the size SFp plot"
+  value: [0, 15]
+
+# Viloins
+violin_ncsf_rsq_range:
+  description: "R-square range in the violin plot"
+  value: [0, 1]
+  
+violin_SFp_range: 
+  description: "SFp range in the violin plot"
+  value: [0, 5]
+  
+violin_CSp_range: 
+  description: "CSp range in the violin plot"
+  value: [0, 400]
+
+violin_width_l_range: 
+  description: "width_l range in the violin plot"
+  value: [0, 1]
+
+violin_width_r_range: 
+  description: "width_r range in the violin plot"
+  value: [0, 1]
+
+violin_crf_exp_range: 
+  description: "CSp range in the violin plot"
+  value: [0, 5] 
+  
+violin_auc_range: 
+  description: "auc range in the violin plot"
+  value: [0, 10]
+
+violin_normalize_auc_range: 
+  description: "Normalize auc range in the violin plot"
+  value: [0, 200]
+  
+violin_SFmax_range: 
+  description: "CSp range in the violin plot"
+  value: [0, 100]
+ 
+# Params median
+params_median_ncsf_rsq_range:
+  description: "R-square range in the median parameters plot"
+  value: [0, 1]
+
+params_median_SFp_range: 
+  description: "SFp range in the median parameters plot"
+  value: [0, 5]
+
+params_median_CSp_range: 
+  description: "CSp range in the median parameters plot"
+  value: [0, 400]
+
+params_median_width_l_range: 
+  description: "width_l range in the median parameters plot"
+  value: [0, 1]
+  
+params_median_width_r_range: 
+  description: "width_r range in the median parameters plot"
+  value: [0, 1]
+
+params_median_crf_exp_range: 
+  description: "crf_exp range in the median parameters plot"
+  value: [0, 5]
+
+params_median_auc_range: 
+  description: "auc range in the median parameters plot"
+  value: [0, 5]
+
+params_median_normalize_auc_range: 
+  description: "normalize_auc range in the median parameters plot"
+  value: [0, 120]
+
+params_median_SFmax_range: 
+  description: "SFmax range in the median parameters plot"
+  value: [0, 50]
+

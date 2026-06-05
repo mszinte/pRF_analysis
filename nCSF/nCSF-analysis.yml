@@ -36,7 +36,7 @@ contNum:
 
 ncsf_grid_nr:
   description: "number of steps for nCSH gridfit"
-  value: 8
+  value: 10
 
 ncsf_iterative_rsq_threshold:
   description: "rsq threshold for nCSF iterative fit"

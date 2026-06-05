@@ -164,8 +164,9 @@ def weighted_nan_median(data, weights):
     median_weight = cumulative_weights.iloc[-1] / 2.0
 
     # Find the index where the cumulative weight crosses the median weight
-    median_index = np.searchsorted(cumulative_weights, median_weight)
-
+    # median_index = np.searchsorted(cumulative_weights, median_weight)
+    median_index = min(np.searchsorted(cumulative_weights, median_weight), len(sorted_data) - 1)
+    
     return sorted_data.iloc[median_index]
 
 def weighted_nan_percentile(data, weights, percentile):
@@ -217,7 +218,8 @@ def weighted_nan_percentile(data, weights, percentile):
     percentile_weight = percentile / 100.0 * cumulative_weights[-1]
     
     # Find the index where the cumulative weight crosses the percentile weight
-    percentile_index = np.searchsorted(cumulative_weights, percentile_weight)
+    # percentile_index = np.searchsorted(cumulative_weights, percentile_weight)
+    percentile_index = min(np.searchsorted(cumulative_weights, percentile_weight), len(sorted_data) - 1)
     
     return float(sorted_data[percentile_index])
         

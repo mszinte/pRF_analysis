@@ -91,11 +91,16 @@ analysis_info = settings[0]
 TR = analysis_info['TR']
 nCSF_session = analysis_info['nCSF_session']
 rois_methods = analysis_info['rois_methods']
-ncsf_grid_nr = analysis_info['ncsf_grid_nr']
+# ncsf_grid_nr = analysis_info['ncsf_grid_nr']
 nCSF_task_name = analysis_info['nCSF_task_name']
 run_ncsf_fit_on_rois = analysis_info['run_ncsf_fit_on_rois']
 rsq_threshold = analysis_info['ncsf_iterative_rsq_threshold']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+width_r_grid = 6   
+SFp_grid     = 8   
+CSp_grid     = 10  
+width_l_grid = 3   
+crf_exp_grid = 5
 
 sf_minFreq = analysis_info['sf_minFreq']
 sf_maxFreq = analysis_info['sf_maxFreq']
@@ -187,8 +192,8 @@ csenf_fitter = CSenFFitter(data=data.T,
 
 ncsf_bounds = {
     'width_r'       : [0, 1.5],          
-    'SFp'           : [sf_filtCenters[1], sf_maxFreq],
-    'CSp'           : [100/maxCont, 200],
+    'SFp'           : [sf_filtCenters[1], int(sf_maxFreq/2)],
+    'CSp'           : [100/maxCont, 100/minCont],
     'width_l'       : [0.5, 1],
     'crf_exp'       : [0, 4],
     'amp_1'         : [0, 6],
@@ -197,13 +202,16 @@ ncsf_bounds = {
     'hrf_2'         : [0, 0],
 }
 
-width_r_grid  = np.linspace(max(ncsf_bounds['width_r'][0], 0.1), ncsf_bounds['width_r'][1], ncsf_grid_nr)
-SFp_grid      = np.logspace(np.log10(ncsf_bounds['SFp'][0]), np.log10(ncsf_bounds['SFp'][1]), ncsf_grid_nr)
-CSp_grid      = np.logspace(np.log10(ncsf_bounds['CSp'][0]), np.log10(ncsf_bounds['CSp'][1]), ncsf_grid_nr)
-width_l_grid  = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], ncsf_grid_nr)
-crf_exp_grid  = np.linspace(max(ncsf_bounds['crf_exp'][0], 0.1), ncsf_bounds['crf_exp'][1], ncsf_grid_nr)
-hrf_1_grid    = np.zeros(len(width_r_grid))
-hrf_2_grid    = np.zeros(len(width_r_grid))
+width_r_grid  = np.linspace(max(ncsf_bounds['width_r'][0], 0.1), ncsf_bounds['width_r'][1], width_r_grid)
+SFp_grid      = np.linspace(ncsf_bounds['SFp'][0], ncsf_bounds['SFp'][1], SFp_grid)
+CSp_grid = np.unique(np.concatenate([
+    np.logspace(np.log10(ncsf_bounds['CSp'][0]), np.log10(ncsf_bounds['CSp'][1]/2), CSp_grid // 2),   
+    np.logspace(np.log10(ncsf_bounds['CSp'][1]/2), np.log10(ncsf_bounds['CSp'][1]), CSp_grid // 2),   
+]))
+width_l_grid  = np.linspace(ncsf_bounds['width_l'][0], ncsf_bounds['width_l'][1], width_l_grid)
+crf_exp_grid  = np.linspace(max(ncsf_bounds['crf_exp'][0], 0.1), ncsf_bounds['crf_exp'][1], crf_exp_grid)
+hrf_1_grid    = np.ones(1)
+hrf_2_grid    = np.zeros(1)
 
 grid_bounds = [ncsf_bounds['amp_1']]
 fixed_grid_baseline=False
@@ -270,7 +278,6 @@ ncsf_fit_extend = np.hstack([ncsf_fit, auc.reshape(-1,1),
                              SFmax.reshape(-1,1)])
 
 # rearange result of nCSF model 
-#gauss_fit = gauss_fitter.gridsearch_params
 ncsf_fit_mat = np.zeros((raw_data.shape[1], ncsf_fit_extend.shape[1]))
 ncsf_pred_mat = np.zeros_like(raw_data) 
 
@@ -285,9 +292,6 @@ for est, vert in enumerate(valid_vertices_idx):
                                                           baseline=ncsf_fit[est][bold_baseline_idx],
                                                           hrf_1=ncsf_fit[est][hrf_1_idx],
                                                           hrf_2=ncsf_fit[est][hrf_2_idx])
-
-# ncsf_fit_mat = np.where(ncsf_fit_mat == 0, np.nan, ncsf_fit_mat)
-# ncsf_pred_mat = np.where(ncsf_pred_mat == 0, np.nan, ncsf_pred_mat)
 
 # Compute LOO r2 
 if 'loo-avg' in input_fn:
