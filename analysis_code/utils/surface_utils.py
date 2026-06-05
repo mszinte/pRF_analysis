@@ -173,3 +173,27 @@ def make_surface_image(data, source_img,maps_names=None):
          raise ValueError("The type of source_img is neither Cifti2Image nor GiftiImage")
          
     return img
+
+def compute_tsnr(timeseries):
+    """
+    Standard tSNR: mean / std
+    Input: (n_timepoints, n_vertices)
+    Output: (n_vertices,)
+    """
+    import numpy as np
+    mean = np.nanmean(timeseries, axis=0)
+    std = np.nanstd(timeseries, axis=0)
+    return np.where(std > 0, mean / std, 0.0)
+
+def compute_tsnr_robust(timeseries):
+    """
+    Robust tSNR: median / (IQR / 1.35)
+    Input: (n_timepoints, n_vertices)
+    Output: (n_vertices,)
+    """
+    import numpy as np
+    median = np.nanmedian(timeseries, axis=0)
+    q75 = np.nanpercentile(timeseries, 75, axis=0)
+    q25 = np.nanpercentile(timeseries, 25, axis=0)
+    robust_std = (q75 - q25) / 1.35
+    return np.where(robust_std > 0, median / robust_std, 0.0)
