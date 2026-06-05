@@ -56,8 +56,8 @@ subject = sys.argv[3]
 group = sys.argv[4]
 server_project = sys.argv[5]
 memory_val = 128
-nb_procs = 32
-hour_proc = 20
+nb_procs = 8
+hour_proc = 1
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -92,7 +92,7 @@ for avg_method in avg_methods:
 
     # Accumulate the results
     pp_fns.extend(glob.glob(dct_avg_gii_fns))
-    pp_fns.extend(glob.glob(dct_avg_nii_fns))
+    # pp_fns.extend(glob.glob(dct_avg_nii_fns)) ############ BE CARFUL !!! #######
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
