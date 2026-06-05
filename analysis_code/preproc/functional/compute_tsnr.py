@@ -4,7 +4,7 @@ compute_tsnr.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
 Compute per-run tSNR maps (standard and/or robust) from preprocessed surface timeseries
-(post-DCT, pre-z-score), and save an average tSNR map across all runs.
+(post-DCT, pre-z-score).
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -164,25 +164,6 @@ for format_, extension in zip(formats, extensions):
                 # Collect for averaging
                 tsnr_collect[method].setdefault(fkey, {'maps': [], 'template': surf_img}).get('maps').append(tsnr_full)
                 tsnr_collect[method][fkey]['template'] = surf_img
-
-# Save averaged tSNR maps across all runs
-print('Saving averaged tSNR maps...')
-for method in (['standard', 'robust'] if tsnr_method == 'both' else [tsnr_method]):
-    fn_label = 'tSNR' if method == 'standard' else 'tSNR-robust'
-    for fkey, data in tsnr_collect[method].items():
-        avg_map = np.nanmedian(np.stack(data['maps'], axis=0), axis=0)
-        format_ = fkey.split('_')[0]
-        hemi = '_'.join(fkey.split('_')[1:]) if '_' in fkey else None
-        hemi_str = '_{}'.format(hemi) if hemi else ''
-        space_label = 'space-{}'.format(format_)
-        avg_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}{}_{}_{}_{}_avg.{}".format(
-            main_dir, project_dir, subject, format_,
-            preproc_prep, filtering,
-            subject, hemi_str, space_label, preproc_prep, fn_label,
-            'func.gii' if 'fsnative' in format_ else 'dtseries.nii')
-        avg_img = make_surface_image(data=avg_map[np.newaxis, :], source_img=data['template'])
-        nb.save(avg_img, avg_fn)
-        print('Saved avg: {}'.format(avg_fn))
 
 # Time
 end_time = datetime.datetime.now()
