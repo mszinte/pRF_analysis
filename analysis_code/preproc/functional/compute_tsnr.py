@@ -153,7 +153,7 @@ for format_, extension in zip(formats, extensions):
 
                 # Per-run filename: replace normalization label with tSNR label
                 out_fn_base = fn_basename.replace(
-                    'bold', '{}_{}_{}_bold'.format(preproc_prep, filtering, fn_label))
+                    '_bold.{}'.format(extension), '_{}_{}_{}.{}'.format(preproc_prep, filtering, fn_label, extension))
                 out_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}".format(
                     main_dir, project_dir, subject, format_,
                     preproc_prep, filtering, out_fn_base)
@@ -170,14 +170,15 @@ print('Saving averaged tSNR maps...')
 for method in (['standard', 'robust'] if tsnr_method == 'both' else [tsnr_method]):
     fn_label = 'tSNR' if method == 'standard' else 'tSNR-robust'
     for fkey, data in tsnr_collect[method].items():
-        avg_map = np.nanmean(np.stack(data['maps'], axis=0), axis=0)
+        avg_map = np.nanmedian(np.stack(data['maps'], axis=0), axis=0)
         format_ = fkey.split('_')[0]
-        hemi = fkey.split('_')[1] if '_' in fkey else None
+        hemi = '_'.join(fkey.split('_')[1:]) if '_' in fkey else None
         hemi_str = '_{}'.format(hemi) if hemi else ''
-        avg_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}{}_{}_{}_avg_bold.{}".format(
+        space_label = 'space-{}'.format(format_)
+        avg_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}/{}{}_{}_{}_{}_avg.{}".format(
             main_dir, project_dir, subject, format_,
             preproc_prep, filtering,
-            subject, hemi_str, preproc_prep, fn_label, 
+            subject, hemi_str, space_label, preproc_prep, fn_label,
             'func.gii' if 'fsnative' in format_ else 'dtseries.nii')
         avg_img = make_surface_image(data=avg_map[np.newaxis, :], source_img=data['template'])
         nb.save(avg_img, avg_fn)

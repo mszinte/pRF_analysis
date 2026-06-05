@@ -181,10 +181,9 @@ def compute_tsnr(timeseries):
     Output: (n_vertices,)
     """
     import numpy as np
-    mean = np.mean(timeseries, axis=0)
-    std = np.std(timeseries, axis=0)
+    mean = np.nanmean(timeseries, axis=0)
+    std = np.nanstd(timeseries, axis=0)
     return np.where(std > 0, mean / std, 0.0)
-
 
 def compute_tsnr_robust(timeseries):
     """
@@ -193,7 +192,8 @@ def compute_tsnr_robust(timeseries):
     Output: (n_vertices,)
     """
     import numpy as np
-    median = np.median(timeseries, axis=0)
-    q75, q25 = np.percentile(timeseries, [75, 25], axis=0)
+    median = np.nanmedian(timeseries, axis=0)
+    q75 = np.nanpercentile(timeseries, 75, axis=0)
+    q25 = np.nanpercentile(timeseries, 25, axis=0)
     robust_std = (q75 - q25) / 1.35
     return np.where(robust_std > 0, median / robust_std, 0.0)

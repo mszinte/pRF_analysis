@@ -27,6 +27,10 @@ flatmap_pcm_scale:
   description: "pRF cortical magnification flatmap colorscale"
   value: [0, 30]
 
+flatmap_tsnr_scale:
+  description: "Color scale range for tSNR flatmaps [min, max]"
+  value: [0, 150]
+
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
   value:
