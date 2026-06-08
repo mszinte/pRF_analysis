@@ -13,8 +13,8 @@ sys.argv[3]: subject name (e.g. sub-01)
 -----------------------------------------------------------------------------------------
 Output(s):
 Residual files saved to:
-  - {pp_dir}/{subject}/170k/pmf/pmf_residuals/
-  - {pp_dir}/{subject}/fsnative/pmf/pmf_residuals/
+  - {pp_dir}/{subject}/170k/func/fmriprep_dct_z-score_concat-residuals
+  - {pp_dir}/{subject}/fsnative/func/fmriprep_dct_z-score_concat-residuals
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
@@ -159,9 +159,9 @@ def find_pmf_gauss_pred(pp_dir, subject, bold_fn, pmf_task_names, preproc_prep,
 def make_residual_output_path(bold_fn, pp_dir, subject):
     """Derive the output path and filename from the BOLD input file."""
     if bold_fn.endswith('.nii'):
-        residuals_dir = "{}/{}/170k/pmf/pmf_residuals".format(pp_dir, subject)
+        residuals_dir = "{}/{}/170k/func/fmriprep_dct_z-score_concat-residuals".format(pp_dir, subject)
     else:
-        residuals_dir = "{}/{}/fsnative/pmf/pmf_residuals".format(pp_dir, subject)
+        residuals_dir = "{}/{}/fsnative/func/fmriprep_dct_z-score_concat-residuals".format(pp_dir, subject)
 
     os.makedirs(residuals_dir, exist_ok=True)
 

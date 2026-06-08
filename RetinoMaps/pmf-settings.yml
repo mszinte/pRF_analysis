@@ -124,6 +124,17 @@ maps_names_stats:
   description: "PRF gauss stats maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
+# Design matrix 
+
+dm_range: 
+  description: "Range of design matrix (visual, retinal and oculomotor) in dva. dm_range x dm_range."
+  value: 15
+
+target_radius: 
+  description: "Radius of target displayed in design matrix in dva."
+  value : 0.6
+
+  
 # Postfit settings
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"

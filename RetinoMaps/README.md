@@ -197,16 +197,19 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Create the visual matrix design with eye movements (retinal view vdm) & target vdm [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
 - [x] Create the motion design matrix for saccades [mdm_builder_sac_dir.py](postproc/pmf/fit/mdm_builder_sac_dir.py)
 - [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
-### Fitting Level 1: 
+### Analysis 1:  
+Fit SacLoc data using pRF with retinal design matrix
 - [x] Fit retinal visual pRF model [prf_fit_submit_jobs.py](postproc/pmf/fit/prf_fit_submit_jobs.py)
+### Analysis 2: 
+Fit SacLoc data using pRF with oculomotor design matrix
+- [x] Fit retinal motor pMF model with bold baseline (--input bold) [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
+### Analysis 3: 
+Predict SacLoc data using retinotopy task pRF parameters and retinal design matrix and Fit SacLoc data residuals using pRF with oculomotor design matrix
 - [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
 - [x] Compute residuals [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
-### Fitting Level 2: 
-- [x] Fit retinal motor pMF model with bold baseline (--input bold) [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
 - [x] Fit retinal motor pMF model with residuals [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
 ### Postprocessing: 
-- [x] Compute stats [gauss_stats.py](postproc/pmf/postfit/gauss_stats.py)
-- [x] Compute derivatives [compute_gauss_derivatives.py](postproc/pmf/postfit/compute_gauss_derivatives.py)
-- [x] Make maps with pycortex [pycortex_maps_gauss.py](postproc/pmf/postfit/pycortex_maps_gauss.py)
-- [x] Make figures: [make_tsv_gauss.py](postproc/pmf/postfit/make_tsv_gauss.py), [make_rois_fig_tsv_gauss.py](postproc/pmf/postfit/make_rois_fig_tsv_gauss.py), [make_rois_fig_gauss.py](postproc/pmf/postfit/make_rois_fig_gauss.py)
-- [x] Make group figures: [tsv_roi_group.py](postproc/pmf/postfit/tsv_roi_group.py), [make_pmf_fig_group.py](postproc/pmf/postfit/make_pmf_fig_group.py)
+see RetinoMaps steps
+
+
+
