@@ -154,7 +154,7 @@ def make_vdm_from_saccades_blob(
     TR=1.2,
     canvas_size=100,
     dva_range=15.0,
-    dot_dva=0.5,        # radius of the dot in dva
+    dot_dva=0.6,        # radius of the dot in dva
 ):
     vdm = np.zeros((canvas_size, canvas_size, n_TRs))
     log = []
@@ -201,8 +201,17 @@ def make_vdm_from_saccades_blob(
             gx = -sac['sac_x_onset']
             gy = -sac['sac_y_onset']
 
+        # --- position of the circle centre on the canvas (convert from dva to pixels) ---
         cx = int(round((gx + dva_range) / (2 * dva_range) * (canvas_size - 1)))
         cy = int(round((gy + dva_range) / (2 * dva_range) * (canvas_size - 1)))
+
+        # --- radius of the circle (in pixels) ---
+        r_px = dot_dva * px_per_dva          # dot_dva [dva] × px_per_dva [px/dva] → px
+
+        # --- build a filled circle mask and stamp it into the volume ---
+        ys, xs = np.ogrid[:canvas_size, :canvas_size]   # two 1-D index arrays
+        mask   = (xs - cx)**2 + (ys - cy)**2 <= r_px**2 # True where inside the circle
+        vdm[mask, tr_idx] = 1.0                          # write 1 into those pixels
 
         r_px = dot_dva * px_per_dva
         ys, xs = np.ogrid[:canvas_size, :canvas_size]
@@ -223,39 +232,6 @@ def make_vdm_from_saccades_blob(
         })
     return vdm, pd.DataFrame(log)
 
-# def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
-#                    dva_range=15.0, preview_fps=60, TR=1.2):
-#     n_trs = vdm.shape[2]
-#     n_total_frames = int(round(n_trs * TR * preview_fps))
-#     frame_dur = 1.0 / preview_fps
-
-#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-#     writer = cv2.VideoWriter(output_path, fourcc, preview_fps,
-#                              (vdm.shape[1], vdm.shape[0]), False)
-
-#     for frame_idx in range(n_total_frames):
-#         t_frame_start = scan_start + frame_idx * frame_dur
-#         t_frame_end   = t_frame_start + frame_dur
-
-#         # Fixed: offset by scan_start before floor-dividing
-#         tr_idx = min(int((t_frame_start - scan_start) / TR), n_trs - 1)
-
-#         active = log_df[
-#             (log_df['t_onset']  < t_frame_end) &
-#             (log_df['t_offset'] > t_frame_start)
-#         ]
-
-#         if len(active) > 0:
-#             frame = vdm[:, :, tr_idx]
-#             frame_uint8 = np.uint8(np.clip(frame, 0, 1) * 255)
-#         else:
-#             frame_uint8 = np.zeros((vdm.shape[0], vdm.shape[1]), dtype=np.uint8)
-
-#         writer.write(np.flipud(frame_uint8))
-
-#     writer.release()
-#     size_mb = os.path.getsize(output_path) / 1e6
-#     print(f"Saved {output_path}  ({n_trs * TR:.1f}s, {n_total_frames} frames, {size_mb:.1f} MB)")
 
 def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
                    dva_range=15.0, preview_fps=60, TR=1.2):
