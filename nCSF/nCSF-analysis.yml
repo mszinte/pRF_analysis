@@ -1,3 +1,21 @@
+# ------------- Main configuration -------------------
+analysis_task_names:
+  description: "Names of the tasks analysed with nCSF methods"
+  value: ["nCSF"]
+
+TR: 
+  description: "Time repetition of the pRF tasks"
+  unit: "seconds"
+  value: 1.6
+
+TRs: 
+  description: "Number of TR of the analysed task"
+  value: 156
+
+output_folder: 
+  description: "Name of the folder created to save all outputs of this analysis"
+  value: "ncsf"
+
 nCSF_session: 
   description: "session of nCSF task"
   value: "ses-01"
@@ -54,7 +72,7 @@ run_ncsf_fit_on_rois:
   description: "Run nCSF fit only on roi (True) or on full brain (False)"
   value: True
 
-# ROIS
+#  -----------  ROIS -----------
 rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 

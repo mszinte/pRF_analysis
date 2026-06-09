@@ -1,4 +1,26 @@
-# Preprocessing settings
+# ------------- Main configuration -------------------
+analysis_task_names:
+  description: "Names of the tasks analysed with pRF methods"
+  value: ["pRF"]
+
+n_runs_analysis_task: 
+  description: "Numbers of runs of the pRF task"
+  value: 2
+
+TR: 
+  description: "Time repetition of the pRF tasks"
+  unit: "seconds"
+  value: 1.6
+
+TRs: 
+  description: "Number of TR of the analysed task"
+  value: null 
+
+output_folder: 
+  description: "Name of the folder created to save all outputs of this analysis"
+  value: "prf"
+
+# ------------- Preprocessing settings -------------------
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
   value: ["avg", "loo-avg"]
@@ -9,7 +31,7 @@ avg_methods:
     concat: "concatenation of runs"
     runs: "single run analysis"
 
-# Screen and visual design matrix settings
+# ------------------- Screen and visual design matrix settings -------------------
 screen_size_pix: 
   description: "Horizontal and vertical size of the pRF tasks display"
   units: "pixels"
@@ -30,7 +52,13 @@ vdm_size_pix:
   units: "pixels"
   value: [50, 50]
 
-# Fit settings
+dm_name: 
+  description: "Type/Name of design matrix used for pRF fit"
+  value: "vdm"
+  levels: ["vdm"]
+
+
+# -------------------  Fit settings -------------------
 gauss_grid_nr: 
   description: "Number of grid steps of the Gaussian grid fit procedure"
   value: 36
@@ -64,7 +92,7 @@ rsq_iterative_th:
   description: "R-square minimum threshold for iterative fit"
   value: 0.01
 
-# Postfit settings
+# ------------------- Postfit settings -------------------
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
@@ -115,7 +143,7 @@ maps_names_css_stats:
   description: "PRF CSS stats maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
-# ROIS
+# ------------------- ROIS -------------------
 rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 

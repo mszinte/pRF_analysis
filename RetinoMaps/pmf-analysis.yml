@@ -2,9 +2,7 @@
 # ------------- Main configuration -------------------
 analysis_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
-  to_check_label: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
-  full_analysis: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
+  value: ["SacLoc"]
 
 n_runs_analysis_task: 
   description: "Numbers of runs of the pRF task"
@@ -13,21 +11,21 @@ n_runs_analysis_task:
 TR: 
   description: "Time repetition of the pRF tasks"
   unit: "seconds"
-  value: 2
+  value: 1.2
 
 TRs: 
-  description: "Number of TR of the pRF task"
-  value: 120
+  description: "Number of TR of the analysed task"
+  value: 208
 
 output_folder: 
   description: "Name of the folder created to save all outputs of this analysis"
-  value: "prf"
+  value: "pmf"
 
 # ------------- Preprocessing settings -------------------
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["single-run"]
-  levels: ["avg", "loo-avg", "concat", "single-run"]
+  value: ["concat"]
+  levels: ["avg", "loo-avg", "concat", "runs", "concat-residuals"]
   level-description: 
     avg: "averaging across runs"
     loo-avg: "leave-one-out averaging across runs"
@@ -53,17 +51,21 @@ screen_distance_cm:
 
 dm_name: 
   description: "Type/Name of design matrix used for pRF fit"
-  value: "vdm"
-  levels: ["vdm"]
+  value: "rdm"
+  levels: ["vdm", "rdm", "odm"]
 
 vdm_size_pix:
   description: "Horizontal and vertical size of the pRF tasks visual design matrix"
   units: "pixels"
-  value: [50, 50]
+  value: [100, 100]
 
 dm_range: 
   description: "Range of design matrix (visual, retinal and oculomotor) in dva. dm_range x dm_range."
-  value: 10
+  value: 15
+
+target_radius: 
+  description: "Radius of target displayed in design matrix in dva."
+  value : 0.6
 
 
 # ------------- Fit settings -------------------
@@ -78,7 +80,7 @@ css_grid_nr:
 max_ecc_size: 
   description: "Maximum eccentricity and size value"
   units: "dva"
-  value: 20
+  value: 30
 
 prf_amplitude_bounds:
   description: "Scaling factor of the pRF response (signal gain)"
@@ -108,12 +110,12 @@ rsq_iterative_th:
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20]
+  value: [0.05, 30]
 
 size_th:
   description: "Size range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 20.0]
+  value: [0.05, 30.0]
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
@@ -121,7 +123,7 @@ rsqr_th:
 
 prf_amp_th: 
   description: "pRF amplitude range threshold for pRF post-fit analysis"
-  value: [-6, 6]
+  value: [0, 6]
 
 stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"
@@ -155,7 +157,7 @@ maps_names_css_stats:
 rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 
-    fsnative: ["rois-group-mmp"]
+    fsnative: ["rois-drawn", "rois-group-mmp"]
     170k: ["rois-group-mmp"]
   levels: ["rois-drawn", "rois-group-mmp"]
   level-description: 
