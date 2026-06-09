@@ -127,7 +127,6 @@ corr_stats_th:
   description: "p value minimum threshold for inter-run correlation analysis"
   value: 0.05
 
-
 # ----------- tSNR ----------- 
 tsnr_method:
   description: "Method to compute tSNR maps per run and averaged across runs"
