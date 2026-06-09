@@ -44,16 +44,43 @@ rois_colors:
     hMT+: [0, 25, 255]
 
 # Main figures
+# roi_colors:
+#   description: "Colors to use for each ROI"
+#   value:
+#     V1: "rgb(243, 231, 155)"
+#     V2: "rgb(250, 196, 132)"
+#     V3: "rgb(248, 160, 126)"
+#     V3AB: "rgb(235, 127, 134)"
+#     LO: "rgb(150, 0, 90)"
+#     VO: "rgb(0, 0, 200)"
+#     hMT+: "rgb(0, 25, 255)"
+
 roi_colors:
   description: "Colors to use for each ROI"
   value:
+    n/a: "rgb(255, 255, 255)"
     V1: "rgb(243, 231, 155)"
     V2: "rgb(250, 196, 132)"
     V3: "rgb(248, 160, 126)"
-    V3AB: "rgb(235, 127, 134)"
-    LO: "rgb(150, 0, 90)"
-    VO: "rgb(0, 0, 200)"
-    hMT+: "rgb(0, 25, 255)"
+    V4: "rgb(240, 120, 100)"
+    V3A: "rgb(220, 90, 120)"
+    V3B: "rgb(200, 70, 140)"
+    V3CD: "rgb(180, 50, 160)"
+    LO1: "rgb(140, 20, 180)"
+    LO2: "rgb(120, 10, 200)"
+    LO3: "rgb(100, 0, 220)"
+    V8: "rgb(60, 180, 180)"
+    PIT: "rgb(40, 160, 200)"
+    PH: "rgb(20, 140, 220)"
+    FFC: "rgb(0, 120, 240)"
+    VMV1: "rgb(80, 200, 120)"
+    VMV2: "rgb(60, 180, 100)"
+    VMV3: "rgb(40, 160, 80)"
+    VVC: "rgb(20, 140, 60)"
+    V4t: "rgb(200, 150, 50)"
+    MST: "rgb(220, 100, 50)"
+    MT: "rgb(240, 60, 40)"
+    FST: "rgb(210, 80, 70)"
 
 rois_groups_plot:
   description: "Grouping of ROIs in figures with grouped values"

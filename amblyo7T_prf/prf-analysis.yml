@@ -1,7 +1,7 @@
 # Preprocessing settings
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["single-run"]
+  value: ["concat"]
   levels: ["avg", "loo-avg", "concat", "single-run"]
   level-description: 
     avg: "averaging across runs"
@@ -125,6 +125,14 @@ rois_methods:
   level-description: 
     rois-drawn: "ROIs hand-drawn using Inskape as defined in rois-drawn (see below)"
     rois-group-mmp: "ROIS based on grouped mmp glasser atlas parcelations as defined in rois_mmp_groups (see below)"
+
+rois_to_plot: 
+  description: "Wich rois to plot in rois plot"
+  value: "roi_mmp"
+  levels: ["roi", "roi_mmp"]
+  description:
+    roi: "plot the rois defined in rois-drawn or keys rois-group-mmp"
+    roi_mmp: "plot the subparcelation contain in values of rois-group-mmp"
 
 rois-drawn: 
   description: "List of regions of interest drawn using Inskape"

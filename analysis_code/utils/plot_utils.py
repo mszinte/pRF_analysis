@@ -153,6 +153,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
     rois_ver_spacing = figure_info['rois_ver_spacing']
     bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -172,7 +173,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
     
     # FDR 0.05 
     # All vertices
-    fig.add_trace(go.Bar(x=df['roi'], 
+    fig.add_trace(go.Bar(x=df[rois_to_plot], 
                          y=df['n_vert_tot'], 
                          text=(df['ratio_5pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
@@ -182,7 +183,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
                  row=1, col=1)
  
     # Significant vertices
-    fig.add_trace(go.Bar(x=df['roi'], 
+    fig.add_trace(go.Bar(x=df[rois_to_plot], 
                          y=df['n_vert_corr_pvalue_5pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
@@ -191,7 +192,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
     
     # FDR 0.01
     # All vertices
-    fig.add_trace(go.Bar(x=df['roi'], 
+    fig.add_trace(go.Bar(x=df[rois_to_plot], 
                          y=df['n_vert_tot'], 
                          text=(df['ratio_1pt']*100).astype(int).astype(str) + '%',
                          textposition='outside',
@@ -201,7 +202,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
                  row=1, col=2)
  
     # Significant vertices
-    fig.add_trace(go.Bar(x=df['roi'], 
+    fig.add_trace(go.Bar(x=df[rois_to_plot], 
                          y=df['n_vert_corr_pvalue_1pt'], 
                          showlegend=False, 
                          marker=dict(color=roi_colors)),
@@ -270,6 +271,7 @@ def prf_violins_plot(df, figure_info, rsq2use):
     rois_ver_spacing = figure_info['rois_ver_spacing']
     bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -284,10 +286,10 @@ def prf_violins_plot(df, figure_info, rsq2use):
 
     for j, roi in enumerate(rois):
         
-        df_roi = df.loc[(df.roi == roi)]
+        df_roi = df.loc[(df[rois_to_plot] == roi)]
         
         # pRF r2 or loor2
-        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+        fig.add_trace(go.Violin(x=df_roi[rois_to_plot][df_roi[rois_to_plot]==roi], 
                                 y=df_roi[rsq2use], 
                                 name=roi, 
                                 opacity=1,
@@ -301,7 +303,7 @@ def prf_violins_plot(df, figure_info, rsq2use):
                       row=1, col=1)
                 
         # pRF size
-        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+        fig.add_trace(go.Violin(x=df_roi[rois_to_plot][df_roi[rois_to_plot]==roi], 
                                 y=df_roi.prf_size, 
                                 name=roi, 
                                 opacity=1,
@@ -315,7 +317,7 @@ def prf_violins_plot(df, figure_info, rsq2use):
                       row=1, col=2)
         
         # pRF ecc
-        fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+        fig.add_trace(go.Violin(x=df_roi[rois_to_plot][df_roi[rois_to_plot]==roi], 
                                 y=df_roi.prf_ecc, 
                                 name=roi, 
                                 opacity=1,
@@ -329,7 +331,7 @@ def prf_violins_plot(df, figure_info, rsq2use):
                       row=2, col=1)
         
         # pcm
-        # fig.add_trace(go.Violin(x=df_roi.roi[df_roi.roi==roi], 
+        # fig.add_trace(go.Violin(x=df_roi[rois_to_plot][df_roi[rois_to_plot]==roi], 
         #                         y=df_roi.pcm_median, 
         #                         name=roi, 
         #                         opacity=1,
@@ -430,6 +432,7 @@ def prf_params_median_plot(df, figure_info, rsq2use):
     rois_ver_spacing = figure_info['rois_ver_spacing']
     bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = bar_width * cols * len(rois) + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -444,7 +447,7 @@ def prf_params_median_plot(df, figure_info, rsq2use):
     
     for j, roi in enumerate(rois):
         
-        df_roi = df.loc[(df.roi == roi)]
+        df_roi = df.loc[(df[rois_to_plot] == roi)]
         
         weighted_median = df_roi[f'{rsq2use}_weighted_median']
         ci_up = df_roi[f'{rsq2use}_ci_up']
@@ -638,6 +641,7 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
     rois_plot_width = figure_info['rois_plot_width']    
     ecc_axis = [0, figure_info['ecc_size_max'][0]]
     size_axis = [0, figure_info['ecc_size_max'][1]]
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -658,7 +662,7 @@ def prf_ecc_size_plot(df, figure_info, rsq2use):
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
-            df_roi = df.loc[(df.roi == roi)]
+            df_roi = df.loc[(df[rois_to_plot] == roi)]
             ecc_median = np.array(df_roi.prf_ecc_bins)
             size_median = np.array(df_roi.prf_size_bins_median)
             r2_median = np.array(df_roi[f'{rsq2use}_bins_median'])
@@ -776,6 +780,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
     rois_plot_width = figure_info['rois_plot_width']
     ecc_axis = [0, figure_info['ecc_pcm_max'][0]]
     pcm_axis = [0, figure_info['ecc_pcm_max'][1]]
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows-1))
     fig_width = rois_plot_width * cols + fig_margin[0] + fig_margin[2] + (rois_hor_spacing * (cols-1))
@@ -796,7 +801,7 @@ def prf_ecc_pcm_plot(df, rsq2use, figure_info):
             roi_color_opac = f"rgba{roi_color[3:-1]}, 0.15)"
             
             # Get data
-            df_roi = df.loc[(df.roi == roi)]
+            df_roi = df.loc[(df[rois_to_plot] == roi)]
             ecc_median = np.array(df_roi.prf_ecc_bins)
             pcm_median = np.array(df_roi.prf_pcm_bins_median)
             r2_median = np.array(df_roi[f'{rsq2use}_bins_median'])
@@ -913,12 +918,12 @@ def prf_polar_angle_plot(df, figure_info) :
 
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['roi_fig_margin']
-    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois)
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
     roi_plot_height = figure_info['roi_plot_height']
     roi_plot_width = figure_info['roi_plot_width']
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
     fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
@@ -936,12 +941,9 @@ def prf_polar_angle_plot(df, figure_info) :
                             horizontal_spacing=hor_spacing, 
                             vertical_spacing=ver_spacing)
             
-        for j, roi in enumerate(rois):
-            if j == 0: showlegend = True
-            else: showlegend = False
-    
+        for j, roi in enumerate(rois):    
             # Parts of polar angles and number of voxels in each part
-            df_roi = df.loc[(df.roi==roi) & (df.hemi==hemi)]
+            df_roi = df.loc[(df[rois_to_plot]==roi) & (df.hemi==hemi)]
             
             # barpolar
             fig.add_trace(go.Barpolar(r=df_roi.rsq_sum, 
@@ -1008,17 +1010,16 @@ def prf_contralaterality_plot(df, figure_info):
     fig_template = plotly_template(template_specs)
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
-    num_bins = figure_info['polar_angle_num_bins']
     rows, cols = 1, len(rois)
 
     roi_colors = figure_info['roi_colors']
     fig_margin = figure_info['roi_fig_margin']
-    rois_groups = figure_info['rois_groups_plot']
     rows, cols = 1, len(rois)
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
     roi_plot_height = figure_info['roi_plot_height']
     roi_plot_width = figure_info['roi_plot_width']
+    rois_to_plot = figure_info['rois_to_plot']
     
     fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
     fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
@@ -1033,7 +1034,7 @@ def prf_contralaterality_plot(df, figure_info):
     
     for j, roi in enumerate(rois):
 
-        df_roi = df.loc[df.roi==roi]
+        df_roi = df.loc[df[rois_to_plot]==roi]
         percentage_total = np.array(df_roi.contralaterality_prct)
         percentage_rest = 1 - percentage_total
         percentage_total = percentage_total.tolist()
@@ -1096,6 +1097,8 @@ def prf_distribution_plot(df, figure_info):
     roi_ver_spacing = figure_info['roi_ver_spacing']
     roi_plot_height = figure_info['roi_plot_height']
     roi_plot_width = figure_info['roi_plot_width']
+    rois_to_plot = figure_info['rois_to_plot']
+    
     
     fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
     fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
@@ -1117,10 +1120,10 @@ def prf_distribution_plot(df, figure_info):
                 print(f"[WARNING] No data for ROI: {roi}")
                 continue  # skip this ROI
             # Make df roi
-            df_roi = df.loc[(df['roi'] == roi) & (df['hemi'] == hemi)]
+            df_roi = df.loc[(df[rois_to_plot] == roi) & (df['hemi'] == hemi)]
 
             # make the two dimensional mesh for z dimension
-            gauss_z_tot = df_roi.drop(columns=['roi', 'x', 'y', 'hemi']).values
+            gauss_z_tot = df_roi.drop(columns=[rois_to_plot, 'x', 'y', 'hemi']).values
             
             # Contour plotdf
             fig.add_trace(go.Contour(x=df_roi.x, 
@@ -1205,7 +1208,7 @@ def active_vertex_roi_plot(df_active_vertex_roi, fig_height, fig_width, roi_colo
 
     for l, line_label in enumerate(plot_groups):
         for j, roi in enumerate(line_label):
-            df_roi = df_active_vertex_roi.loc[df_active_vertex_roi['roi']==roi]
+            df_roi = df_active_vertex_roi.loc[df_active_vertex_roi.roi==roi]
             
             # Individual trace
             if 'median' not in df_active_vertex_roi.columns:
@@ -1500,13 +1503,13 @@ def prf_barycentre_plot(df, figure_info):
     distribution_screen_side = figure_info['distribution_screen_side']
     rois = figure_info['rois']
     roi_colors = figure_info['roi_colors']
-    num_bins = figure_info['polar_angle_num_bins']
     rows, cols = 1, len(rois)
     fig_margin = figure_info['roi_fig_margin']
     roi_hor_spacing = figure_info['roi_hor_spacing']
     roi_ver_spacing = figure_info['roi_ver_spacing']
     roi_plot_height = figure_info['roi_plot_height']
     roi_plot_width = figure_info['roi_plot_width']
+    rois_to_plot = figure_info['rois_to_plot']
     fig_height = roi_plot_height * rows + fig_margin[1] + fig_margin[3] + (roi_ver_spacing * (rows-1))
     fig_width = roi_plot_width * cols + fig_margin[0] + fig_margin[2] + (roi_hor_spacing * (cols-1))
     hor_spacing = roi_hor_spacing / (fig_width - fig_margin[0] - fig_margin[2])
@@ -1530,7 +1533,7 @@ def prf_barycentre_plot(df, figure_info):
 
         for j, roi in enumerate(rois):
             # Make df roi
-            df_roi = df.loc[(df.roi == roi) & (df.hemi == hemi)]
+            df_roi = df.loc[(df[rois_to_plot] == roi) & (df.hemi == hemi)]
 
             # Center lines
             if hemi == 'hemi-L':
