@@ -10,7 +10,8 @@ sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name
 sys.argv[4]: input file name (path to the data to fit)
-sys.argv[5]: number of jobs 
+sys.argv[5]: analysis task name (ex. prf)
+sys.argv[6]: number of jobs 
 -----------------------------------------------------------------------------------------
 Output(s):
 fit tester numpy arrays
@@ -66,16 +67,17 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 sub_num = subject[4:]
 input_fn = sys.argv[4]
-n_jobs = int(sys.argv[5])
+analysis_name = sys.argv[5]
+n_jobs = int(sys.argv[6])
 n_batches = n_jobs
 verbose = False
 gauss_params_num = 8
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
@@ -94,7 +96,7 @@ rsq_iterative_th = analysis_info['rsq_iterative_th']
 
 
 # Load screen settings from subject dependend task-events.json
-prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
+task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
 screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
 
 print("\n===== PRF FIT PARAMETERS =====")
@@ -104,42 +106,46 @@ print(f"TR: {TR}")
 print(f"Max eccentricity/size values: {max_ecc_size}")
 print("==============================\n")
 
+# Get task specific (visual) design matrix
+# Find dm: check subject-specific directory first, then general vdm directory
+dm_name = analysis_info['dm_name']
+dm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
+dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name)
+dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name)
+
+if os.path.isfile(dm_fn_subject):
+    dm_fn = dm_fn_subject
+elif os.path.isfile(dm_fn_general):
+    dm_fn = dm_fn_general
+else:
+    raise FileNotFoundError(
+        f"No DM found for task '{task_name}'.\n"
+        f"  Checked: {dm_fn_subject}\n"
+        f"  Checked: {dm_fn_general}"
+    )
+
+print(f"Loading DM from: {dm_fn}")
+dm = np.load(dm_fn)
+
+
 # Define directories
+output_folder = analysis_info["output_folder"]
 if input_fn.endswith('.nii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/170k/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 elif input_fn.endswith('.gii'):
-    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/prf/fit".format(
-        main_dir, project_dir, subject)
+    prf_fit_dir = "{}/{}/derivatives/pp_data/{}/fsnative/{}/fit".format(
+        main_dir, project_dir, subject, output_folder)
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', 'prf-gauss_fit')
+gauss_fit_fn = gauss_fit_fn.replace('bold', f'{analysis_name}-gauss-{vdm}_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', 'prf-gauss_pred')
+gauss_pred_fn = gauss_pred_fn.replace('bold', f'{analysis_name}-gauss-{vdm}_pred')
 
-
-# Find vdm: check subject-specific directory first, then general vdm directory
-vdm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-vdm_fn_subject = '{}/sub-{}/sub-{}_task-{}_vdm.npy'.format(vdm_base_dir, sub_num, sub_num, prf_task_name)
-vdm_fn_general = '{}/task-{}_vdm.npy'.format(vdm_base_dir, prf_task_name)
-
-if os.path.isfile(vdm_fn_subject):
-    vdm_fn = vdm_fn_subject
-elif os.path.isfile(vdm_fn_general):
-    vdm_fn = vdm_fn_general
-else:
-    raise FileNotFoundError(
-        f"No VDM found for task '{prf_task_name}'.\n"
-        f"  Checked: {vdm_fn_subject}\n"
-        f"  Checked: {vdm_fn_general}"
-    )
-
-print(f"Loading VDM from: {vdm_fn}")
-vdm = np.load(vdm_fn)
 
 # define model parameter grid range
 sizes = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr) ** 2
@@ -157,7 +163,7 @@ data = raw_data[:,valid_vertices]
 # determine stimulus
 stimulus = PRFStimulus2D(screen_size_cm=screen_size_cm[1],
                          screen_distance_cm=screen_distance_cm,
-                         design_matrix=vdm, 
+                         design_matrix=dm, 
                          TR=TR)
 
 print("\n===== PRF MODEL PARAMETERS =====")

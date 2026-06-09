@@ -1,7 +1,8 @@
+
 # ------------- Main configuration -------------------
 analysis_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["pRF"]
+  value: ["SacLoc"]
 
 n_runs_analysis_task: 
   description: "Numbers of runs of the pRF task"
@@ -10,67 +11,76 @@ n_runs_analysis_task:
 TR: 
   description: "Time repetition of the pRF tasks"
   unit: "seconds"
-  value: 1.6
+  value: 1.2
 
 TRs: 
   description: "Number of TR of the analysed task"
-  value: null 
+  value: 208
 
 output_folder: 
   description: "Name of the folder created to save all outputs of this analysis"
-  value: "prf"
+  value: "pmf"
 
 # ------------- Preprocessing settings -------------------
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["avg", "loo-avg"]
-  levels: ["avg", "loo-avg", "concat", "runs"]
+  value: ["concat"]
+  levels: ["avg", "loo-avg", "concat", "runs", "concat-residuals"]
   level-description: 
     avg: "averaging across runs"
     loo-avg: "leave-one-out averaging across runs"
     concat: "concatenation of runs"
     runs: "single run analysis"
+    concat-residuals: "concatentation of runs minus prf prediction"
 
-# ------------------- Screen and visual design matrix settings -------------------
+# ------------- Screen and design matrix settings -------------------
 screen_size_pix: 
   description: "Horizontal and vertical size of the pRF tasks display"
   units: "pixels"
-  value: [1920, 1080]
+  value: [1080, 1080]
 
 screen_size_cm: 
   description: "Horizontal and vertical size of the pRF tasks display"
   units: "cm"
-  value: [80.7, 45.4]
+  value: [77.3, 43.5]
 
 screen_distance_cm:
   description: "Distance between subject and display"
   units: "cm"
-  value: 100
+  value: 120
+
+dm_name: 
+  description: "Type/Name of design matrix used for pRF fit"
+  value: "rdm"
+  levels: ["vdm", "rdm", "odm"]
 
 vdm_size_pix:
   description: "Horizontal and vertical size of the pRF tasks visual design matrix"
   units: "pixels"
-  value: [50, 50]
+  value: [100, 100]
 
-dm_name: 
-  description: "Type/Name of design matrix used for pRF fit"
-  value: "vdm"
-  levels: ["vdm"]
+dm_range: 
+  description: "Range of design matrix (visual, retinal and oculomotor) in dva. dm_range x dm_range."
+  value: 15
+
+target_radius: 
+  description: "Radius of target displayed in design matrix in dva."
+  value : 0.6
 
 
-# -------------------  Fit settings -------------------
-gauss_grid_nr: 
-  description: "Number of grid steps of the Gaussian grid fit procedure"
+# ------------- Fit settings -------------------
+gauss_grid_nr:
+  description: "Number of grid samples per dimension for Gaussian grid search"
   value: 36
 
 css_grid_nr:
-  description: "Number of grid steps of the CSS grid fit procedure"
+  description: "Number of grid samples for CSS exponent grid search"
   value: 10
 
 max_ecc_size: 
   description: "Maximum eccentricity and size value"
   units: "dva"
-  value: 12
+  value: 30
 
 prf_amplitude_bounds:
   description: "Scaling factor of the pRF response (signal gain)"
@@ -87,29 +97,29 @@ hrf_1_bounds:
 hrf_2_bounds:
   description: "Secondary HRF parameter (fixed if lower=upper=0)"
   value: [0, 0]
+
+n_th:
+  description: "Exponent controlling subadditive spatial summation (n < 1 = compression)"
+  value: [0.01, 1]
   
 rsq_iterative_th: 
   description: "R-square minimum threshold for iterative fit"
   value: 0.01
 
-# ------------------- Postfit settings -------------------
+# ------------- Postfit settings -------------------
 ecc_th:
   description: "Eccentricity range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 12]
+  value: [0.05, 30]
 
 size_th:
   description: "Size range threshold for pRF post-fit analysis"
   units: "dva"
-  value: [0.05, 12]
+  value: [0.05, 30.0]
 
 rsqr_th:
   description: "R-square minimum threshold for pRF post-fit analysis"
   value: 0
-
-n_th:
-  description: "CSS n range threshold for pRF post-fit analysis"
-  value: [0.01, 1]
 
 prf_amp_th: 
   description: "pRF amplitude range threshold for pRF post-fit analysis"
@@ -143,11 +153,11 @@ maps_names_css_stats:
   description: "PRF CSS stats maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
-# ------------------- ROIS -------------------
+# ------------- ROIS -------------------
 rois_methods:
   description: "Method use to define ROIS, defined for each format"
   value: 
-    fsnative: ["rois-group-mmp"]
+    fsnative: ["rois-drawn", "rois-group-mmp"]
     170k: ["rois-group-mmp"]
   levels: ["rois-drawn", "rois-group-mmp"]
   level-description: 
@@ -173,3 +183,8 @@ rois-group-mmp:
     iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
     sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
     mPCS: ["SCEF", "p32pr", "24dv"]
+
+
+
+
+

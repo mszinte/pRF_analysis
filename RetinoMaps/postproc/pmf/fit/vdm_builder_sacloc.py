@@ -14,11 +14,11 @@ sys.argv[4]: group of shared data (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Per run:
-- target + gaze preview:  vdm_target_gaze.mp4    (eyetracking frequency)
-- retinal preview:        vdm_preview.mp4         (eyetracking frequency)
-- retinal downsampled:    vdm_run_0{run}.mp4      (TR resolution)
+- target + gaze preview:  vdm_gaze.mp4            (eyetracking frequency)
+- retinal preview:        rdm_raw.mp4             (eyetracking frequency)
+- retinal downsampled:    rdm_run_0{run}.mp4      (TR resolution)
 Concatenated:
-- vdm.npy   downsampled to TR (concatenated across all runs)
+- rdm.npy   downsampled to TR (concatenated across all runs)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/fit
@@ -49,28 +49,31 @@ project_dir = sys.argv[2]
 subject     = sys.argv[3]
 group       = sys.argv[4]
 
-TASK               = "SacLoc"
-TR                 = 1.2
-TIME_SCALE         = 1e-3          # ms → seconds
-SAMPLES_PER_TR     = int(TR * 1000)  # 1200 samples at 1 kHz
-N_PIXELS           = 100
-VISUAL_FIELD_SIZE  = 20            # degrees
-TARGET_RADIUS      = 0.5           # degrees
-PREVIEW_FPS        = 60
-
 ses = 'ses-01' if subject == 'sub-01' else 'ses-02'
 sub_num = subject[4:]
 
-# ── Directories ───────────────────────────────────────────────────────────────
 gaze_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/eyetracking/timeseries"
 vdm_dir  = f"{main_dir}/{project_dir}/derivatives/vdm/{subject}"
 os.makedirs(gaze_dir, exist_ok=True)
 os.makedirs(vdm_dir,  exist_ok=True)
 
 # ── Load settings + events ────────────────────────────────────────────────────
-base_dir      = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, 'eyetracking-analysis.yml')
-analysis_info = load_settings([settings_path])[0]
+base_dir          = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
+settings_path     = os.path.join(base_dir, project_dir, 'eyetracking-analysis.yml')
+pmf_settings_path = os.path.join(base_dir, project_dir, "pmf-settings.yml")
+analysis_info     = load_settings([settings_path, pmf_settings_path])[0]
+
+
+dm_range           = analysis_info['dm_range']
+TASK               = "SacLoc"
+TR                 = 1.2
+TIME_SCALE         = 1e-3                           # ms → seconds
+SAMPLES_PER_TR     = int(TR * 1000)                 # 1200 samples at 1 kHz
+N_PIXELS           = 100
+VISUAL_FIELD_SIZE  = dm_range + dm_range            # degrees
+TARGET_RADIUS      = analysis_info['target_radius'] # degrees
+PREVIEW_FPS        = 60
+
 
 event_files = load_event_files(main_dir, project_dir, subject, ses, TASK)
 event_runs  = [pd.read_csv(fp, sep='\t') for fp in event_files]
@@ -83,6 +86,7 @@ with h5py.File(h5_fn, "r") as f:
     time_start = np.array(f["time_start_trial"])
 
 print(f"Subject: {subject}  |  Runs found: {len(event_runs)}")
+
 
 
 def build_vdm_chunked(frame_fn, n_timepoints):
@@ -173,7 +177,7 @@ for run in range(1, len(event_runs) + 1):
         np.save(os.path.join(gaze_dir, f"{subject}_SacLoc_run_0{run}_{tag}"), arr)
 
     # ── 1. Retinal VDM downsampled → npy + mp4 per run ───────────────────────
-    print("Building retinal VDM (downsampled)...")
+    print("Building retinal RDM (downsampled)...")
     vdm_down = build_vdm_chunked(
         lambda t: create_visual_frame(
             retino_x[t], retino_y[t],
@@ -183,15 +187,10 @@ for run in range(1, len(event_runs) + 1):
         ),
         n_timepoints,
     )
-    print(f"  Retinal VDM shape: {vdm_down.shape}")
-
-    # Save npy
-    npy_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.npy")
-    np.save(npy_fn, vdm_down)
-    print(f"  Saved {npy_fn}")
+    print(f"  Retinal VDM shape: {vdm_down.shape}, DM range= {VISUAL_FIELD_SIZE} dva")
 
     # Save mp4 at TR resolution (one frame per TR, played at PREVIEW_FPS)
-    mp4_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm.mp4")
+    mp4_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_rdm.mp4")
     frames_per_tr = 10
     video_fps = frames_per_tr / TR
     write_grayscale_video(vdm_down, mp4_fn, fps=video_fps, repeat=frames_per_tr, flip_ud=False)
@@ -206,7 +205,7 @@ for run in range(1, len(event_runs) + 1):
     step          = max(1, n_timepoints // total_frames)
     preview_idx   = np.arange(0, n_timepoints, step)[:total_frames]
 
-    preview_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_preview.mp4")
+    preview_fn = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_rdm_raw.mp4")
     fourcc     = cv2.VideoWriter_fourcc(*'mp4v')
     writer     = cv2.VideoWriter(preview_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), False)
     for idx in preview_idx:
@@ -224,7 +223,7 @@ for run in range(1, len(event_runs) + 1):
 
     # ── 3. Target + gaze video at eyetracking frequency ───────────────────────
     print("Writing target+gaze video (eyetracking frequency)...")
-    tg_fn  = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_target_gaze.mp4")
+    tg_fn  = os.path.join(vdm_dir, f"{subject}_run_0{run}_task-{TASK}_vdm_gaze.mp4")
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter(tg_fn, fourcc, PREVIEW_FPS, (N_PIXELS, N_PIXELS), True)
     for idx in preview_idx:
@@ -247,7 +246,7 @@ for run in range(1, len(event_runs) + 1):
 # ── Concatenate retinal VDMs across all runs ──────────────────────────────────
 print(f"\n{'='*60}\nConcatenating retinal VDMs\n{'='*60}")
 vdm_all   = np.concatenate(all_vdm_downsampled, axis=-1)   # (H, W, T_total)
-concat_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_vdm.npy")
+concat_fn = os.path.join(vdm_dir, f"{subject}_task-{TASK}_rdm.npy")
 np.save(concat_fn, vdm_all)
 
 assert vdm_all.shape[-1] == sum(v.shape[-1] for v in all_vdm_downsampled), \
