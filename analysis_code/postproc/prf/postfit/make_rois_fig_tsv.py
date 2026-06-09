@@ -73,7 +73,6 @@ rsqr_threshold = analysis_info['rsqr_th']
 amplitude_threshold = analysis_info['prf_amp_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
-subjects_to_group = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
@@ -89,6 +88,8 @@ ecc_size_max = analysis_info['ecc_size_max']
 distribution_max_ecc = analysis_info['distribution_max_ecc']
 distribution_mesh_grain = analysis_info['distribution_mesh_grain']
 hot_zone_percent = analysis_info['hot_zone_percent']
+rois_to_plot = analysis_info['rois_to_plot']
+
 
 # Main loop
 for avg_method in avg_methods:
@@ -104,7 +105,9 @@ for avg_method in avg_methods:
                 rois = analysis_info[rois_method_format]
             elif rois_method_format == 'rois-group-mmp':
                 rois = list(analysis_info[rois_method_format].keys())
-            
+                # rois_dict = analysis_info['rois-group-mmp']
+                # rois = [item for sublist in rois_dict.values() for item in sublist]
+
             for prf_task_name in prf_task_names:
     
                 print(f'{prf_task_name} - {avg_method} - {format_}')
@@ -140,12 +143,12 @@ for avg_method in avg_methods:
                              (data[stats_col] > stats_threshold)] = np.nan
                     
                     data = data.dropna()
-
+                    
                     # ROI active proportion
                     # ---------------------
                     
                     # Number of vert per roi
-                    n_vert_tot_roi = (data_raw.groupby('roi', sort=False)
+                    n_vert_tot_roi = (data_raw.groupby(rois_to_plot, sort=False)
                                       .size()
                                       .reset_index(name='n_vert_tot'))
 
@@ -153,32 +156,32 @@ for avg_method in avg_methods:
                     
                     # Number of significant vert for 0.05 p vale correction
                     n_vert_corr_5pt = (data_raw[data_raw['corr_pvalue_5pt'] < 0.05]
-                                       .groupby('roi', sort=False)
+                                       .groupby(rois_to_plot, sort=False)
                                        .size()
                                        .reset_index(name='n_vert_corr_pvalue_5pt'))
                     
                     # Number of significant vert for 0.01 p vale correction
                     n_vert_corr_1pt = (data_raw[data_raw['corr_pvalue_1pt'] < 0.01]
-                                       .groupby('roi', sort=False)
+                                       .groupby(rois_to_plot, sort=False)
                                        .size()
                                        .reset_index(name='n_vert_corr_pvalue_1pt'))
                     
-                    tmp_df = n_vert_tot_roi.merge(n_vert_corr_5pt, on='roi', how='left') \
-                                           .merge(n_vert_corr_1pt, on='roi', how='left')
+                    tmp_df = n_vert_tot_roi.merge(n_vert_corr_5pt, on=rois_to_plot, how='left') \
+                                           .merge(n_vert_corr_1pt, on=rois_to_plot, how='left')
                     
                     tmp_df = tmp_df.fillna(0)
                     
-                    ratio_5pt = tmp_df[['roi']].copy()
-                    ratio_1pt = tmp_df[['roi']].copy()
+                    ratio_5pt = tmp_df[[rois_to_plot]].copy()
+                    ratio_1pt = tmp_df[[rois_to_plot]].copy()
                     
                     ratio_5pt['ratio_5pt'] = tmp_df['n_vert_corr_pvalue_5pt'] / tmp_df['n_vert_tot']
                     ratio_1pt['ratio_1pt'] = tmp_df['n_vert_corr_pvalue_1pt'] / tmp_df['n_vert_tot']
                     
                     df_roi_active_vert = (n_vert_tot_roi
-                                          .merge(n_vert_corr_5pt, on='roi', how='left')
-                                          .merge(n_vert_corr_1pt, on='roi', how='left')
-                                          .merge(ratio_1pt, on='roi', how='left')
-                                          .merge(ratio_5pt, on='roi', how='left'))
+                                          .merge(n_vert_corr_5pt, on=rois_to_plot, how='left')
+                                          .merge(n_vert_corr_1pt, on=rois_to_plot, how='left')
+                                          .merge(ratio_1pt, on=rois_to_plot, how='left')
+                                          .merge(ratio_5pt, on=rois_to_plot, how='left'))
                     
                     df_roi_active_vert = df_roi_active_vert.fillna(0)
 
@@ -201,10 +204,10 @@ for avg_method in avg_methods:
                     # Parameters median
                     # ------------------
                     for num_roi, roi in enumerate(rois):
-                        df_roi = data.loc[(data.roi == roi)]
+                        df_roi = data.loc[(data[rois_to_plot] == roi)]
             
                         df_params_median_roi = pd.DataFrame()
-                        df_params_median_roi['roi'] = [roi]
+                        df_params_median_roi[rois_to_plot] = [roi]
                     
                         df_params_median_roi[f'{rsq2use}_weighted_median'] = weighted_nan_median(df_roi[rsq2use], weights=df_roi[rsq2use])
                         df_params_median_roi[f'{rsq2use}_ci_down'] = weighted_nan_percentile(df_roi[rsq2use], df_roi[rsq2use], 25)
@@ -238,10 +241,10 @@ for avg_method in avg_methods:
                     # --------
                     ecc_bins = np.linspace(0, ecc_size_max[0], ecc_size_num_bins+1) 
                     for num_roi, roi in enumerate(rois):
-                        df_roi = data.loc[(data.roi == roi)]
+                        df_roi = data.loc[(data[rois_to_plot] == roi)]
                         df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
                         df_ecc_size_bin = pd.DataFrame()
-                        df_ecc_size_bin['roi'] = [roi]*ecc_size_num_bins
+                        df_ecc_size_bin[rois_to_plot] = [roi]*ecc_size_num_bins
                         df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
                         df_ecc_size_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
                         df_ecc_size_bin['prf_size_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
@@ -263,10 +266,10 @@ for avg_method in avg_methods:
                     data_pcm = data
                     ecc_bins = np.linspace(0, ecc_pcm_max[0], ecc_pcm_num_bins+1) 
                     for num_roi, roi in enumerate(rois):
-                        df_roi = data_pcm.loc[(data.roi == roi)]
+                        df_roi = data_pcm.loc[(data[rois_to_plot] == roi)]
                         df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
                         df_ecc_pcm_bin = pd.DataFrame()
-                        df_ecc_pcm_bin['roi'] = [roi]*ecc_pcm_num_bins
+                        df_ecc_pcm_bin[rois_to_plot] = [roi]*ecc_pcm_num_bins
                         df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
                         df_ecc_pcm_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
                         df_ecc_pcm_bin['prf_pcm_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
@@ -291,7 +294,7 @@ for avg_method in avg_methods:
                     for i, hemi in enumerate(hemis):
                         hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                         for j, roi in enumerate(rois): #
-                            df = data.loc[(data.roi==roi) & (data.hemi.isin(hemi_values))]
+                            df = data.loc[(data[rois_to_plot]==roi) & (data.hemi.isin(hemi_values))]
                             if len(df): 
                                 df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
                                 rsq_sum = df_bins[rsq2use].sum()
@@ -299,7 +302,7 @@ for avg_method in avg_methods:
                                 rsq_sum = [np.nan]*polar_angle_num_bins
                 
                             df_polar_angle_bin = pd.DataFrame()
-                            df_polar_angle_bin['roi'] = [roi]*(polar_angle_num_bins)
+                            df_polar_angle_bin[rois_to_plot] = [roi]*(polar_angle_num_bins)
                             df_polar_angle_bin['hemi'] = [hemi]*(polar_angle_num_bins)
                             df_polar_angle_bin['num_bins'] = np.arange((polar_angle_num_bins))
                             df_polar_angle_bin['theta_slices'] = np.array(theta_slices)
@@ -317,8 +320,8 @@ for avg_method in avg_methods:
                     # Contralaterality
                     # ----------------         
                     for j, roi in enumerate(rois):
-                        df_rh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-R')]
-                        df_lh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-L')]
+                        df_rh = data.loc[(data[rois_to_plot] == roi) & (data.hemi == 'hemi-R')]
+                        df_lh = data.loc[(data[rois_to_plot] == roi) & (data.hemi == 'hemi-L')]
                         try: 
                             contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0][rsq2use]) + \
                                                      sum(df_lh.loc[df_lh.prf_x > 0][rsq2use])) / \
@@ -327,7 +330,7 @@ for avg_method in avg_methods:
                             contralaterality_prct = np.nan
                         
                         df_contralaterality_roi = pd.DataFrame()
-                        df_contralaterality_roi['roi'] = [roi]
+                        df_contralaterality_roi[rois_to_plot] = [roi]
                         df_contralaterality_roi['contralaterality_prct'] = np.array(contralaterality_prct)
                 
                         if j == 0: df_contralaterality = df_contralaterality_roi
@@ -344,7 +347,7 @@ for avg_method in avg_methods:
                         hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                         data_hemi = data.loc[data.hemi.isin(hemi_values)]
                         df_distribution_hemi = make_prf_distribution_df(
-                            data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use)
+                            data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use, analysis_info)
                 
                         df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
                         if i == 0: df_distribution = df_distribution_hemi
@@ -364,7 +367,7 @@ for avg_method in avg_methods:
                         df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                         df_barycentre_hemi = make_prf_barycentre_df(
                             df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
                         
                         df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                         if i == 0: df_barycentre = df_barycentre_hemi
@@ -377,6 +380,11 @@ for avg_method in avg_methods:
                     
                 # Group Analysis    
                 else :
+                    if subject == 'group':
+                        subjects_to_group = analysis_info['subjects']
+                    else:
+                        subjects_to_group = analysis_info[subject]
+                        
                     print('group')
                     for i, subject_to_group in enumerate(subjects_to_group):
                         tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
@@ -442,8 +450,8 @@ for avg_method in avg_methods:
                         tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
                             tsv_dir, subject_to_group, fn_spec)
                         df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
-                        mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
-                        others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
+                        mesh_indiv = df_distribution_indiv.drop(columns=[rois_to_plot, 'x', 'y', 'hemi']).values
+                        others_columns = df_distribution_indiv[[rois_to_plot, 'x', 'y', 'hemi']]
             
                         if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
                         else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
@@ -455,7 +463,7 @@ for avg_method in avg_methods:
                     
                     # ROI surface areas 
                     # -----------------
-                    df_roi_area = df_roi_area.groupby(['roi'], sort=False).median().reset_index()
+                    df_roi_area = df_roi_area.groupby([rois_to_plot], sort=False).median().reset_index()
                     tsv_roi_area_fn =  "{}/{}_{}_prf-css_active-vert.tsv".format(
                         tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_roi_area_fn))
@@ -475,20 +483,20 @@ for avg_method in avg_methods:
                     
                     # compute median 
                     colnames = [rsq2use, 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
-                    df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[[rsq2use]].apply(
+                    df_params_median_indiv = df_params_median.groupby([rois_to_plot, 'subject'])[[rsq2use]].apply(
                         lambda x: weighted_nan_median(x[rsq2use], df_params_median.loc[x.index, rsq2use])).reset_index(name=f'{rsq2use}_weighted_median')
                     
                     for colname in colnames[1:]:
-                        df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, rsq2use]].apply(
+                        df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby([rois_to_plot, 'subject'])[[colname, rsq2use]].apply(
                             lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, rsq2use])).reset_index()[0]
-                    df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
+                    df_params_med_median = df_params_median_indiv.groupby([rois_to_plot])[[colname + '_weighted_median' for colname in colnames]].median()
             
                     # compute Ci
                     df_params_median_ci = pd.DataFrame()
                     for colname in colnames:
-                        df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                        df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby([rois_to_plot]).apply(
                             lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 2.5)) 
-                        df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                        df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby([rois_to_plot]).apply(
                             lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 97.5)) 
             
                     df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
@@ -499,7 +507,7 @@ for avg_method in avg_methods:
                     
                     # Ecc.size
                     # --------
-                    df_ecc_size = df_ecc_size.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
+                    df_ecc_size = df_ecc_size.groupby([rois_to_plot, 'num_bins'], sort=False).median().reset_index()
                     tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
                             tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_ecc_size_fn))
@@ -507,7 +515,7 @@ for avg_method in avg_methods:
                 
                     # Ecc.pCM
                     # -------
-                    df_ecc_pcm = df_ecc_pcm.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
+                    df_ecc_pcm = df_ecc_pcm.groupby([rois_to_plot, 'num_bins'], sort=False).median().reset_index()
                     tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
                             tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
@@ -515,7 +523,7 @@ for avg_method in avg_methods:
                 
                     # Polar angle
                     # -----------
-                    df_polar_angle = df_polar_angle.groupby(['roi', 'hemi', 'num_bins'], sort=False).median().reset_index()
+                    df_polar_angle = df_polar_angle.groupby([rois_to_plot, 'hemi', 'num_bins'], sort=False).median().reset_index()
                     tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
                             tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_polar_angle_fn))
@@ -523,7 +531,7 @@ for avg_method in avg_methods:
                 
                     # Contralaterality
                     # ----------------
-                    df_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()
+                    df_contralaterality = df_contralaterality.groupby([rois_to_plot], sort=False).median().reset_index()
                     tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
                             tsv_dir, subject, fn_spec)
                     print('Saving tsv: {}'.format(tsv_contralaterality_fn))

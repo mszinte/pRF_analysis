@@ -86,6 +86,8 @@ for avg_method in avg_methods:
                 analysis_info['rois'] = analysis_info[rois_method_format]
             elif rois_method_format == 'rois-group-mmp':
                 analysis_info['rois'] = list(analysis_info[rois_method_format].keys())
+                # rois_dict = analysis_info['rois-group-mmp']
+                # analysis_info['rois'] = [item for sublist in rois_dict.values() for item in sublist]
 
             for prf_task_name in prf_task_names:
                 

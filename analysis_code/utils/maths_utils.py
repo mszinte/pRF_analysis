@@ -511,7 +511,7 @@ def median_subject_template(fns):
          
     return img, data_med
 
-def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
+def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use, figure_info):
     """
     Load the PRF TSV file and compute the PRF distribution 
     
@@ -529,13 +529,16 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
     """
     import pandas as pd
     import numpy as np
+    
+    rois_to_plot = figure_info['rois_to_plot']
+    
     df_distribution = pd.DataFrame()
     
     for roi_num, roi in enumerate(rois) :
         # Make df_distribution
         #-------------------
         # Roi data frame
-        df_roi = data.loc[data.roi == roi].reset_index()
+        df_roi = data.loc[data[rois_to_plot] == roi].reset_index()
         
         if df_roi.empty:
             print(f"[WARNING] No data for ROI: {roi}")
@@ -559,7 +562,7 @@ def make_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
 
         # create the df
         df_distribution_roi = pd.DataFrame()
-        df_distribution_roi['roi'] = [roi] * grain
+        df_distribution_roi[rois_to_plot] = [roi] * grain
         df_distribution_roi['x'] = x
         df_distribution_roi['y'] = y
         
@@ -584,14 +587,16 @@ def gaussian_2d(x0, y0, sigma, screen_side, grain):
     return coords, coords, z
     
 
-def make_gauss_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
+def make_gauss_prf_distribution_df(data, rois, max_ecc, grain, rsq2use, figure_info):
     import pandas as pd
     import numpy as np
+    
+    rois_to_plot = figure_info['rois_to_plot']
 
     df_distribution = pd.DataFrame()
     
     for roi_num, roi in enumerate(rois):
-        df_roi = data.loc[data.roi == roi].reset_index()
+        df_roi = data.loc[data[rois_to_plot] == roi].reset_index()
         
         if df_roi.empty:
             print(f"[WARNING] No data for ROI: {roi}")
@@ -616,7 +621,7 @@ def make_gauss_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
             z_tot = (z_tot - z_tot.min()) / (z_tot.max() - z_tot.min())
 
         df_distribution_roi = pd.DataFrame({
-            'roi': [roi] * grain,
+            rois_to_plot: [roi] * grain,
             'x': x,
             'y': y
         })
@@ -631,7 +636,7 @@ def make_gauss_prf_distribution_df(data, rois, max_ecc, grain, rsq2use):
         
     return df_distribution
 
-def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_percent=0.01):
+def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, figure_info, hot_zone_percent=0.01):
     """
     Compute the pRF hot zone barycentre
     
@@ -650,13 +655,15 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
     """
     import pandas as pd
     import numpy as np
+    
+    rois_to_plot = figure_info['rois_to_plot']
 
     for j, roi in enumerate(rois) :
         # Create DataFrame for the region of interest
-        df_roi = df_distribution[df_distribution.roi == roi]
+        df_roi = df_distribution[df_distribution[rois_to_plot] == roi]
         
         # make the two dimensional mesh for z dimension
-        exclude_columns = ['roi', 'hemi', 'x', 'y']
+        exclude_columns = [rois_to_plot, 'hemi', 'x', 'y']
         int_columns = df_roi.columns.difference(exclude_columns)
         gauss_z_tot = df_roi[int_columns].values
         
@@ -693,7 +700,7 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, hot_zone_perce
         
         # make the df 
         df_barycentre_roi = pd.DataFrame()
-        df_barycentre_roi['roi'] = [roi]
+        df_barycentre_roi[rois_to_plot] = [roi]
         df_barycentre_roi['barycentre_x'] = [barycentre_x]
         df_barycentre_roi['barycentre_y'] = [barycentre_y]
         df_barycentre_roi['lower_ci_x'] = lower_ci_x

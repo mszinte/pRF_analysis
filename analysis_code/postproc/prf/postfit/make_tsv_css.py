@@ -99,7 +99,10 @@ for avg_method in avg_methods:
                 rois = analysis_info[rois_method_format]
             elif rois_method_format == 'rois-group-mmp':
                 rois = list(analysis_info[rois_method_format].keys())
-
+            elif rois_method_format == 'rois-mmp':
+                rois_dict = analysis_info['rois-group-mmp']
+                rois = [item for sublist in rois_dict.values() for item in sublist]
+                    
             prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
                 main_dir, project_dir, subject, format_)
             
@@ -245,7 +248,7 @@ for avg_method in avg_methods:
                 print('Saving tsv: {}'.format(tsv_fn))
                 df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
