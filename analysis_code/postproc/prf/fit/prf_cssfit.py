@@ -102,7 +102,7 @@ rsq_iterative_th = analysis_info['rsq_iterative_th']
 task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
 screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, task_name)
 
-
+print(f"Fitting data: {input_fn}\n")
 print("\n===== PRF FIT PARAMETERS =====")
 print(f"fit : {input_fn}")
 print(f"Screen Size (cm): {screen_size_cm}")
