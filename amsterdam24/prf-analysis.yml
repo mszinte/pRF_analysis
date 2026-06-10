@@ -160,7 +160,7 @@ rois_methods:
 
 rois_to_plot: 
   description: "Wich rois to plot in rois plot"
-  value: "roi_mmp"
+  value: "roi"
   levels: ["roi", "roi_mmp"]
   description:
     roi: "plot the rois defined in rois-drawn or keys rois-group-mmp"
