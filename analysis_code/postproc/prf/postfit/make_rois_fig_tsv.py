@@ -90,7 +90,6 @@ distribution_mesh_grain = analysis_info['distribution_mesh_grain']
 hot_zone_percent = analysis_info['hot_zone_percent']
 rois_to_plot = analysis_info['rois_to_plot']
 
-
 # Main loop
 for avg_method in avg_methods:
     if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
@@ -105,8 +104,6 @@ for avg_method in avg_methods:
                 rois = analysis_info[rois_method_format]
             elif rois_method_format == 'rois-group-mmp':
                 rois = list(analysis_info[rois_method_format].keys())
-                # rois_dict = analysis_info['rois-group-mmp']
-                # rois = [item for sublist in rois_dict.values() for item in sublist]
 
             for prf_task_name in prf_task_names:
     
@@ -131,6 +128,7 @@ for avg_method in avg_methods:
                    
                     # Keep a raw data df 
                     data_raw = data.copy()
+                    data_raw = data_raw[data_raw[rois_to_plot].isin(rois)]
                     
                     # Threshold data (replace by nan)
                     if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
@@ -140,10 +138,11 @@ for avg_method in avg_methods:
                              (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                              (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
                              (data[rsq2use] < rsqr_threshold) |
-                             (data[stats_col] > stats_threshold)] = np.nan
+                             (data[stats_col] > stats_threshold) | 
+                             (~data[rois_to_plot].isin(rois))] = np.nan
                     
                     data = data.dropna()
-                    
+
                     # ROI active proportion
                     # ---------------------
                     

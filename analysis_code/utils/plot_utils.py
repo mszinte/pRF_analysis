@@ -161,7 +161,7 @@ def prf_roi_active_vert_plot(df, figure_info, format):
     ver_spacing = rois_ver_spacing / (fig_height - fig_margin[1] - fig_margin[3])
 
     # colors 
-    roi_colors = list(roi_colors.values())
+    roi_colors = list(roi_colors.values())[1:]
 
     # General settings
     fig = make_subplots(rows=rows, 

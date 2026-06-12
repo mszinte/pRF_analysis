@@ -360,6 +360,7 @@ def eyes_active_vert_plot(df, figure_info, format_):
     bar_width = figure_info['rois_bar_width']
     rois_plot_height = figure_info['rois_plot_height']
     subject_group = figure_info['subject_group']
+    rois_to_plot = figure_info['rois_to_plot']
 
     rows, cols = 1, 2
     fig_height = rois_plot_height * rows + fig_margin[1] + fig_margin[3] + (rois_ver_spacing * (rows - 1))
@@ -397,11 +398,11 @@ def eyes_active_vert_plot(df, figure_info, format_):
             df_eye = df.loc[df.eye_condition == eye_condition]
             eye_label = eye_labels[eye_condition]
             pattern_shape = eye_patterns[eye_condition]
-            bar_colors = [roi_colors[roi] for roi in df_eye['roi']]
+            bar_colors = [roi_colors[roi] for roi in df_eye[rois_to_plot]]
 
             # Total vertices — transparent background
             fig.add_trace(go.Bar(
-                x=df_eye['roi'],
+                x=df_eye[rois_to_plot],
                 y=df_eye['n_vert_tot'],
                 name=eye_label,
                 text=(df_eye[ratio_col] * 100).astype(int).astype(str) + '%',
@@ -417,7 +418,7 @@ def eyes_active_vert_plot(df, figure_info, format_):
 
             # Significant vertices — solid/patterned bar
             fig.add_trace(go.Bar(
-                x=df_eye['roi'],
+                x=df_eye[rois_to_plot],
                 y=df_eye[sig_col],
                 name=eye_label,
                 offsetgroup=eye_condition,

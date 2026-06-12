@@ -45,7 +45,7 @@ python make_ecc_size_pcm_tsv.py [main directory] [project name] [subject] [group
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_ecc_size_pcm_tsv.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_ecc_size_pcm_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_ecc_size_pcm_tsv.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_ecc_size_pcm_tsv.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------
@@ -93,6 +93,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
+rois_to_plot = analysis_info['rois_to_plot']
 
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
@@ -119,9 +120,9 @@ if 'group' not in subject:
     subject_group = subject_groups[subject]
 else:
     if 'patient' in subject:
-        subjects_to_group = analysis_info['group_patient']
+        subjects_to_group = analysis_info['group-patient']
     elif 'control' in subject:
-        subjects_to_group = analysis_info['group_control']
+        subjects_to_group = analysis_info['group-control']
 
 # Main loop
 for avg_method in avg_methods:
@@ -204,7 +205,7 @@ for avg_method in avg_methods:
                         ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
 
                         for num_roi, roi in enumerate(rois):
-                            df_roi = data.loc[(data.roi == roi)]
+                            df_roi = data.loc[(data[rois_to_plot] == roi)]
 
                             # Size bins
                             df_size_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))

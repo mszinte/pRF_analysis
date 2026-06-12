@@ -172,25 +172,44 @@ rois_to_plot:
 
 rois-drawn: 
   description: "List of regions of interest drawn using Inskape"
-  value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
+  value: ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+"]
 
-rois-group-mmp: 
-  description: "List of Glasser MMP atlas parcelations grouped to form an ROI"
-  value: 
+# rois-group-mmp: 
+#   description: "List of Glasser MMP atlas parcelations grouped to form an ROI"
+#   value: 
+#     V1: ["V1"]
+#     V2: ["V2"]
+#     V3: ["V3", "V4"]
+#     V3AB: ["V3A", "V3B", "V3CD"]
+#     LO: ["LO1", "LO2", "LO3"] 
+#     VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
+#     hMT+: ["V4t", "MST", "MT", "FST"]
+
+rois-group-mmp:
+  description: "List of Glasser MMP atlas parcelations"
+  value:
     V1: ["V1"]
     V2: ["V2"]
-    V3: ["V3", "V4"]
-    V3AB: ["V3A", "V3B", "V3CD"]
-    LO: ["LO1", "LO2", "LO3"] 
-    VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
-    hMT+: ["V4t", "MST", "MT", "FST"]
-    iIPS: ["IP0", "IPS1", "V7", "MIP", "IP1", "V6A", "7Pl"]
-    sIPS: ["VIP", "LIPv", "LIPd", "IP2", "7PC", "AIP", "7AL", "7Am", "7Pm"]
-    iPCS: ["PEF", "IFJp", "6v", "6r", "IFJa", "55b"] 
-    sPCS: ["FEF", "i6-8", "6a", "6d", "6mp", "6ma"] 
-    mPCS: ["SCEF", "p32pr", "24dv"]
-
-
+    V3: ["V3"]
+    V4: ["V4"]
+    V3A: ["V3A"]
+    V3B: ["V3B"]
+    V3CD: ["V3CD"]
+    LO1: ["LO1"]
+    LO2: ["LO2"]
+    LO3: ["LO3"]
+    V8: ["V8"]
+    PIT: ["PIT"]
+    PH: ["PH"]
+    FFC: ["FFC"]
+    VMV1: ["VMV1"]
+    VMV2: ["VMV2"]
+    VMV3: ["VMV3"]
+    VVC: ["VVC"]
+    V4t: ["V4t"]
+    MST: ["MST"]
+    MT: ["MT"]
+    FST: ["FST"]
 
 
 

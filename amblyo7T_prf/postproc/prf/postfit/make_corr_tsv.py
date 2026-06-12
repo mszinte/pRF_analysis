@@ -49,7 +49,7 @@ python make_corr_tsv.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_corr_tsv.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------
@@ -104,6 +104,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+rois_to_plot = analysis_info['rois_to_plot']
 
 # Parameters specific to eye correlation analysis
 corr_params = analysis_info['corr_params']
@@ -130,9 +131,9 @@ if 'group' not in subject:
     subject_group = subject_groups[subject]
 else:
     if 'patient' in subject:
-        subjects_to_group = analysis_info['group_patient']
+        subjects_to_group = analysis_info['group-patient']
     elif 'control' in subject:
-        subjects_to_group = analysis_info['group_control']
+        subjects_to_group = analysis_info['group-control']
 
 # Main loop
 for avg_method in avg_methods:
@@ -184,7 +185,8 @@ for avg_method in avg_methods:
                                  (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                                  (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
                                  (data[rsq2use] < rsqr_threshold) |
-                                 (data[stats_col] > stats_threshold)] = np.nan
+                                 (data[stats_col] > stats_threshold) | 
+                                 (~data[rois_to_plot].isin(rois))] = np.nan
                         data = data.dropna()
                         data = data.reset_index(drop=True)
 
@@ -254,31 +256,34 @@ for avg_method in avg_methods:
 
                         df_reg_rows = []
                         for num_roi, roi in enumerate(rois):
-
-                            df_roi = data.loc[(data.roi == roi)].copy()
-
-                            x_vals = df_roi[f'{corr_param}_FE-LE'].values  # x = FE (reference)
-                            y_vals = df_roi[f'{corr_param}_AE-RE'].values  # y = AE (outcome)
+                            df_roi = data.loc[(data[rois_to_plot] == roi)].copy()
+                            x_vals = df_roi[f'{corr_param}_FE-LE'].values
+                            y_vals = df_roi[f'{corr_param}_AE-RE'].values
                             r2_ae = df_roi[f'{rsq2use}_AE-RE'].values
                             r2_fe = df_roi[f'{rsq2use}_FE-LE'].values
                             r2_combined = (r2_ae + r2_fe) / 2
-
                             # Remove NaNs
                             mask = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
                             x_vals = x_vals[mask]
                             y_vals = y_vals[mask]
                             r2_combined = r2_combined[mask]
-
                             n_vertex = len(x_vals)
-                            mean_r2_weight = np.nanmean(r2_combined)
-
-                            # Normalize weights
-                            r2_norm = r2_combined / r2_combined.sum()
-
-                            # Compute weighted 2D KDE
-                            kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
-                            density = kde(grid_points).reshape(corr_grid_size, corr_grid_size)
-
+                            mean_r2_weight = np.nanmean(r2_combined) if n_vertex > 0 else np.nan
+                        
+                            if n_vertex > 1:
+                                # Normalize weights
+                                r2_norm = r2_combined / r2_combined.sum()
+                                # Compute weighted 2D KDE
+                                # kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                                try:
+                                    kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                                    density = kde(grid_points).reshape(corr_grid_size, corr_grid_size)
+                                except np.linalg.LinAlgError:
+                                    density = np.full(corr_grid_size * corr_grid_size, np.nan).reshape(corr_grid_size, corr_grid_size)
+                            else:
+                                r2_norm = np.array([])
+                                density = np.full(corr_grid_size * corr_grid_size, np.nan)
+                        
                             # Save KDE as long-format dataframe
                             df_kde_roi = pd.DataFrame({
                                 'roi': roi,
@@ -286,10 +291,9 @@ for avg_method in avg_methods:
                                 'y_grid': yy.ravel(),
                                 'density': density.ravel()
                             })
-
                             if num_roi == 0: df_kde = df_kde_roi
                             else: df_kde = pd.concat([df_kde, df_kde_roi])
-
+                        
                             # Deming regression + stats
                             if n_vertex > 2:
                                 weights = r2_norm
@@ -307,7 +311,6 @@ for avg_method in avg_methods:
                                 intercept = np.nan
                                 r2_pearson = np.nan
                                 p_val = np.nan
-
                             df_reg_rows.append({
                                 'roi': roi,
                                 'slope': slope,
