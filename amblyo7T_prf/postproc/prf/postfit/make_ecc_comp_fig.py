@@ -25,7 +25,7 @@ sys.argv[4]: server group           (e.g. 327)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_ecc_comp_fig.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_ecc_comp_fig.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_ecc_comp_fig.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_ecc_comp_fig.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------

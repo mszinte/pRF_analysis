@@ -36,7 +36,7 @@ sys.argv[4]: server group           (e.g. 327)
 -----------------------------------------------------------------------------------------
 To run:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_ecc_comp_tsv.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_ecc_comp_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_ecc_comp_tsv.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_ecc_comp_tsv.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------
@@ -84,6 +84,7 @@ filtering            = analysis_info['filtering']
 normalization        = analysis_info['normalization']
 avg_methods          = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
+rois_to_plot         = analysis_info['rois_to_plot']
 
 ecc_threshold        = analysis_info['ecc_th']
 size_threshold       = analysis_info['size_th']
@@ -100,8 +101,8 @@ participants_df   = pd.read_table(participants_path)
 amblyopic_eyes    = dict(zip(participants_df['participant_id'], participants_df['amblyopic_eye']))
 subject_groups    = dict(zip(participants_df['participant_id'], participants_df['group']))
 
-patients  = analysis_info['group_patient']
-controls  = analysis_info['group_control']
+patients  = analysis_info['group-patient']
+controls  = analysis_info['group-control']
 
 # Determine which subjects to process for individual TSVs
 # and whether to run group aggregation + stats
@@ -218,7 +219,7 @@ for avg_method in avg_methods:
                         # Compute R²-weighted median + 2.5/97.5 CI per roi × ecc_category
                         rows_list = []
                         for roi in rois:
-                            df_roi = data.loc[data.roi == roi]
+                            df_roi = data.loc[data[rois_to_plot] == roi]
                             for ecc_cat in ecc_categories:
                                 if ecc_cat == 'all':
                                     df_cat = df_roi
@@ -233,7 +234,7 @@ for avg_method in avg_methods:
                                 row = {
                                     'subject':              subj,
                                     'subject_group':        subject_group,
-                                    'roi':                  roi,
+                                    rois_to_plot:                  roi,
                                     'eye_condition':        eye_condition,
                                     'ecc_category':         ecc_cat,
                                     'n_vert':               len(df_cat),
@@ -268,7 +269,7 @@ for avg_method in avg_methods:
                         for roi in rois:
                             for ecc_cat in ecc_categories:
                                 df_rc = df_subj.loc[
-                                    (df_subj.roi == roi) & (df_subj.ecc_category == ecc_cat)]
+                                    (df_subj[rois_to_plot] == roi) & (df_subj.ecc_category == ecc_cat)]
                                 ctrl_row = {
                                     'subject':       subj,
                                     'subject_group': subject_group,
@@ -399,7 +400,7 @@ for avg_method in avg_methods:
                         for roi in rois:
                             for ecc_cat in ecc_categories:
                                 df_rc = df_indiv.loc[
-                                    (df_indiv.roi == roi) & (df_indiv.ecc_category == ecc_cat)]
+                                    (df_indiv[rois_to_plot] == roi) & (df_indiv.ecc_category == ecc_cat)]
                                 for (cond_a, cond_b) in comparisons:
                                     paired = paired_map[(cond_a, cond_b)]
                                     df_ab  = df_rc.loc[df_rc[group_col].isin([cond_a, cond_b])].copy()

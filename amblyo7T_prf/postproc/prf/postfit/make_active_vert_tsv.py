@@ -27,7 +27,7 @@ python make_active_vert_tsv.py [main directory] [project name] [subject] [group]
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_active_vert_tsv.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_active_vert_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_active_vert_tsv.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_active_vert_tsv.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------
@@ -45,7 +45,6 @@ deb = ipdb.set_trace
 # General imports
 import os
 import sys
-import numpy as np
 import pandas as pd
 
 # Personal import
@@ -74,6 +73,7 @@ filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
+rois_to_plot = analysis_info['rois_to_plot']
 
 # Load participant info
 participants_path = os.path.join(main_dir, project_dir, 'participants.tsv')
@@ -87,9 +87,9 @@ if 'group' not in subject:
     subject_group = subject_groups[subject]
 else:
     if 'patient' in subject:
-        subjects_to_group = analysis_info['group_patient']
+        subjects_to_group = analysis_info['group-patient']
     elif 'control' in subject:
-        subjects_to_group = analysis_info['group_control']
+        subjects_to_group = analysis_info['group-control']
 
 # Main loop
 for avg_method in avg_methods:
@@ -135,6 +135,7 @@ for avg_method in avg_methods:
 
                         # Keep raw data — no thresholding
                         data_raw = pd.read_table(tsv_fn, sep="\t")
+                        data_raw = data_raw[data_raw[rois_to_plot].isin(rois)]
 
                         # Get eye_val
                         if 'RightEye' in prf_task_eye_name:
@@ -157,20 +158,20 @@ for avg_method in avg_methods:
                         else: eye_condition = 'FE-LE'
 
                         # Count vertices per ROI
-                        n_vert_tot_roi = (data_raw.groupby('roi', sort=False)
+                        n_vert_tot_roi = (data_raw.groupby(rois_to_plot, sort=False)
                                           .size().reset_index(name='n_vert_tot'))
 
                         n_vert_corr_5pt = (data_raw[data_raw['corr_pvalue_5pt'] < 0.05]
-                                           .groupby('roi', sort=False)
+                                           .groupby(rois_to_plot, sort=False)
                                            .size().reset_index(name='n_vert_corr_pvalue_5pt'))
 
                         n_vert_corr_1pt = (data_raw[data_raw['corr_pvalue_1pt'] < 0.01]
-                                           .groupby('roi', sort=False)
+                                           .groupby(rois_to_plot, sort=False)
                                            .size().reset_index(name='n_vert_corr_pvalue_1pt'))
 
                         df_eye = (n_vert_tot_roi
-                                  .merge(n_vert_corr_5pt, on='roi', how='left')
-                                  .merge(n_vert_corr_1pt, on='roi', how='left')
+                                  .merge(n_vert_corr_5pt, on=rois_to_plot, how='left')
+                                  .merge(n_vert_corr_1pt, on=rois_to_plot, how='left')
                                   .fillna(0))
 
                         df_eye['ratio_5pt'] = df_eye['n_vert_corr_pvalue_5pt'] / df_eye['n_vert_tot']
@@ -207,15 +208,15 @@ for avg_method in avg_methods:
                     # Median across subjects per roi/eye_condition
                     median_cols = ['n_vert_tot', 'n_vert_corr_pvalue_5pt',
                                    'n_vert_corr_pvalue_1pt', 'ratio_5pt', 'ratio_1pt']
-                    df_group = df_all.groupby(['roi', 'eye_condition'], sort=False)[median_cols].median().reset_index()
+                    df_group = df_all.groupby([rois_to_plot, 'eye_condition'], sort=False)[median_cols].median().reset_index()
 
                     # CI across subjects (2.5/97.5 percentiles)
                     for col in ['ratio_5pt', 'ratio_1pt']:
                         df_group[f'{col}_ci_upper'] = (
-                            df_all.groupby(['roi', 'eye_condition'], sort=False)[col]
+                            df_all.groupby([rois_to_plot, 'eye_condition'], sort=False)[col]
                             .quantile(0.975).reset_index()[col])
                         df_group[f'{col}_ci_lower'] = (
-                            df_all.groupby(['roi', 'eye_condition'], sort=False)[col]
+                            df_all.groupby([rois_to_plot, 'eye_condition'], sort=False)[col]
                             .quantile(0.025).reset_index()[col])
 
                     # Save group TSV

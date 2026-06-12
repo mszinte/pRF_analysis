@@ -34,7 +34,7 @@ python make_ecc_size_pcm_fig.py [main directory] [project name] [subject] [group
 -----------------------------------------------------------------------------------------
 Example:
 cd ~/projects/pRF_analysis/amblyo7T_prf/postproc/prf/postfit/
-python make_ecc_size_pcm_fig.py /scratch/mszinte/data amblyo7T_prf sub-17 327
+python make_ecc_size_pcm_fig.py /scratch/mszinte/data amblyo7T_prf sub-02 327
 python make_ecc_size_pcm_fig.py /scratch/mszinte/data amblyo7T_prf group-patient 327
 python make_ecc_size_pcm_fig.py /scratch/mszinte/data amblyo7T_prf group-control 327
 -----------------------------------------------------------------------------------------

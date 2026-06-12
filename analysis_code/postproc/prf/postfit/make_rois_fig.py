@@ -137,67 +137,67 @@ for avg_method in avg_methods:
                 fig.write_image(fig_fn)
                 remove_second_page(fig_fn)
     
-                # Ecc.size plots
-                tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(tsv_dir, subject, fn_spec)
-                df_ecc_size = pd.read_table(tsv_ecc_size_fn, sep="\t")
-                fig = prf_ecc_size_plot(df=df_ecc_size, figure_info=analysis_info, rsq2use=rsq2use)
-                fig_fn = "{}/{}_{}_prf-css_ecc-size.pdf".format(fig_dir, subject, fn_spec)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
-                remove_second_page(fig_fn)
+                # # Ecc.size plots
+                # tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(tsv_dir, subject, fn_spec)
+                # df_ecc_size = pd.read_table(tsv_ecc_size_fn, sep="\t")
+                # fig = prf_ecc_size_plot(df=df_ecc_size, figure_info=analysis_info, rsq2use=rsq2use)
+                # fig_fn = "{}/{}_{}_prf-css_ecc-size.pdf".format(fig_dir, subject, fn_spec)
+                # print('Saving pdf: {}'.format(fig_fn))
+                # fig.write_image(fig_fn)
+                # remove_second_page(fig_fn)
                 
-                # Ecc.pCM plot
-                tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(tsv_dir, subject, fn_spec)
-                df_ecc_pcm = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
-                fig_fn = "{}/{}_{}_prf-css_ecc-pcm.pdf".format(fig_dir, subject, fn_spec)
-                fig = prf_ecc_pcm_plot(df=df_ecc_pcm, figure_info=analysis_info, rsq2use=rsq2use)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
-                remove_second_page(fig_fn)
+                # # Ecc.pCM plot
+                # tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(tsv_dir, subject, fn_spec)
+                # df_ecc_pcm = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
+                # fig_fn = "{}/{}_{}_prf-css_ecc-pcm.pdf".format(fig_dir, subject, fn_spec)
+                # fig = prf_ecc_pcm_plot(df=df_ecc_pcm, figure_info=analysis_info, rsq2use=rsq2use)
+                # print('Saving pdf: {}'.format(fig_fn))
+                # fig.write_image(fig_fn)
+                # remove_second_page(fig_fn)
     
-                # Polar angle distributions
-                tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
-                df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
-                figs, hemis = prf_polar_angle_plot(df=df_polar_angle, figure_info=analysis_info)
-                for (fig, hemi) in zip(figs, hemis):
-                    if hemi == 'hemi-LR':
-                        fig_fn = "{}/{}_{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
-                        print('Saving pdf: {}'.format(fig_fn))
-                        fig.write_image(fig_fn)
-                        remove_second_page(fig_fn)
+                # # Polar angle distributions
+                # tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(tsv_dir, subject, fn_spec)
+                # df_polar_angle = pd.read_table(tsv_polar_angle_fn, sep="\t")
+                # figs, hemis = prf_polar_angle_plot(df=df_polar_angle, figure_info=analysis_info)
+                # for (fig, hemi) in zip(figs, hemis):
+                #     if hemi == 'hemi-LR':
+                #         fig_fn = "{}/{}_{}_prf-css_polar-angle.pdf".format(fig_dir, subject, fn_spec)
+                #         print('Saving pdf: {}'.format(fig_fn))
+                #         fig.write_image(fig_fn)
+                #         remove_second_page(fig_fn)
     
-                # Contralaterality plots
-                tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
-                df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
-                fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
-                fig = prf_contralaterality_plot(df=df_contralaterality, figure_info=analysis_info)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
-                remove_second_page(fig_fn)
+                # # Contralaterality plots
+                # tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(tsv_dir, subject, fn_spec)
+                # df_contralaterality = pd.read_table(tsv_contralaterality_fn, sep="\t")
+                # fig_fn = "{}/{}_{}_prf-css_contralaterality.pdf".format(fig_dir, subject, fn_spec)
+                # fig = prf_contralaterality_plot(df=df_contralaterality, figure_info=analysis_info)
+                # print('Saving pdf: {}'.format(fig_fn))
+                # fig.write_image(fig_fn)
+                # remove_second_page(fig_fn)
                 
-                # Spatial distribution plot
-                tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
-                df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
-                figs, hemis = prf_distribution_plot(df=df_distribution, figure_info=analysis_info)
-                for (fig, hemi) in zip(figs, hemis):
-                    if hemi == 'hemi-LR':
-                        fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
-                        print('Saving pdf: {}'.format(fig_fn))
-                        fig.write_image(fig_fn)
-                        remove_second_page(fig_fn)
+                # # Spatial distribution plot
+                # tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(tsv_dir, subject,fn_spec )
+                # df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
+                # figs, hemis = prf_distribution_plot(df=df_distribution, figure_info=analysis_info)
+                # for (fig, hemi) in zip(figs, hemis):
+                #     if hemi == 'hemi-LR':
+                #         fig_fn = "{}/{}_{}_prf-css_distribution.pdf".format(fig_dir, subject, fn_spec)
+                #         print('Saving pdf: {}'.format(fig_fn))
+                #         fig.write_image(fig_fn)
+                #         remove_second_page(fig_fn)
                 
-                # Spatial distibution barycentre plot
-                tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
-                try:
-                    df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
-                except FileNotFoundError:
-                    print(f"File not found: {tsv_barycentre_fn}, skipping...")
-                    continue
-                fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
-                fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
-                remove_second_page(fig_fn)
+                # # Spatial distibution barycentre plot
+                # tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(tsv_dir, subject, fn_spec)
+                # try:
+                #     df_barycentre = pd.read_table(tsv_barycentre_fn, sep="\t")
+                # except FileNotFoundError:
+                #     print(f"File not found: {tsv_barycentre_fn}, skipping...")
+                #     continue
+                # fig_fn = "{}/{}_{}_prf-css_barycentre.pdf".format(fig_dir, subject, fn_spec)
+                # fig = prf_barycentre_plot(df=df_barycentre, figure_info=analysis_info)
+                # print('Saving pdf: {}'.format(fig_fn))
+                # fig.write_image(fig_fn)
+                # remove_second_page(fig_fn)
     
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
