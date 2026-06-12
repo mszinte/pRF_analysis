@@ -12,7 +12,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: group (e.g. 327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 New brain volume in derivative nifti file
@@ -21,12 +22,12 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 2. run python command
->> python compute_pcm.py [main directory] [project name] [subject] [group]
+>> python compute_pcm.py [main directory] [project name] [subject] [analysis name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_pcm.py /scratch/mszinte/data RetinoMaps template_avg 327
+python compute_css_pcm.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
+python compute_css_pcm.py /scratch/mszinte/data RetinoMaps template_avg prf 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -60,15 +61,14 @@ from pycortex_utils import set_pycortex_config_file, load_surface_pycortex, get_
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
-if len(sys.argv) > 5: output_folder = sys.argv[5]
-else: output_folder = "prf"
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 vert_dist_th = analysis_info['vertex_pcm_rad']
@@ -76,7 +76,7 @@ formats = analysis_info['formats']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 maps_names_pcm = analysis_info['maps_names_pcm']
 subjects = analysis_info['subjects']
-prf_task_names = analysis_info['prf_task_names']
+task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
@@ -85,6 +85,8 @@ rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 averaging_templates = analysis_info['averaging_templates']
 formats_conversion = analysis_info['formats_conversion'] 
+output_folder = analysis_info["output_folder"]
+dm_name = analysis_info["dm_name"]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -113,12 +115,10 @@ if subject != 'template_avg':
             
             print(f'{avg_method} - {format_}')
             # define directories and fn
-            prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
-                main_dir, project_dir, subject, format_)
-            fit_dir = "{}/fit".format(prf_dir)
+            prf_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{output_folder}"
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
 
-            for prf_task_name in prf_task_names:
+            for task_name in task_names:
             
                 if format_ == 'fsnative':
                     # initial settings
@@ -126,12 +126,8 @@ if subject != 'template_avg':
                     surf_format = format_
 
                     # Derivatives                    
-                    deriv_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, 
-                        preproc_prep, filtering, normalization, avg_method)
-                    deriv_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, 
-                        preproc_prep, filtering, normalization, avg_method)
+                    deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii'
+                    deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii'
                     print(f'Loading:\t{deriv_fn_L}\n\t\t{deriv_fn_R}')
                     results = load_surface_pycortex(L_fn=deriv_fn_L, 
                                                     R_fn=deriv_fn_R, 
@@ -141,12 +137,8 @@ if subject != 'template_avg':
                     img_R = results['img_R']
         
                     # Stats
-                    stats_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-css_stats.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, 
-                        preproc_prep, filtering, normalization, avg_method)
-                    stats_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_prf-css_stats.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, 
-                        preproc_prep, filtering, normalization, avg_method)
+                    stats_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.func.gii'
+                    stats_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.func.gii'
                     print(f'Loading:\t{stats_fn_L}\n\t\t{stats_fn_R}')
                     stats_results = load_surface_pycortex(L_fn=stats_fn_L, 
                                                           R_fn=stats_fn_R)
@@ -158,9 +150,7 @@ if subject != 'template_avg':
                     surf_format = formats_conversion[format_]
                     
                     # Derivatives
-                    deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.dtseries.nii'
                     print(f'Loading:\t{deriv_fn}')
                     results = load_surface_pycortex(brain_fn=deriv_fn,
                                                     return_img=True,
@@ -172,9 +162,7 @@ if subject != 'template_avg':
                     img = results['img']
                     
                     # Stats
-                    stats_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii'.format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    stats_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.dtseries.nii'
                     print(f'Loading:\t{stats_fn}')
                     stats_results = load_surface_pycortex(brain_fn=stats_fn)
                     stats_mat = stats_results['data_concat']
@@ -243,16 +231,6 @@ if subject != 'template_avg':
                     # Get the vertices number per hemisphere
                     lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
                     vert_num = lh_vert_num + rh_vert_num
-                    
-                    # # Derivatives settings        
-                    # vert_rsq_data = deriv_mat[rsq_idx2use, ...]
-                    # vert_x_data = deriv_mat[prf_x_idx, ...]
-                    # vert_y_data = deriv_mat[prf_y_idx, ...]
-                    # vert_size_data = deriv_mat[prf_size_idx, ...]
-                    # vert_ecc_data = deriv_mat[prf_ecc_idx, ...]
-                    
-                    # # Create empty results
-                    # vert_cm = np.zeros((4,vert_num))*np.nan
                     
                     for roi in rois:
                         # Find ROI vertex
@@ -341,12 +319,8 @@ if subject != 'template_avg':
                                                                     img=None, 
                                                                     brain_mask_59k=None)
             
-                        deriv_fn_L = '{}/{}_task-{}_hemi-L_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, 
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
-                        deriv_fn_R = '{}/{}_task-{}_hemi-R_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, 
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.func.gii'
+                        deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.func.gii'
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_L))
                         nb.save(new_img_L, deriv_fn_L)
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_R))
@@ -363,9 +337,7 @@ if subject != 'template_avg':
                                               img=img, 
                                               brain_mask_59k=mask_59k)
                 
-                        deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii'.format(
-                            prf_deriv_dir, subject, prf_task_name,
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii'
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
                         nb.save(new_img, deriv_fn)
 
@@ -374,8 +346,7 @@ elif subject == 'template_avg':
     for averaging_template_name, averaging_template_format in averaging_templates.items(): 
         print('{}, Median corr across subject...'. format(averaging_template_name))
 
-        for prf_task_name in prf_task_names:
-            
+        for task_name in task_names:
             for avg_method in avg_methods:
     
                 rois_methods_format = rois_methods['{}'.format(averaging_template_format)]
@@ -384,23 +355,17 @@ elif subject == 'template_avg':
                     # find all the subject prf stats
                     prf_pcm_fns = []
                     for subject in subjects: 
-                        prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
-                            main_dir, project_dir, subject, averaging_template_format)
-                        prf_pcm_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
-                            prf_deriv_dir, subject, prf_task_name,
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)]
+                        prf_deriv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{averaging_template_format}/{output_folder}/prf_derivatives"
+                        prf_pcm_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii"]
         
                      # Computing  across subject
                     img, data_pcm_median = median_subject_template(fns=prf_pcm_fns)
             
                     # Export results
-                    template_pcm_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
-                            main_dir, project_dir, averaging_template_name, averaging_template_format)
+                    template_pcm_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{averaging_template_name}/{averaging_template_format}/{output_folder}/prf_derivatives"
                     os.makedirs(template_pcm_dir, exist_ok=True)
                     
-                    template_pcm_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii".format(
-                        template_pcm_dir, averaging_template_name, prf_task_name, 
-                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    template_pcm_fn = f"{template_pcm_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii"
                     print("saving: {}".format(template_pcm_fn))
                     template_pcm_img = make_surface_image(data=data_pcm_median, 
                                                           source_img=img, 

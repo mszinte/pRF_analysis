@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: group (e.g. 327)
+sys.argv[4]: analysis task name (ex. prf)
+sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
@@ -19,16 +20,17 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python compute_css_derivatives.py [main directory] [project name] 
-                                     [subject num] [group] [analysis folder - optional]
+                                     [subject num] [analysis name][group] 
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 327
-python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps template_avg 327
-python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 327
+python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
+python compute_css_derivatives.py /scratch/mszinte/data RetinoMaps template_avg prf 327
+python compute_css_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
+edited by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
 # Stop warnings
@@ -58,24 +60,28 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 subjects = analysis_info['subjects']
-prf_task_names = analysis_info['prf_task_names']
+task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 averaging_templates = analysis_info['averaging_templates']
+output_folder = analysis_info["output_folder"]
+dm_name = analysis_info["dm_name"]
+
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -97,21 +103,21 @@ if subject != 'template_avg':
         for format_, extension in zip(formats, extensions):
 
             # define/create folders
-            prf_fit_dir = '{}/{}/{}/prf/fit'.format(
-                    pp_dir, subject, format_)
-            prf_deriv_dir = "{}/{}/{}/prf/prf_derivatives".format(
-                pp_dir, subject, format_)
+            prf_fit_dir = '{}/{}/{}/{}/fit'.format(
+                    pp_dir, subject, format_, analysis_name)
+            prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(
+                pp_dir, subject, format_, analysis_name)
+            os.makedirs(prf_deriv_dir, exist_ok=True)
 
-            for prf_task_name in prf_task_names:
-                print(f'{avg_method} - {format_} - {prf_task_name}')
-
+            for task_name in task_names:
+                print(f'{avg_method} - {format_} - {task_name}')
                 # Find pRF func/pred files
-                fit_fns = glob.glob('{}/*task-{}_*_{}*_prf-css_fit.{}'.format(
-                        prf_fit_dir, prf_task_name, avg_method, extension))
+                fit_fns = glob.glob('{}/*task-{}_*_{}*_{}-css-{}_fit.{}'.format(
+                        prf_fit_dir, task_name, avg_method, analysis_name, dm_name, extension))
     
                 # Compute derivatives
                 for fit_fn in fit_fns:
-                    deriv_fn = fit_fn.split('/')[-1].replace('prf-css_fit', 'prf-css_deriv')
+                    deriv_fn = fit_fn.split('/')[-1].replace(f'{analysis_name}-css-{dm_name}_fit', f'{analysis_name}-css-{dm_name}_deriv')
 
                     # get arrays
                     fit_img, fit_data = load_surface(fit_fn)
@@ -132,7 +138,7 @@ if subject != 'template_avg':
                     print('Compute median across LOO')                
                     
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{prf_task_name}_*loo-avg-*_prf-css_deriv.{extension}")
+                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css-{dm_name}_deriv.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
@@ -148,9 +154,9 @@ if subject != 'template_avg':
                             # Load first file to initialize median array and define fn
                             prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
                             loo_prf_deriv = np.zeros_like(prf_deriv_data)
-                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_prf-css_deriv.{}'.format(
+                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css-{}_deriv.{}'.format(
                                 prf_deriv_dir, subject, prf_task_name, hemi, 
-                                preproc_prep, filtering, normalization, extension)
+                                preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
                             
                             # Compute median across LOO runs
                             for n_run, loo_deriv_fn in enumerate(group_files):
@@ -170,7 +176,7 @@ elif subject == 'template_avg':
     for averaging_template_name, averaging_template_format in averaging_templates.items(): 
         print('{}, Median corr across subject...'. format(averaging_template_name))
     
-        for prf_task_name in prf_task_names:
+        for task_name in task_names:
             
             for avg_method in avg_methods:
                 if 'loo' in avg_method:
@@ -181,23 +187,23 @@ elif subject == 'template_avg':
                 # find all the subject prf deriv
                 prf_deriv_fns = []
                 for subject in subjects:
-                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
-                        main_dir, project_dir, subject, averaging_template_format)
-                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)]
+                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format, analysis_name)
+                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-css-{}_deriv.dtseries.nii".format(
+                        prf_deriv_dir, subject, task_name,
+                        preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)]
     
                 # Computing median across subject
                 img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
                 
                 # Export results
-                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives".format(
-                    main_dir, project_dir, averaging_template_name, averaging_template_format)
+                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
+                    main_dir, project_dir, averaging_template_name, averaging_template_format, analysis_name)
                 os.makedirs(template_deriv_dir, exist_ok=True)
     
-                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii".format(
-                    template_deriv_dir, averaging_template_name, prf_task_name, 
-                    preproc_prep, filtering, normalization, avg_method)
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-css-{}_deriv.dtseries.nii".format(
+                    template_deriv_dir, averaging_template_name, task_name, 
+                    preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
                 
                 print("save: {}".format(template_deriv_fn))
                 template_deriv_img = make_surface_image(data=data_deriv_median, 
@@ -205,7 +211,7 @@ elif subject == 'template_avg':
                                                         maps_names=maps_names)
                 nb.save(template_deriv_img, template_deriv_fn)
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

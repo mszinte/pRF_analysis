@@ -61,7 +61,7 @@ analysis_name = sys.argv[4]
 group = sys.argv[5]
 server_project = sys.argv[6]
 memory_val = 30
-nb_procs = 8
+nb_procs = 12
 hour_proc = 10
 
 # Load settings
@@ -82,6 +82,7 @@ avg_methods = analysis_info['avg_methods'] # selects input type
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
 
+
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
@@ -97,6 +98,9 @@ chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 pp_fns = []
 for avg_method in avg_methods:
     for task_name in task_names:
+        print(f"=========================")
+        print(f"Running CSS Fit with: data: {avg_method}, task: {task_name}, dm: {dm_name}, analysis: {analysis_name}")
+        print(f"=========================\n")
         dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
         dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
@@ -132,7 +136,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_{{avg_method}-analysis_name}-css-{dm_name}_fit_%N_%j_%a.out
+#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit_%N_%j_%a.out
 #SBATCH -J {subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit
 """.format(server_project=server_project, 
            cluster_name=cluster_name,
@@ -150,7 +154,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
         main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
     
     # Create shs
-    sh_fn = "{}/jobs/{}_{}-css-{}_fit-{}.sh".format(prf_dir, subject, analysis_name, dm_name, fit_num)
+    sh_fn = "{}/jobs/{}_{}-{}-css-{}_fit-{}.sh".format(prf_dir, subject, avg_method, analysis_name, dm_name, fit_num)
 
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 

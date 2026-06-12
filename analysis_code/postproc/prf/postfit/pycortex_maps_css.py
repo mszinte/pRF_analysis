@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: save in svg (e.g. no)
+sys.argv[4]: analysisi name (e.g. prf)
+sys.argv[5]: save in svg (e.g. no)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -19,13 +20,13 @@ To run:
 1. cd to function
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python pycortex_maps_css.py [main directory] [project] [subject] [save_svg_in] 
+>> python pycortex_maps_css.py [main directory] [project] [subject] [analysis name] [save_svg_in] 
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-01 n
-python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
-python pycortex_maps_css.py ~/disks/meso_S/data amblyo7T_prf sub-16 n
+python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-01 prf n
+python pycortex_maps_css.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm prf n
+python pycortex_maps_css.py ~/disks/meso_S/data amblyo7T_prf sub-16 prf n
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -56,19 +57,20 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg = sys.argv[4]
+analysis_name = sys.argv[4]
+save_svg = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
-settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
+settings = load_settings([general_settings_path, analysis_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
-prf_task_names = analysis_info['prf_task_names']
+task_names = analysis_info['analysis_task_names']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 preproc_prep = analysis_info['preproc_prep']
@@ -77,6 +79,8 @@ normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+output_folder = analysis_info["output_folder"]
+dm_name = analysis_info["dm_name"]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -120,8 +124,7 @@ for avg_method in avg_methods:
         for rois_method_format in rois_methods_format:
 
             # Define directories and fn
-            prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
-                main_dir, project_dir, subject, format_)
+            prf_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{output_folder}"
 
             if not os.path.isdir(prf_dir):
                 print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
@@ -136,17 +139,15 @@ for avg_method in avg_methods:
             # Define overlay
             overlay_fn = f"overlays_{rois_method_format}.svg"
 
-            for prf_task_name in prf_task_names:
+            for task_name in task_names:
 
                 # Load all data
                 if format_ == 'fsnative':
                     pycortex_subject = subject
 
                     deriv_fns_L = sorted(
-                        glob.glob('{}/{}_task-{}_hemi-L_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)) +
-                        glob.glob('{}/{}_task-{}_run-*_hemi-L_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method))
+                        glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii') +
+                        glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}_run-*_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii')
                     )
 
                     for deriv_fn_L in deriv_fns_L:
@@ -320,9 +321,7 @@ for avg_method in avg_methods:
                             print(roi_name)
                             exec('param_{}.update(roi_param)'.format(maps_name))
                             exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-                            flatmap_fn = '{}/{}_task-{}{}_{}_{}_{}_{}_{}_css-{}.pdf'.format(
-                                flatmaps_dir, subject, prf_task_name, run_id,
-                                preproc_prep, filtering, normalization, avg_method, rois_method_format, maps_name)
+                            flatmap_fn = f'{flatmaps_dir}/{subject}_task-{task_name}{run_id}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}-{maps_name}.pdf'
                             exec("plt.savefig('{}')".format(flatmap_fn))
                             print(f"Saved flatmap: {flatmap_fn}")
                             plt.close()
@@ -333,9 +332,7 @@ for avg_method in avg_methods:
                             volumes.update({vol_description: volume})
 
                         # save dataset
-                        dataset_file = "{}/{}_task-{}{}_{}_{}_{}_{}_{}_css.hdf".format(
-                            datasets_dir, subject, prf_task_name, run_id,
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        dataset_file = f"{datasets_dir}/{subject}_task-{task_name}{run_id}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}.hdf"
                         if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
                         dataset = cortex.Dataset(data=volumes)
                         dataset.save(dataset_file)
@@ -345,16 +342,13 @@ for avg_method in avg_methods:
                     pycortex_subject = pycortex_subject_template
 
                     deriv_fns = sorted(
-                        glob.glob('{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
-                            prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method)) +
-                        glob.glob('{}/{}_task-{}_run-*_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
-                            prf_deriv_dir, subject, prf_task_name, preproc_prep, filtering, normalization, avg_method))
+                        glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.dtseries.nii') +
+                        glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}_run-*_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.dtseries.nii')
                     )
 
                     for deriv_fn in deriv_fns:
-                        stats_fn = deriv_fn.replace('prf-css_deriv', 'prf-css_stats')
-                        pcm_fn   = deriv_fn.replace('prf-css_deriv', 'prf-css_pcm').replace(
-                                       f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
+                        stats_fn = deriv_fn.replace(f'{analysis_name}-css-{dm_name}_deriv', f'{analysis_name}-css-{dm_name}_stats')
+                        pcm_fn   = deriv_fn.replace(f'{analysis_name}-css-{dm_name}_deriv', f'{analysis_name}-css-{dm_name}_pcm').replace(f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
 
                         print(f"Loading deriv: {os.path.basename(deriv_fn)}")
                         deriv_mat = load_surface_pycortex(brain_fn=deriv_fn)['data_concat']
@@ -521,9 +515,7 @@ for avg_method in avg_methods:
                             print(roi_name)
                             exec('param_{}.update(roi_param)'.format(maps_name))
                             exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-                            flatmap_fn = '{}/{}_task-{}{}_{}_{}_{}_{}_{}_css-{}.pdf'.format(
-                                flatmaps_dir, subject, prf_task_name, run_id,
-                                preproc_prep, filtering, normalization, avg_method, rois_method_format, maps_name)
+                            flatmap_fn = f'{flatmaps_dir}/{subject}_task-{task_name}{run_id}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}-{maps_name}.pdf'
                             exec("plt.savefig('{}')".format(flatmap_fn))
                             print(f"Saved flatmap: {flatmap_fn}")
                             plt.close()
@@ -534,9 +526,7 @@ for avg_method in avg_methods:
                             volumes.update({vol_description: volume})
 
                         # save dataset
-                        dataset_file = "{}/{}_task-{}{}_{}_{}_{}_{}_{}_css.hdf".format(
-                            datasets_dir, subject, prf_task_name, run_id,
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        dataset_file = f"{datasets_dir}/{subject}_task-{task_name}{run_id}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}.hdf"
                         if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
                         dataset = cortex.Dataset(data=volumes)
                         dataset.save(dataset_file)
