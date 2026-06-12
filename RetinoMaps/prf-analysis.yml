@@ -50,8 +50,8 @@ screen_distance_cm:
 
 dm_name: 
   description: "Type/Name of design matrix used for pRF fit"
-  value: "vdm"
-  levels: ["vdm", "rdm", "odm"]
+  value: ""
+  levels: ["-vdm_", "rdm", "odm"]
 
 vdm_size_pix:
   description: "Horizontal and vertical size of the pRF tasks visual design matrix"
