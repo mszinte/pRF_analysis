@@ -9,6 +9,7 @@
 # input[1]: project code directory
 # input[2]: project name (correspond to directory)
 # input[3]: main data directory (correspond to directory)
+# input[4]: analysis_name (e.g prf)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # All ROI based figures 
@@ -39,6 +40,7 @@ fi
 base_path="$1"
 project_name="$2"
 data_path="$3"
+analysis_name="$4"
 
 # Define the path to the settings.yml file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.yml"
@@ -58,5 +60,5 @@ with open('$settings_file', 'r') as file:
 for subject in $subjects
 do
     echo "Processing compute_css_derivatives.py for: $subject"
-    python compute_css_derivatives.py "$data_path" "$project_name" "$subject" 327
+    python compute_css_derivatives.py "$data_path" "$project_name" "$subject" "$analysis_name" 327
 done

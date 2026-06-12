@@ -56,13 +56,14 @@ from pycortex_utils import get_rois, set_pycortex_config_file
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 if subject == 'sub-170k': formats = ['170k']
@@ -95,8 +96,7 @@ for format_, extension in zip(formats, extensions):
             if rois_method_format == 'rois-drawn':
                 continue
                 
-        rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(
-            main_dir, project_dir, subject, format_)
+        rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
         os.makedirs(rois_dir, exist_ok=True)
         if rois_method_format == 'rois-drawn':
             rois = analysis_info[rois_method_format]
@@ -122,9 +122,7 @@ for format_, extension in zip(formats, extensions):
                     array_rois[mask] = i
                     
                 # Load data to have source img
-                data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}'.format(
-                    main_dir, project_dir, subject, format_,
-                    preproc_prep, filtering, normalization)
+                data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
 
                 # Find first file with prf-deriv in the name
                 data_files = glob.glob('{}/{}*{}*.{}'.format(data_dir, subject, hemi, extension))
@@ -135,11 +133,8 @@ for format_, extension in zip(formats, extensions):
                 img, data = load_surface(fn=data_fn)
                 
                 # Define filename
-                rois_fn = '{}_{}_{}_{}_{}_{}.{}'.format(subject, hemi, preproc_prep, filtering, 
-                                                        normalization, rois_method_format,
-                                                        extension)
+                rois_fn = f'{subject}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
 
-    
                 # Saving file
                 array_rois = array_rois.reshape(1, -1)
                 rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
@@ -148,9 +143,7 @@ for format_, extension in zip(formats, extensions):
                           
         elif format_ == '170k':
             # Load data to have source img
-            data_dir = '{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}'.format(
-                main_dir, project_dir, subject, format_,
-                preproc_prep, filtering, normalization)
+            data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
             
             # Find first file with prf-deriv in the name
             data_files = glob.glob('{}/{}*.{}'.format(data_dir, subject, extension))
@@ -173,8 +166,7 @@ for format_, extension in zip(formats, extensions):
                 array_rois[mask] = i
                 
             # Define filename
-            rois_fn = '{}_{}_{}_{}_{}.{}'.format(subject, preproc_prep, filtering, 
-                                                 normalization, rois_method_format, extension)
+            rois_fn = f'{subject}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
     
             # Saving file
             array_rois = array_rois.reshape(1, -1)

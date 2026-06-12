@@ -21,11 +21,11 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
 python prf_gaussfit.py [main directory] [project name] [subject name] 
-                       [inout file name] [number of jobs]
+                       [inout file name] [analysis name] [number of jobs]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] 32  
+python prf_gaussfit.py /scratch/mszinte/data RetinoMaps sub-03 [file path] prf 32  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -109,9 +109,10 @@ print("==============================\n")
 # Get task specific (visual) design matrix
 # Find dm: check subject-specific directory first, then general vdm directory
 dm_name = analysis_info['dm_name']
+dm_name_tofind = dm_name[1:] if dm_name else "vdm"
 dm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name)
-dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name)
+dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name_tofind)
+dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name_tofind)
 
 if os.path.isfile(dm_fn_subject):
     dm_fn = dm_fn_subject
@@ -141,10 +142,10 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', f'{analysis_name}-gauss-{vdm}_fit')
+gauss_fit_fn = gauss_fit_fn.replace('bold', f'{analysis_name}-gauss{vdm}_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', f'{analysis_name}-gauss-{vdm}_pred')
+gauss_pred_fn = gauss_pred_fn.replace('bold', f'{analysis_name}-gauss{vdm}_pred')
 
 
 # define model parameter grid range

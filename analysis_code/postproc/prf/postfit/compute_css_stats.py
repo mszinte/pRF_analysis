@@ -113,7 +113,7 @@ if subject != 'template_avg':
             for task_name in task_names:
                 print(f'{avg_method} - {format_} - {task_name}')
                 # Find pRF func/pred files
-                prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}_{analysis_name}-css-{dm_name}_pred.{extension}')
+                prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}_{analysis_name}-css{dm_name}_pred.{extension}')
                 # Find pRF func/pred files
                 for prf_pred_fn in prf_pred_fns:
                     if 'loo' in prf_pred_fn:
@@ -154,7 +154,7 @@ if subject != 'template_avg':
                                                      alpha=fdr_alpha)
                     
                     # Save results
-                    prf_stats_fn = prf_pred_fn.split('/')[-1].replace(f'{analysis_name}-css-{dm_name}_pred', f'{analysis_name}-css-{dm_name}_stats')
+                    prf_stats_fn = prf_pred_fn.split('/')[-1].replace(f'{analysis_name}-css-{dm_name}_pred', f'{analysis_name}-css{dm_name}_stats')
                     prf_stats_img = make_surface_image(data=results, 
                                                        source_img=pred_img, 
                                                        maps_names=maps_names)
@@ -167,7 +167,7 @@ if subject != 'template_avg':
                     print('Computing median across LOO')
 
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css-{dm_name}_stats.{extension}")
+                    loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
@@ -184,7 +184,7 @@ if subject != 'template_avg':
                             # Load first file to initialize median array and define fn
                             stats_img, stats_data = load_surface(group_files[0])
                             loo_prf_stats = np.zeros_like(stats_data)
-                            loo_prf_stats_fn =  f'{prf_deriv_dir}/{subject}_task-{task_name}{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{analysis_name}-css-{dm_name}_stats.{extension}'
+                            loo_prf_stats_fn =  f'{prf_deriv_dir}/{subject}_task-{task_name}{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{analysis_name}-css{dm_name}_stats.{extension}'
                             # Compute median across LOO runs
                             for n_run, loo_stats_fn in enumerate(group_files):
                                 print(f'Loadding loo stats: {loo_stats_fn}')
@@ -221,7 +221,7 @@ elif subject == 'template_avg':
                 prf_stats_fns = []
                 for subject in subjects: 
                     prf_deriv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{averaging_template_format}/{output_folder}/prf_derivatives"
-                    prf_stats_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.dtseries.nii"]
+                    prf_stats_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii"]
         
                 # Computing  across subject
                 img, data_stat_median = median_subject_template(fns=prf_stats_fns)
@@ -241,7 +241,7 @@ elif subject == 'template_avg':
                 template_stats_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{averaging_template_name}/{averaging_template_format}/{output_folder}/prf_derivatives"
                 os.makedirs(template_stats_dir, exist_ok=True)
                 
-                template_stat_fn = f"{template_stats_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.dtseries.nii"
+                template_stat_fn = f"{template_stats_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii"
                 print("saving: {}".format(template_stat_fn))
                 template_stat_img = make_surface_image(data=data_stat_median, 
                                                        source_img=img, 

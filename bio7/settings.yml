@@ -1,4 +1,4 @@
-# Main configuration
+# ----------- Main configuration -----------
 project_name:
   description: "Name of the project and of the dataset directory"
   value: "bio7"
@@ -7,7 +7,7 @@ cluster_name:
   description: "Name of the cluster to use in AMU mesocenter"
   value: "skylake"
 
-# Dataset description
+# ----------- Dataset description -----------
 subjects:
   description: "Subjects of the dataset"
   value: ["sub-8761", "sub-8762"]
@@ -24,33 +24,12 @@ func_session:
   description: "Session containing the pRF tasks"
   value: ["ses-02"]
 
-prf_task_names:
-  description: "Names of the tasks analysed with pRF methods"
-  value: ["retin"]
-
 partial_scan: 
   description: "Dataset including non whole-head recording"
   value: False
   levels: [True, False]
 
-TR: 
-  description: "Time repetition of the pRF tasks"
-  unit: "seconds"
-  value: 1.6
-
-TRs: 
-  description: "Number of TR of the pRF task"
-  value: 156
-
-starting_TR: 
-  description: "TR in which aquisition started"
-  value: 0
-
-ending_TR: 
-  description: "Number of TRs to cut from the end, null to keep all"
-  value: null
-
-# Preprocessing
+# ----------- Preprocessing -----------
 preproc_prep: 
   description: "Name of the main preprocessing method"
   value: "fmriprep"
@@ -63,6 +42,14 @@ flattening_method:
     autoflatten: "Use autoflatten software for automatic flattening using pyflatten"
     mris_flatten: "Use mrisflatten after cutting manually the cortex with freesurfer"
     autoflatten_freesurfer: "Use autoflatten software for automatic flattening using freesurfer mrisflatten"
+
+starting_TR: 
+  description: "TR in which aquisition started"
+  value: 0
+
+ending_TR: 
+  description: "Number of TRs to cut from the end, null to keep all"
+  value: null
 
 normalization: 
   description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
@@ -109,7 +96,7 @@ maps_names_corr:
   description: "Inter-run correlation maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
-# Stats
+# ----------- Stats -----------
 fdr_alpha: 
   description: "P value level list for FDR corrected statistics"
   value: [0.05, 0.01]

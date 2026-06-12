@@ -135,9 +135,9 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit_%N_%j_%a.out
-#SBATCH -J {subject}_{avg_method}-{analysis_name}-css-{dm_name}_fit
+#SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.out
+#SBATCH -J {subject}_{avg_method}-{analysis_name}-css{dm_name}_fit
 """.format(server_project=server_project, 
            cluster_name=cluster_name,
            nb_procs=nb_procs, 
@@ -154,7 +154,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
         main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
     
     # Create shs
-    sh_fn = "{}/jobs/{}_{}-{}-css-{}_fit-{}.sh".format(prf_dir, subject, avg_method, analysis_name, dm_name, fit_num)
+    sh_fn = "{}/jobs/{}_{}-{}-css{}_fit-{}.sh".format(prf_dir, subject, avg_method, analysis_name, dm_name, fit_num)
 
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 

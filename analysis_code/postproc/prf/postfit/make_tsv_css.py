@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: server group (e.g. 327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: server group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 TSV file
@@ -19,13 +20,13 @@ To run:
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python make_tsv_css.py [main directory] [project name] 
-                          [subject num] [group] [analysis folder - optional]
+                          [subject num] [analysis name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
-python make_tsv_css.py /scratch/mszinte/data amblyo7T_prf sub-02 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
+python make_tsv_css.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm prf 327
+python make_tsv_css.py /scratch/mszinte/data amblyo7T_prf sub-02 prf 327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -55,12 +56,13 @@ from pycortex_utils import get_rois, set_pycortex_config_file
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
@@ -75,6 +77,9 @@ normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+
+output_folder = analysis_info["output_folder"]
+dm_name = analysis_info["dm_name"]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -103,8 +108,7 @@ for avg_method in avg_methods:
                 rois_dict = analysis_info['rois-group-mmp']
                 rois = [item for sublist in rois_dict.values() for item in sublist]
                     
-            prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
-                main_dir, project_dir, subject, format_)
+            prf_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{output_folder}"
             
             if not os.path.isdir(prf_dir):
                 print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
@@ -114,12 +118,10 @@ for avg_method in avg_methods:
     
             tsv_dir = "{}/tsv".format(prf_dir)
             os.makedirs(tsv_dir, exist_ok=True)
-            for prf_task_name in prf_task_names:
+            for task_name in task_names:
                 
-                print(f'{prf_task_name} - {avg_method} - {format_}')
-                tsv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css-deriv.tsv'.format(
-                    tsv_dir, subject, prf_task_name,
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                print(f'{task_name} - {avg_method} - {format_}')
+                tsv_fn = f'{tsv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_deriv.tsv'
         
                 # Load all data
                 df_rois = pd.DataFrame()
@@ -128,23 +130,17 @@ for avg_method in avg_methods:
                     for hemi in ['hemi-L', 'hemi-R']:
     
                         # Derivatives
-                        deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_deriv.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, hemi,
-                            preproc_prep, filtering, normalization, avg_method)
+                        deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_deriv.func.gii'
                         print(f'loading {deriv_fn}')
                         deriv_img, deriv_mat = load_surface(deriv_fn)
                         
                         # Stats
-                        stats_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_stats.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, hemi,
-                            preproc_prep, filtering, normalization, avg_method)
+                        stats_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.func.gii'
                         print(f'loading {stats_fn}')
                         stats_img, stats_mat = load_surface(stats_fn)
                         
                         # pCM
-                        pcm_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_{}_prf-css_pcm.func.gii'.format(
-                            prf_deriv_dir, subject, prf_task_name, hemi,
-                            preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                        pcm_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.func.gii'
                         print(f'loading {pcm_fn}')
                         pcm_img, pcm_mat = load_surface(pcm_fn)
                         
@@ -153,8 +149,7 @@ for avg_method in avg_methods:
                         
                         # get MMP rois img
                         roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
-                        roi_fn = '{}/{}_{}_{}_{}_{}_rois-mmp.func.gii'.format(roi_dir, subject, hemi,
-                                                                               preproc_prep, filtering, normalization)
+                        roi_fn = '{}/{}_{}_{}_{}_{}_rois-mmp.func.gii'.format(roi_dir, subject, hemi,preproc_prep, filtering, normalization)
                         roi_img, roi_mat = load_surface(roi_fn)
                     
                         # get MMP rois numbers tsv
@@ -187,23 +182,17 @@ for avg_method in avg_methods:
                     pycortex_subject = pycortex_subject_template
     
                     # Derivatives
-                    deriv_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_deriv.dtseries.nii'.format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_deriv.dtseries.nii'
                     print(f'loading {deriv_fn}')
                     deriv_img, deriv_mat = load_surface(deriv_fn)
                     
                     # Stats
-                    stats_fn = '{}/{}_task-{}_{}_{}_{}_{}_prf-css_stats.dtseries.nii'.format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method)
+                    stats_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii'
                     print(f'loading {stats_fn}')
                     stats_img, stats_mat = load_surface(stats_fn)
                     
                     # pRF CM
-                    pcm_fn = '{}/{}_task-{}_{}_{}_{}_{}_{}_prf-css_pcm.dtseries.nii'.format(
-                        prf_deriv_dir, subject, prf_task_name,
-                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    pcm_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.dtseries.nii'
                     print(f'loading {pcm_fn}')
                     pcm_img, pcm_mat = load_surface(pcm_fn)
                     
@@ -248,7 +237,7 @@ for avg_method in avg_methods:
                 print('Saving tsv: {}'.format(tsv_fn))
                 df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-# # Define permission cmd
-# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# Define permission cmd
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

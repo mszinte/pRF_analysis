@@ -92,13 +92,13 @@ if subject != 'template_avg':
         os.makedirs(prf_deriv_dir, exist_ok=True)
         
         # Get prf fit filenames
-        fit_fns = glob.glob("{}/{}/{}/{}/fit/*{}-gauss-{}_fit*".format(pp_dir, subject, format_, analysis_name, analysis_name, dm_name))
+        fit_fns = glob.glob("{}/{}/{}/{}/fit/*{}-gauss{}_fit*".format(pp_dir, subject, format_, analysis_name, analysis_name, dm_name))
 
         # Compute derivatives 
         for fit_fn in fit_fns:
             
             deriv_fn = fit_fn.split('/')[-1]
-            deriv_fn = deriv_fn.replace(f'{analysis_name}-gauss-{dm_name}_fit', f'{analysis_name}-gauss-{dm_name}_deriv')
+            deriv_fn = deriv_fn.replace(f'{analysis_name}-gauss-{dm_name}_fit', f'{analysis_name}-gauss{dm_name}_deriv')
         
             if os.path.isfile(fit_fn) == False:
                 sys.exit('Missing files, analysis stopped : {}'.format(fit_fn))
@@ -130,10 +130,8 @@ elif subject == 'template_avg':
                 # find all the subject prf derivatives
                 prf_deriv_fns = []
                 for subject in subjects: 
-                    prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives'.format(
-                        main_dir, project_dir, subject, averaging_template_format, analysis_name)
-                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*{}-gauss-{}_deriv.dtseries.nii".format(
-                         prf_deriv_dir, subject, task_name, avg_method, analysis_name, dm_name)
+                    prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives'.format(main_dir, project_dir, subject, averaging_template_format, analysis_name)
+                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*{}-gauss{}_deriv.dtseries.nii".format(prf_deriv_dir, subject, task_name, avg_method, analysis_name, dm_name)
                     prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
                 
                 # Median across subject
@@ -144,9 +142,7 @@ elif subject == 'template_avg':
                         main_dir, project_dir, averaging_template_name, averaging_template_format, analysis_name)
                 os.makedirs(template_deriv_dir, exist_ok=True)
                 
-                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-gauss-{}_deriv.dtseries.nii".format(
-                    template_deriv_dir, averaging_template_name, task_name, preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
-                
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-gauss{}_deriv.dtseries.nii".format(template_deriv_dir, averaging_template_name, task_name, preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
                 print("saving: {}".format(template_deriv_fn))
                 template_deriv_img = make_surface_image(
                     data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
