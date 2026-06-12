@@ -117,15 +117,13 @@ set_pycortex_config_file(cortex_dir)
 
 # Get task specific (visual) design matrix
 # Find dm: check subject-specific directory first, then general vdm directory
-#TODO remove first character from dm_name to find it!!
 dm_name = analysis_info['dm_name']
-dm_name_tofind = dm_name[:1]
-print(dm_name_tofind)
+dm_name_tofind = dm_name[1:] if dm_name else "vdm"
 dm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
-dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name)
-dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name)
+dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name_tofind)
+dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name_tofind)
 
-deb()
+
 if os.path.isfile(dm_fn_subject):
     dm_fn = dm_fn_subject
 elif os.path.isfile(dm_fn_general):
@@ -153,10 +151,10 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 css_fit_fn = input_fn.split('/')[-1]
-css_fit_fn = css_fit_fn.replace('bold', f'{analysis_name}-css-{dm_name}_fit')
+css_fit_fn = css_fit_fn.replace('bold', f'{analysis_name}-css{dm_name}_fit')
 
 css_pred_fn = input_fn.split('/')[-1] 
-css_pred_fn = css_pred_fn.replace('bold', f'{analysis_name}-css-{dm_name}_pred')
+css_pred_fn = css_pred_fn.replace('bold', f'{analysis_name}-css{dm_name}_pred')
 
 
 # Define model parameter grid range

@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: save in svg (e.g. no)
+sys.argv[4]: analyis name (e.g. prf)
+sys.argv[5]: save in svg (e.g. no)
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -20,13 +21,13 @@ To run:
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
 >> python pycortex_maps_rois.py [main directory] [project name] [subject num] 
-                                [save_in_svg]
+                                [analysis name][save_in_svg]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python pycortex_maps_rois.py ~/disks/meso_shared RetinoMaps sub-01 n
-python pycortex_maps_rois.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm n
-python pycortex_maps_rois.py ~/disks/meso_S/data amblyo7T_prf sub-02 n
+python pycortex_maps_rois.py ~/disks/meso_shared RetinoMaps sub-01 prf n
+python pycortex_maps_rois.py ~/disks/meso_shared RetinoMaps sub-hcp1.6mm prf n
+python pycortex_maps_rois.py ~/disks/meso_S/data amblyo7T_prf sub-02 prf n
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -59,10 +60,10 @@ save_svg = sys.argv[4]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_info}-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
-settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
+settings = load_settings([general_settings_path, analysis_settings_path, figure_settings_path])
 analysis_info = settings[0]
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']

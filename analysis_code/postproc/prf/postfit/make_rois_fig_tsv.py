@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: server group (e.g. 327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: server group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 CSS analysis tsv
@@ -18,14 +19,14 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
-python make_rois_fig.py [main directory] [project name] [subject] [group]
+python make_rois_fig.py [main directory] [project name] [subject] [analysis name] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
-python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group 327
-python make_rois_fig_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm prf 327
+python make_rois_fig_tsv.py /scratch/mszinte/data RetinoMaps group prf 327
+python make_rois_fig_tsv.py /scratch/mszinte/data amblyo7T_prf sub-02 prf 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)
@@ -54,14 +55,15 @@ from maths_utils import make_prf_distribution_df, weighted_nan_median, weighted_
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
-settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
+settings = load_settings([general_settings_path, analysis_settings_path, figure_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
@@ -77,7 +79,7 @@ preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
-prf_task_names = analysis_info['prf_task_names']
+task_names = analysis_info['analysis_task_names']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 ecc_size_num_bins = analysis_info['ecc_size_num_bins']
@@ -89,6 +91,9 @@ distribution_max_ecc = analysis_info['distribution_max_ecc']
 distribution_mesh_grain = analysis_info['distribution_mesh_grain']
 hot_zone_percent = analysis_info['hot_zone_percent']
 rois_to_plot = analysis_info['rois_to_plot']
+
+output_folder = analysis_info["output_folder"]
+dm_name = analysis_info["dm_name"]
 
 # Main loop
 for avg_method in avg_methods:
@@ -105,25 +110,20 @@ for avg_method in avg_methods:
             elif rois_method_format == 'rois-group-mmp':
                 rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_name in prf_task_names:
+            for task_name in task_names:
     
-                print(f'{prf_task_name} - {avg_method} - {format_}')
+                print(f'{task_name} - {avg_method} - {format_}')
     
                 # Individual subject analysis
                 if 'group' not in subject:
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
-                    
+                    tsv_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{output_folder}/tsv'
                     # Exception if no data for one format (e.g template subject)
                     if not os.path.isdir(tsv_dir):
                         print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
                         continue
                     
-                    fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                        prf_task_name, preproc_prep, filtering,
-                        normalization, avg_method, rois_method_format)
-                    tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(
-                        tsv_dir, subject, fn_spec)
+                    fn_spec = f"task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}"
+                    tsv_fn = f'{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_deriv.tsv'.format(, , )
                     data = pd.read_table(tsv_fn, sep="\t")
                    
                     # Keep a raw data df 
@@ -187,16 +187,14 @@ for avg_method in avg_methods:
                     
                     
                     # Export tsv
-                    tsv_roi_active_vert_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_roi_active_vert_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_active-vert.tsv"
                     print('Saving tsv: {}'.format(tsv_roi_active_vert_fn))
                     df_roi_active_vert.to_csv(tsv_roi_active_vert_fn, sep="\t", na_rep='NaN', index=False)
                 
                     # Violins
                     # -------
                     df_violins = data
-                    tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_violins_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_violins.tsv"
                     print('Saving tsv: {}'.format(tsv_violins_fn))
                     df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -231,8 +229,7 @@ for avg_method in avg_methods:
                         if num_roi == 0: df_params_median = df_params_median_roi
                         else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
                     
-                    tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_params_median_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_params-median.tsv"
                     print('Saving tsv: {}'.format(tsv_params_median_fn))
                     df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -255,8 +252,7 @@ for avg_method in avg_methods:
                     
                     df_ecc_size = df_ecc_size_bins
                     
-                    tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_ecc_size_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-size.tsv"
                     print('Saving tsv: {}'.format(tsv_ecc_size_fn))
                     df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
 
@@ -280,8 +276,7 @@ for avg_method in avg_methods:
                 
                     df_ecc_pcm = df_ecc_pcm_bins
             
-                    tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_ecc_pcm_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-pcm.tsv"
                     print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
                     df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -311,8 +306,7 @@ for avg_method in avg_methods:
                                 
                     df_polar_angle = df_polar_angle_bins
             
-                    tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_polar_angle_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_polar-angle.tsv"
                     print('Saving tsv: {}'.format(tsv_polar_angle_fn))
                     df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -335,8 +329,7 @@ for avg_method in avg_methods:
                         if j == 0: df_contralaterality = df_contralaterality_roi
                         else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_roi]) 
                     
-                    tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_contralaterality_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_contralaterality.tsv"
                     df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
 
                     # Spatial distribution 
@@ -352,8 +345,7 @@ for avg_method in avg_methods:
                         if i == 0: df_distribution = df_distribution_hemi
                         else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
             
-                    tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_distribution_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_distribution.tsv"
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -372,8 +364,7 @@ for avg_method in avg_methods:
                         if i == 0: df_barycentre = df_barycentre_hemi
                         else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                     
-                    tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_barycentre_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_barycentre.tsv"
                     print('Saving tsv: {}'.format(tsv_barycentre_fn))
                     df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                     
@@ -386,24 +377,19 @@ for avg_method in avg_methods:
                         
                     print('group')
                     for i, subject_to_group in enumerate(subjects_to_group):
-                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject_to_group, format_)
-
-                        fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                            prf_task_name, preproc_prep, filtering, normalization, avg_method, rois_method_format)
-                
+                        tsv_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject_to_group}/{format_}/{output_folder}/tsv'
+                        fn_spec = f"task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}"
+        
                         # ROI active vertices
                         # -------------------
-                        tsv_roi_area_fn = "{}/{}_{}_prf-css_active-vert.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_roi_area_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_active-vert.tsv"
                         df_roi_area_indiv = pd.read_table(tsv_roi_area_fn, sep="\t")
                         if i == 0: df_roi_area = df_roi_area_indiv.copy()
                         else: df_roi_area = pd.concat([df_roi_area, df_roi_area_indiv])
                 
                         # Violins
                         # -------
-                        tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_violins_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_violins.tsv"
                         df_violins_indiv = pd.read_table(tsv_violins_fn, sep="\t")
                         if i == 0: df_violins = df_violins_indiv.copy()
                         else: df_violins = pd.concat([df_violins, df_violins_indiv])
@@ -414,40 +400,35 @@ for avg_method in avg_methods:
                 
                         # Ecc.size
                         # --------
-                        tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_ecc_size_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-size.tsv"
                         df_ecc_size_indiv = pd.read_table(tsv_ecc_size_fn, sep="\t")
                         if i == 0: df_ecc_size = df_ecc_size_indiv.copy()
                         else: df_ecc_size = pd.concat([df_ecc_size, df_ecc_size_indiv])
     
                         # Ecc.pCM
                         # -------
-                        tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_ecc_pcm_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-pcm.tsv"
                         df_ecc_pcm_indiv = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
                         if i == 0: df_ecc_pcm = df_ecc_pcm_indiv.copy()
                         else: df_ecc_pcm = pd.concat([df_ecc_pcm, df_ecc_pcm_indiv])
     
                         # Polar angle
                         # -----------
-                        tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_polar_angle_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_polar-angle.tsv"
                         df_polar_angle_indiv = pd.read_table(tsv_polar_angle_fn, sep="\t")
                         if i == 0: df_polar_angle = df_polar_angle_indiv.copy()
                         else: df_polar_angle = pd.concat([df_polar_angle, df_polar_angle_indiv])
                 
                         # Contralaterality
                         # ----------------
-                        tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_contralaterality_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_contralaterality.tsv"
                         df_contralaterality_indiv = pd.read_table(tsv_contralaterality_fn, sep="\t")
                         if i == 0: df_contralaterality = df_contralaterality_indiv.copy()
                         else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_indiv])
                         
                         # Spatial distribution 
                         # -------------------
-                        tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec)
+                        tsv_distribution_fn = f"{tsv_dir}/{subject_to_group}_{fn_spec}_{analysis_name}-css{dm_name}_distribution.tsv"
                         df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
                         mesh_indiv = df_distribution_indiv.drop(columns=[rois_to_plot, 'x', 'y', 'hemi']).values
                         others_columns = df_distribution_indiv[[rois_to_plot, 'x', 'y', 'hemi']]
@@ -456,23 +437,20 @@ for avg_method in avg_methods:
                         else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
                        
                     # Median and saving tsv
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
+                    tsv_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{analysis_name}/tsv'
                     os.makedirs(tsv_dir, exist_ok=True)
                     
                     # ROI surface areas 
                     # -----------------
                     df_roi_area = df_roi_area.groupby([rois_to_plot], sort=False).median().reset_index()
-                    tsv_roi_area_fn =  "{}/{}_{}_prf-css_active-vert.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_roi_area_fn =  f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_active-vert.tsv"
                     print('Saving tsv: {}'.format(tsv_roi_area_fn))
                     df_roi_area.to_csv(tsv_roi_area_fn, sep="\t", na_rep='NaN', index=False)
                     
                     # Violins
                     # -------
                     df_violins = df_violins # no averaging
-                    tsv_violins_fn = "{}/{}_{}_prf-css_violins.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_violins_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_violins.tsv"
                     print('Saving tsv: {}'.format(tsv_violins_fn))
                     df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
     
@@ -499,47 +477,41 @@ for avg_method in avg_methods:
                             lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 97.5)) 
             
                     df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                    tsv_params_median_fn = "{}/{}_{}_prf-css_params-median.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_params_median_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_params-median.tsv"
                     print('Saving tsv: {}'.format(tsv_params_median_fn))
                     df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
                     
                     # Ecc.size
                     # --------
                     df_ecc_size = df_ecc_size.groupby([rois_to_plot, 'num_bins'], sort=False).median().reset_index()
-                    tsv_ecc_size_fn = "{}/{}_{}_prf-css_ecc-size.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_ecc_size_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-size.tsv"
                     print('Saving tsv: {}'.format(tsv_ecc_size_fn))
                     df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
                 
                     # Ecc.pCM
                     # -------
                     df_ecc_pcm = df_ecc_pcm.groupby([rois_to_plot, 'num_bins'], sort=False).median().reset_index()
-                    tsv_ecc_pcm_fn = "{}/{}_{}_prf-css_ecc-pcm.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_ecc_pcm_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_ecc-pcm.tsv"
                     print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
                     df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
                 
                     # Polar angle
                     # -----------
                     df_polar_angle = df_polar_angle.groupby([rois_to_plot, 'hemi', 'num_bins'], sort=False).median().reset_index()
-                    tsv_polar_angle_fn = "{}/{}_{}_prf-css_polar-angle.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_polar_angle_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_polar-angle.tsv"
                     print('Saving tsv: {}'.format(tsv_polar_angle_fn))
                     df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
                 
                     # Contralaterality
                     # ----------------
                     df_contralaterality = df_contralaterality.groupby([rois_to_plot], sort=False).median().reset_index()
-                    tsv_contralaterality_fn = "{}/{}_{}_prf-css_contralaterality.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_contralaterality_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_contralaterality.tsv"
                     print('Saving tsv: {}'.format(tsv_contralaterality_fn))
                     df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
                     
                     # Spatial distribution 
                     # -------------------
-                    tsv_distribution_fn = "{}/{}_{}_prf-css_distribution.tsv".format(
-                            tsv_dir, subject, fn_spec)
+                    tsv_distribution_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_distribution.tsv"
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
                     median_mesh = np.median(mesh_group, axis=0)
                     df_distribution = pd.DataFrame(median_mesh)
@@ -562,8 +534,7 @@ for avg_method in avg_methods:
                         if j == 0: df_barycentre = df_barycentre_hemi
                         else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                        
-                    tsv_barycentre_fn = "{}/{}_{}_prf-css_barycentre.tsv".format(
-                        tsv_dir, subject, fn_spec)
+                    tsv_barycentre_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_barycentre.tsv"
                     print('Saving tsv: {}'.format(tsv_barycentre_fn))
                     df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
         

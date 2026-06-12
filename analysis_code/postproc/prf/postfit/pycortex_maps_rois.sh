@@ -9,6 +9,7 @@
 # input[1]: project code directory
 # input[2]: project name (correspond to directory)
 # input[3]: main data directory (correspond to directory)
+# input[4]: analysis name (e.g. prf)
 # -----------------------------------------------------------------------------------------
 # Output(s):
 # All pycortex maps for ROIs
@@ -18,12 +19,12 @@
 # 1. cd to function
 # >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 # 2. run python command
-# >> sh pycortex_maps_rois.sh [code directory] [project name] [main directory]
+# >> sh pycortex_maps_rois.sh [code directory][project name][main directory][analysis name]
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects RetinoMaps
-#                          /home/mszinte/disks/meso_S/data
+# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects RetinoMaps 
+# /home/mszinte/disks/meso_S/data prf
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -31,7 +32,7 @@
 
 # Check if the base path, project name, and data path are provided as arguments
 if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <base_path> <project_name> <data_path>"
+    echo "Usage: $0 <base_path> <project_name> <data_path> <analysis_name>"
     exit 1
 fi
 
@@ -39,6 +40,7 @@ fi
 base_path="$1"
 project_name="$2"
 data_path="$3"
+analysis_name="$4"
 
 # Define the path to the settings.yml file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.yml"
@@ -58,5 +60,5 @@ with open('$settings_file', 'r') as file:
 for subject in $subjects
 do
     echo "Processing pycortex_maps_rois.py for: $subject"
-    python pycortex_maps_rois.py "$data_path" "$project_name" "$subject" n
+    python pycortex_maps_rois.py "$data_path" "$project_name" "$subject" "$analysis_name" n
 done

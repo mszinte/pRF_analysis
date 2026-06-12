@@ -112,12 +112,12 @@ if subject != 'template_avg':
             for task_name in task_names:
                 print(f'{avg_method} - {format_} - {task_name}')
                 # Find pRF func/pred files
-                fit_fns = glob.glob('{}/*task-{}_*_{}*_{}-css-{}_fit.{}'.format(
+                fit_fns = glob.glob('{}/*task-{}_*_{}*_{}-css{}_fit.{}'.format(
                         prf_fit_dir, task_name, avg_method, analysis_name, dm_name, extension))
     
                 # Compute derivatives
                 for fit_fn in fit_fns:
-                    deriv_fn = fit_fn.split('/')[-1].replace(f'{analysis_name}-css-{dm_name}_fit', f'{analysis_name}-css-{dm_name}_deriv')
+                    deriv_fn = fit_fn.split('/')[-1].replace(f'{analysis_name}-css{dm_name}_fit', f'{analysis_name}-css{dm_name}_deriv')
 
                     # get arrays
                     fit_img, fit_data = load_surface(fit_fn)
@@ -138,7 +138,7 @@ if subject != 'template_avg':
                     print('Compute median across LOO')                
                     
                     # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css-{dm_name}_deriv.{extension}")
+                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_deriv.{extension}")
 
                     # Group files by hemisphere/format
                     loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
@@ -154,7 +154,7 @@ if subject != 'template_avg':
                             # Load first file to initialize median array and define fn
                             prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
                             loo_prf_deriv = np.zeros_like(prf_deriv_data)
-                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css-{}_deriv.{}'.format(
+                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css{}_deriv.{}'.format(
                                 prf_deriv_dir, subject, prf_task_name, hemi, 
                                 preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
                             
@@ -189,7 +189,7 @@ elif subject == 'template_avg':
                 for subject in subjects:
                     prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
                         main_dir, project_dir, subject, averaging_template_format, analysis_name)
-                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-css-{}_deriv.dtseries.nii".format(
+                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
                         prf_deriv_dir, subject, task_name,
                         preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)]
     
@@ -201,7 +201,7 @@ elif subject == 'template_avg':
                     main_dir, project_dir, averaging_template_name, averaging_template_format, analysis_name)
                 os.makedirs(template_deriv_dir, exist_ok=True)
     
-                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-css-{}_deriv.dtseries.nii".format(
+                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
                     template_deriv_dir, averaging_template_name, task_name, 
                     preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
                 

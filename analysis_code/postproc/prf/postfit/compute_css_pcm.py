@@ -311,8 +311,8 @@ if subject != 'template_avg':
                                                                     img=None, 
                                                                     brain_mask_59k=None)
             
-                        deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.func.gii'
-                        deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.func.gii'
+                        deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.func.gii'
+                        deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.func.gii'
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_L))
                         nb.save(new_img_L, deriv_fn_L)
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn_R))
@@ -329,7 +329,7 @@ if subject != 'template_avg':
                                               img=img, 
                                               brain_mask_59k=mask_59k)
                 
-                        deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii'
+                        deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.dtseries.nii'
                         print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
                         nb.save(new_img, deriv_fn)
 
@@ -348,7 +348,7 @@ elif subject == 'template_avg':
                     prf_pcm_fns = []
                     for subject in subjects: 
                         prf_deriv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{averaging_template_format}/{output_folder}/prf_derivatives"
-                        prf_pcm_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii"]
+                        prf_pcm_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.dtseries.nii"]
         
                      # Computing  across subject
                     img, data_pcm_median = median_subject_template(fns=prf_pcm_fns)
@@ -357,7 +357,7 @@ elif subject == 'template_avg':
                     template_pcm_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{averaging_template_name}/{averaging_template_format}/{output_folder}/prf_derivatives"
                     os.makedirs(template_pcm_dir, exist_ok=True)
                     
-                    template_pcm_fn = f"{template_pcm_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css-{dm_name}_pcm.dtseries.nii"
+                    template_pcm_fn = f"{template_pcm_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}_{analysis_name}-css{dm_name}_pcm.dtseries.nii"
                     print("saving: {}".format(template_pcm_fn))
                     template_pcm_img = make_surface_image(data=data_pcm_median, 
                                                           source_img=img, 
