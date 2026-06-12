@@ -9,8 +9,9 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: group (e.g. 327)
-sys.argv[5]: server project number (e.g. b327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: group (e.g. 327)
+sys.argv[6]: server project number (e.g. b327)
 -----------------------------------------------------------------------------------------
 Output(s):
 sh file for running batch command
@@ -19,18 +20,17 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 2. run python command
->> python css_pcm_sbatch.py [main directory] [project] [subject] [group] [server] 
+>> python css_pcm_sbatch.py [main directory] [project] [subject] [analysis name] [group] [server] 
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
-python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 prf 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 -----------------------------------------------------------------------------------------
 """
-
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
@@ -52,8 +52,9 @@ from pycortex_utils import set_pycortex_config_file
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-group = sys.argv[4]
-server_project = sys.argv[5]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
+server_project = sys.argv[6]
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -61,8 +62,8 @@ set_pycortex_config_file(cortex_dir)
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-settings = load_settings([settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+settings = load_settings([general_settings_path])
 analysis_info = settings[0]
 
 # Define cluster/server specific parameters
@@ -79,6 +80,7 @@ job_dir = "{}/{}/derivatives/pp_data/{}/jobs".format(
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(job_dir, exist_ok=True)
 
+
 slurm_cmd = """\
 #!/bin/bash
 #SBATCH -p {cluster_name}
@@ -87,18 +89,17 @@ slurm_cmd = """\
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_pcm_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_pcm_%N_%j_%a.out
-#SBATCH -J {subject}_css_pcm
+#SBATCH -e {log_dir}/{subject}_{analysis_name}-pcm_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_{analysis_name}-pcm_%N_%j_%a.out
+#SBATCH -J {subject}_{analysis_name}-css_pcm
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
-           subject=subject, memory_val=memory_val, log_dir=log_dir)
+           subject=subject, memory_val=memory_val, log_dir=log_dir, analysis_name=analysis_name)
 
-compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {}".format(
-    main_dir, project_dir, subject, group)
+compute_pcm_cmd = "python compute_css_pcm.py {} {} {} {} {}".format(main_dir, project_dir, subject, analysis_name, group)
 
 # Create sh fn
-sh_fn = "{}/{}_css_pcm.sh".format(job_dir, subject)
+sh_fn = "{}/{}_{}-css_pcm.sh".format(job_dir, subject, analysis_name)
 
 of = open(sh_fn, 'w')
 of.write("{}".format(slurm_cmd))

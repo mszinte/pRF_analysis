@@ -199,10 +199,10 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 - [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
 ### Analysis 1:  
 Fit SacLoc data using pRF with retinal design matrix
-- [x] Fit retinal visual pRF model [prf_fit_submit_jobs.py](postproc/pmf/fit/prf_fit_submit_jobs.py)
+- [x] CSS Fit retinal visual pRF model [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 ### Analysis 2: 
 Fit SacLoc data using pRF with oculomotor design matrix
-- [x] Fit retinal motor pMF model with bold baseline (--input bold) [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
+- [x] CSS Fit retinal motor pMF model with bold baseline [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 ### Analysis 3: 
 Predict SacLoc data using retinotopy task pRF parameters and retinal design matrix and Fit SacLoc data residuals using pRF with oculomotor design matrix
 - [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
