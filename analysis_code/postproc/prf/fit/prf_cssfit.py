@@ -117,11 +117,15 @@ set_pycortex_config_file(cortex_dir)
 
 # Get task specific (visual) design matrix
 # Find dm: check subject-specific directory first, then general vdm directory
+#TODO remove first character from dm_name to find it!!
 dm_name = analysis_info['dm_name']
+dm_name_tofind = dm_name[:1]
+print(dm_name_tofind)
 dm_base_dir = '{}/{}/derivatives/vdm'.format(main_dir, project_dir)
 dm_fn_subject = '{}/sub-{}/sub-{}_task-{}_{}.npy'.format(dm_base_dir, sub_num, sub_num, task_name, dm_name)
 dm_fn_general = '{}/task-{}_{}.npy'.format(dm_base_dir, task_name, dm_name)
 
+deb()
 if os.path.isfile(dm_fn_subject):
     dm_fn = dm_fn_subject
 elif os.path.isfile(dm_fn_general):
