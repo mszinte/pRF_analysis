@@ -126,8 +126,8 @@ if subject != 'template_avg':
                     surf_format = format_
 
                     # Derivatives                    
-                    deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii'
-                    deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.func.gii'
+                    deriv_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_deriv.func.gii'
+                    deriv_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_deriv.func.gii'
                     print(f'Loading:\t{deriv_fn_L}\n\t\t{deriv_fn_R}')
                     results = load_surface_pycortex(L_fn=deriv_fn_L, 
                                                     R_fn=deriv_fn_R, 
@@ -137,8 +137,8 @@ if subject != 'template_avg':
                     img_R = results['img_R']
         
                     # Stats
-                    stats_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.func.gii'
-                    stats_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.func.gii'
+                    stats_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.func.gii'
+                    stats_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.func.gii'
                     print(f'Loading:\t{stats_fn_L}\n\t\t{stats_fn_R}')
                     stats_results = load_surface_pycortex(L_fn=stats_fn_L, 
                                                           R_fn=stats_fn_R)
@@ -150,7 +150,7 @@ if subject != 'template_avg':
                     surf_format = formats_conversion[format_]
                     
                     # Derivatives
-                    deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_deriv.dtseries.nii'
+                    deriv_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_deriv.dtseries.nii'
                     print(f'Loading:\t{deriv_fn}')
                     results = load_surface_pycortex(brain_fn=deriv_fn,
                                                     return_img=True,
@@ -162,10 +162,11 @@ if subject != 'template_avg':
                     img = results['img']
                     
                     # Stats
-                    stats_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css-{dm_name}_stats.dtseries.nii'
+                    stats_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii'
                     print(f'Loading:\t{stats_fn}')
                     stats_results = load_surface_pycortex(brain_fn=stats_fn)
                     stats_mat = stats_results['data_concat']
+                    
                 
                 # Combine deriv and stats mat
                 deriv_mat = np.concatenate((deriv_mat, stats_mat))
@@ -187,7 +188,7 @@ if subject != 'template_avg':
                 deriv_mat[rsq_idx2use, np.logical_and.reduce(all_th)==False]=0
         
                 # Get surfaces for each hemisphere
-                surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(subject, "flat")]
+                surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
                 surf_lh, surf_rh = surfs[0], surfs[1]
                 
                 
@@ -223,15 +224,6 @@ if subject != 'template_avg':
                     
                     # Create empty results
                     vert_cm = np.zeros((4,vert_num))*np.nan
-                    
-                    # Get surfaces for each hemisphere
-                    surfs = [cortex.polyutils.Surface(*d) for d in cortex.db.get_surf(pycortex_subject, "flat")]
-                    surf_lh, surf_rh = surfs[0], surfs[1]
-                    
-                    # Get the vertices number per hemisphere
-                    lh_vert_num, rh_vert_num = surf_lh.pts.shape[0], surf_rh.pts.shape[0]
-                    vert_num = lh_vert_num + rh_vert_num
-                    
                     for roi in rois:
                         # Find ROI vertex
                         roi_vert_lh_idx = roi_verts_dict[roi][roi_verts_dict[roi] < lh_vert_num]
