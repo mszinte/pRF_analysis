@@ -89,10 +89,11 @@ distribution_mesh_grain = analysis_info['distribution_mesh_grain']
 hot_zone_percent = analysis_info['hot_zone_percent']
 group_tasks = analysis_info['task_intertask']
 categories_to_plot = analysis_info['categories_to_plot']
+ecc_bin_power = analysis_info['ecc_bin_power']
 
 rsq2use = 'prf_loo_rsq'
 avg_method = 'loo-avg'
-prf_task_name = analysis_info['prf_task_names'][0]
+prf_task_name = analysis_info['analysis_task_names'][0]
 
 for tasks in group_tasks : 
     if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
@@ -203,10 +204,11 @@ for tasks in group_tasks :
     
                     # Ecc.size
                     # --------
-                    ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
+                    # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
+                    ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data.loc[(data.roi == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
                         df_ecc_size_bin = pd.DataFrame()
                         df_ecc_size_bin['roi'] = [roi]*ecc_size_num_bins
                         df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
@@ -229,10 +231,11 @@ for tasks in group_tasks :
                     # Ecc.pCM
                     # --------
                     data_pcm = data_categorie.loc[data_categorie.pcm_median != 'non_computed']
-                    ecc_bins = np.linspace(0, ecc_size_max[1], ecc_pcm_num_bins+1) 
+                    # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_pcm_num_bins+1) 
+                    ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data_pcm.loc[(data.roi == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
                         df_ecc_pcm_bin = pd.DataFrame()
                         df_ecc_pcm_bin['roi'] = [roi]*ecc_pcm_num_bins
                         df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
@@ -315,7 +318,7 @@ for tasks in group_tasks :
                         hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
                         data_hemi = data.loc[data.hemi.isin(hemi_values)]
                         df_distribution_hemi = make_prf_distribution_df(
-                            data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use)
+                            data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use, analysis_info)
                 
                         df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
                         if i == 0: df_distribution = df_distribution_hemi
@@ -335,7 +338,7 @@ for tasks in group_tasks :
                         df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                         df_barycentre_hemi = make_prf_barycentre_df(
                             df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
                         
                         df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                         if i == 0: df_barycentre = df_barycentre_hemi
@@ -513,7 +516,7 @@ for tasks in group_tasks :
                         df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                         df_barycentre_hemi = make_prf_barycentre_df(
                             df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
                        
                         df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                         if j == 0: df_barycentre = df_barycentre_hemi

@@ -91,6 +91,7 @@ distribution_max_ecc = analysis_info['distribution_max_ecc']
 distribution_mesh_grain = analysis_info['distribution_mesh_grain']
 hot_zone_percent = analysis_info['hot_zone_percent']
 rois_to_plot = analysis_info['rois_to_plot']
+ecc_bin_power = analysis_info['ecc_bin_power']
 
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
@@ -235,10 +236,11 @@ for avg_method in avg_methods:
                     
                     # Ecc.size
                     # --------
-                    ecc_bins = np.linspace(0, ecc_size_max[0], ecc_size_num_bins+1) 
+                    # ecc_bins = np.linspace(0, ecc_size_max[0], ecc_size_num_bins+1) 
+                    ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data.loc[(data[rois_to_plot] == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
                         df_ecc_size_bin = pd.DataFrame()
                         df_ecc_size_bin[rois_to_plot] = [roi]*ecc_size_num_bins
                         df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
@@ -259,10 +261,11 @@ for avg_method in avg_methods:
                     # Ecc.pCM
                     # --------
                     data_pcm = data
-                    ecc_bins = np.linspace(0, ecc_pcm_max[0], ecc_pcm_num_bins+1) 
+                    # ecc_bins = np.linspace(0, ecc_pcm_max[0], ecc_pcm_num_bins+1) 
+                    ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data_pcm.loc[(data[rois_to_plot] == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
                         df_ecc_pcm_bin = pd.DataFrame()
                         df_ecc_pcm_bin[rois_to_plot] = [roi]*ecc_pcm_num_bins
                         df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
@@ -528,7 +531,7 @@ for avg_method in avg_methods:
                         df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
                         df_barycentre_hemi = make_prf_barycentre_df(
                             df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent)
+                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
                        
                         df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
                         if j == 0: df_barycentre = df_barycentre_hemi
