@@ -63,14 +63,14 @@ group = sys.argv[5]
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
-prf_task_names = analysis_info['prf_task_names']
+task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
