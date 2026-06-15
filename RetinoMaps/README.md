@@ -202,14 +202,14 @@ Fit SacLoc data using pRF with retinal design matrix
 - [x] CSS Fit retinal visual pRF model [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 ### Analysis 2: 
 Fit SacLoc data using pRF with oculomotor design matrix
-- [x] CSS Fit retinal motor pMF model with bold baseline [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+- [x] CSS Fit ocluomotor pMF model with bold baseline [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 ### Analysis 3: 
 Predict SacLoc data using retinotopy task pRF parameters and retinal design matrix and Fit SacLoc data residuals using pRF with oculomotor design matrix
 - [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
 - [x] Compute residuals [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
-- [x] Fit retinal motor pMF model with residuals [pmf_fit_submit_jobs.py](postproc/pmf/fit/pmf_fit_submit_jobs.py)
+- [ ] CSS Fit oculomotor pMF model with residuals [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
 ### Postprocessing: 
-see RetinoMaps steps
+see RetinoMaps steps CSS 
 
 
 

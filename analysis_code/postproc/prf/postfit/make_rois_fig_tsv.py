@@ -123,7 +123,7 @@ for avg_method in avg_methods:
                         continue
                     
                     fn_spec = f"task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{rois_method_format}"
-                    tsv_fn = f'{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_deriv.tsv'.format(, , )
+                    tsv_fn = f'{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_deriv.tsv'
                     data = pd.read_table(tsv_fn, sep="\t")
                    
                     # Keep a raw data df 
