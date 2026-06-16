@@ -154,7 +154,7 @@ if subject != 'template_avg':
                                                      alpha=fdr_alpha)
                     
                     # Save results
-                    prf_stats_fn = prf_pred_fn.split('/')[-1].replace(f'{analysis_name}-css-{dm_name}_pred', f'{analysis_name}-css{dm_name}_stats')
+                    prf_stats_fn = prf_pred_fn.split('/')[-1].replace(f'{analysis_name}-css{dm_name}_pred', f'{analysis_name}-css{dm_name}_stats')
                     prf_stats_img = make_surface_image(data=results, 
                                                        source_img=pred_img, 
                                                        maps_names=maps_names)

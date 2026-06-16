@@ -97,7 +97,6 @@ css_grid_nr = analysis_info['css_grid_nr']
 css_exponent_bounds = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 
-
 # Load screen settings from subject dependend task-events.json
 task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
 screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, task_name)
