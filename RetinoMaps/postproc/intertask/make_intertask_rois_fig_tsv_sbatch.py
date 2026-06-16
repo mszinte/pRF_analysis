@@ -16,12 +16,12 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/RetinoMaps/intertask/
+>> cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 2. run python command
 >> python glm_sbatch.py [main directory] [project name] [subject num] [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/RetinoMaps/intertask/
+cd ~/projects/pRF_analysis/RetinoMaps/postproc/intertask/
 python make_intertask_rois_fig_tsv_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
@@ -84,7 +84,7 @@ slurm_cmd = """\
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
 #SBATCH -e {log_dir}/{subject}_intertask_fig_tsv_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_sintertask_fig_tsv_%N_%j_%a.out
+#SBATCH -o {log_dir}/{subject}_intertask_fig_tsv_%N_%j_%a.out
 #SBATCH -J {subject}_intertask_fig_tsv
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 

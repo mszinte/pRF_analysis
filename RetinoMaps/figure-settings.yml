@@ -180,6 +180,10 @@ params_median_ecc_range:
 params_median_pcm_range: 
   description: "PRF CM range in the median parameters plot"
   value: [0, 20]
+
+ecc_bin_power:
+  description: "Power function exponent for eccentricity binning (1=linear, >1=finer near fovea)"
+  value: 1.5
   
 distribution_max_ecc: 
   description: "Maximum eccentricity in the pRF spatial distribution plot"
