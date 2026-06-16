@@ -155,7 +155,7 @@ if subject != 'template_avg':
                             prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
                             loo_prf_deriv = np.zeros_like(prf_deriv_data)
                             loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css{}_deriv.{}'.format(
-                                prf_deriv_dir, subject, prf_task_name, hemi, 
+                                prf_deriv_dir, subject, task_name, hemi, 
                                 preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
                             
                             # Compute median across LOO runs
