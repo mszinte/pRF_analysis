@@ -97,7 +97,6 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 # Define preprocessing folder
 pp_dir = f"{main_dir}/{project_dir}/derivatives/pp_data"
 
-
 # template_avg exeption
 if subject != 'template_avg':
     for avg_method in avg_methods:
@@ -141,7 +140,6 @@ if subject != 'template_avg':
 
                 #     prf_bold_fn = bold_matches[0]  
 
-                
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
@@ -187,7 +185,7 @@ if subject != 'template_avg':
                 if 'loo-avg' in avg_method:
                     print('Computing median across LOO')
 
-                    # Get LOO files (excluding any with "median" in the name) # sub-13_task-pRF_hemi-R_fmriprep_dct_z-score_loo-avg-1_prf-css_deriv.func.gii
+                    # Get LOO files (excluding any with "median" in the name)
                     loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
                     
                     # Group files by hemisphere/format
