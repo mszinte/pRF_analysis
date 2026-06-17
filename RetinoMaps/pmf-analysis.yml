@@ -34,20 +34,15 @@ avg_methods:
     concat-residuals: "concatentation of runs minus prf prediction"
 
 # ------------- Screen and design matrix settings -------------------
-screen_size_pix: 
-  description: "Horizontal and vertical size of the pRF tasks display"
+fake_screen_size_pix: 
+  description: " "
   units: "pixels"
-  value: [1080, 1080]
+  value: [1620, 1620]
 
-screen_size_cm: 
-  description: "Horizontal and vertical size of the pRF tasks display"
+fake_screen_size_cm: 
+  description: ""
   units: "cm"
-  value: [77.3, 43.5]
-
-screen_distance_cm:
-  description: "Distance between subject and display"
-  units: "cm"
-  value: 120
+  value: [31.6, 31.6]
 
 dm_name: 
   description: "Type/Name of design matrix used for pRF fit"
