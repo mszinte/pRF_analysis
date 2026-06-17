@@ -10,25 +10,24 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
+sys.argv[4]: analysis name (e.g. pmf)
+sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
-Residual files saved to:
-  - {pp_dir}/{subject}/170k/func/fmriprep_dct_z-score_concat-residuals
-  - {pp_dir}/{subject}/fsnative/func/fmriprep_dct_z-score_concat-residuals
+Residual files saved to: .../func/fmriprep_dct_z-score_concat-residuals/
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/postfit
 2. run python command
->> python compute_residuals.py [main directory] [project name] [subject] [n_jobs]
+>> python compute_residuals.py [main directory] [project name] [subject] [analysis name] [group]
 -----------------------------------------------------------------------------------------
 Example:
-python compute_residuals.py /scratch/mszinte/data RetinoMaps sub-01 
+python compute_residuals.py /scratch/mszinte/data RetinoMaps sub-01 pmf 327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
-
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
@@ -51,24 +50,29 @@ from surface_utils import make_surface_image, load_surface
 from pycortex_utils import set_pycortex_config_file
 from settings_utils import load_settings
 
-
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
+analysis_name = sys.argv[4]
+group = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
-settings_path = os.path.join(base_dir, project_dir, "pmf-settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
-pmf_task_names = analysis_info['pmf_task_names']
+formats = analysis_info['formats']
+extensions = analysis_info['extensions']
+task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
+output_folder = analysis_info['output_folder']
+dm_name = analysis_info['dm_name']
 
 # Set pycortex config
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -76,159 +80,103 @@ set_pycortex_config_file(cortex_dir)
 
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
+# Only process concat avg_method
+for avg_method in avg_methods:
+    if avg_method != 'concat':
+        continue
 
-def find_bold_files(pp_dir, subject, pmf_task_names, preproc_prep, filtering,
-                    normalization, avg_methods):
-    """Find concat-averaged BOLD files for the pmf task (both 170k and fsnative)."""
-    bold_fns = []
-    for avg_method in avg_methods:
-        if avg_method != 'concat':
-            continue
+    for format_, extension in zip(formats, extensions):
 
-        gii_pattern = (
-            "{}/{}/fsnative/func/{}_{}_{}_{}/"
-            "*_task-{}*{}*.func.gii"
-        ).format(
-            pp_dir, subject,
-            preproc_prep, filtering, normalization, avg_method,
-            pmf_task_names[0], avg_method
-        )
-        nii_pattern = (
-            "{}/{}/170k/func/{}_{}_{}_{}/"
-            "*_task-{}*{}*.dtseries.nii"
-        ).format(
-            pp_dir, subject,
-            preproc_prep, filtering, normalization, avg_method,
-            pmf_task_names[0], avg_method
-        )
+        func_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_{avg_method}'
+        fit_dir  = f'{pp_dir}/{subject}/{format_}/{output_folder}/fit'
 
-        bold_fns.extend(glob.glob(gii_pattern))
-        bold_fns.extend(glob.glob(nii_pattern))
+        for task_name in task_names:
+            print(f'\n{"="*72}')
+            print(f'Processing: {avg_method} - {format_} - {task_name}')
 
-    return bold_fns
+            # Find BOLD files 
+            if format_ == 'fsnative':
+                bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_hemi-L*_{avg_method}_bold.{extension}')
+                bold_fns += glob.glob(f'{func_dir}/*task-{task_name}_hemi-R*_{avg_method}_bold.{extension}')
+            elif format_ == '170k':
+                bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_*_{avg_method}_bold*.{extension}')
 
+            if not bold_fns:
+                print(f'No BOLD files found in: {func_dir}')
+                continue
 
-def find_pmf_gauss_pred(pp_dir, subject, bold_fn, pmf_task_names, preproc_prep,
-                        filtering, normalization):
-    """
-    Find the PMF gauss prediction file matching the format and hemisphere of bold_fn.
-    These are the outputs of the pmf fit step (pmf_pred_from_prf.py).
-    """
-    if bold_fn.endswith('.nii'):
-        pattern = (
-            "{}/{}/170k/pmf/fit/"
-            "{}_task-{}_{}_{}_{}_*pmf-gauss_pred*.nii"
-        ).format(
-            pp_dir, subject,
-            subject, pmf_task_names[0],
-            preproc_prep, filtering, normalization
-        )
+            # Find pred files 
+            pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-gauss{dm_name}_pred.{extension}')
 
-    elif bold_fn.endswith('.gii'):
-        fn_basename = os.path.basename(bold_fn)
-        if 'hemi-L' in fn_basename:
-            hemi = 'hemi-L'
-        elif 'hemi-R' in fn_basename:
-            hemi = 'hemi-R'
-        else:
-            raise ValueError(
-                "Could not determine hemisphere from filename: {}".format(fn_basename)
-            )
+            if not pred_fns:
+                print(f'No pred files found in: {fit_dir}')
+                continue
 
-        pattern = (
-            "{}/{}/fsnative/pmf/fit/"
-            "{}_task-{}_{}_{}_{}_{}_*pmf-gauss_pred*.gii"
-        ).format(
-            pp_dir, subject,
-            subject, pmf_task_names[0], hemi,
-            preproc_prep, filtering, normalization
-        )
+            for bold_fn in bold_fns:
+                print(f'\nBOLD: {bold_fn}')
 
-    else:
-        raise ValueError("Unsupported file extension: {}".format(bold_fn))
+                # Match pred to bold by hemisphere (fsnative) or directly (170k)
+                if format_ == 'fsnative':
+                    hemi = 'hemi-L' if 'hemi-L' in os.path.basename(bold_fn) else 'hemi-R'
+                    matched_preds = [fn for fn in pred_fns if hemi in os.path.basename(fn)]
+                elif format_ == '170k':
+                    hemi = None
+                    matched_preds = pred_fns
 
-    matches = glob.glob(pattern)
-    if not matches:
-        raise FileNotFoundError(
-            "No PMF gauss prediction file found.\n  Pattern: {}".format(pattern)
-        )
+                if not matched_preds:
+                    print(f'No matching pred file found for: {bold_fn}')
+                    continue
 
-    return matches[0]
+                pred_fn = matched_preds[0]
+                print(f'Pred: {pred_fn}')
 
+                # Build output path and filename
+                residuals_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_concat-residuals'
+                os.makedirs(residuals_dir, exist_ok=True)
 
-def make_residual_output_path(bold_fn, pp_dir, subject):
-    """Derive the output path and filename from the BOLD input file."""
-    if bold_fn.endswith('.nii'):
-        residuals_dir = "{}/{}/170k/func/fmriprep_dct_z-score_concat-residuals".format(pp_dir, subject)
-    else:
-        residuals_dir = "{}/{}/fsnative/func/fmriprep_dct_z-score_concat-residuals".format(pp_dir, subject)
+                if format_ == 'fsnative':
+                    residual_fn = f'{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
+                elif format_ == '170k':
+                    residual_fn = f'{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
 
-    os.makedirs(residuals_dir, exist_ok=True)
+                residual_fullfn = os.path.join(residuals_dir, residual_fn)
+                print(f'Output: {residual_fullfn}')
 
-    residual_fn = os.path.basename(bold_fn).replace('bold', 'pmf-residuals')
-    return os.path.join(residuals_dir, residual_fn)
+                # Load data
+                print('Loading pred data...')
+                pred_img, pred_data = load_surface(fn=pred_fn)
+                print('Loading BOLD data...')
+                bold_img, bold_data = load_surface(fn=bold_fn)
 
+                print(f'  BOLD shape: {bold_data.shape}')
+                print(f'  Pred shape: {pred_data.shape}')
 
-bold_fns = find_bold_files(
-    pp_dir, subject, pmf_task_names, preproc_prep, filtering, normalization, avg_methods
-)
+                # Sanity check
+                if bold_data.shape != pred_data.shape:
+                    raise ValueError(
+                        f'Shape mismatch — BOLD {bold_data.shape} vs pred {pred_data.shape}.'
+                    )
 
-if not bold_fns:
-    raise FileNotFoundError(
-        "No BOLD input files found for subject '{}', task '{}'.".format(
-            subject, pmf_task_names[0]
-        )
-    )
+                # NaN mask
+                nan_mask = (
+                    np.isnan(bold_data).any(axis=0) |
+                    np.isnan(pred_data).any(axis=0)
+                )
+                clean_vox = np.where(~nan_mask)[0]
+                print(f'  Clean voxels: {len(clean_vox)} / {bold_data.shape[1]}')
 
-print("Found {} BOLD file(s) to process.".format(len(bold_fns)))
+                # Compute residuals
+                residual_data = np.full_like(bold_data, np.nan)
+                residual_data[:, clean_vox] = bold_data[:, clean_vox] - pred_data[:, clean_vox]
 
-for bold_fn in bold_fns:
-    print("\n" + "=" * 72)
-    print("BOLD:       {}".format(bold_fn))
+                # Save
+                residual_img = make_surface_image(data=residual_data, source_img=bold_img)
+                nb.save(residual_img, residual_fullfn)
+                print(f'Saved: {residual_fullfn}')
 
-    # Find matching prediction file
-    pmf_pred_fn = find_pmf_gauss_pred(
-        pp_dir, subject, bold_fn, pmf_task_names, preproc_prep, filtering, normalization
-    )
-    print("PMF pred:   {}".format(pmf_pred_fn))
+print('\nDone — all residuals computed.')
 
-    # Derive output path
-    residual_fullfn = make_residual_output_path(bold_fn, pp_dir, subject)
-    print("Output:     {}".format(residual_fullfn))
-
-    # Load data
-    print("Loading PMF prediction data...")
-    pmf_pred_img, pmf_pred_data = load_surface(fn=pmf_pred_fn)
-
-    print("Loading BOLD data...")
-    bold_img, bold_data = load_surface(fn=bold_fn)
-
-    print("  BOLD shape:     {}".format(bold_data.shape))
-    print("  PMF pred shape: {}".format(pmf_pred_data.shape))
-
-    # Sanity check
-    if bold_data.shape != pmf_pred_data.shape:
-        raise ValueError(
-            "Shape mismatch — BOLD {} vs PMF pred {}.".format(
-                bold_data.shape, pmf_pred_data.shape
-            )
-        )
-
-    # NaN mask: exclude voxels that are NaN in either dataset
-    nan_mask = (
-        np.isnan(bold_data).any(axis=0) |
-        np.isnan(pmf_pred_data).any(axis=0)
-    )
-    clean_vox = np.where(~nan_mask)[0]
-    print("  Clean voxels:   {} / {}".format(len(clean_vox), bold_data.shape[1]))
-
-    # Compute residuals on clean voxels only
-    residual_data = np.full_like(bold_data, np.nan)
-    residual_data[:, clean_vox] = bold_data[:, clean_vox] - pmf_pred_data[:, clean_vox]
-
-    # Save
-    residual_img = make_surface_image(data=residual_data, source_img=bold_img)
-    nb.save(residual_img, residual_fullfn)
-    print("Saved: {}".format(residual_fullfn))
-
-print("\nDone — all residuals computed.")
+# Permissions
+print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
