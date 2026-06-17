@@ -113,32 +113,53 @@ if subject != 'template_avg':
             for task_name in task_names:
                 print(f'{avg_method} - {format_} - {task_name}')
                 # Find pRF func/pred files
-                prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}_{analysis_name}-css{dm_name}_pred.{extension}')
-                # Find pRF func/pred files
-                for prf_pred_fn in prf_pred_fns:
+                prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
+                
+                # NOT WORKING 
+                # for prf_pred_fn in prf_pred_fns:
+                #     if 'loo' in prf_pred_fn:
+                #         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
+                #         if format_ == 'fsnative':
+                #             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
+                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-avg-{loo_number}.{extension}')
+                #             if not bold_matches:
+                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-{loo_number}.{extension}')
+                #         elif format_ == '170k':
+                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-avg-{loo_number}.{extension}')
+                #             if not bold_matches:
+                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-{loo_number}.{extension}')
+                #     else:                                          # <-- same level as 'if loo'
+                #         if format_ == 'fsnative':
+                #             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
+                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}.{extension}')
+                #             if not bold_matches:
+                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}_bold.{extension}')
+                #         elif format_ == '170k':
+                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}.{extension}')
+                #             if not bold_matches:
+                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}_bold.{extension}')
+
+                #     prf_bold_fn = bold_matches[0]  
+
+                
+                for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
                         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
-                        if format_ == 'fsnative':
+                        if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                            bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-avg-{loo_number}.{extension}')
-                            if not bold_matches:
-                                bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-{loo_number}.{extension}')
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold*.{}'.format(
+                                prf_func_dir, task_name, hemi, loo_number, extension))[0]
                         elif format_ == '170k':
-                            bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-avg-{loo_number}.{extension}')
-                            if not bold_matches:
-                                bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-{loo_number}.{extension}')
-                    else:                                          # <-- same level as 'if loo'
-                        if format_ == 'fsnative':
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
+                                prf_func_dir, task_name, loo_number, extension))[0]
+                    else:
+                        if format_ == 'fsnative': 
                             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                            bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}.{extension}')
-                            if not bold_matches:
-                                bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}_bold.{extension}')
+                            prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
+                                prf_func_dir, task_name, hemi, avg_method, extension))[0]
                         elif format_ == '170k':
-                            bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}.{extension}')
-                            if not bold_matches:
-                                bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}_bold.{extension}')
-
-                    prf_bold_fn = bold_matches[0]  
+                            prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
+                                prf_func_dir, task_name, avg_method, extension))[0]
 
                     # load data
                     print(f'Loading bold: {prf_bold_fn}')
@@ -161,14 +182,14 @@ if subject != 'template_avg':
 
                     print(f'Saving: {prf_deriv_dir}/{prf_stats_fn}')
                     nb.save(prf_stats_img, f'{prf_deriv_dir}/{prf_stats_fn}')
-            
+                
                 # Compute median across leave-one-out fit
                 if 'loo-avg' in avg_method:
                     print('Computing median across LOO')
 
-                    # Get LOO files (excluding any with "median" in the name)
+                    # Get LOO files (excluding any with "median" in the name) # sub-13_task-pRF_hemi-R_fmriprep_dct_z-score_loo-avg-1_prf-css_deriv.func.gii
                     loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
-
+                    
                     # Group files by hemisphere/format
                     loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
                     loo_prf_stats_fsnative_hemi_R_fns = [fn for fn in loo_prf_stats_fns if "hemi-R" in fn]
@@ -185,6 +206,7 @@ if subject != 'template_avg':
                             stats_img, stats_data = load_surface(group_files[0])
                             loo_prf_stats = np.zeros_like(stats_data)
                             loo_prf_stats_fn =  f'{prf_deriv_dir}/{subject}_task-{task_name}{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{analysis_name}-css{dm_name}_stats.{extension}'
+                            
                             # Compute median across LOO runs
                             for n_run, loo_stats_fn in enumerate(group_files):
                                 print(f'Loadding loo stats: {loo_stats_fn}')
