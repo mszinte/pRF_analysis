@@ -113,32 +113,6 @@ if subject != 'template_avg':
                 print(f'{avg_method} - {format_} - {task_name}')
                 # Find pRF func/pred files
                 prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
-                
-                # NOT WORKING 
-                # for prf_pred_fn in prf_pred_fns:
-                #     if 'loo' in prf_pred_fn:
-                #         loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
-                #         if format_ == 'fsnative':
-                #             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-avg-{loo_number}.{extension}')
-                #             if not bold_matches:
-                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_loo-{loo_number}.{extension}')
-                #         elif format_ == '170k':
-                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-avg-{loo_number}.{extension}')
-                #             if not bold_matches:
-                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_loo-{loo_number}.{extension}')
-                #     else:                                          # <-- same level as 'if loo'
-                #         if format_ == 'fsnative':
-                #             hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
-                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}.{extension}')
-                #             if not bold_matches:
-                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_hemi-{hemi}*_{avg_method}_bold.{extension}')
-                #         elif format_ == '170k':
-                #             bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}.{extension}')
-                #             if not bold_matches:
-                #                 bold_matches = glob.glob(f'{prf_func_dir}/*task-{task_name}_*_{avg_method}_bold.{extension}')
-
-                #     prf_bold_fn = bold_matches[0]  
 
                 for prf_pred_fn in prf_pred_fns :
                     if 'loo' in prf_pred_fn:
@@ -158,7 +132,6 @@ if subject != 'template_avg':
                         elif format_ == '170k':
                             prf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
                                 prf_func_dir, task_name, avg_method, extension))[0]
-
                     # load data
                     print(f'Loading bold: {prf_bold_fn}')
                     bold_img, bold_data = load_surface(prf_bold_fn)
