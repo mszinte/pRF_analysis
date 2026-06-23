@@ -65,7 +65,7 @@ group = sys.argv[5]
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
-settings = load_settings([settings_path, prf_settings_path])
+settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
@@ -98,7 +98,7 @@ if subject != 'template_avg':
         for fit_fn in fit_fns:
             
             deriv_fn = fit_fn.split('/')[-1]
-            deriv_fn = deriv_fn.replace(f'{analysis_name}-gauss-{dm_name}_fit', f'{analysis_name}-gauss{dm_name}_deriv')
+            deriv_fn = deriv_fn.replace(f'{analysis_name}-gauss{dm_name}_fit', f'{analysis_name}-gauss{dm_name}_deriv')
         
             if os.path.isfile(fit_fn) == False:
                 sys.exit('Missing files, analysis stopped : {}'.format(fit_fn))
@@ -113,6 +113,7 @@ if subject != 'template_avg':
                 deriv_img = make_surface_image(data=deriv_array, 
                                                source_img=fit_img, 
                                                maps_names=maps_names_gauss)
+                print('Saving {}/{}'.format(prf_deriv_dir, deriv_fn))
                 nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
 
 # template_avg median          

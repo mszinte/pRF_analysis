@@ -138,9 +138,9 @@ for avg_method in avg_methods:
                 # get run numbers
                 if "single-run" in avg_method:
                     if format_ == 'fsnative':
-                        deriv_list = glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}*_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss-{dm_name}_deriv.func.gii')
+                        deriv_list = glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}*_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss{dm_name}_deriv.func.gii')
                     elif format_ == '170k':
-                        deriv_list = glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}*_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss-{dm_name}_deriv.dtseries.nii')
+                        deriv_list = glob.glob(f'{prf_deriv_dir}/{subject}_task-{task_name}*_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss{dm_name}_deriv.dtseries.nii')
                     runs = sorted(set('_run-' + f.split('run-')[1].split('_')[0] for f in deriv_list))
                 else:
                     runs = ['']
@@ -148,15 +148,15 @@ for avg_method in avg_methods:
                 for run in runs:
                     if format_ == 'fsnative':
                         pycortex_subject = subject
-                        deriv_avg_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss-{dm_name}_deriv.func.gii'
-                        deriv_avg_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss-{dm_name}_deriv.func.gii'
+                        deriv_avg_fn_L = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_hemi-L_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss{dm_name}_deriv.func.gii'
+                        deriv_avg_fn_R = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_hemi-R_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss{dm_name}_deriv.func.gii'
                         results = load_surface_pycortex(L_fn=deriv_avg_fn_L, 
                                                         R_fn=deriv_avg_fn_R)
                         deriv_mat = results['data_concat']
                         
                     elif format_ == '170k':
                         pycortex_subject = pycortex_subject_template
-                        deriv_avg_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss-{dm_name}_deriv.dtseries.nii'
+                        deriv_avg_fn = f'{prf_deriv_dir}/{subject}_task-{task_name}{run}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-gauss{dm_name}_deriv.dtseries.nii'
                         results = load_surface_pycortex(brain_fn=deriv_avg_fn)
                         deriv_mat = results['data_concat']
                 
@@ -264,7 +264,7 @@ for avg_method in avg_methods:
                         print(roi_name)
                         exec('param_{}.update(roi_param)'.format(maps_name))
                         exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-                        exec(f"plt.savefig('{flatmaps_dir}/{subject}_task-{task_name}{run}_{preproc_prep}_{filtering}_{normalization}_{avg_method}{rois_method_format_txt}_{analysis_name}-gauss-{dm_name}-{maps_name}.pdf')".format)
+                        exec("plt.savefig('{}/{}_task-{}{}_{}_{}_{}_{}{}_gauss{}-{}.pdf')".format(flatmaps_dir, subject, analysis_name, run, preproc_prep, filtering, normalization, avg_method, rois_method_format_txt, dm_name, maps_name))
                         plt.close()
                     
                         # save flatmap as dataset
@@ -273,7 +273,7 @@ for avg_method in avg_methods:
                         volumes.update({vol_description:volume})
                     
                     # save dataset
-                    dataset_file = f"{datasets_dir}/{subject}_task-{task_name}{run}_{preproc_prep}_{filtering}_{normalization}_{avg_method}{rois_method_format_txt}_{analysis_name}-gauss-{dm_name}.hdf"
+                    dataset_file = f"{datasets_dir}/{subject}_task-{task_name}{run}_{preproc_prep}_{filtering}_{normalization}_{avg_method}{rois_method_format_txt}_{analysis_name}-gauss{dm_name}.hdf"
                     if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
                     dataset = cortex.Dataset(data=volumes)
                     dataset.save(dataset_file)

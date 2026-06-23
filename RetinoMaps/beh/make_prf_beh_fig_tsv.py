@@ -66,7 +66,6 @@ num_steps_kappa_pRF = analysis_info['num_steps_kappa_pRF']
 
 kappa_values = np.concatenate(([0], 10 ** np.linspace(-1, 1.5, num_steps_kappa_pRF - 1)))
 
-
 if 'group' not in subject:
     print('{} is processing...'.format(subject))
     # Exception for sub-01
@@ -79,7 +78,7 @@ if 'group' not in subject:
         
         # Find TRs with bar stimulation
         prf_events = prf_events_raw.loc[prf_events_raw['bar_direction'] != 9].copy()
-            
+
         # concat runs
         if n_run==0: 
             perf_runs_indiv_concat = prf_events.response_val.values
