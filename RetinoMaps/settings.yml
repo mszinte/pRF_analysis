@@ -44,6 +44,10 @@ partial_scan:
   value: False
   levels: [True, False]
 
+n_runs_prf:
+  description: "Number of runs for pRF task"
+  value: 5
+  
 # ------------------- Preprocessing -------------------
 preproc_prep: 
   description: "Name of the main preprocessing method"

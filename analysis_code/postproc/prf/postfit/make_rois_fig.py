@@ -181,11 +181,11 @@ for avg_method in avg_methods:
                 df_distribution = pd.read_table(tsv_distribution_fn, sep="\t")
                 figs, hemis = prf_distribution_plot(df=df_distribution, figure_info=analysis_info)
                 for (fig, hemi) in zip(figs, hemis):
-                    if hemi == 'hemi-LR':
-                        fig_fn = f"{fig_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_distribution.pdf"
-                        print('Saving pdf: {}'.format(fig_fn))
-                        fig.write_image(fig_fn)
-                        remove_second_page(fig_fn)
+                    # if hemi == 'hemi-LR':
+                    fig_fn = f"{fig_dir}/{subject}_{hemi}_{fn_spec}_{analysis_name}-css{dm_name}_distribution.pdf"
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
+                    remove_second_page(fig_fn)
                 
                 # Spatial distibution barycentre plot
                 tsv_barycentre_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_barycentre.tsv"

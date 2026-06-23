@@ -34,8 +34,8 @@
 # -----------------------------------------------------------------------------------------
 
 # Check if the base path, project name, and data path are provided as arguments
-if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <base_path> <project_name> <data_path> <save_in_overlay>]"
+if [ "$#" -ne 5 ]; then
+    echo "Usage: $0 <base_path> <project_name> <data_path> <analysis_name> <save_in_overlay>]"
     exit 1
 fi
 
