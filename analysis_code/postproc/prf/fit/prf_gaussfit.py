@@ -97,7 +97,7 @@ rsq_iterative_th = analysis_info['rsq_iterative_th']
 
 # Load screen settings from subject dependend task-events.json
 task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
-screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, prf_task_name)
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, task_name)
 
 print("\n===== PRF FIT PARAMETERS =====")
 print(f"Screen Size (cm): {screen_size_cm}")
@@ -142,10 +142,10 @@ elif input_fn.endswith('.gii'):
     os.makedirs(prf_fit_dir, exist_ok=True)
 
 gauss_fit_fn  = input_fn.split('/')[-1]
-gauss_fit_fn = gauss_fit_fn.replace('bold', f'{analysis_name}-gauss{vdm}_fit')
+gauss_fit_fn = gauss_fit_fn.replace('bold', f'{analysis_name}-gauss{dm_name}_fit')
 
 gauss_pred_fn = input_fn.split('/')[-1]
-gauss_pred_fn = gauss_pred_fn.replace('bold', f'{analysis_name}-gauss{vdm}_pred')
+gauss_pred_fn = gauss_pred_fn.replace('bold', f'{analysis_name}-gauss{dm_name}_pred')
 
 
 # define model parameter grid range

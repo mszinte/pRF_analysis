@@ -142,7 +142,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
 
     # define fit cmd
     fit_cmd = "python prf_gaussfit.py {} {} {} {} {} {}".format(
-        main_dir, project_dir, subject, pp_fn, analysis_name nb_procs)
+        main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
     
     # create sh
     sh_fn = "{}/jobs/{}_{}-gauss{}_fit-{}.sh".format(prf_dir, subject, analysis_name, dm_name, fit_num)
