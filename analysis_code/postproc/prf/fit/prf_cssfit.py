@@ -97,19 +97,23 @@ css_grid_nr = analysis_info['css_grid_nr']
 css_exponent_bounds = analysis_info['n_th']
 rsq_iterative_th = analysis_info['rsq_iterative_th']
 
-# Load screen settings from subject dependend task-events.json
-task_name = input_fn.split("task-")[1].split("_")[0] # from the file path
-screen_size_cm, screen_distance_cm = get_screen_settings(main_dir,project_dir, sub_num, task_name)
+# Load screen settings from subject dependent task-events.json
+task_name = input_fn.split("task-")[1].split("_")[0]  # from the file path
+screen_size_cm, screen_distance_cm = get_screen_settings(main_dir, project_dir, sub_num, task_name)
+
+# Override with fake screen settings if defined in analysis yml
+if 'fake_screen_size_cm' in analysis_info:
+    print("[INFO] Fake screen size found in settings — overriding real screen size.")
+    screen_size_cm = analysis_info['fake_screen_size_cm']
 
 print(f"Fitting data: {input_fn}\n")
 print("\n===== PRF FIT PARAMETERS =====")
 print(f"fit : {input_fn}")
-print(f"Screen Size (cm): {screen_size_cm}")
+print(f"Screen Size (cm): {screen_size_cm} {'[FAKE]' if 'fake_screen_size_cm' in analysis_info else '[REAL]'}")
 print(f"Screen Distance (cm): {screen_distance_cm}")
 print(f"TR: {TR}")
 print(f"Max eccentricity/size values: {max_ecc_size}")
 print("==============================\n")
-
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)

@@ -24,7 +24,7 @@ output_folder:
 # ------------- Preprocessing settings -------------------
 avg_methods: 
   description: "Name of the averaging or at default grouping of the data (e.g concat, single-run, avg, loo-avg)"
-  value: ["concat-residuals"]
+  value: ["concat"]
   levels: ["avg", "loo-avg", "concat", "runs", "concat-residuals"]
   level-description: 
     avg: "averaging across runs"
@@ -37,12 +37,12 @@ avg_methods:
 fake_screen_size_pix: 
   description: " "
   units: "pixels"
-  value: [1620, 1620]
+  value: [1613, 1613]
 
 fake_screen_size_cm: 
   description: ""
   units: "cm"
-  value: [31.6, 31.6]
+  value: [64.31, 64.31]
 
 dm_name: 
   description: "Type/Name of design matrix used for pRF fit"
