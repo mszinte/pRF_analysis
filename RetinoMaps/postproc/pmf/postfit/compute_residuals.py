@@ -106,7 +106,7 @@ for avg_method in avg_methods:
                 continue
 
             # Find pred files 
-            pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-gauss{dm_name}_pred.{extension}')
+            pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
 
             if not pred_fns:
                 print(f'No pred files found in: {fit_dir}')

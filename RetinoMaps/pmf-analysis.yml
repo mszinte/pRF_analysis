@@ -46,7 +46,7 @@ fake_screen_size_cm:
 
 dm_name: 
   description: "Type/Name of design matrix used for pRF fit"
-  value: "-rdm"
+  value: "-odm"
   levels: ["-vdm", "-rdm", "-odm"]
 
 vdm_size_pix:
