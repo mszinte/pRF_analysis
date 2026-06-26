@@ -160,6 +160,12 @@ results = {
     for variant in VARIANTS
 }
 
+## Need to add this to get pearsonr not fisher-z
+#
+#     results[variant][seed][tc][hemi].append(
+#         float(np.tanh(np.nanmean(values[idx])))
+#     )
+
 missing_files = []   # global log — reported at end
 
 for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
