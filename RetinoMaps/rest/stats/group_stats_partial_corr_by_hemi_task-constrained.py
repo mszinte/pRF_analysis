@@ -37,18 +37,20 @@ Inputs (sys.argv):
     4: server project           (e.g. b327)
 
 Outputs (per hemisphere × variant):
-    group_mean_seed-task_by_macror-task_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_median_seed-task_by_macror-task_partial_fisherz_{run_label}_{hemi}.npy / .csv
-    group_mean_seed-task_by_macror-task_partial_r_{run_label}_{hemi}.npy / .csv
-    group_median_seed-task_by_macror-task_partial_r_{run_label}_{hemi}.npy / .csv
-    group_partial_corr_task-constrained_{run_label}_{hemi}.npz
+    seed-task_by_macror-task_partial-corr_fisherz_mean_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_fisherz_median_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_r_mean_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_r_median_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_{run_label}_{hemi}.npz
 
-    Rows    : seed macro-region names   (n_clusters)
-    Columns : target macro-region names (n_clusters)
+    e.g. seed-task_by_macror-task_partial-corr_fisherz_median_concat_clean_rh.npy
+
+    Full-corr equivalent for reference:
+    seed-task_by_macro_full-corr_fisherz_median_{run_label}_{hemi}.npy
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -89,28 +91,22 @@ print(f"  server      : {server}")
 # ============================================================
 # Load settings
 # ============================================================
-settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
-prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
-settings          = load_settings([settings_path, prf_settings_path])
-rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
-rest_settings      = load_settings([rest_settings_path])[0]
-analysis_info     = settings[0]
-subjects          = analysis_info["subjects"]
-
-# ============================================================
-# Personal imports
-# ============================================================
-base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-
+base_dir            = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
 
 sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
 from rest_utils import VARIANTS
 
-# Load rest-specific settings (runs, exclusions)
-RUNS          = rest_settings["runs"]["value"]
-RUN02_EXCLUDED = frozenset(rest_settings["run02_excluded"]["value"])
+settings_path       = os.path.join(base_dir, project_dir, "settings.yml")
+prf_settings_path   = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings            = load_settings([settings_path, prf_settings_path])
+rest_settings_path  = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings       = load_settings([rest_settings_path])[0]
+analysis_info       = settings[0]
+subjects            = analysis_info["subjects"]
+RUNS                = rest_settings["runs"][0]
+RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
 
 # ============================================================
 # ROIs — canonical order from YAML config
@@ -228,40 +224,38 @@ for hemi in ("lh", "rh"):
         print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},  {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
 
-        # ── Output filename run-label ─────────────────────────────────────────
+        # run_label: None normal_tag → use variant name (e.g. "concat", "concat_clean")
         run_label = normal_tag if normal_tag is not None else variant
 
-        # ============================================================
-        # Output filename stem builder
-        #
-        # Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}
-        # Matches full-corr convention: seed-task_by_macro_full-corr_fisherz_{stat}_{run_label}_{hemi}
-        # ============================================================
-        def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
+        # Output filename pattern (harmonized with full-corr):
+        #   seed-task_by_macror-task_partial-corr_{space}_{stat}_{run_label}_{hemi}
+        # e.g. seed-task_by_macror-task_partial-corr_fisherz_median_concat_clean_rh.npy
+        def _stem(stat: str, space: str) -> str:
             return (
                 f"seed-task_by_macror-task_partial-corr"
                 f"_{space}_{stat}_{run_label}_{hemi}"
-        )
+            )
 
-
-        # ── Save Fisher-z arrays ──────────────────────────────────────────────
+        # Save Fisher-z arrays
         for stat, arr in (("mean", mean_fz), ("median", median_fz)):
             stem = _stem(stat, "fisherz")
             np.save(output_folder / f"{stem}.npy", arr)
             pd.DataFrame(arr, index=clusters, columns=clusters).to_csv(
                 output_folder / f"{stem}.csv"
             )
+            print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Save Pearson r arrays ─────────────────────────────────────────────
+        # Save Pearson r arrays
         for stat, arr in (("mean", mean_r), ("median", median_r)):
             stem = _stem(stat, "r")
             np.save(output_folder / f"{stem}.npy", arr)
             pd.DataFrame(arr, index=clusters, columns=clusters).to_csv(
                 output_folder / f"{stem}.csv"
             )
+            print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Compressed archive ────────────────────────────────────────────────
-        npz_stem = f"group_partial_corr_task-constrained_{run_label}_{hemi}"
+        # Compressed archive — keys use the same space_stat pattern for consistency
+        npz_stem = f"seed-task_by_macror-task_partial-corr_{run_label}_{hemi}"
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
@@ -275,11 +269,6 @@ for hemi in ("lh", "rh"):
             hemi              = np.array(hemi),
             variant           = np.array(variant),
         )
-
-        print(f"    Saved: {_stem('mean',   'fisherz')}.npy / .csv")
-        print(f"    Saved: {_stem('median', 'fisherz')}.npy / .csv")
-        print(f"    Saved: {_stem('mean',   'r')}.npy / .csv")
-        print(f"    Saved: {_stem('median', 'r')}.npy / .csv")
         print(f"    Saved: {npz_stem}.npz")
 
 print("\n" + "=" * 80)
@@ -287,6 +276,6 @@ print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")
 print(
-    "\nNote: Fisher-z outputs are in z-space. Apply np.tanh() to recover Pearson r "
-    "only at the final reporting or plotting stage."
+    "\nNote: Pearson r group values are recovered back from Fisher-z outputs with np.tanh()"
+    "Use these values at the final reporting or plotting stage as is standard practice."
 )

@@ -2,14 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 Goal of the script:
-Full correlation violin plots split by hemisphere.
-Seeds are on the y-axis, one figure per TARGET macro-region
+Full correlation violin plots — TASK-CONSTRAINED version
+Seeds on the y-axis, one figure per TARGET macro-region
+
+Input files are parcellated_by_macro (24 rows: 12 LH + 12 RH macro-regions,
+ordered mPCS → V1 per hemisphere), so no parcel-level averaging is needed —
+we index directly by cluster position
 
 Produces figures for four data variants:
   - concat        : both runs concatenated, all subjects
-  - concat_clean  : both runs concatenated, excluding subjects with bad run-02
-  - run-01        : run-01 only, all subjects (skips subjects missing the file)
-  - run-02        : run-02 only, ALL subjects (including bad ones, to show artifact)
+  - concat_clean  : bad run-02 subjects fall back to run-01
+  - run-01        : run-01 only, all subjects
+  - run-02        : run-02 only, all subjects (bad subjects show artifact)
 
 Missing files are always skipped with a warning
 
@@ -50,7 +54,6 @@ from rest_utils import (
     MEDIAN_COLORS,
     MEDIAN_HALF_LEN,
     derive_hemi_color,
-    load_tsv_hemi,
 )
 
 project_dir       = "RetinoMaps"
@@ -60,88 +63,114 @@ settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
 subjects          = analysis_info["subjects"]
 
-fig_dir = os.path.join(output_folder, "figures/violin_plots")
+fig_dir = os.path.join(output_folder, "figures/violin_plots/task-constrained")
 os.makedirs(fig_dir, exist_ok=True)
 
 # ============================================================
-# Cluster ↔ parcel mapping
+# Cluster ordering
 # ============================================================
 
+# Full ordered list, reversed so mPCS is first — this IS the row order
+# inside the _parcellated_by_macro TSVs (12 LH rows then 12 RH rows).
 clusters_all = analysis_info["rois-drawn"]
-clusters_all.reverse()   # mPCS, sPCS, iPCS, sIPS, iIPS, hMT+, ...
+clusters_all.reverse()   # mPCS, sPCS, iPCS, sIPS, iIPS, hMT+, ..., V1
 
-cluster_to_parcels = analysis_info["rois-group-mmp"]
+# The TSV has one row per macro-region per hemisphere:
+#   rows 0–11  → LH clusters in clusters_all order
+#   rows 12–23 → RH clusters in clusters_all order
+N_CLUSTERS = len(clusters_all)   # expected 12
 
+assert N_CLUSTERS == 12, (
+    f"Expected 12 clusters after reverse, got {N_CLUSTERS}. "
+    "Check 'rois-drawn' in settings.yml."
+)
+
+HEMI_ROW_SLICE = {
+    "lh": slice(0,          N_CLUSTERS),
+    "rh": slice(N_CLUSTERS, N_CLUSTERS * 2),
+}
+
+# Seed clusters: first 5 (mPCS → iIPS)
 seed_clusters   = clusters_all[:5]
 target_clusters = seed_clusters.copy()
 
+# Validate
+cluster_to_parcels = analysis_info["rois-group-mmp"]
 for cl in seed_clusters:
     if cl not in cluster_to_parcels:
         raise KeyError(
             f"Seed cluster '{cl}' has no entry in 'rois-group-mmp' — "
             "check settings.yml"
         )
-    if len(cluster_to_parcels[cl]) == 0:
-        raise ValueError(f"Seed cluster '{cl}' maps to an empty parcel list")
 
 # ============================================================
-# Build parcel indices
+# TSV loader — task-constrained _parcellated_by_macro files
 # ============================================================
 
-clusters = clusters_all   # alias — row order matches .npy/.tsv files
+def load_macro_tsv_hemi(filepath, hemi):
+    # type: (str, str) -> Optional[np.ndarray]
+    """Load a 24-row parcellated_by_macro TSV and return the 12 values for hemi.
 
-parcels = []
-for cl in clusters_all:
-    parcels.extend(cluster_to_parcels[cl])
+    Row layout: rows 0-11 = LH clusters, rows 12-23 = RH clusters,
+    both in clusters_all order (mPCS first).
 
-cluster_to_parcel_idx = {
-    cl: [parcels.index(p) for p in plist]
-    for cl, plist in cluster_to_parcels.items()
-}
+    Returns None (with a warning) on any file or format problem.
+    """
+    if not os.path.isfile(filepath):
+        print("  WARNING: missing -- {}".format(filepath))
+        return None
+    try:
+        values = (
+            pd.read_csv(filepath, header=None, sep="\t")
+            .squeeze()
+            .to_numpy(dtype=float)
+        )
+    except Exception as e:
+        print("  WARNING: could not read {} -- {}".format(filepath, e))
+        return None
 
-print(f"\nParcels from YAML: {len(parcels)} | first: {parcels[0]}")
-print(f"Clusters from YAML: {clusters}")
-print("\nCluster → parcel indices:")
-for cl in seed_clusters:
-    print(f"  {cl:5s} → {[parcels[i] for i in cluster_to_parcel_idx[cl]]}")
-    if len(cluster_to_parcel_idx[cl]) == 0:
-        raise RuntimeError(f"No parcels found for cluster '{cl}'")
+    expected_rows = N_CLUSTERS * 2   # 24
+    if values.ndim != 1 or len(values) != expected_rows:
+        print(
+            "  WARNING: unexpected shape {} in {} "
+            "(expected ({},)) -- skipping".format(values.shape, filepath, expected_rows)
+        )
+        return None
+
+    return values[HEMI_ROW_SLICE[hemi]]
 
 # ============================================================
 # BIDS path builder
 # ============================================================
 
-def get_fname(
-    sub_path: str,
-    sub: str,
-    variant: str,
-    normal_tag: Optional[str],
-    excluded_tag: Optional[str],
-    hemi: str,
-    seed: str,
-) -> str:
-    """Return the full-correlation TSV filepath for one subject/hemi/seed.
+def get_fname(sub_path, sub, variant, normal_tag, excluded_tag, hemi, seed):
+    # type: (str, str, str, Optional[str], Optional[str], str, str) -> str
+    """Return the task-constrained TSV filepath for one subject/hemi/seed.
 
-    For concat_clean, subjects with bad run-02 fall back to excluded_tag
-    ("run-01") instead of being dropped.  For all other variants every
-    subject uses normal_tag — including run-02 bad subjects, so their
-    missing file produces a WARNING and they are skipped, preserving the
-    artifact-visibility intent of that variant.
+    For concat_clean, subjects in RUN02_EXCLUDED use excluded_tag (run-01)
+    so all subjects contribute one value rather than being dropped.
     """
     if variant == "concat_clean" and sub in RUN02_EXCLUDED:
         effective_tag = excluded_tag
     else:
         effective_tag = normal_tag
 
+    task_constrained_subdir = os.path.join(sub_path, "task-constrained")
+
     if effective_tag is None:
-        return (
-            f"{sub_path}/{sub}_task-rest_space-fsLR_den-91k"
-            f"_desc-full_corr_{hemi}_{seed}_parcellated.tsv"
-        )
-    return (
-        f"{sub_path}/{sub}_task-rest_{effective_tag}_space-fsLR"
-        f"_den-91k_desc-full_corr_{hemi}_{seed}_parcellated.tsv"
-    )
+        fname = (
+            "{sub}_task-rest_space-fsLR_den-91k"
+            "_desc-fisher-z_{hemi}_{seed}"
+            "_task-constrained_parcellated_by_macro_legacy-mode.tsv"
+        ).format(sub=sub, hemi=hemi, seed=seed)
+    else:
+        fname = (
+            "{sub}_task-rest_{tag}_space-fsLR_den-91k"
+            "_desc-fisher-z_{hemi}_{seed}"
+            "_task-constrained_parcellated_by_macro_legacy-mode.tsv"
+        ).format(sub=sub, tag=effective_tag, hemi=hemi, seed=seed)
+
+    return os.path.join(task_constrained_subdir, fname)
 
 # ============================================================
 # Load data for all variants
@@ -161,67 +190,72 @@ results = {
     for variant in VARIANTS
 }
 
-missing_files = []   # global log — reported at end
+missing_files = []
 
 for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
 
-    print(f"\n=== Loading variant: {variant} | {len(subjects)} subjects ===")
+    print("\n=== Loading variant: {} | {} subjects ===".format(
+        variant, len(subjects)))
 
     for sub in subjects:
 
         if skip_excluded and sub in RUN02_EXCLUDED:
-            print(f"  SKIP (excluded): {sub} [{variant}]")
+            print("  SKIP (excluded): {} [{}]".format(sub, variant))
             continue
 
         sub_path = os.path.join(
-            main_data, f"{sub}/91k/rest/corr/full_corr/by_hemi"
+            main_data,
+            "{}/91k/rest/corr/full_corr/by_hemi".format(sub)
         )
 
         for seed in seed_clusters:
             for hemi in hemis:
 
                 fname = get_fname(
-                    sub_path=sub_path,
-                    sub=sub,
-                    variant=variant,
-                    normal_tag=normal_tag,
-                    excluded_tag=excluded_tag,
-                    hemi=hemi,
-                    seed=seed,
+                    sub_path    = sub_path,
+                    sub         = sub,
+                    variant     = variant,
+                    normal_tag  = normal_tag,
+                    excluded_tag= excluded_tag,
+                    hemi        = hemi,
+                    seed        = seed,
                 )
 
-                values = load_tsv_hemi(fname, hemi)
+                values = load_macro_tsv_hemi(fname, hemi)
 
                 if values is None:
                     missing_files.append((variant, fname))
                     continue
 
-                print(
-                    f"  {sub} ({variant}, {hemi}, seed={seed}): "
-                    f"loaded {len(values)} parcel values"
-                )
+                print("  {} ({}, {}, seed={}): loaded {} cluster values".format(
+                    sub, variant, hemi, seed, len(values)))
+
+                # values is now a 12-element array: one fisher-z per cluster
+                # for this seed x hemi.  Index by cluster position in clusters_all.
+                seed_row_in_file = clusters_all.index(seed)
 
                 for tc in target_clusters:
                     if tc == seed:
                         continue
-                    idx = cluster_to_parcel_idx[tc]
+                    tc_row_in_file = clusters_all.index(tc)
                     results[variant][seed][tc][hemi].append(
-                        float(np.nanmean(values[idx]))
+                        float(values[tc_row_in_file])
                     )
 
 if missing_files:
-    print(f"\n{'='*60}")
-    print(f"WARNING: {len(missing_files)} file(s) could not be loaded:")
-    for variant, f in missing_files:
-        print(f"  [{variant}] {f}")
-    print(f"{'='*60}\n")
+    print("\n" + "=" * 60)
+    print("WARNING: {} file(s) could not be loaded:".format(len(missing_files)))
+    for v, f in missing_files:
+        print("  [{}] {}".format(v, f))
+    print("=" * 60 + "\n")
 
 # ============================================================
 # Plotting
 # ============================================================
 
-def plot_target_figure(target: str, variant: str, res: dict) -> None:
-    """Draw and save one violin figure for *target* × *variant*."""
+def plot_target_figure(target, variant, res):
+    # type: (str, str, dict) -> None
+    """Draw and save one violin figure for target x variant."""
 
     target_row_idx = seed_clusters.index(target)
 
@@ -242,7 +276,7 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
     df = pd.DataFrame(plot_rows)
 
     if df.loc[df["Seed"] != target, "Correlation"].dropna().empty:
-        print(f"  SKIP (no data): target={target}, variant={variant}")
+        print("  SKIP (no data): target={}, variant={}".format(target, variant))
         return
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -264,18 +298,15 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
 
     new_collections = ax.collections[n_before:]
 
-    # seaborn skips all-NaN rows (the target row), so expect one pair per
-    # non-target seed
     n_plottable_rows     = len(seed_clusters) - 1
     expected_collections = n_plottable_rows * 2
 
     assert len(new_collections) == expected_collections, (
-        f"[{variant}, target={target}] Expected {expected_collections} "
-        f"PolyCollections but got {len(new_collections)}. "
-        "seaborn layout may have changed — check version."
+        "[{}, target={}] Expected {} PolyCollections but got {}. "
+        "seaborn layout may have changed -- check version.".format(
+            variant, target, expected_collections, len(new_collections))
     )
 
-    # Colour violin halves
     collection_idx = 0
     for seed in seed_clusters:
         if seed == target:
@@ -288,7 +319,6 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
             artist.set_alpha(0.85)
             collection_idx += 1
 
-    # Muted band for target (self-seed) row
     ax.axhspan(
         target_row_idx - 0.45,
         target_row_idx + 0.45,
@@ -297,7 +327,6 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
         label="_nolegend_",
     )
 
-    # Median ticks
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
@@ -314,7 +343,6 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
                 zorder=4,
             )
 
-    # Per-subject dots
     rng = np.random.default_rng(seed=42)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
@@ -332,9 +360,10 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
                        edgecolor="none", zorder=3)
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Full Correlation",  fontsize=18, fontweight="bold")
-    ax.set_ylabel("Seed Cluster",      fontsize=18, fontweight="bold")
-    ax.set_title(f"{target} target — {variant}", fontsize=18, fontweight="bold")
+    ax.set_xlabel("Full Correlation (task-constrained)", fontsize=18, fontweight="bold")
+    ax.set_ylabel("Seed Cluster",                        fontsize=18, fontweight="bold")
+    ax.set_title("{} target -- {} (task-constrained)".format(target, variant),
+                 fontsize=18, fontweight="bold")
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
     ax.set_xlim(-0.25, 0.55)
@@ -343,10 +372,10 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
 
     outname = os.path.join(
         fig_dir,
-        f"violin_target-{target}_full_corr_{variant}.png"
+        "violin_target-{}_full_corr_{}_task-constrained.png".format(target, variant)
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
-    print(f"  Saved: {outname}")
+    print("  Saved: {}".format(outname))
     plt.show()
     plt.close(fig)
 
@@ -355,6 +384,6 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
 # ============================================================
 
 for variant in VARIANTS:
-    print(f"\n=== Plotting variant: {variant} ===")
+    print("\n=== Plotting variant: {} ===".format(variant))
     for target in target_clusters:
         plot_target_figure(target, variant, results[variant])
