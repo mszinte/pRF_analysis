@@ -50,7 +50,7 @@ Outputs (per hemisphere × variant):
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_stats_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
