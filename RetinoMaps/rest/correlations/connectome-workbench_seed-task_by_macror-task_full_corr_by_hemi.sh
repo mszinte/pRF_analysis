@@ -26,7 +26,7 @@ do
 
     mkdir -p "$OUT_DIR"
 
-    for ROI in mPCS sPCS iPCS sIPS iIPS hMT+ VO LO V3AB V3 V2 V1;
+    for ROI in mPCS sPCS iPCS sIPS iIPS;
     do
         for HEMI in lh rh;
         do
