@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-group_full_corr_task_constrained_by_hemi.py
+group_stats_full_corr_task_constrained_by_hemi.py
 ------------------------------------------------------------------------------------------
 Goal:
     Compute group-level Fisher-z statistics from per-subject, per-seed,
     task-constrained full-correlation TSV files parcellated by macro-region.
 
     "Task-constrained" means both the seed and the target regions come from
-    task (pRF/saccade/pursuit) results rather than from the full Glasser MMP atlas.
+    task (pRF/saccade) results rather than from the full Glasser MMP atlas.
     The counterpart script (group_full_corr_by_hemi.py) handles the
     "task-free" case (53 MMP atlas parcels per hemisphere).
 
@@ -131,17 +131,36 @@ from rest_utils import RUN02_EXCLUDED, VARIANTS
 # ============================================================
 USAGE = (
     "Usage: python group_full_corr_task_constrained_by_hemi.py "
-    "<main_dir> <project_dir> <group> <server>"
+    "<main_dir> <project_dir> <group> <server> [--percentiles LO HI]\n"
+    "  --percentiles  lower and upper percentile bounds for the subject\n"
+    "                 distribution saved alongside group mean/median\n"
+    "                 (default: 25 75)"
 )
 
-if len(sys.argv) != 5:
-    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) not in (5, 8):
+    print(f"ERROR: unexpected number of arguments.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
 project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
+
+# Optional percentile bounds (default lower and upper quartiles)
+pct_lo, pct_hi = 25, 75
+if len(sys.argv) == 8:
+    if sys.argv[5] != "--percentiles":
+        print(f"ERROR: unknown option '{sys.argv[5]}'.\n{USAGE}")
+        sys.exit(1)
+    try:
+        pct_lo = float(sys.argv[6])
+        pct_hi = float(sys.argv[7])
+    except ValueError:
+        print("ERROR: --percentiles values must be floats (e.g. 2.5 97.5)")
+        sys.exit(1)
+    if not (0 <= pct_lo < pct_hi <= 100):
+        print("ERROR: percentile values must satisfy 0 ≤ lo < hi ≤ 100")
+        sys.exit(1)
 
 # Hardcoded: input TSVs are always produced in legacy mode.
 TSV_SUFFIX = "_legacy-mode"
@@ -155,6 +174,7 @@ print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
 print(f"  group       : {group}")
 print(f"  server      : {server}")
+print(f"  percentiles : {pct_lo} / {pct_hi}")
 
 # ============================================================
 # Load settings
@@ -361,9 +381,17 @@ for hemi in ("lh", "rh"):
         mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (N_EYE_FIELDS × 10)
         median_fz = np.nanmedian(stacked_fz, axis=0)
 
+        # Inter-subject percentile bounds in Fisher-z space.
+        # These describe the spread of subject values around the group statistic,
+        # not uncertainty of the estimate itself (for that, use bootstrap CIs).
+        pct_lo_fz = np.nanpercentile(stacked_fz, pct_lo, axis=0)
+        pct_hi_fz = np.nanpercentile(stacked_fz, pct_hi, axis=0)
+
         # ── Back-convert to Pearson r at reporting stage only ─────────────────
-        mean_r   = np.tanh(mean_fz)
-        median_r = np.tanh(median_fz)
+        mean_r     = np.tanh(mean_fz)
+        median_r   = np.tanh(median_fz)
+        pct_lo_r   = np.tanh(pct_lo_fz)
+        pct_hi_r   = np.tanh(pct_hi_fz)
 
         print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},   {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
@@ -371,22 +399,36 @@ for hemi in ("lh", "rh"):
         # run_label: None normal_tag → variant name ("concat", "concat_clean")
         run_label = normal_tag if normal_tag is not None else variant
 
-        # ── Save Fisher-z arrays ──────────────────────────────────────────────
-        for stat, arr in (("mean", mean_fz), ("median", median_fz)):
+        # Percentile label strings used in filenames (e.g. "p025", "p975")
+        pct_lo_tag = f"p{int(pct_lo * 10):03d}"
+        pct_hi_tag = f"p{int(pct_hi * 10):03d}"
+
+        # ── Save Fisher-z arrays (full precision .npy; 3 d.p. .csv) ──────────
+        for stat, arr in (
+            ("mean",             mean_fz),
+            ("median",           median_fz),
+            (pct_lo_tag,         pct_lo_fz),
+            (pct_hi_tag,         pct_hi_fz),
+        ):
             stem = _stem(stat, "fisherz", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=EYE_FIELDS, columns=TARGET_COLUMNS).to_csv(
-                output_folder / f"{stem}.csv"
-            )
+            pd.DataFrame(
+                np.round(arr, 3), index=EYE_FIELDS, columns=TARGET_COLUMNS
+            ).to_csv(output_folder / f"{stem}.csv")
             print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Save Pearson r arrays ─────────────────────────────────────────────
-        for stat, arr in (("mean", mean_r), ("median", median_r)):
+        # ── Save Pearson r arrays (full precision .npy; 2 decimal positions in .csv) ─────────
+        for stat, arr in (
+            ("mean",             mean_r),
+            ("median",           median_r),
+            (pct_lo_tag,         pct_lo_r),
+            (pct_hi_tag,         pct_hi_r),
+        ):
             stem = _stem(stat, "r", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=EYE_FIELDS, columns=TARGET_COLUMNS).to_csv(
-                output_folder / f"{stem}.csv"
-            )
+            pd.DataFrame(
+                np.round(arr, 2), index=EYE_FIELDS, columns=TARGET_COLUMNS
+            ).to_csv(output_folder / f"{stem}.csv")
             print(f"    Saved: {stem}.npy / .csv")
 
         # ── Compressed archive with all arrays + metadata ─────────────────────
@@ -397,16 +439,21 @@ for hemi in ("lh", "rh"):
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
             median_fz         = median_fz,
+            pct_lo_fz         = pct_lo_fz,
+            pct_hi_fz         = pct_hi_fz,
             mean_r            = mean_r,
             median_r          = median_r,
+            pct_lo_r          = pct_lo_r,
+            pct_hi_r          = pct_hi_r,
             n_subjects_loaded = np.array(n_valid),
             subjects_loaded   = np.array(subject_ids),
             subjects_missing  = np.array(missing_subjects),
-            eye_fields        = np.array(EYE_FIELDS),     # row labels (5)
-            target_columns    = np.array(TARGET_COLUMNS), # col labels (10)
+            eye_fields        = np.array(EYE_FIELDS),
+            target_columns    = np.array(TARGET_COLUMNS),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
             mode              = np.array(MODE_LABEL),
+            percentiles       = np.array([pct_lo, pct_hi]),
         )
         print(f"    Saved: {npz_stem}.npz")
 
