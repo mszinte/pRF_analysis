@@ -95,13 +95,13 @@ do
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_task-constrained.dscalar.nii" \
                     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_macro-regions.dlabel.nii" COLUMN \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}_task-constrained_parcellated_by_macro.pscalar.nii" \
-                    -method MEAN -only-numeric
+                    -method MEAN
 
                 wb_command -cifti-parcellate \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_task-constrained.dscalar.nii" \
                     "$ATLAS/atlas-Glasser_space-fsLR_den-32k_macro-regions.dlabel.nii" COLUMN \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_task-constrained_parcellated_by_macro.pscalar.nii" \
-                    -method MEAN -only-numeric
+                    -method MEAN
 
                 # Parcellate excluding outliers
                 wb_command -cifti-parcellate \

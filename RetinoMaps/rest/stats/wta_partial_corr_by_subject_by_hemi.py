@@ -146,7 +146,7 @@ n_clusters = len(clusters)
 #
 # Used as the level-2 Fisher-z reference in break_ties_wta() for ALL variants.
 # One matrix per hemisphere: shape (n_clusters × n_parcels), rows in clusters
-# order, columns in canonical parcels order.
+# order, columns in canonical parcels order
 #
 # Filename produced by group_partial_corr_by_hemi.py:
 #   seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_{hemi}.npy
