@@ -232,13 +232,14 @@ def tsv_path(
                  (e.g. "task-free" or "task-constrained").
                  None → files sit directly in by_hemi/ (legacy behaviour).
     """
-    by_hemi_dir = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
-    subj_dir    = by_hemi_dir / task if task is not None else by_hemi_dir
-    run_entity  = f"_{run_tag}" if run_tag is not None else ""
+    by_hemi_dir  = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
+    subj_dir     = by_hemi_dir / task if task is not None else by_hemi_dir
+    run_entity   = f"_{run_tag}" if run_tag is not None else ""
+    task_token   = f"_{task}" if task is not None else ""
     fname = (
         f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
         f"_desc-fisher-z_{hemi}_{roi}"
-        f"_parcellated{tsv_suffix}.tsv"
+        f"{task_token}_parcellated{tsv_suffix}.tsv"
     )
     return subj_dir / fname
 

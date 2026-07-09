@@ -1,52 +1,52 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-wta_partial_corr_by_subject_by_hemi.py
+wta_full_corr_by_subject_by_hemi_task-free.py
 -----------------------------------------------------------------------------------------
 Goal:
-    Compute winner-take-all (WTA) from per-subject partial correlation CSVs.
+    Compute winner-take-all (WTA) from per-subject full-correlation TSV files.
     Outputs one combined table per hemisphere × variant containing:
         - one row per subject   (winner seed label per parcel)
         - one GROUP row         (modal winner across subjects per parcel)
         - one CONSISTENCY row   (% of subjects matching the group winner)
 
-    Input CSVs are already in seeds × parcels format (no slicing needed).
-    Working on fisher-z outputs that stabilize variance across subjects/parcels.
-    All shared logic (constants, WTA, tie-breaking) is imported from rest_utils.py.
+    Input TSVs are already parcellated; each file covers one seed × one hemi.
+    The atlas-key row order is remapped to canonical YAML parcel order on load.
+    All shared logic (constants, I/O, WTA, tie-breaking) is imported from
+    rest_utils.py — do not duplicate those definitions here.
 
     Tie-breaking cascade in append_group_and_consistency():
         1. Vote count   — unique modal winner across subjects → done
-        2. Fisher-z     — concat_clean group-median partial-corr Fisher-z used
-                          to resolve remaining ties (same reference for all variants)
+        2. Fisher-z     — group-median Fisher-z from concat_clean reference
+                          file used to resolve remaining ties
         3. Seed number  — deterministic fallback: lowest seed number
 
-    Group median file (from group_partial_corr_by_hemi.py):
-        seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_{hemi}.npy
+    The concat_clean group median is used as the Fisher-z reference for ALL
+    variants (same anatomical reference regardless of which run variant is
+    being processed).
 -----------------------------------------------------------------------------------------
 Run variants (from rest_utils.VARIANTS):
-    concat       — concatenated-run CSV, all subjects
+    concat       — concatenated-run TSV, all subjects
     concat_clean — best available run per subject (concat or run-01 fallback)
-    run-01       — run-01 CSV, all subjects
-    run-02       — run-02 CSV, RUN02_EXCLUDED subjects skipped with WARNING
-
-Filename convention (input CSVs):
-    concat / concat_clean : cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
-    run-01 / run-02       : cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
+    run-01       — run-01 TSV, all subjects
+    run-02       — run-02 TSV, RUN02_EXCLUDED subjects skipped with WARNING
 -----------------------------------------------------------------------------------------
 Inputs (sys.argv):
     1: main project directory   (e.g. /scratch/mszinte/data)
     2: project name/directory   (e.g. RetinoMaps)
     3: server group             (e.g. 327)
     4: server project           (e.g. b327)
+    5: parcellation mode:
+           "default"     → _parcellated.tsv
+           "legacy"      → _parcellated_legacy-mode.tsv
+           "no_outliers" → _parcellated_no_outliers.tsv
 
 Output:
     Per hemisphere × variant, one CSV:
-        winning_seeds_by_subject_partial_corr_{hemi}_{variant}.csv
-    Rows: subjects + GROUP + CONSISTENCY_%; columns: parcel names.
+        winning_seeds_by_subject_full_corr_{hemi}_{variant}_{mode}.csv
+    Rows: subjects + GROUP + CONSISTENCY_%; columns: parcel names (YAML order).
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python wta_partial_corr_by_subject_by_hemi.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python wta_full_corr_by_subject_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327 default
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 -----------------------------------------------------------------------------------------
@@ -76,6 +76,10 @@ sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils"))
 from rest_utils import (
     RUN02_EXCLUDED,
     VARIANTS,
+    MODE_SUFFIX,
+    ATLAS_ORDER,
+    build_remap,
+    load_full_corr_matrix,
     compute_winners,
     append_group_and_consistency,
 )
@@ -84,26 +88,35 @@ from rest_utils import (
 # Parse and validate arguments
 # ============================================================
 USAGE = (
-    "Usage: python wta_partial_corr_by_subject_by_hemi.py "
-    "<main_dir> <project_dir> <group> <server>"
+    "Usage: python wta_full_corr_by_subject_by_hemi_task-free.py "
+    "<main_dir> <project_dir> <group> <server> <mode>\n"
+    f"  <mode> must be one of: {', '.join(MODE_SUFFIX)}"
 )
 
-if len(sys.argv) != 5:
-    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) != 6:
+    print(f"ERROR: expected 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
 project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
+mode        = sys.argv[5]
+
+if mode not in MODE_SUFFIX:
+    print(f"ERROR: unrecognised mode '{mode}'.\n  Accepted: {', '.join(MODE_SUFFIX)}\n{USAGE}")
+    sys.exit(1)
+
+tsv_suffix = MODE_SUFFIX[mode]
 
 print("=" * 80)
-print("WTA — partial correlation (Nilearn parcellated fisher-z CSVs)")
+print("WTA — full correlation (workbench parcellated TSVs)")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
 print(f"  group       : {group}")
 print(f"  server      : {server}")
+print(f"  mode        : {mode!r}  →  suffix: '_parcellated{tsv_suffix}.tsv'")
 
 # ============================================================
 # Load settings
@@ -115,23 +128,40 @@ analysis_info     = settings[0]
 subjects          = analysis_info["subjects"]
 
 # ============================================================
-# Paths
-# ============================================================
-main_data          = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder      = main_data / "group/91k/rest/wta/nilearn"
-group_corr_folder  = main_data / "group/91k/rest/partial_corr/by_hemi/task-free"
-output_folder.mkdir(parents=True, exist_ok=True)
-
-# ============================================================
-# ROI / cluster settings
+# ROIs — canonical order from YAML config
 # ============================================================
 clusters: List[str]                   = list(analysis_info["rois-drawn"])
 seed_to_parcels: Dict[str, List[str]] = analysis_info["rois-group-mmp"]
 clusters.reverse()                    # mPCS first
 
+parcels: List[str] = []
+for cl in clusters:
+    parcels.extend(seed_to_parcels[cl])
+
 seed_to_number: Dict[str, int] = {s: i + 1 for i, s in enumerate(clusters)}
 
 n_clusters = len(clusters)
+n_parcels  = len(parcels)
+
+# ============================================================
+# Paths
+# ============================================================
+main_data        = Path(main_dir) / project_dir / "derivatives/pp_data"
+output_folder    = main_data / "group/91k/rest/wta/workbench"
+group_corr_folder = main_data / "group/91k/rest/full_corr/by_hemi/task-free"
+output_folder.mkdir(parents=True, exist_ok=True)
+
+# ============================================================
+# Pre-compute remap indices: atlas-key order → canonical YAML order
+# ============================================================
+_REMAP: Dict[str, tuple] = {}
+for _hemi in ("rh", "lh"):
+    _remap_idx, _present = build_remap(ATLAS_ORDER[_hemi], parcels, _hemi)
+    _REMAP[_hemi] = (_remap_idx, _present)
+    print(
+        f"  Remap [{_hemi.upper()}]: {len(_present)}/{n_parcels} canonical parcels "
+        "found in atlas key table."
+    )
 
 # ============================================================
 # Load concat_clean group-median Fisher-z matrices
@@ -140,17 +170,16 @@ n_clusters = len(clusters)
 # One matrix per hemisphere: shape (n_clusters × n_parcels), rows in clusters
 # order, columns in canonical parcels order.
 #
-# Filename produced by group_partial_corr_by_hemi.py:
-#   seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_{hemi}.npy
+# Filename: seed-task_by_mmp-parcel_full-corr_fisherz_median_concat_clean_{hemi}_{mode}.npy
 # ============================================================
-def load_group_median(hemi: str, n_parcels: int) -> Optional[np.ndarray]:
+def load_group_median(hemi: str) -> Optional[np.ndarray]:
     """
-    Load the concat_clean group-median partial-corr Fisher-z .npy for one hemi.
+    Load the concat_clean group-median Fisher-z .npy for one hemisphere.
     Returns None with a WARNING if the file is not found.
     """
     fname = (
-        f"seed-task_by_mmp-parcel_partial-corr_fisherz"
-        f"_median_concat_clean_{hemi}.npy"
+        f"seed-task_by_mmp-parcel_full-corr_fisherz_median"
+        f"_concat_clean_{hemi}_{mode}.npy"
     )
     fpath = group_corr_folder / fname
     if not fpath.exists():
@@ -167,52 +196,11 @@ def load_group_median(hemi: str, n_parcels: int) -> Optional[np.ndarray]:
     print(f"  Group median [{hemi.upper()}]: loaded {fpath.name}  shape={mat.shape}")
     return mat
 
-# ============================================================
-# Partial-corr-specific I/O helpers
-# (not in rest_utils: path logic and file format are Nilearn-specific)
-# ============================================================
 
-def csv_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
-    """
-    Return expected path for one subject / hemi partial corr CSV.
-
-    run_tag = None  → concatenated file:
-        cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
-    run_tag = str   → per-run file:
-        cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
-    """
-    subj_dir   = main_data / subject / "91k/rest/corr/partial_corr/by_hemi/task-free"
-    run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.csv"
-    return subj_dir / fname
-
-
-def load_partial_corr_matrix(
-    subject: str,
-    hemi: str,
-    run_tag: Optional[str],
-) -> Optional[pd.DataFrame]:
-    """
-    Load the seeds × parcels partial correlation matrix for one subject / hemi.
-
-    Returns None if the file is missing.
-    Raises ValueError if any expected seed is absent from the CSV index.
-    """
-    fpath = csv_path(subject, hemi, run_tag)
-
-    if not fpath.exists():
-        print(f"  WARNING [{subject} {hemi}]: missing {fpath.name}")
-        return None
-
-    df = pd.read_csv(fpath, index_col=0)
-
-    missing_seeds = set(clusters) - set(df.index)
-    if missing_seeds:
-        raise ValueError(
-            f"Seeds missing from {fpath.name}: {sorted(missing_seeds)}"
-        )
-
-    return df
+print("\nLoading concat_clean group-median Fisher-z matrices...")
+GROUP_MEDIAN: Dict[str, Optional[np.ndarray]] = {
+    hemi: load_group_median(hemi) for hemi in ("lh", "rh")
+}
 
 # ============================================================
 # Main loop — hemisphere × variant
@@ -223,9 +211,8 @@ for hemi in ("lh", "rh"):
     print(f"Processing hemisphere: {hemi.upper()}")
     print("=" * 80)
 
-    # parcel_columns captured from first valid subject — consistent across variants
-    # within a hemisphere (same CSV structure guaranteed by the Nilearn pipeline)
-    parcel_columns: Optional[List[str]] = None
+    remap_idx, present = _REMAP[hemi]
+    group_median       = GROUP_MEDIAN[hemi]   # may be None → falls to level 3
 
     for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
         print(f"\n  --- Variant: {variant} ---")
@@ -242,20 +229,22 @@ for hemi in ("lh", "rh"):
 
             run_tag = excluded_tag if is_excluded else normal_tag
 
-            df_corr = load_partial_corr_matrix(subject, hemi, run_tag)
-            if df_corr is None:
-                print(f"    {subject}: SKIPPED (missing file)")
-                continue
+            df_corr = load_full_corr_matrix(
+                subject    = subject,
+                hemi       = hemi,
+                run_tag    = run_tag,
+                clusters   = clusters,
+                parcels    = parcels,
+                remap_idx  = remap_idx,
+                present    = present,
+                main_data  = main_data,
+                tsv_suffix = tsv_suffix,
+                task       = "task-free",
+            )
 
-            # Capture and enforce consistent parcel column order across all
-            # subjects and variants within this hemisphere
-            if parcel_columns is None:
-                parcel_columns = list(df_corr.columns)
-            elif list(df_corr.columns) != parcel_columns:
-                raise ValueError(
-                    f"Column order mismatch for {subject} {hemi} {variant} — "
-                    "parcels are not consistent across subjects."
-                )
+            if df_corr is None:
+                print(f"    {subject}: SKIPPED (missing files)")
+                continue
 
             if variant == "concat_clean" and is_excluded:
                 print(f"    {subject}: OK (fallback → run-01)")
@@ -275,30 +264,23 @@ for hemi in ("lh", "rh"):
             print(f"    ERROR: no valid subjects for {hemi} / {variant} — skipping.")
             continue
 
-        # Load group median now that we know n_parcels from the data
-        # (done once per hemi, lazily on first variant that produces results)
-        n_parcels = len(parcel_columns)
-        group_median = load_group_median(hemi, n_parcels)
-
-        subject_df = pd.DataFrame(
-            all_winners, index=subject_ids, columns=parcel_columns
-        )
+        subject_df = pd.DataFrame(all_winners, index=subject_ids, columns=parcels)
 
         # Tie-breaking cascade:
         #   Level 1 — unique vote winner
-        #   Level 2 — concat_clean group-median partial-corr Fisher-z
+        #   Level 2 — concat_clean group-median Fisher-z (same reference for all variants)
         #   Level 3 — lowest seed number (deterministic fallback)
         combined_df = append_group_and_consistency(
             subject_df     = subject_df,
             clusters       = clusters,
             seed_to_number = seed_to_number,
             group_median   = group_median,
-            parcels        = parcel_columns,
+            parcels        = parcels,
         )
 
         out_csv = (
             output_folder
-            / f"winning_seeds_by_subject_partial_corr_{hemi}_{variant}.csv"
+            / f"winning_seeds_by_subject_full_corr_{hemi}_{variant}_{mode}.csv"
         )
         combined_df.to_csv(out_csv)
         print(f"    Saved: {out_csv.name}")
@@ -319,25 +301,30 @@ print(f"\nOutputs written to: {output_folder}")
 # Output: one tidy CSV + ready-to-paste results text printed to stdout.
 # ============================================================
 
-TARGET_MACROS  = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
+TARGET_MACROS = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
 number_to_seed = {v: k for k, v in seed_to_number.items()}
 
-
-def consistency_ranges() -> None:
+def consistency_ranges(corr_type_label: str, mode_token: str) -> None:
     """
     Load the concat_clean WTA CSVs for both hemispheres and compute
     per-macro-region consistency ranges (min/max parcel + value).
-    Results are saved to a tidy CSV and printed as ready-to-paste text.
+
+    Parameters
+    ----------
+    corr_type_label : short label for the correlation type (for filenames/print)
+    mode_token      : appended to the input/output filename (e.g. "_default" or "")
     """
     print(f"\n{'='*80}")
-    print("CONSISTENCY RANGE REPORT — partial_corr / concat_clean")
+    print(f"CONSISTENCY RANGE REPORT — {corr_type_label} / concat_clean{mode_token}")
     print("=" * 80)
 
     rows = []   # for the tidy CSV
 
     for hemi in ("lh", "rh"):
+        # Load the concat_clean WTA table for this hemisphere
         wta_fname = (
-            f"winning_seeds_by_subject_partial_corr_{hemi}_concat_clean.csv"
+            f"winning_seeds_by_subject_{corr_type_label}"
+            f"_{hemi}_concat_clean{mode_token}.csv"
         )
         wta_path = output_folder / wta_fname
         if not wta_path.exists():
@@ -383,8 +370,8 @@ def consistency_ranges() -> None:
                 rows.append({
                     "hemi": hemi, "macro_region": target_macro,
                     "n_eligible_parcels": 0,
-                    "min_pct": np.nan, "min_parcel": "", "min_winner": "",
-                    "max_pct": np.nan, "max_parcel": "", "max_winner": "",
+                    "min_pct": np.nan, "min_parcel": "",  "min_winner": "",
+                    "max_pct": np.nan, "max_parcel": "",  "max_winner": "",
                 })
                 continue
 
@@ -414,9 +401,12 @@ def consistency_ranges() -> None:
     report_df = pd.DataFrame(rows)
 
     # Save tidy CSV
-    report_path = output_folder / "consistency_ranges_partial_corr_concat_clean.csv"
+    report_fname = (
+        f"consistency_ranges_{corr_type_label}_concat_clean{mode_token}.csv"
+    )
+    report_path = output_folder / report_fname
     report_df.to_csv(report_path, index=False)
-    print(f"\n  Saved tidy table: {report_path.name}")
+    print(f"\n  Saved tidy table: {report_fname}")
 
     # Print ready-to-paste results text
     print("\n  --- Ready-to-paste results text ---\n")
@@ -439,4 +429,9 @@ def consistency_ranges() -> None:
     print()
 
 
-consistency_ranges()
+# Run the report for concat_clean (canonical output for the paper)
+mode_token_report = f"_{mode}" if mode else ""
+consistency_ranges(
+    corr_type_label = f"full_corr",
+    mode_token      = mode_token_report,
+)
