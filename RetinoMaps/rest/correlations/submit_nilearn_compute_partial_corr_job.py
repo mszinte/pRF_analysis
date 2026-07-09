@@ -19,7 +19,7 @@ Output(s):
 Example:
 conda activate pRF_env
 cd projects/pRF_analysis/RetinoMaps/rest/correlations/
-python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-free 0:30:00
+python submit_nilearn_compute_partial_corr_job.py /scratch/mszinte/data RetinoMaps 327 b327 task-constrained 0:30:00
 -----------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 """

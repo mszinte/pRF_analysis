@@ -384,7 +384,40 @@ def load_npy_hemi(filepath: str) -> Optional[np.ndarray]:
         return None
     return arr
 
+# Helper for Nilearn partial correlation
+def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
+    """Replace NaN values in a (n_time × n_signals) matrix before passing to
+    Nilearn's ConnectivityMeasure, which cannot handle NaNs.
+    """
+    X_clean = X.copy()
+    n_signals = X_clean.shape[1]
 
+    for j in range(n_signals):
+        col = X_clean[:, j]
+        nan_mask = np.isnan(col)
+
+        if not nan_mask.any():
+            continue
+
+        n_nan = int(nan_mask.sum())
+
+        if nan_mask.all():
+            print(
+                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
+                f"ALL {n_nan} timepoints are NaN — replacing with zeros"
+            )
+            X_clean[:, j] = 0.0
+        else:
+            col_mean = np.nanmean(col)
+            print(
+                f"  {'[' + label + '] ' if label else ''}⚠️  Column {j}: "
+                f"{n_nan}/{len(col)} NaN timepoints — imputing with column mean "
+                f"({col_mean:.4f})"
+            )
+            X_clean[nan_mask, j] = col_mean
+
+    return X_clean
+    
 # ============================================================
 # Violin-plot visual constants
 # ============================================================
