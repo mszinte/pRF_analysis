@@ -63,11 +63,19 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 # ============================================================
-# Personal imports — settings utils
+# Personal imports
 # ============================================================
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
+
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
+
+# Load rest-specific settings (runs, exclusions)
+rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
+rest_settings      = load_settings([rest_settings_path])[0]
+
+RUNS          = rest_settings["runs"]["value"]
+RUN02_EXCLUDED = frozenset(rest_settings["run02_excluded"]["value"])
 
 # ============================================================
 # rest_utils — shared pipeline constants and functions
@@ -119,7 +127,7 @@ subjects          = analysis_info["subjects"]
 # ============================================================
 main_data          = Path(main_dir) / project_dir / "derivatives/pp_data"
 output_folder      = main_data / "group/91k/rest/wta/nilearn"
-group_corr_folder  = main_data / "group/91k/rest/partial_corr/by_hemi/task-free"
+group_corr_folder  = main_data / "group/91k/rest/partial_corr/by_hemi"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
@@ -138,7 +146,7 @@ n_clusters = len(clusters)
 #
 # Used as the level-2 Fisher-z reference in break_ties_wta() for ALL variants.
 # One matrix per hemisphere: shape (n_clusters × n_parcels), rows in clusters
-# order, columns in canonical parcels order.
+# order, columns in canonical parcels order
 #
 # Filename produced by group_partial_corr_by_hemi.py:
 #   seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_{hemi}.npy
@@ -181,9 +189,9 @@ def csv_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
     run_tag = str   → per-run file:
         cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
     """
-    subj_dir   = main_data / subject / "91k/rest/corr/partial_corr/by_hemi/task-free"
+    subj_dir   = main_data / subject / "91k/rest/corr/partial_corr/by_hemi"
     run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.csv"
+    fname      = f"cluster_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.csv"
     return subj_dir / fname
 
 
@@ -308,135 +316,3 @@ print("\n" + "=" * 80)
 print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")
-
-# ============================================================
-# Consistency range report — concat_clean only
-#
-# For each target macro-region × hemisphere, report the min and max
-# CONSISTENCY_% across parcels whose GROUP winner is one of the 5 target
-# macro-regions (in-scope only; self-seed and out-of-scope parcels excluded).
-#
-# Output: one tidy CSV + ready-to-paste results text printed to stdout.
-# ============================================================
-
-TARGET_MACROS  = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
-number_to_seed = {v: k for k, v in seed_to_number.items()}
-
-
-def consistency_ranges() -> None:
-    """
-    Load the concat_clean WTA CSVs for both hemispheres and compute
-    per-macro-region consistency ranges (min/max parcel + value).
-    Results are saved to a tidy CSV and printed as ready-to-paste text.
-    """
-    print(f"\n{'='*80}")
-    print("CONSISTENCY RANGE REPORT — partial_corr / concat_clean")
-    print("=" * 80)
-
-    rows = []   # for the tidy CSV
-
-    for hemi in ("lh", "rh"):
-        wta_fname = (
-            f"winning_seeds_by_subject_partial_corr_{hemi}_concat_clean.csv"
-        )
-        wta_path = output_folder / wta_fname
-        if not wta_path.exists():
-            print(f"  WARNING: {wta_fname} not found — skipping {hemi.upper()}.")
-            continue
-
-        df = pd.read_csv(wta_path, index_col=0)
-
-        if "GROUP" not in df.index or "CONSISTENCY_%" not in df.index:
-            print(f"  WARNING: GROUP or CONSISTENCY_% row missing in {wta_fname}.")
-            continue
-
-        group_row       = df.loc["GROUP"].astype(float)
-        consistency_row = df.loc["CONSISTENCY_%"].astype(float)
-
-        for target_macro in TARGET_MACROS:
-            target_parcels = seed_to_parcels[target_macro]
-
-            # Collect eligible parcels: in target macro-region, GROUP winner is
-            # an in-scope seed (not the target itself, not out-of-scope)
-            eligible = []
-            for parcel in target_parcels:
-                if parcel not in group_row.index:
-                    continue
-                winner_label = group_row[parcel]
-                if pd.isna(winner_label):
-                    continue
-                winner_macro = number_to_seed[int(winner_label)]
-                if winner_macro == target_macro:
-                    continue              # self-seed excluded
-                if winner_macro not in TARGET_MACROS:
-                    continue              # out-of-scope excluded
-                pct = consistency_row.get(parcel, np.nan)
-                if pd.isna(pct):
-                    continue
-                eligible.append((parcel, winner_macro, pct))
-
-            if not eligible:
-                print(
-                    f"  {hemi.upper()} {target_macro}: no eligible parcels "
-                    "(all self-seed or out-of-scope)."
-                )
-                rows.append({
-                    "hemi": hemi, "macro_region": target_macro,
-                    "n_eligible_parcels": 0,
-                    "min_pct": np.nan, "min_parcel": "", "min_winner": "",
-                    "max_pct": np.nan, "max_parcel": "", "max_winner": "",
-                })
-                continue
-
-            eligible_df = pd.DataFrame(
-                eligible, columns=["parcel", "winner_macro", "consistency_pct"]
-            ).sort_values("consistency_pct")
-
-            min_row = eligible_df.iloc[0]
-            max_row = eligible_df.iloc[-1]
-
-            rows.append({
-                "hemi":               hemi,
-                "macro_region":       target_macro,
-                "n_eligible_parcels": len(eligible_df),
-                "min_pct":            round(min_row["consistency_pct"], 1),
-                "min_parcel":         min_row["parcel"],
-                "min_winner":         min_row["winner_macro"],
-                "max_pct":            round(max_row["consistency_pct"], 1),
-                "max_parcel":         max_row["parcel"],
-                "max_winner":         max_row["winner_macro"],
-            })
-
-    if not rows:
-        print("  No data to report.")
-        return
-
-    report_df = pd.DataFrame(rows)
-
-    # Save tidy CSV
-    report_path = output_folder / "consistency_ranges_partial_corr_concat_clean.csv"
-    report_df.to_csv(report_path, index=False)
-    print(f"\n  Saved tidy table: {report_path.name}")
-
-    # Print ready-to-paste results text
-    print("\n  --- Ready-to-paste results text ---\n")
-    for hemi in ("lh", "rh"):
-        hemi_label = "left hemisphere" if hemi == "lh" else "right hemisphere"
-        hemi_rows  = report_df[report_df["hemi"] == hemi]
-        parts = []
-        for _, r in hemi_rows.iterrows():
-            if pd.isna(r["min_pct"]):
-                parts.append(f"{r['macro_region']} no eligible parcels")
-            else:
-                parts.append(
-                    f"{r['macro_region']} {r['min_pct']:.1f}%"
-                    f" ({r['min_parcel']})"
-                    f"–{r['max_pct']:.1f}%"
-                    f" ({r['max_parcel']})"
-                )
-        print(f"  {hemi_label}: {'; '.join(parts)}")
-
-    print()
-
-
-consistency_ranges()

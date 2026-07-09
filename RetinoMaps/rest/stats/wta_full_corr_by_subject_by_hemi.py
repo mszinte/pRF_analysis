@@ -1,6 +1,4 @@
 """
-Created on May 3, 2025
-
 wta_full_corr_by_subject_by_hemi.py
 -----------------------------------------------------------------------------------------
 Goal:
@@ -15,22 +13,19 @@ Goal:
     All shared logic (constants, I/O, WTA, tie-breaking) is imported from
     rest_utils.py — do not duplicate those definitions here.
 
-Pipeline per hemisphere × variant:
-    1. For each subject, resolve which TSV files to load (varies by variant).
-    2. Load one TSV per seed via load_full_corr_matrix(), which slices hemi
-       rows and remaps to canonical parcel order.
-    3. Apply compute_winners() → winning seed label per parcel.
-    4. Collect across subjects → append GROUP and CONSISTENCY via
-       append_group_and_consistency() with the three-level tie-break cascade
-       (votes → Fisher-z → lowest seed number).  Fisher-z tiebreaking requires
-       a group-median matrix; pass None here to fall through to level 3.
-    5. Save combined table.
+    Tie-breaking cascade in append_group_and_consistency():
+        1. Vote count   — unique modal winner across subjects → done
+        2. Fisher-z     — group-median Fisher-z from concat_clean reference
+                          file used to resolve remaining ties
+        3. Seed number  — deterministic fallback: lowest seed number
+
+    The concat_clean group median is used as the Fisher-z reference for ALL
+    variants (same anatomical reference regardless of which run variant is
+    being processed).
 -----------------------------------------------------------------------------------------
 Run variants (from rest_utils.VARIANTS):
     concat       — concatenated-run TSV, all subjects
-    concat_clean — best available run per subject:
-                     · RUN02_EXCLUDED subjects → run-01 TSV
-                     · all other subjects      → concatenated-run TSV
+    concat_clean — best available run per subject (concat or run-01 fallback)
     run-01       — run-01 TSV, all subjects
     run-02       — run-02 TSV, RUN02_EXCLUDED subjects skipped with WARNING
 -----------------------------------------------------------------------------------------
@@ -68,19 +63,11 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 # ============================================================
-# Personal imports
+# Personal imports — settings utils
 # ============================================================
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
-
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
-
-# Load rest-specific settings (runs, exclusions)
-rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
-rest_settings      = load_settings([rest_settings_path])[0]
-
-RUNS          = rest_settings["runs"]["value"]
-RUN02_EXCLUDED = frozenset(rest_settings["run02_excluded"]["value"])
 
 # ============================================================
 # rest_utils — shared pipeline constants and functions
@@ -90,13 +77,8 @@ from rest_utils import (
     RUN02_EXCLUDED,
     VARIANTS,
     MODE_SUFFIX,
-    ATLAS_KEY_TABLES,
     ATLAS_ORDER,
-    HEMI_ROW_SLICE,
-    N_PARCELS_PER_HEMI,
-    N_PARCELS_TOTAL,
     build_remap,
-    tsv_path,
     load_full_corr_matrix,
     compute_winners,
     append_group_and_consistency,
@@ -148,9 +130,9 @@ subjects          = analysis_info["subjects"]
 # ============================================================
 # ROIs — canonical order from YAML config
 # ============================================================
-clusters: List[str]             = list(analysis_info["rois-drawn"])
+clusters: List[str]                   = list(analysis_info["rois-drawn"])
 seed_to_parcels: Dict[str, List[str]] = analysis_info["rois-group-mmp"]
-clusters.reverse()                      # mPCS first
+clusters.reverse()                    # mPCS first
 
 parcels: List[str] = []
 for cl in clusters:
@@ -164,15 +146,13 @@ n_parcels  = len(parcels)
 # ============================================================
 # Paths
 # ============================================================
-main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder = main_data / "group/91k/rest/wta/workbench"
+main_data        = Path(main_dir) / project_dir / "derivatives/pp_data"
+output_folder    = main_data / "group/91k/rest/wta/workbench"
+group_corr_folder = main_data / "group/91k/rest/full_corr/by_hemi/task-free"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
-# Build remap index: atlas-key order → canonical YAML parcel order
-#
-# Computed once at startup via rest_utils.build_remap().
-# Raises immediately if the atlas key tables and the YAML are inconsistent.
+# Pre-compute remap indices: atlas-key order → canonical YAML order
 # ============================================================
 _REMAP: Dict[str, tuple] = {}
 for _hemi in ("rh", "lh"):
@@ -184,6 +164,45 @@ for _hemi in ("rh", "lh"):
     )
 
 # ============================================================
+# Load concat_clean group-median Fisher-z matrices
+#
+# Used as the level-2 Fisher-z reference in break_ties_wta() for ALL variants.
+# One matrix per hemisphere: shape (n_clusters × n_parcels), rows in clusters
+# order, columns in canonical parcels order.
+#
+# Filename: seed-task_by_mmp-parcel_full-corr_fisherz_median_concat_clean_{hemi}_{mode}.npy
+# ============================================================
+def load_group_median(hemi: str) -> Optional[np.ndarray]:
+    """
+    Load the concat_clean group-median Fisher-z .npy for one hemisphere.
+    Returns None with a WARNING if the file is not found.
+    """
+    fname = (
+        f"seed-task_by_mmp-parcel_full-corr_fisherz_median"
+        f"_concat_clean_{hemi}_{mode}.npy"
+    )
+    fpath = group_corr_folder / fname
+    if not fpath.exists():
+        print(f"  WARNING: group median not found — {fpath.name}")
+        print("    Tie-breaking will fall back to level 3 (lowest seed number).")
+        return None
+    mat = np.load(fpath)
+    if mat.shape != (n_clusters, n_parcels):
+        raise ValueError(
+            f"Group median shape {mat.shape} does not match expected "
+            f"({n_clusters}, {n_parcels}) for {fpath.name}.\n"
+            "  Check that the group stats script used the same YAML config."
+        )
+    print(f"  Group median [{hemi.upper()}]: loaded {fpath.name}  shape={mat.shape}")
+    return mat
+
+
+print("\nLoading concat_clean group-median Fisher-z matrices...")
+GROUP_MEDIAN: Dict[str, Optional[np.ndarray]] = {
+    hemi: load_group_median(hemi) for hemi in ("lh", "rh")
+}
+
+# ============================================================
 # Main loop — hemisphere × variant
 # ============================================================
 
@@ -193,6 +212,7 @@ for hemi in ("lh", "rh"):
     print("=" * 80)
 
     remap_idx, present = _REMAP[hemi]
+    group_median       = GROUP_MEDIAN[hemi]   # may be None → falls to level 3
 
     for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
         print(f"\n  --- Variant: {variant} ---")
@@ -209,18 +229,16 @@ for hemi in ("lh", "rh"):
 
             run_tag = excluded_tag if is_excluded else normal_tag
 
-            # load_full_corr_matrix() from rest_utils handles TSV loading,
-            # hemi-row slicing, and remap to canonical parcel order
             df_corr = load_full_corr_matrix(
-                subject     = subject,
-                hemi        = hemi,
-                run_tag     = run_tag,
-                clusters    = clusters,
-                parcels     = parcels,
-                remap_idx   = remap_idx,
-                present     = present,
-                main_data   = main_data,
-                tsv_suffix  = tsv_suffix,
+                subject    = subject,
+                hemi       = hemi,
+                run_tag    = run_tag,
+                clusters   = clusters,
+                parcels    = parcels,
+                remap_idx  = remap_idx,
+                present    = present,
+                main_data  = main_data,
+                tsv_suffix = tsv_suffix,
             )
 
             if df_corr is None:
@@ -232,7 +250,6 @@ for hemi in ("lh", "rh"):
             else:
                 print(f"    {subject}: OK")
 
-            # compute_winners() from rest_utils masks self-seed parcels then argmax
             all_winners.append(
                 compute_winners(
                     df_corr         = df_corr,
@@ -248,15 +265,15 @@ for hemi in ("lh", "rh"):
 
         subject_df = pd.DataFrame(all_winners, index=subject_ids, columns=parcels)
 
-        # append_group_and_consistency() from rest_utils computes GROUP via the
-        # three-level tie-break cascade (votes → Fisher-z → lowest seed number).
-        # group_median=None here: no group-level Fisher-z matrix is available at
-        # this stage, so ties fall through to level 3 (lowest seed number)
+        # Tie-breaking cascade:
+        #   Level 1 — unique vote winner
+        #   Level 2 — concat_clean group-median Fisher-z (same reference for all variants)
+        #   Level 3 — lowest seed number (deterministic fallback)
         combined_df = append_group_and_consistency(
             subject_df     = subject_df,
             clusters       = clusters,
             seed_to_number = seed_to_number,
-            group_median   = None,
+            group_median   = group_median,
             parcels        = parcels,
         )
 
@@ -272,3 +289,148 @@ print("\n" + "=" * 80)
 print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")
+
+# ============================================================
+# Consistency range report — concat_clean only
+#
+# For each target macro-region × hemisphere, report the min and max
+# CONSISTENCY_% across parcels whose GROUP winner is one of the 5 target
+# macro-regions (in-scope only; self-seed and out-of-scope parcels excluded).
+#
+# Output: one tidy CSV + ready-to-paste results text printed to stdout.
+# ============================================================
+
+TARGET_MACROS = ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"]
+number_to_seed = {v: k for k, v in seed_to_number.items()}
+
+def consistency_ranges(corr_type_label: str, mode_token: str) -> None:
+    """
+    Load the concat_clean WTA CSVs for both hemispheres and compute
+    per-macro-region consistency ranges (min/max parcel + value).
+
+    Parameters
+    ----------
+    corr_type_label : short label for the correlation type (for filenames/print)
+    mode_token      : appended to the input/output filename (e.g. "_default" or "")
+    """
+    print(f"\n{'='*80}")
+    print(f"CONSISTENCY RANGE REPORT — {corr_type_label} / concat_clean{mode_token}")
+    print("=" * 80)
+
+    rows = []   # for the tidy CSV
+
+    for hemi in ("lh", "rh"):
+        # Load the concat_clean WTA table for this hemisphere
+        wta_fname = (
+            f"winning_seeds_by_subject_{corr_type_label}"
+            f"_{hemi}_concat_clean{mode_token}.csv"
+        )
+        wta_path = output_folder / wta_fname
+        if not wta_path.exists():
+            print(f"  WARNING: {wta_fname} not found — skipping {hemi.upper()}.")
+            continue
+
+        df = pd.read_csv(wta_path, index_col=0)
+
+        if "GROUP" not in df.index or "CONSISTENCY_%" not in df.index:
+            print(f"  WARNING: GROUP or CONSISTENCY_% row missing in {wta_fname}.")
+            continue
+
+        group_row       = df.loc["GROUP"].astype(float)
+        consistency_row = df.loc["CONSISTENCY_%"].astype(float)
+
+        for target_macro in TARGET_MACROS:
+            target_parcels = seed_to_parcels[target_macro]
+
+            # Collect eligible parcels: in target macro-region, GROUP winner is
+            # an in-scope seed (not the target itself, not out-of-scope)
+            eligible = []
+            for parcel in target_parcels:
+                if parcel not in group_row.index:
+                    continue
+                winner_label = group_row[parcel]
+                if pd.isna(winner_label):
+                    continue
+                winner_macro = number_to_seed[int(winner_label)]
+                if winner_macro == target_macro:
+                    continue              # self-seed excluded
+                if winner_macro not in TARGET_MACROS:
+                    continue              # out-of-scope excluded
+                pct = consistency_row.get(parcel, np.nan)
+                if pd.isna(pct):
+                    continue
+                eligible.append((parcel, winner_macro, pct))
+
+            if not eligible:
+                print(
+                    f"  {hemi.upper()} {target_macro}: no eligible parcels "
+                    "(all self-seed or out-of-scope)."
+                )
+                rows.append({
+                    "hemi": hemi, "macro_region": target_macro,
+                    "n_eligible_parcels": 0,
+                    "min_pct": np.nan, "min_parcel": "",  "min_winner": "",
+                    "max_pct": np.nan, "max_parcel": "",  "max_winner": "",
+                })
+                continue
+
+            eligible_df = pd.DataFrame(
+                eligible, columns=["parcel", "winner_macro", "consistency_pct"]
+            ).sort_values("consistency_pct")
+
+            min_row = eligible_df.iloc[0]
+            max_row = eligible_df.iloc[-1]
+
+            rows.append({
+                "hemi":               hemi,
+                "macro_region":       target_macro,
+                "n_eligible_parcels": len(eligible_df),
+                "min_pct":            round(min_row["consistency_pct"], 1),
+                "min_parcel":         min_row["parcel"],
+                "min_winner":         min_row["winner_macro"],
+                "max_pct":            round(max_row["consistency_pct"], 1),
+                "max_parcel":         max_row["parcel"],
+                "max_winner":         max_row["winner_macro"],
+            })
+
+    if not rows:
+        print("  No data to report.")
+        return
+
+    report_df = pd.DataFrame(rows)
+
+    # Save tidy CSV
+    report_fname = (
+        f"consistency_ranges_{corr_type_label}_concat_clean{mode_token}.csv"
+    )
+    report_path = output_folder / report_fname
+    report_df.to_csv(report_path, index=False)
+    print(f"\n  Saved tidy table: {report_fname}")
+
+    # Print ready-to-paste results text
+    print("\n  --- Ready-to-paste results text ---\n")
+    for hemi in ("lh", "rh"):
+        hemi_label = "left hemisphere" if hemi == "lh" else "right hemisphere"
+        hemi_rows  = report_df[report_df["hemi"] == hemi]
+        parts = []
+        for _, r in hemi_rows.iterrows():
+            if pd.isna(r["min_pct"]):
+                parts.append(f"{r['macro_region']} no eligible parcels")
+            else:
+                parts.append(
+                    f"{r['macro_region']} {r['min_pct']:.1f}%"
+                    f" ({r['min_parcel']})"
+                    f"–{r['max_pct']:.1f}%"
+                    f" ({r['max_parcel']})"
+                )
+        print(f"  {hemi_label}: {'; '.join(parts)}")
+
+    print()
+
+
+# Run the report for concat_clean (canonical output for the paper)
+mode_token_report = f"_{mode}" if mode else ""
+consistency_ranges(
+    corr_type_label = f"full_corr",
+    mode_token      = mode_token_report,
+)
