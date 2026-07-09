@@ -42,7 +42,8 @@ Outputs (per subject, per run, per hemisphere)
   seed-task_by_macror-task_partial_fisherz_{run}_{hemi}.npy / .csv   — Fisher z
   seed-task_by_macror-task_partial_{run}_{hemi}_bilateral.npy / .csv — bilateral
 
-Group aggregation: run group_stats_partial_corr.py (Fisher-z space throughout).
+Group aggregation: run group_stats_partial_corr_task-constrained.py 
+(Fisher-z space throughout)
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -350,41 +351,50 @@ for subject in subjects:
             )
             os.makedirs(sub_out, exist_ok=True)
 
-            tag = label.lower()   # "lh" or "rh"
+            tag = label.lower()  # lh / rh
 
-            # Ipsilateral outputs (primary; consumed by downstream scripts)
+            # Build BIDS-like filename stem
+            if run:
+                stem = (
+                    f"{subject}_task-rest_{run}"
+                    f"_space-fsLR_den-91k_desc-fisher-z_{tag}_task-constrained"
+                )
+            else:
+                stem = (
+                    f"{subject}"
+                    f"_task-rest_space-fsLR_den-91k_desc-fisher-z_{tag}_task-constrained"
+                )
+
+            # ---------- primary outputs ----------
+
             np.save(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}.npy"),
-                filled_r,
-            )
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}.npy"),
+                os.path.join(sub_out, f"{stem}.npy"),
                 filled_fz,
             )
-            pd.DataFrame(filled_r,  index=clusters, columns=clusters).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}.csv")
-            )
-            pd.DataFrame(filled_fz, index=clusters, columns=clusters).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}.csv")
+
+            pd.DataFrame(
+                filled_fz,
+                index=clusters,
+                columns=clusters,
+            ).to_csv(
+                os.path.join(sub_out, f"{stem}.tsv"),
+                sep="\t",
             )
 
-            # Bilateral outputs ([ipsi | contra]; ipsi half = [:, :n_clusters])
+            # ---------- bilateral outputs ----------
+
             np.save(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}_bilateral.npy"),
-                filled_r_bilateral,
-            )
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}_bilateral.npy"),
+                os.path.join(sub_out, f"{stem}_bilateral.npy"),
                 filled_fz_bilateral,
             )
-            pd.DataFrame(filled_r_bilateral,  index=clusters, columns=clusters_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial{run_tag}_{tag}_bilateral.csv")
-            )
-            pd.DataFrame(filled_fz_bilateral, index=clusters, columns=clusters_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macror-task_partial_fisherz{run_tag}_{tag}_bilateral.csv")
+
+            pd.DataFrame(
+                filled_fz_bilateral,
+                index=clusters,
+                columns=clusters_bilateral,
+            ).to_csv(
+                os.path.join(sub_out, f"{stem}_bilateral.tsv"),
+                sep="\t",
             )
 
             print(f"  [{label}] Saved to {sub_out}")
-
-print("\nDone. Run group_stats_partial_corr.py to aggregate across subjects.")
-# ============================================================

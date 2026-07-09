@@ -215,6 +215,7 @@ def tsv_path(
     run_tag: Optional[str],
     main_data: Path,
     tsv_suffix: str,
+    task: Optional[str] = None,
 ) -> Path:
     """
     Return the expected path for one subject / hemi / seed TSV file.
@@ -227,13 +228,18 @@ def tsv_path(
     run_tag    : None → concat file; str → per-run file (e.g. "run-01")
     main_data  : Path to {main_dir}/{project_dir}/derivatives/pp_data
     tsv_suffix : from MODE_SUFFIX[mode], e.g. "" or "_legacy-mode"
+    task       : optional task subfolder inside by_hemi/
+                 (e.g. "task-free" or "task-constrained").
+                 None → files sit directly in by_hemi/ (legacy behaviour).
     """
-    subj_dir   = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
-    run_entity = f"_{run_tag}" if run_tag is not None else ""
+    by_hemi_dir  = main_data / subject / "91k/rest/corr/full_corr/by_hemi"
+    subj_dir     = by_hemi_dir / task if task is not None else by_hemi_dir
+    run_entity   = f"_{run_tag}" if run_tag is not None else ""
+    task_token   = f"_{task}" if task is not None else ""
     fname = (
         f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
         f"_desc-fisher-z_{hemi}_{roi}"
-        f"_parcellated{tsv_suffix}.tsv"
+        f"{task_token}_parcellated{tsv_suffix}.tsv"
     )
     return subj_dir / fname
 
@@ -248,6 +254,7 @@ def load_full_corr_matrix(
     present: List[str],
     main_data: Path,
     tsv_suffix: str,
+    task: Optional[str] = None,
 ) -> Optional[pd.DataFrame]:
     """
     Load all seed TSVs for one subject/hemi/run_tag, remap to canonical YAML
@@ -255,6 +262,11 @@ def load_full_corr_matrix(
 
     Returns None if any seed file is missing; all missing paths are printed.
     Raises ValueError on unexpected TSV shape.
+
+    Parameters
+    ----------
+    task : optional task subfolder inside by_hemi/ (e.g. "task-free").
+           Passed through to tsv_path(). None = legacy behaviour (no subfolder).
     """
     row_slice       = HEMI_ROW_SLICE[hemi]
     n_parcels       = len(parcels)
@@ -265,7 +277,7 @@ def load_full_corr_matrix(
     missing:   List[Path]            = []
 
     for seed in clusters:
-        fpath = tsv_path(subject, hemi, seed, run_tag, main_data, tsv_suffix)
+        fpath = tsv_path(subject, hemi, seed, run_tag, main_data, tsv_suffix, task)
 
         if not fpath.exists():
             missing.append(fpath)
@@ -405,7 +417,7 @@ def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
             X_clean[nan_mask, j] = col_mean
 
     return X_clean
-
+    
 # ============================================================
 # Violin-plot visual constants
 # ============================================================
