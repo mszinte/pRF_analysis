@@ -6,5 +6,5 @@ runs:
   description: "names of the runs - empty string = concatenated timeseries (no run tag in filename)"
   value: ["run-01", "run-02", ""]
 run02_excluded:
-  description: "subjects with bad data / registration errors in run-02"
+  description: "subjects with bad data / registration errors (sub-22) in run-02"
   value: ["sub-03", "sub-04", "sub-14", "sub-21", "sub-22", "sub-23"]

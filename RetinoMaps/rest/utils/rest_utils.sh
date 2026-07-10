@@ -78,8 +78,9 @@ CLUSTER_TO_WINNER["V1"]=12
 
 # ============================================================
 # Atlas keys
-# Used only to look up the integer label value for wb_command.
-# NOT used to determine column order in CSVs (that is name-based).
+# Used only to look up the integer label value for wb_command
+# NOT used to determine column order in CSVs (that is name-based)
+# EDIT: Double check how cifti-parcellate does it
 # ============================================================
 declare -A R_KEYS
 R_KEYS["V1"]=1;    R_KEYS["MST"]=2;   R_KEYS["V2"]=4;    R_KEYS["V3"]=5;    R_KEYS["V4"]=6
