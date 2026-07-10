@@ -155,6 +155,8 @@ do
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_task-constrained_parcellated_by_macro_no_outliers.pscalar.nii" \
                     "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}_task-constrained_parcellated_by_macro_no_outliers.tsv"
 
+                ## Add stacked table for all seeds
+
                 # Remove files that occupy excessive memory space
                 rm "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-full_corr_${HEMI}_${ROI}.dconn.nii"
                 rm "$OUT_DIR/sub-${i}_task-rest${RUN_TAG}_space-fsLR_den-91k_desc-fisher-z_${HEMI}_${ROI}.dconn.nii"
