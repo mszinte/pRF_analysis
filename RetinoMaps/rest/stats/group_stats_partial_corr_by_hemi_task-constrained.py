@@ -1,8 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 group_stats_partial_corr_by_hemi_task-constrained.py
 ------------------------------------------------------------------------------------------
 Goal:
-
     Compute group-level Fisher-z statistics from per-subject partial-correlation
     produced by nilearn_partial_corr_seed-task_by_macror-task_by_hemi.py
 
@@ -225,7 +226,7 @@ def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
         / "91k/rest/corr/partial_corr/by_hemi/task-constrained"
         / fname
     )
-    
+
 # ============================================================
 # Output filename stem builder
 # ============================================================

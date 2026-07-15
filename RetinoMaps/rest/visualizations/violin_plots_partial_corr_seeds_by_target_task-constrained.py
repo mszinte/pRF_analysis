@@ -15,7 +15,7 @@ TSV structure:
     (one row per subject × seed; GROUP row at the bottom)
 
 Only ipsilateral values are plotted (one table per hemisphere).
-The GROUP row is plotted as a diamond marker on top of each violin half.
+The GROUP row is plotted as a vertical line spanning each violin half.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -224,7 +224,8 @@ def plot_target_figure(target):
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
-    # GROUP diamond markers
+    # GROUP line markers — vertical line spanning the full violin half,
+    # drawn over individual subject dots so the group value is clearly visible.
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
@@ -233,12 +234,12 @@ def plot_target_figure(target):
             group_val  = group_rows[group_rows["seed"] == seed][target].values
             if len(group_val) == 0 or np.isnan(group_val[0]):
                 continue
-            ax.scatter(
-                group_val[0], i + y_offset,
-                marker="D", s=50,
+            ax.plot(
+                [group_val[0]] * 2,
+                [i + y_offset - 0.35, i + y_offset + 0.35],
                 color=MEDIAN_COLORS[hemi],
-                edgecolor="white", linewidth=0.8,
-                zorder=5,
+                linewidth=2.5,
+                zorder=6,
             )
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
@@ -251,7 +252,7 @@ def plot_target_figure(target):
     )
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
-    ax.set_xlim(-0.25, 0.55)
+    ax.set_xlim(-1.0, 1.0)
 
     plt.tight_layout()
 
