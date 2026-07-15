@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Goal of the script:
+violin_full_corr_task_constrained.py
+---------------------------------------------------
 Full correlation violin plots — TASK-CONSTRAINED version
 Seeds on the y-axis, one figure per TARGET macro-region
 
-Input files are parcellated_by_macro (24 rows: 12 LH + 12 RH macro-regions,
-ordered mPCS → V1 per hemisphere), so no parcel-level averaging is needed —
-we index directly by cluster position
+Reads from the concat_clean reporting TSVs produced by
+group_stats_full_corr_by_hemi_task-constrained.py:
+    full_corr/tables/seed-task_by_macror-task_full-corr_r_report_ipsi_{hemi}_legacy.tsv
 
-Produces figures for four data variants:
-  - concat        : both runs concatenated, all subjects
-  - concat_clean  : bad run-02 subjects fall back to run-01
-  - run-01        : run-01 only, all subjects
-  - run-02        : run-02 only, all subjects (bad subjects show artifact)
+TSV structure:
+    subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+    (one row per subject × seed; GROUP row at the bottom)
 
-Missing files are always skipped with a warning
+Only ipsilateral values are plotted (one table per hemisphere).
+The GROUP row is plotted as a diamond marker on top of each violin half.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -29,16 +29,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from pathlib import Path
-from typing import Optional
 
 # ============================================================
 # Paths & settings
 # ============================================================
-USER = os.environ["USER"]
-
 main_data     = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
+tables_folder = main_data / "group/91k/rest/full_corr/tables"
 output_folder = main_data / "group/91k/rest/full_corr"
-output_folder.mkdir(parents=True, exist_ok=True)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
@@ -46,10 +43,7 @@ from settings_utils import load_settings
 
 sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
 from rest_utils import (
-    RUN02_EXCLUDED,
-    VARIANTS,
     MACRO_COLORS,
-    SHADE_FACTORS,
     SEED_COLOR,
     MEDIAN_COLORS,
     MEDIAN_HALF_LEN,
@@ -61,7 +55,6 @@ settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
-subjects          = analysis_info["subjects"]
 
 fig_dir = os.path.join(output_folder, "figures/violin_plots/task-constrained")
 os.makedirs(fig_dir, exist_ok=True)
@@ -69,221 +62,97 @@ os.makedirs(fig_dir, exist_ok=True)
 # ============================================================
 # Cluster ordering
 # ============================================================
+clusters_all = list(analysis_info["rois-drawn"])
+clusters_all.reverse()   # mPCS first
 
-# Full ordered list, reversed so mPCS is first — this IS the row order
-# inside the _parcellated_by_macro TSVs (12 LH rows then 12 RH rows).
-clusters_all = analysis_info["rois-drawn"]
-clusters_all.reverse()   # mPCS, sPCS, iPCS, sIPS, iIPS, hMT+, ..., V1
-
-# The TSV has one row per macro-region per hemisphere:
-#   rows 0–11  → LH clusters in clusters_all order
-#   rows 12–23 → RH clusters in clusters_all order
-N_CLUSTERS = len(clusters_all)   # expected 12
-
-assert N_CLUSTERS == 12, (
-    f"Expected 12 clusters after reverse, got {N_CLUSTERS}. "
-    "Check 'rois-drawn' in settings.yml."
-)
-
-HEMI_ROW_SLICE = {
-    "lh": slice(0,          N_CLUSTERS),
-    "rh": slice(N_CLUSTERS, N_CLUSTERS * 2),
-}
-
-# Seed clusters: first 5 (mPCS → iIPS)
-seed_clusters   = clusters_all[:5]
+seed_clusters   = clusters_all[:5]   # mPCS, sPCS, iPCS, sIPS, iIPS
 target_clusters = seed_clusters.copy()
 
-# Validate
-cluster_to_parcels = analysis_info["rois-group-mmp"]
-for cl in seed_clusters:
-    if cl not in cluster_to_parcels:
-        raise KeyError(
-            f"Seed cluster '{cl}' has no entry in 'rois-group-mmp' — "
-            "check settings.yml"
-        )
-
 # ============================================================
-# TSV loader — task-constrained _parcellated_by_macro files
+# Load reporting TSVs — one per hemisphere
+#
+# Each TSV has columns: subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+# Rows: one per subject × seed, plus GROUP rows at the bottom.
+# Values are already in Pearson r (no tanh needed here).
 # ============================================================
-
-def load_macro_tsv_hemi(filepath, hemi):
-    # type: (str, str) -> Optional[np.ndarray]
-    """Load a 24-row parcellated_by_macro TSV and return the 12 values for hemi.
-
-    Row layout: rows 0-11 = LH clusters, rows 12-23 = RH clusters,
-    both in clusters_all order (mPCS first).
-
-    Returns None (with a warning) on any file or format problem.
-    """
-    if not os.path.isfile(filepath):
-        print("  WARNING: missing -- {}".format(filepath))
-        return None
-    try:
-        values = (
-            pd.read_csv(filepath, header=None, sep="\t")
-            .squeeze()
-            .to_numpy(dtype=float)
-        )
-    except Exception as e:
-        print("  WARNING: could not read {} -- {}".format(filepath, e))
-        return None
-
-    expected_rows = N_CLUSTERS * 2   # 24
-    if values.ndim != 1 or len(values) != expected_rows:
-        print(
-            "  WARNING: unexpected shape {} in {} "
-            "(expected ({},)) -- skipping".format(values.shape, filepath, expected_rows)
-        )
-        return None
-
-    return values[HEMI_ROW_SLICE[hemi]]
-
-# ============================================================
-# BIDS path builder
-# ============================================================
-
-def get_fname(sub_path, sub, variant, normal_tag, excluded_tag, hemi, seed):
-    # type: (str, str, str, Optional[str], Optional[str], str, str) -> str
-    """Return the task-constrained TSV filepath for one subject/hemi/seed.
-
-    For concat_clean, subjects in RUN02_EXCLUDED use excluded_tag (run-01)
-    so all subjects contribute one value rather than being dropped.
-    """
-    if variant == "concat_clean" and sub in RUN02_EXCLUDED:
-        effective_tag = excluded_tag
-    else:
-        effective_tag = normal_tag
-
-    task_constrained_subdir = os.path.join(sub_path, "task-constrained")
-
-    if effective_tag is None:
-        fname = (
-            "{sub}_task-rest_space-fsLR_den-91k"
-            "_desc-fisher-z_{hemi}_{seed}"
-            "_task-constrained_parcellated_by_macro_legacy-mode.tsv"
-        ).format(sub=sub, hemi=hemi, seed=seed)
-    else:
-        fname = (
-            "{sub}_task-rest_{tag}_space-fsLR_den-91k"
-            "_desc-fisher-z_{hemi}_{seed}"
-            "_task-constrained_parcellated_by_macro_legacy-mode.tsv"
-        ).format(sub=sub, tag=effective_tag, hemi=hemi, seed=seed)
-
-    return os.path.join(task_constrained_subdir, fname)
-
-# ============================================================
-# Load data for all variants
-# ============================================================
-
 hemis = ["lh", "rh"]
 
-# results[variant][seed][tc][hemi] = list of per-subject scalar values
-results = {
-    variant: {
-        seed: {
-            tc: {hemi: [] for hemi in hemis}
-            for tc in target_clusters if tc != seed
-        }
-        for seed in seed_clusters
+# tables[hemi] = {"subjects": DataFrame, "group": DataFrame}
+#   subjects : rows where subject != "GROUP"
+#   group    : rows where subject == "GROUP"
+tables = {}
+missing_tables = []
+
+for hemi in hemis:
+    fname = (
+        "seed-task_by_macror-task_full-corr"
+        "_r_report_ipsi_{hemi}_legacy.tsv".format(hemi=hemi)
+    )
+    fpath = tables_folder / fname
+    if not fpath.exists():
+        print("WARNING: missing table -- {}".format(fpath))
+        missing_tables.append(str(fpath))
+        continue
+
+    df = pd.read_csv(fpath, sep="\t")
+    tables[hemi] = {
+        "subjects": df[df["subject"] != "GROUP"].copy(),
+        "group":    df[df["subject"] == "GROUP"].copy(),
     }
-    for variant in VARIANTS
-}
+    n_subj = tables[hemi]["subjects"]["subject"].nunique()
+    print("Loaded [{hemi}]: {n} subjects + GROUP".format(
+        hemi=hemi.upper(), n=n_subj))
 
-missing_files = []
-
-for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
-
-    print("\n=== Loading variant: {} | {} subjects ===".format(
-        variant, len(subjects)))
-
-    for sub in subjects:
-
-        if skip_excluded and sub in RUN02_EXCLUDED:
-            print("  SKIP (excluded): {} [{}]".format(sub, variant))
-            continue
-
-        sub_path = os.path.join(
-            main_data,
-            "{}/91k/rest/corr/full_corr/by_hemi".format(sub)
-        )
-
-        for seed in seed_clusters:
-            for hemi in hemis:
-
-                fname = get_fname(
-                    sub_path    = sub_path,
-                    sub         = sub,
-                    variant     = variant,
-                    normal_tag  = normal_tag,
-                    excluded_tag= excluded_tag,
-                    hemi        = hemi,
-                    seed        = seed,
-                )
-
-                values = load_macro_tsv_hemi(fname, hemi)
-
-                if values is None:
-                    missing_files.append((variant, fname))
-                    continue
-
-                print("  {} ({}, {}, seed={}): loaded {} cluster values".format(
-                    sub, variant, hemi, seed, len(values)))
-
-                # values is now a 12-element array: one fisher-z per cluster
-                # for this seed x hemi.  Index by cluster position in clusters_all.
-                seed_row_in_file = clusters_all.index(seed)
-
-                for tc in target_clusters:
-                    if tc == seed:
-                        continue
-                    tc_row_in_file = clusters_all.index(tc)
-                    results[variant][seed][tc][hemi].append(
-                        float(values[tc_row_in_file])
-                    )
-
-if missing_files:
-    print("\n" + "=" * 60)
-    print("WARNING: {} file(s) could not be loaded:".format(len(missing_files)))
-    for v, f in missing_files:
-        print("  [{}] {}".format(v, f))
-    print("=" * 60 + "\n")
+if missing_tables:
+    print("\nERROR: {} reporting table(s) missing — cannot plot.".format(
+        len(missing_tables)))
+    sys.exit(1)
 
 # ============================================================
 # Plotting
 # ============================================================
 
-def plot_target_figure(target, variant, res):
-    # type: (str, str, dict) -> None
-    """Draw and save one violin figure for target x variant."""
+def plot_target_figure(target):
+    # type: (str) -> None
+    """Draw and save one violin figure (ipsi, concat_clean) for one target."""
 
     target_row_idx = seed_clusters.index(target)
 
+    # Build long-format DataFrame for seaborn:
+    # one row per subject × seed × hemisphere, values = Pearson r for target
     plot_rows = []
-    for seed in seed_clusters:
-        if seed == target:
-            for hemi_label in ["LH", "RH"]:
-                plot_rows.append(
-                    {"Seed": seed, "Correlation": np.nan, "Hemisphere": hemi_label}
-                )
-            continue
-        for hemi in hemis:
-            for val in res[seed][target][hemi]:
-                plot_rows.append(
-                    {"Seed": seed, "Correlation": val, "Hemisphere": hemi.upper()}
-                )
+    for hemi in hemis:
+        subj_df = tables[hemi]["subjects"]
+        for seed in seed_clusters:
+            seed_rows = subj_df[subj_df["seed"] == seed]
+            if seed == target:
+                # Self-seed: insert NaN placeholders so seaborn keeps the row
+                # position but the violin is empty
+                for _ in range(len(seed_rows)):
+                    plot_rows.append({
+                        "Seed": seed,
+                        "Correlation": np.nan,
+                        "Hemisphere": hemi.upper(),
+                    })
+                continue
+            for val in seed_rows[target].values:
+                plot_rows.append({
+                    "Seed": seed,
+                    "Correlation": float(val),
+                    "Hemisphere": hemi.upper(),
+                })
 
-    df = pd.DataFrame(plot_rows)
+    df_plot = pd.DataFrame(plot_rows)
 
-    if df.loc[df["Seed"] != target, "Correlation"].dropna().empty:
-        print("  SKIP (no data): target={}, variant={}".format(target, variant))
+    if df_plot.loc[df_plot["Seed"] != target, "Correlation"].dropna().empty:
+        print("  SKIP (no data): target={}".format(target))
         return
 
     fig, ax = plt.subplots(figsize=(8, 6))
     n_before = len(ax.collections)
 
     sns.violinplot(
-        data=df,
+        data=df_plot,
         y="Seed",
         x="Correlation",
         hue="Hemisphere",
@@ -297,16 +166,16 @@ def plot_target_figure(target, variant, res):
     )
 
     new_collections = ax.collections[n_before:]
-
     n_plottable_rows     = len(seed_clusters) - 1
     expected_collections = n_plottable_rows * 2
 
     assert len(new_collections) == expected_collections, (
-        "[{}, target={}] Expected {} PolyCollections but got {}. "
+        "[target={}] Expected {} PolyCollections but got {}. "
         "seaborn layout may have changed -- check version.".format(
-            variant, target, expected_collections, len(new_collections))
+            target, expected_collections, len(new_collections))
     )
 
+    # Colour violin halves by seed × hemisphere
     collection_idx = 0
     for seed in seed_clusters:
         if seed == target:
@@ -319,6 +188,7 @@ def plot_target_figure(target, variant, res):
             artist.set_alpha(0.85)
             collection_idx += 1
 
+    # Grey band for self-seed row
     ax.axhspan(
         target_row_idx - 0.45,
         target_row_idx + 0.45,
@@ -327,11 +197,13 @@ def plot_target_figure(target, variant, res):
         label="_nolegend_",
     )
 
+    # Median tick lines (from subject data, not GROUP row)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
         for hemi, y_offset in zip(hemis, [-0.12, 0.12]):
-            vals = np.array(res[seed][target][hemi])
+            vals = tables[hemi]["subjects"]
+            vals = vals[vals["seed"] == seed][target].dropna().values
             if len(vals) == 0:
                 continue
             ax.plot(
@@ -343,12 +215,14 @@ def plot_target_figure(target, variant, res):
                 zorder=4,
             )
 
+    # Individual subject dots with jitter
     rng = np.random.default_rng(seed=42)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
         for hemi, y_offset in zip(hemis, [-0.1, 0.1]):
-            x = np.array(res[seed][target][hemi])
+            vals = tables[hemi]["subjects"]
+            x = vals[vals["seed"] == seed][target].dropna().values.astype(float)
             if len(x) == 0:
                 continue
             y_jitter = (
@@ -359,11 +233,31 @@ def plot_target_figure(target, variant, res):
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
+    # GROUP diamond markers (one per seed × hemisphere)
+    for i, seed in enumerate(seed_clusters):
+        if seed == target:
+            continue
+        for hemi, y_offset in zip(hemis, [-0.1, 0.1]):
+            group_rows = tables[hemi]["group"]
+            group_val  = group_rows[group_rows["seed"] == seed][target].values
+            if len(group_val) == 0 or np.isnan(group_val[0]):
+                continue
+            ax.scatter(
+                group_val[0], i + y_offset,
+                marker="D", s=50,
+                color=MEDIAN_COLORS[hemi],
+                edgecolor="white", linewidth=0.8,
+                zorder=5,
+            )
+
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Full Correlation (task-constrained)", fontsize=18, fontweight="bold")
-    ax.set_ylabel("Seed Cluster",                        fontsize=18, fontweight="bold")
-    ax.set_title("{} target -- {} (task-constrained)".format(target, variant),
-                 fontsize=18, fontweight="bold")
+    ax.set_xlabel("Full Correlation (r, task-constrained)",
+                  fontsize=18, fontweight="bold")
+    ax.set_ylabel("Seed Cluster", fontsize=18, fontweight="bold")
+    ax.set_title(
+        "{} target -- concat_clean (task-constrained)".format(target),
+        fontsize=18, fontweight="bold"
+    )
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
     ax.set_xlim(-0.25, 0.55)
@@ -372,7 +266,7 @@ def plot_target_figure(target, variant, res):
 
     outname = os.path.join(
         fig_dir,
-        "violin_target-{}_full_corr_{}_task-constrained.png".format(target, variant)
+        "violin_target-{}_full_corr_concat_clean_task-constrained.png".format(target)
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
     print("  Saved: {}".format(outname))
@@ -383,7 +277,6 @@ def plot_target_figure(target, variant, res):
 # Main loop
 # ============================================================
 
-for variant in VARIANTS:
-    print("\n=== Plotting variant: {} ===".format(variant))
-    for target in target_clusters:
-        plot_target_figure(target, variant, results[variant])
+print("\n=== Plotting full corr task-constrained (concat_clean, ipsi) ===")
+for target in target_clusters:
+    plot_target_figure(target)

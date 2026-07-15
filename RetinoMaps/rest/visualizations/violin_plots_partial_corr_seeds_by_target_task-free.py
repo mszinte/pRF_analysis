@@ -139,7 +139,7 @@ def get_fname(
         )
     return os.path.join(
         sub_path,
-        f"cluster_by_mmp-parcel_partial_{effective_tag}_{hemi}.npy"
+        f"seed-task_by_mmp-parcel_partial_{effective_tag}_{hemi}.npy"
     )
 
 # ============================================================
@@ -179,7 +179,7 @@ for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
             continue
 
         sub_path = os.path.join(
-            main_data, f"{sub}/91k/rest/corr/partial_corr/by_hemi"
+            main_data, f"{sub}/91k/rest/corr/partial_corr/by_hemi/task-free"
         )
 
         for hemi in hemis:

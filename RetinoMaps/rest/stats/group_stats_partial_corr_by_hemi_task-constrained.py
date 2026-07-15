@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 group_stats_partial_corr_by_hemi_task-constrained.py
 ------------------------------------------------------------------------------------------
 Goal:
+
     Compute group-level Fisher-z statistics from per-subject partial-correlation
     produced by nilearn_partial_corr_seed-task_by_macror-task_by_hemi.py
 
@@ -30,6 +29,11 @@ Goal:
         5. Back-converts to Pearson r via tanh() at the reporting stage only.
         6. Saves .npy + .csv for both spaces (fisherz and r) per hemisphere ×
            variant, plus a compressed .npz archive with full metadata.
+        7. For concat_clean only: saves two long-format reporting TSVs
+           (one for ipsi targets, one for contra targets) with one row per
+           subject × seed, values in Pearson r, plus a GROUP row at the
+           bottom whose values come from tanh(nanmedian(Fisher-z)) — the
+           same group median already computed for the .npy outputs.
 
     Averaging is always in Fisher-z space; Pearson r is recovered only at the
     final reporting stage via tanh().  This is intentional:
@@ -43,8 +47,17 @@ Output filename convention (harmonized with full-corr group stats):
     seed-task_by_macror-task_partial-corr_{space}_{stat}_{run_label}_{hemi}.npy / .csv
     seed-task_by_macror-task_partial-corr_{run_label}_{hemi}.npz
 
-    e.g. seed-task_by_macror-task_partial-corr_fisherz_median_concat_clean_rh.npy
-         seed-task_by_macror-task_partial-corr_r_median_concat_clean_rh.npy
+    Reporting TSVs (concat_clean only):
+    seed-task_by_macror-task_partial-corr_r_report_ipsi_{hemi}.tsv
+    seed-task_by_macror-task_partial-corr_r_report_contra_{hemi}.tsv
+
+    Reporting TSV structure:
+        subject   : subject ID (e.g. "sub-01") or "GROUP"
+        seed      : eye-field seed name (mPCS / sPCS / iPCS / sIPS / iIPS)
+        mPCS / sPCS / iPCS / sIPS / iIPS : Pearson r for each target region
+            (ipsi half in the ipsi table, contra half in the contra table)
+        GROUP row values = tanh(nanmedian(Fisher-z)) across subjects — the
+            same quantity saved in the _r_median_ .npy / .csv outputs.
 
     Full-corr equivalent for reference:
     seed-task_by_macror-task_full-corr_fisherz_median_{run_label}_{hemi}_legacy.npy
@@ -69,7 +82,14 @@ Outputs (per hemisphere × variant):
     seed-task_by_macror-task_partial-corr_fisherz_median_{run_label}_{hemi}.npy / .csv
     seed-task_by_macror-task_partial-corr_r_mean_{run_label}_{hemi}.npy / .csv
     seed-task_by_macror-task_partial-corr_r_median_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_r_p25_{run_label}_{hemi}.npy / .csv
+    seed-task_by_macror-task_partial-corr_r_p75_{run_label}_{hemi}.npy / .csv
     seed-task_by_macror-task_partial-corr_{run_label}_{hemi}.npz
+
+    Reporting TSVs (concat_clean only, per hemisphere, written to
+    {pp_data}/group/91k/rest/partial_corr/tables/):
+    seed-task_by_macror-task_partial-corr_r_report_ipsi_{hemi}.tsv
+    seed-task_by_macror-task_partial-corr_r_report_contra_{hemi}.tsv
 
     Rows    : 5 eye-field seeds in canonical order (mPCS first)
     Columns : 5 eye-field regions × 2 hemispheres (ipsi then contra)  (n = 10)
@@ -90,7 +110,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 # Suppress only RuntimeWarnings (e.g. nanmean of all-NaN slice on diagonal);
 # keep all other warning categories visible.
@@ -111,15 +131,12 @@ from rest_utils import RUN02_EXCLUDED, VARIANTS
 # Parse and validate arguments
 # ============================================================
 USAGE = (
-    "Usage: python group_partial_corr_by_hemi_task-constrained.py "
-    "<main_dir> <project_dir> <group> <server> [--percentiles LO HI]\n"
-    "  --percentiles  lower and upper percentile bounds for the subject\n"
-    "                 distribution saved alongside group mean/median\n"
-    "                 (default: 25 75)"
+    "Usage: python group_stats_partial_corr_by_hemi_task-constrained.py "
+    "<main_dir> <project_dir> <group> <server>"
 )
 
-if len(sys.argv) not in (5, 8):
-    print(f"ERROR: unexpected number of arguments.\n{USAGE}")
+if len(sys.argv) != 5:
+    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
@@ -127,21 +144,8 @@ project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
 
-# Optional percentile bounds (default: lower and upper quartiles)
-pct_lo, pct_hi = 25.0, 75.0
-if len(sys.argv) == 8:
-    if sys.argv[5] != "--percentiles":
-        print(f"ERROR: unknown option '{sys.argv[5]}'.\n{USAGE}")
-        sys.exit(1)
-    try:
-        pct_lo = float(sys.argv[6])
-        pct_hi = float(sys.argv[7])
-    except ValueError:
-        print("ERROR: --percentiles values must be floats (e.g. 2.5 97.5)")
-        sys.exit(1)
-    if not (0 <= pct_lo < pct_hi <= 100):
-        print("ERROR: percentile values must satisfy 0 ≤ lo < hi ≤ 100")
-        sys.exit(1)
+# Percentile bounds for the subject distribution saved alongside group stats.
+PCT_LO, PCT_HI = 25.0, 75.0
 
 print("=" * 80)
 print("GROUP PARTIAL CORRELATION (TASK-CONSTRAINED) — Fisher-z statistics")
@@ -151,7 +155,6 @@ print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
 print(f"  group       : {group}")
 print(f"  server      : {server}")
-print(f"  percentiles : {pct_lo} / {pct_hi}")
 
 # ============================================================
 # Load settings
@@ -160,32 +163,21 @@ settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
-subjects          = analysis_info["subjects"]
+subjects          = analysis_info["subjects"]  # type: List[str]
 
 # ============================================================
 # Macro-regions — full canonical list (mPCS first)
-#
-# The full list defines the column order in the bilateral .npy files
-# (n_clusters columns for ipsi, n_clusters for contra) and is used to
-# locate EYE_FIELDS within each half via EYE_FIELDS_IDX.
 # ============================================================
-macro_regions: List[str] = list(analysis_info["rois-drawn"])
+macro_regions = list(analysis_info["rois-drawn"])
 macro_regions.reverse()   # mPCS first
 
 N_MACRO = len(macro_regions)   # expected: 12
 
 # ============================================================
 # Eye-field regions — the 5 core ROIs used for all outputs
-#
-# EYE_FIELDS is derived positionally (first 5 of macro_regions) so it stays
-# correct as long as rois-drawn ordering is maintained.  The assertion below
-# guards against any silent mismatch — it must pass before processing begins.
-#
-# Seed rows AND target columns are both restricted to EYE_FIELDS.
-# Target columns are further split into ipsi and contra halves (10 total).
 # ============================================================
 N_EYE_FIELDS = 5
-EYE_FIELDS   = macro_regions[:N_EYE_FIELDS]
+EYE_FIELDS   = macro_regions[:N_EYE_FIELDS]  # type: List[str]
 
 assert EYE_FIELDS == ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"], (
     f"EYE_FIELDS resolved to {EYE_FIELDS}, expected the 5 eye-field ROIs "
@@ -199,7 +191,7 @@ EYE_FIELDS_IDX = [macro_regions.index(r) for r in EYE_FIELDS]
 TARGET_COLUMNS = (
     [f"{r}_ipsi"   for r in EYE_FIELDS] +
     [f"{r}_contra" for r in EYE_FIELDS]
-)
+)  # type: List[str]
 
 print(f"\n  All macro-regions (n={N_MACRO}): {macro_regions}")
 print(f"  Eye-field regions (n={N_EYE_FIELDS}): {EYE_FIELDS}")
@@ -209,55 +201,90 @@ print(f"  Target cols  : {TARGET_COLUMNS}")
 # ============================================================
 # Paths
 # ============================================================
-main_data     = Path(main_dir) / project_dir / "derivatives/pp_data"
-output_folder = (
-    main_data / "group/91k/rest/partial_corr/by_hemi/task-constrained"
-)
+main_data      = Path(main_dir) / project_dir / "derivatives/pp_data"
+output_folder  = main_data / "group/91k/rest/partial_corr/by_hemi/task-constrained"
+tables_folder  = main_data / "group/91k/rest/partial_corr/tables"
+
 output_folder.mkdir(parents=True, exist_ok=True)
+tables_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
 # Helper: resolve per-subject bilateral .npy path
-#
-# Subject-level files live under:
-#   {subject}/91k/rest/corr/partial_corr/by_hemi/task-constrained/
-#       seed-task_by_macror-task_partial_fisherz{run_tag}_{hemi}_bilateral.npy
-#
-# Shape: (n_clusters × 2*n_clusters)
-#   columns   0 : n_clusters  → ipsilateral targets
-#   columns n_clusters : end  → contralateral targets
-#
-# run_tag mapping (None = concat session):
-#   None   → "_concat"
-#   str    → "_{str}"  e.g. "_run-01", "_run-02"
 # ============================================================
-def npy_path(subject: str, hemi: str, run_tag: str) -> Path:
+def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
+    # Actual BIDS-style filename produced by the subject-level script:
+    #   sub-05_task-rest_run-01_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_bilateral.npy  (per-run)
+    #   sub-05_task-rest_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_bilateral.npy          (concat)
+    run_entity = f"_{run_tag}" if run_tag is not None else ""
     fname = (
-        f"seed-task_by_macror-task_partial_fisherz{run_tag}_{hemi}_bilateral.npy"
+        f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
+        f"_desc-fisher-z_{hemi}_task-constrained_bilateral.npy"
     )
     return (
         main_data / subject
         / "91k/rest/corr/partial_corr/by_hemi/task-constrained"
         / fname
     )
-
-def to_run_tag(tag: Optional[str]) -> str:
-    """Convert a VARIANTS run tag (None = concat, str = run-XX) to filename tag."""
-    return f"_{tag}" if tag is not None else "_concat"
-
+    
 # ============================================================
 # Output filename stem builder
-#
-# Pattern: seed-task_by_macror-task_partial-corr_{space}_{stat}_{run_label}_{hemi}
-# Matches full-corr: seed-task_by_macror-task_full-corr_{space}_{stat}_{run_label}_{hemi}_{mode}
-#
-# run_label and hemi are passed explicitly so the function remains pure and
-# does not depend on loop-scoped variables.
 # ============================================================
 def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
     return (
         f"seed-task_by_macror-task_partial-corr"
         f"_{space}_{stat}_{run_label}_{hemi}"
     )
+
+# ============================================================
+# Reporting TSV builder (concat_clean only)
+#
+# Produces two long-format tables — one for ipsi targets, one for contra —
+# with the structure:
+#   subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+#
+# Subject rows: raw Pearson r = tanh applied per-subject to their Fisher-z
+#   slice, never averaged across subjects.
+# GROUP row: tanh(nanmedian(Fisher-z)) = median_r passed in — identical to
+#   the value saved in the _r_median_ .npy / .csv outputs.
+# ============================================================
+def _save_reporting_tsvs(
+    stacked_fz: np.ndarray,
+    median_r:   np.ndarray,
+    subject_ids: List[str],
+    hemi: str,
+) -> None:
+    ipsi_cols   = list(range(N_EYE_FIELDS))
+    contra_cols = list(range(N_EYE_FIELDS, 2 * N_EYE_FIELDS))
+
+    for side, col_idx in (("ipsi", ipsi_cols), ("contra", contra_cols)):
+        rows = []  # type: List[Dict]
+
+        # ── Per-subject rows ──────────────────────────────────────────────
+        for s_idx, subj in enumerate(subject_ids):
+            subj_r = np.tanh(stacked_fz[s_idx])   # (N_EYE_FIELDS × 10)
+            for seed_idx, seed in enumerate(EYE_FIELDS):
+                row = {"subject": subj, "seed": seed}
+                for t_idx, t_col in enumerate(col_idx):
+                    row[EYE_FIELDS[t_idx]] = subj_r[seed_idx, t_col]
+                rows.append(row)
+
+        # ── GROUP row ─────────────────────────────────────────────────────
+        for seed_idx, seed in enumerate(EYE_FIELDS):
+            row = {"subject": "GROUP", "seed": seed}
+            for t_idx, t_col in enumerate(col_idx):
+                row[EYE_FIELDS[t_idx]] = median_r[seed_idx, t_col]
+            rows.append(row)
+
+        col_order = ["subject", "seed"] + EYE_FIELDS
+        df = pd.DataFrame(rows, columns=col_order)
+
+        fname = (
+            f"seed-task_by_macror-task_partial-corr"
+            f"_r_report_{side}_{hemi}.tsv"
+        )
+        df.to_csv(tables_folder / fname, sep="\t", index=False,
+                  float_format="%.4f")
+        print(f"    Saved reporting TSV: {fname}")
 
 # ============================================================
 # Main loop — hemisphere × variant
@@ -269,18 +296,15 @@ for hemi in ("lh", "rh"):
     print("=" * 80)
 
     for variant, (normal_tag, excluded_tag, _skip) in VARIANTS.items():
-        # run-02: intentionally retains all subjects for group QC (artifact
-        # visibility), regardless of the skip_excluded flag used in WTA scripts.
         print(f"\n  --- Variant: {variant} ---")
 
-        subject_matrices: List[np.ndarray] = []
-        subject_ids:      List[str]        = []
-        missing_subjects: List[str]        = []
+        subject_matrices = []  # type: List[np.ndarray]
+        subject_ids      = []  # type: List[str]
+        missing_subjects = []  # type: List[str]
 
         for subject in subjects:
             is_excluded = subject in RUN02_EXCLUDED
-            tag         = excluded_tag if is_excluded else normal_tag
-            run_tag     = to_run_tag(tag)
+            run_tag     = excluded_tag if is_excluded else normal_tag
 
             fpath = npy_path(subject, hemi, run_tag)
 
@@ -291,7 +315,6 @@ for hemi in ("lh", "rh"):
 
             bilateral = np.load(fpath)
 
-            # Expected shape: (n_clusters × 2*n_clusters)
             if bilateral.shape != (N_MACRO, 2 * N_MACRO):
                 raise ValueError(
                     f"[{subject} {hemi} {variant}] Unexpected shape "
@@ -299,18 +322,13 @@ for hemi in ("lh", "rh"):
                     f"(expected ({N_MACRO}, {2 * N_MACRO}))."
                 )
 
-            # Slice ipsi and contra halves, then restrict each to EYE_FIELDS.
-            # bilateral[:, :N_MACRO]  = ipsilateral targets (same hemi as seed)
-            # bilateral[:, N_MACRO:]  = contralateral targets
             ipsi_half   = bilateral[:, :N_MACRO]
             contra_half = bilateral[:, N_MACRO:]
 
-            # Restrict seed rows and target columns to EYE_FIELDS
-            ipsi_ef   = ipsi_half[np.ix_(EYE_FIELDS_IDX, EYE_FIELDS_IDX)]   # (5×5)
-            contra_ef = contra_half[np.ix_(EYE_FIELDS_IDX, EYE_FIELDS_IDX)] # (5×5)
+            ipsi_ef   = ipsi_half[np.ix_(EYE_FIELDS_IDX, EYE_FIELDS_IDX)]    # (5×5)
+            contra_ef = contra_half[np.ix_(EYE_FIELDS_IDX, EYE_FIELDS_IDX)]  # (5×5)
 
-            # Assemble (5 × 10): [ipsi_ef | contra_ef] — matches TARGET_COLUMNS
-            mat = np.concatenate([ipsi_ef, contra_ef], axis=1)
+            mat = np.concatenate([ipsi_ef, contra_ef], axis=1)  # (5×10)
 
             if mat.shape != (N_EYE_FIELDS, 2 * N_EYE_FIELDS):
                 raise ValueError(
@@ -335,8 +353,6 @@ for hemi in ("lh", "rh"):
         if missing_subjects:
             print(f"    Missing       : {missing_subjects}")
 
-        # Stack → (n_subjects × N_EYE_FIELDS × 2*N_EYE_FIELDS)
-        # Input matrices are already in Fisher-z space (Nilearn output).
         stacked_fz = np.stack(subject_matrices, axis=0)
 
         if stacked_fz.shape != (n_valid, N_EYE_FIELDS, 2 * N_EYE_FIELDS):
@@ -345,17 +361,13 @@ for hemi in ("lh", "rh"):
                 f"{hemi} / {variant}."
             )
 
-        # ── Group statistics in Fisher-z space ───────────────────────────────
-        mean_fz   = np.nanmean(  stacked_fz, axis=0)   # (N_EYE_FIELDS × 10)
+        # ── Group statistics in Fisher-z space ───────────────────────────
+        mean_fz   = np.nanmean(  stacked_fz, axis=0)
         median_fz = np.nanmedian(stacked_fz, axis=0)
+        pct_lo_fz = np.nanpercentile(stacked_fz, PCT_LO, axis=0)
+        pct_hi_fz = np.nanpercentile(stacked_fz, PCT_HI, axis=0)
 
-        # Inter-subject percentile bounds in Fisher-z space.
-        # These describe the spread of subject values around the group statistic,
-        # not uncertainty of the estimate itself (for that, use bootstrap CIs).
-        pct_lo_fz = np.nanpercentile(stacked_fz, pct_lo, axis=0)
-        pct_hi_fz = np.nanpercentile(stacked_fz, pct_hi, axis=0)
-
-        # ── Back-convert to Pearson r at reporting stage only ─────────────────
+        # ── Back-convert to Pearson r at reporting stage only ─────────────
         mean_r   = np.tanh(mean_fz)
         median_r = np.tanh(median_fz)
         pct_lo_r = np.tanh(pct_lo_fz)
@@ -364,42 +376,32 @@ for hemi in ("lh", "rh"):
         print(f"    Fisher-z mean   range : [{np.nanmin(mean_fz):.4f},   {np.nanmax(mean_fz):.4f}]")
         print(f"    Fisher-z median range : [{np.nanmin(median_fz):.4f}, {np.nanmax(median_fz):.4f}]")
 
-        # run_label: None normal_tag → variant name ("concat", "concat_clean")
-        run_label = normal_tag if normal_tag is not None else variant
+        run_label  = normal_tag if normal_tag is not None else variant
+        pct_lo_tag = f"p{int(PCT_LO):02d}"
+        pct_hi_tag = f"p{int(PCT_HI):02d}"
 
-        # Percentile label strings used in filenames (e.g. "p25", "p75")
-        pct_lo_tag = f"p{int(pct_lo):02d}"
-        pct_hi_tag = f"p{int(pct_hi):02d}"
-
-        # ── Save Fisher-z arrays (full precision .npy; 2 d.p. .csv) ──────────
-        for stat, arr in (
-            ("mean",     mean_fz),
-            ("median",   median_fz),
-            (pct_lo_tag, pct_lo_fz),
-            (pct_hi_tag, pct_hi_fz),
+        # ── Save Fisher-z and r arrays (.npy + .csv) ─────────────────────
+        for space, arrays in (
+            ("fisherz", (("mean",     mean_fz),
+                         ("median",   median_fz),
+                         (pct_lo_tag, pct_lo_fz),
+                         (pct_hi_tag, pct_hi_fz))),
+            ("r",       (("mean",     mean_r),
+                         ("median",   median_r),
+                         (pct_lo_tag, pct_lo_r),
+                         (pct_hi_tag, pct_hi_r))),
         ):
-            stem = _stem(stat, "fisherz", run_label, hemi)
-            np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=EYE_FIELDS, columns=TARGET_COLUMNS).to_csv(
-                output_folder / f"{stem}.csv", float_format="%.2f"
-            )
-            print(f"    Saved: {stem}.npy / .csv")
+            for stat, arr in arrays:
+                stem = _stem(stat, space, run_label, hemi)
+                np.save(output_folder / f"{stem}.npy", arr)
+                pd.DataFrame(
+                    arr, index=EYE_FIELDS, columns=TARGET_COLUMNS
+                ).to_csv(
+                    output_folder / f"{stem}.csv", float_format="%.4f"
+                )
+                print(f"    Saved: {stem}.npy / .csv")
 
-        # ── Save Pearson r arrays (full precision .npy; 2 d.p. .csv) ─────────
-        for stat, arr in (
-            ("mean",     mean_r),
-            ("median",   median_r),
-            (pct_lo_tag, pct_lo_r),
-            (pct_hi_tag, pct_hi_r),
-        ):
-            stem = _stem(stat, "r", run_label, hemi)
-            np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=EYE_FIELDS, columns=TARGET_COLUMNS).to_csv(
-                output_folder / f"{stem}.csv", float_format="%.2f"
-            )
-            print(f"    Saved: {stem}.npy / .csv")
-
-        # ── Compressed archive with all arrays + metadata ─────────────────────
+        # ── Compressed archive with all arrays + metadata ─────────────────
         npz_stem = f"seed-task_by_macror-task_partial-corr_{run_label}_{hemi}"
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
@@ -418,14 +420,18 @@ for hemi in ("lh", "rh"):
             target_columns    = np.array(TARGET_COLUMNS),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
-            percentiles       = np.array([pct_lo, pct_hi]),
         )
         print(f"    Saved: {npz_stem}.npz")
+
+        # ── Reporting TSVs — concat_clean only ───────────────────────────
+        if variant == "concat_clean":
+            _save_reporting_tsvs(stacked_fz, median_r, subject_ids, hemi)
 
 print("\n" + "=" * 80)
 print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
-print(f"\nOutputs written to: {output_folder}")
+print(f"\nStats outputs : {output_folder}")
+print(f"Reporting TSVs: {tables_folder}")
 print(
     "\nNote: Fisher-z outputs are in z-space. Apply np.tanh() to recover Pearson r "
     "only at the final reporting or plotting stage."

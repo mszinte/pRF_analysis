@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Goal of the script:
+violin_partial_corr_task_constrained.py
+---------------------------------------------------
 Partial correlation violin plots — TASK-CONSTRAINED version
 Seeds on the y-axis, one figure per TARGET macro-region
 
-Input files: seed-task_by_macror-task_partial_fisherz_{variant}_{hemi}.csv
-These contain fisher-z values which are converted to Pearson r for plotting
+Reads from the concat_clean reporting TSVs produced by
+group_stats_partial_corr_by_hemi_task-constrained.py:
+    partial_corr/tables/seed-task_by_macror-task_partial-corr_r_report_ipsi_{hemi}.tsv
 
-Currently only concat_clean is produced (the only reliable variant for
-task-constrained partial correlations)
+TSV structure:
+    subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+    (one row per subject × seed; GROUP row at the bottom)
+
+Only ipsilateral values are plotted (one table per hemisphere).
+The GROUP row is plotted as a diamond marker on top of each violin half.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -23,16 +29,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from pathlib import Path
-from typing import Optional
 
 # ============================================================
 # Paths & settings
 # ============================================================
-USER = os.environ["USER"]
-
 main_data     = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
+tables_folder = main_data / "group/91k/rest/partial_corr/tables"
 output_folder = main_data / "group/91k/rest/partial_corr"
-output_folder.mkdir(parents=True, exist_ok=True)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
@@ -40,7 +43,6 @@ from settings_utils import load_settings
 
 sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
 from rest_utils import (
-    RUN02_EXCLUDED,
     MACRO_COLORS,
     SEED_COLOR,
     MEDIAN_COLORS,
@@ -53,7 +55,6 @@ settings_path     = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
-subjects          = analysis_info["subjects"]
 
 fig_dir = os.path.join(output_folder, "figures/violin_plots/task-constrained")
 os.makedirs(fig_dir, exist_ok=True)
@@ -61,220 +62,90 @@ os.makedirs(fig_dir, exist_ok=True)
 # ============================================================
 # Cluster ordering
 # ============================================================
+clusters_all = list(analysis_info["rois-drawn"])
+clusters_all.reverse()   # mPCS first
 
-clusters_all = analysis_info["rois-drawn"]
-clusters_all.reverse()   # mPCS, sPCS, iPCS, sIPS, iIPS, hMT+, ..., V1
-
-cluster_to_parcels = analysis_info["rois-group-mmp"]
-
-seed_clusters   = clusters_all[:5]
+seed_clusters   = clusters_all[:5]   # mPCS, sPCS, iPCS, sIPS, iIPS
 target_clusters = seed_clusters.copy()
 
-for cl in seed_clusters:
-    if cl not in cluster_to_parcels:
-        raise KeyError(
-            "Seed cluster '{}' has no entry in 'rois-group-mmp' -- "
-            "check settings.yml".format(cl)
-        )
-    if len(cluster_to_parcels[cl]) == 0:
-        raise ValueError(
-            "Seed cluster '{}' maps to an empty parcel list".format(cl)
-        )
-
-N_CLUSTERS = len(clusters_all)   # expected 12
-
 # ============================================================
-# Variants — task-constrained only uses concat_clean for now
+# Load reporting TSVs — one per hemisphere
+#
+# Each TSV has columns: subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+# Rows: one per subject × seed, plus GROUP rows at the bottom.
+# Values are already in Pearson r (conversion done at the stats stage).
 # ============================================================
-
-# variant_name : (csv_tag, subject_filter_fn)
-# csv_tag is the token that appears in the filename (e.g. "concat")
-# For concat_clean we load the concat file for clean subjects and the
-# run-01 file for RUN02_EXCLUDED subjects (same logic as task-free).
-
-def _all(sub):      return True
-def _no_run02(sub): return sub not in RUN02_EXCLUDED
-
-TC_VARIANTS = {
-    "concat_clean": ("concat", _no_run02, "run-01"),
-    # Add further variants here when the files exist, e.g.:
-    # "run-01": ("run-01", _all,      None),
-    # "run-02": ("run-02", _all,      None),
-    # "concat": ("concat", _all,      None),
-}
-
-# ============================================================
-# CSV loader with fisher-z → Pearson r conversion
-# ============================================================
-
-def load_partial_csv_hemi(filepath, hemi, n_clusters):
-    # type: (str, str, int) -> Optional[np.ndarray]
-    """Load a task-constrained partial corr CSV and return a (n_seeds x n_targets)
-    matrix in Pearson r for the requested hemisphere.
-
-    The CSV is expected to be a (n_seeds x n_clusters) matrix of fisher-z
-    values for one hemisphere.  Rows = seeds (clusters_all order),
-    Columns = target macro-regions (clusters_all order).
-
-    Returns None (with a warning) on any file or format problem.
-    """
-    if not os.path.isfile(filepath):
-        print("  WARNING: missing -- {}".format(filepath))
-        return None
-    try:
-        arr = pd.read_csv(filepath, header=None).to_numpy(dtype=float)
-    except Exception as e:
-        print("  WARNING: could not read {} -- {}".format(filepath, e))
-        return None
-
-    if arr.ndim != 2:
-        print("  WARNING: expected 2D array, got shape {} in {} -- skipping".format(
-            arr.shape, filepath))
-        return None
-
-    if arr.shape != (n_clusters, n_clusters):
-        print(
-            "  WARNING: expected ({n}x{n}) matrix, got {s} in {f} -- skipping".format(
-                n=n_clusters, s=arr.shape, f=filepath)
-        )
-        return None
-
-    # Convert fisher-z to Pearson r
-    return np.tanh(arr)
-
-
-# ============================================================
-# Path builder
-# ============================================================
-
-def get_fname(sub_path, sub, csv_tag, excluded_run_tag, hemi):
-    # type: (str, str, str, Optional[str], str) -> str
-    """Return the task-constrained partial corr CSV path for one subject/hemi.
-
-    For concat_clean, subjects in RUN02_EXCLUDED use excluded_run_tag
-    (run-01) instead of the concat file.
-    """
-    task_constrained_subdir = os.path.join(sub_path, "task-constrained")
-
-    if sub in RUN02_EXCLUDED and excluded_run_tag is not None:
-        effective_tag = excluded_run_tag
-    else:
-        effective_tag = csv_tag
-
-    fname = "seed-task_by_macror-task_partial_fisherz_{}_{}.csv".format(
-        effective_tag, hemi
-    )
-    return os.path.join(task_constrained_subdir, fname)
-
-# ============================================================
-# Load data
-# ============================================================
-
 hemis = ["lh", "rh"]
 
-# results[variant][seed][tc][hemi] = list of per-subject Pearson r values
-results = {
-    variant: {
-        seed: {
-            tc: {hemi: [] for hemi in hemis}
-            for tc in target_clusters if tc != seed
-        }
-        for seed in seed_clusters
+tables = {}
+missing_tables = []
+
+for hemi in hemis:
+    fname = (
+        "seed-task_by_macror-task_partial-corr"
+        "_r_report_ipsi_{hemi}.tsv".format(hemi=hemi)
+    )
+    fpath = tables_folder / fname
+    if not fpath.exists():
+        print("WARNING: missing table -- {}".format(fpath))
+        missing_tables.append(str(fpath))
+        continue
+
+    df = pd.read_csv(fpath, sep="\t")
+    tables[hemi] = {
+        "subjects": df[df["subject"] != "GROUP"].copy(),
+        "group":    df[df["subject"] == "GROUP"].copy(),
     }
-    for variant in TC_VARIANTS
-}
+    n_subj = tables[hemi]["subjects"]["subject"].nunique()
+    print("Loaded [{hemi}]: {n} subjects + GROUP".format(
+        hemi=hemi.upper(), n=n_subj))
 
-missing_files = []
-
-for variant, (csv_tag, subject_filter, excluded_run_tag) in TC_VARIANTS.items():
-
-    variant_subjects = [s for s in subjects if subject_filter(s)]
-    print("\n=== Loading variant: {} | {} subjects ===".format(
-        variant, len(variant_subjects)))
-
-    for sub in variant_subjects:
-
-        sub_path = os.path.join(
-            main_data,
-            "{}/91k/rest/corr/partial_corr/by_hemi".format(sub)
-        )
-
-        for hemi in hemis:
-
-            fname = get_fname(
-                sub_path         = sub_path,
-                sub              = sub,
-                csv_tag          = csv_tag,
-                excluded_run_tag = excluded_run_tag,
-                hemi             = hemi,
-            )
-
-            matrix_r = load_partial_csv_hemi(fname, hemi, N_CLUSTERS)
-
-            if matrix_r is None:
-                missing_files.append((variant, fname))
-                continue
-
-            print("  {} ({}, {}): loaded {}x{} matrix (Pearson r)".format(
-                sub, variant, hemi, matrix_r.shape[0], matrix_r.shape[1]))
-
-            # matrix_r[seed_row, tc_col] = partial corr of seed with tc
-            for seed in seed_clusters:
-                seed_idx = clusters_all.index(seed)
-                for tc in target_clusters:
-                    if tc == seed:
-                        continue
-                    tc_idx = clusters_all.index(tc)
-                    results[variant][seed][tc][hemi].append(
-                        float(matrix_r[seed_idx, tc_idx])
-                    )
-
-if missing_files:
-    print("\n" + "=" * 60)
-    print("WARNING: {} file(s) could not be loaded:".format(len(missing_files)))
-    for v, f in missing_files:
-        print("  [{}] {}".format(v, f))
-    print("=" * 60 + "\n")
+if missing_tables:
+    print("\nERROR: {} reporting table(s) missing -- cannot plot.".format(
+        len(missing_tables)))
+    sys.exit(1)
 
 # ============================================================
 # Plotting
 # ============================================================
 
-MEDIAN_COLORS_LOCAL = {"lh": "#222222", "rh": "#888888"}
-MEDIAN_HALF_LEN_LOCAL = 0.08
-
-
-def plot_target_figure(target, variant, res):
-    # type: (str, str, dict) -> None
-    """Draw and save one violin figure for target x variant."""
+def plot_target_figure(target):
+    # type: (str) -> None
+    """Draw and save one violin figure (ipsi, concat_clean) for one target."""
 
     target_row_idx = seed_clusters.index(target)
 
     plot_rows = []
-    for seed in seed_clusters:
-        if seed == target:
-            for hemi_label in ["LH", "RH"]:
-                plot_rows.append(
-                    {"Seed": seed, "Correlation": np.nan, "Hemisphere": hemi_label}
-                )
-            continue
-        for hemi in hemis:
-            for val in res[seed][target][hemi]:
-                plot_rows.append(
-                    {"Seed": seed, "Correlation": val, "Hemisphere": hemi.upper()}
-                )
+    for hemi in hemis:
+        subj_df = tables[hemi]["subjects"]
+        for seed in seed_clusters:
+            seed_rows = subj_df[subj_df["seed"] == seed]
+            if seed == target:
+                for _ in range(len(seed_rows)):
+                    plot_rows.append({
+                        "Seed": seed,
+                        "Correlation": np.nan,
+                        "Hemisphere": hemi.upper(),
+                    })
+                continue
+            for val in seed_rows[target].values:
+                plot_rows.append({
+                    "Seed": seed,
+                    "Correlation": float(val),
+                    "Hemisphere": hemi.upper(),
+                })
 
-    df = pd.DataFrame(plot_rows)
+    df_plot = pd.DataFrame(plot_rows)
 
-    if df.loc[df["Seed"] != target, "Correlation"].dropna().empty:
-        print("  SKIP (no data): target={}, variant={}".format(target, variant))
+    if df_plot.loc[df_plot["Seed"] != target, "Correlation"].dropna().empty:
+        print("  SKIP (no data): target={}".format(target))
         return
 
     fig, ax = plt.subplots(figsize=(8, 6))
     n_before = len(ax.collections)
 
     sns.violinplot(
-        data=df,
+        data=df_plot,
         y="Seed",
         x="Correlation",
         hue="Hemisphere",
@@ -288,14 +159,13 @@ def plot_target_figure(target, variant, res):
     )
 
     new_collections = ax.collections[n_before:]
-
     n_plottable_rows     = len(seed_clusters) - 1
     expected_collections = n_plottable_rows * 2
 
     assert len(new_collections) == expected_collections, (
-        "[{}, target={}] Expected {} PolyCollections but got {}. "
+        "[target={}] Expected {} PolyCollections but got {}. "
         "seaborn layout may have changed -- check version.".format(
-            variant, target, expected_collections, len(new_collections))
+            target, expected_collections, len(new_collections))
     )
 
     collection_idx = 0
@@ -318,28 +188,32 @@ def plot_target_figure(target, variant, res):
         label="_nolegend_",
     )
 
+    # Median tick lines (computed from subject rows, not GROUP)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
         for hemi, y_offset in zip(hemis, [-0.12, 0.12]):
-            vals = np.array(res[seed][target][hemi])
+            vals = tables[hemi]["subjects"]
+            vals = vals[vals["seed"] == seed][target].dropna().values
             if len(vals) == 0:
                 continue
             ax.plot(
                 [np.nanmedian(vals)] * 2,
-                [i + y_offset - MEDIAN_HALF_LEN_LOCAL,
-                 i + y_offset + MEDIAN_HALF_LEN_LOCAL],
-                color=MEDIAN_COLORS_LOCAL[hemi],
+                [i + y_offset - MEDIAN_HALF_LEN,
+                 i + y_offset + MEDIAN_HALF_LEN],
+                color=MEDIAN_COLORS[hemi],
                 linewidth=1.5,
                 zorder=4,
             )
 
+    # Individual subject dots with jitter
     rng = np.random.default_rng(seed=42)
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
         for hemi, y_offset in zip(hemis, [-0.1, 0.1]):
-            x = np.array(res[seed][target][hemi])
+            vals = tables[hemi]["subjects"]
+            x = vals[vals["seed"] == seed][target].dropna().values.astype(float)
             if len(x) == 0:
                 continue
             y_jitter = (
@@ -350,11 +224,29 @@ def plot_target_figure(target, variant, res):
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
+    # GROUP diamond markers
+    for i, seed in enumerate(seed_clusters):
+        if seed == target:
+            continue
+        for hemi, y_offset in zip(hemis, [-0.1, 0.1]):
+            group_rows = tables[hemi]["group"]
+            group_val  = group_rows[group_rows["seed"] == seed][target].values
+            if len(group_val) == 0 or np.isnan(group_val[0]):
+                continue
+            ax.scatter(
+                group_val[0], i + y_offset,
+                marker="D", s=50,
+                color=MEDIAN_COLORS[hemi],
+                edgecolor="white", linewidth=0.8,
+                zorder=5,
+            )
+
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Partial Correlation (r)", fontsize=18, fontweight="bold")
-    ax.set_ylabel("Seed Cluster",            fontsize=18, fontweight="bold")
+    ax.set_xlabel("Partial Correlation (r, task-constrained)",
+                  fontsize=18, fontweight="bold")
+    ax.set_ylabel("Seed Cluster", fontsize=18, fontweight="bold")
     ax.set_title(
-        "{} target -- {} (task-constrained)".format(target, variant),
+        "{} target -- concat_clean (task-constrained)".format(target),
         fontsize=18, fontweight="bold"
     )
     ax.tick_params(axis="both", which="major", labelsize=16)
@@ -365,8 +257,7 @@ def plot_target_figure(target, variant, res):
 
     outname = os.path.join(
         fig_dir,
-        "violin_target-{}_partial_corr_{}_task-constrained.png".format(
-            target, variant)
+        "violin_target-{}_partial_corr_concat_clean_task-constrained.png".format(target)
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
     print("  Saved: {}".format(outname))
@@ -377,7 +268,6 @@ def plot_target_figure(target, variant, res):
 # Main loop
 # ============================================================
 
-for variant in TC_VARIANTS:
-    print("\n=== Plotting variant: {} ===".format(variant))
-    for target in target_clusters:
-        plot_target_figure(target, variant, results[variant])
+print("\n=== Plotting partial corr task-constrained (concat_clean, ipsi) ===")
+for target in target_clusters:
+    plot_target_figure(target)
