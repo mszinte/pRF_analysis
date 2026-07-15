@@ -140,7 +140,7 @@ def get_fname(
         )
     return (
         f"{sub_path}/{sub}_task-rest_{effective_tag}_space-fsLR"
-        f"_den-91k_desc-full_corr_{hemi}_{seed}_parcellated.tsv"
+        f"_den-91k_desc-full_corr_{hemi}_{seed}_task-free_parcellated_legacy-mode.tsv"
     )
 
 # ============================================================
@@ -181,7 +181,7 @@ for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
             continue
 
         sub_path = os.path.join(
-            main_data, f"{sub}/91k/rest/corr/full_corr/by_hemi"
+            main_data, f"{sub}/91k/rest/corr/full_corr/by_hemi/task-free"
         )
 
         for seed in seed_clusters:
