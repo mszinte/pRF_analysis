@@ -37,30 +37,10 @@ Standardize flag
   since mean≈0, std≈1) and correct on non-z-scored individual runs.
   Forward-compatible with Nilearn ≥ 0.15.
 
-Collinearity diagnostic (NEW)
-  Before computing any partial correlations, the condition number of the
-  covariance matrix of the full conditioning-relevant region pool (all
-  loaded ipsi + contra macro-region timeseries stacked together) is
-  computed per subject × run × hemisphere.  A high condition number
-  indicates the sample covariance matrix is close to singular, which is
-  the classic driver of unstable / high-variance partial correlation
-  estimates (inverting a near-singular matrix amplifies noise).  As a
-  rule of thumb: cond < ~30 is unremarkable, 30-100 warrants a look,
-  > 100 suggests genuine multicollinearity in the conditioning set.
-  All records are collected and printed as a summary table (and saved
-  to CSV) at the end of the run, across all subjects/runs/hemis, so the
-  scale of the problem can be assessed before deciding whether to switch
-  to a regularized covariance estimator (e.g. Ledoit-Wolf).
-  This diagnostic does not change any of the saved partial-corr outputs.
-
 Outputs (per subject, per run, per hemisphere)
   seed-task_by_macror-task_partial_{run}_{hemi}.npy / .csv           — Pearson r
   seed-task_by_macror-task_partial_fisherz_{run}_{hemi}.npy / .csv   — Fisher z
   seed-task_by_macror-task_partial_{run}_{hemi}_bilateral.npy / .csv — bilateral
-
-Diagnostic output (all subjects/runs/hemis combined)
-  {main_data}/group/91k/rest/partial_corr/diagnostics/
-      collinearity_condition_numbers_task-constrained.csv
 
 Group aggregation: run group_stats_partial_corr_task-constrained.py 
 (Fisher-z space throughout)
@@ -129,51 +109,6 @@ HEMIS = [
 rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
 rest_settings      = load_settings([rest_settings_path])[0]
 RUNS          = rest_settings["runs"]
-
-# ============================================================
-# Collinearity diagnostic — accumulator
-#
-# One record per subject × run × hemisphere, capturing the condition
-# number of the covariance matrix of the full region pool used for
-# conditioning (ipsi + contra macro-regions stacked together), plus
-# the number of timepoints and regions for context.  Printed as a
-# summary table and saved to CSV at the very end of the script.
-# ============================================================
-diagnostic_records = []
-
-
-def _condition_number_report(X, subject, run_tag, label, n_time):
-    """
-    Compute and log the condition number of the covariance matrix of X
-    (n_time × n_regions).  Appends a record to diagnostic_records but
-    does not alter any partial-corr computation — purely informational.
-    """
-    n_regions = X.shape[1]
-    cov = np.cov(X, rowvar=False)
-    cond = np.linalg.cond(cov)
-
-    if cond < 30:
-        flag = "OK"
-    elif cond < 100:
-        flag = "WATCH"
-    else:
-        flag = "HIGH"
-
-    print(
-        f"  [{label}] Collinearity check: {n_regions} regions, "
-        f"{n_time} timepoints, cond(cov) = {cond:.1f}  [{flag}]"
-    )
-
-    diagnostic_records.append({
-        "subject":     subject,
-        "run":         run_tag,
-        "hemi":        label,
-        "n_regions":   n_regions,
-        "n_timepoints": n_time,
-        "condition_number": cond,
-        "flag":        flag,
-    })
-
 
 # ============================================================
 # Subject loop
@@ -288,28 +223,6 @@ for subject in subjects:
                     label=f"{subject}{run_tag} {label} contra {roi}"
                 )
                 macro_ts_contra[roi] = clean[:, 0]
-
-            # ------------------------------------------------------
-            # Step 2b — Collinearity diagnostic (NEW)
-            #
-            # Stack the full region pool used across all conditioning sets
-            # for this subject/run/hemi (all loaded ipsi + contra regions)
-            # and report the condition number of its covariance matrix.
-            # This is a single upper-bound-ish proxy for how ill-conditioned
-            # any individual conditioning set drawn from this pool could be
-            # — it does not recompute a separate condition number for every
-            # seed/target pair, which would be far more output for little
-            # extra insight at this exploratory stage.
-            # ------------------------------------------------------
-
-            full_pool = (
-                [macro_ts[r]        for r in loaded_rois] +
-                [macro_ts_contra[r] for r in loaded_rois_contra]
-            )
-            X_pool = np.column_stack(full_pool)
-            _condition_number_report(
-                X_pool, subject, run_tag, label, n_time=X_pool.shape[0]
-            )
 
             # ------------------------------------------------------
             # Step 3 — Partial correlations
@@ -485,44 +398,3 @@ for subject in subjects:
             )
 
             print(f"  [{label}] Saved to {sub_out}")
-
-# ============================================================
-# Collinearity diagnostic — final summary across all subjects
-# ============================================================
-
-print("\n" + "=" * 80)
-print("COLLINEARITY DIAGNOSTIC SUMMARY — all subjects × runs × hemispheres")
-print("=" * 80)
-
-diag_df = pd.DataFrame(diagnostic_records)
-
-if diag_df.empty:
-    print("No diagnostic records collected (no hemispheres processed).")
-else:
-    # Sort worst-first so problem cases are immediately visible
-    diag_df_sorted = diag_df.sort_values("condition_number", ascending=False)
-    print(diag_df_sorted.to_string(index=False))
-
-    print("\nSummary statistics for condition_number:")
-    print(diag_df["condition_number"].describe().to_string())
-
-    n_high  = int((diag_df["flag"] == "HIGH").sum())
-    n_watch = int((diag_df["flag"] == "WATCH").sum())
-    n_ok    = int((diag_df["flag"] == "OK").sum())
-    n_total = len(diag_df)
-
-    print(
-        f"\nFlags: {n_high}/{n_total} HIGH (cond ≥ 100), "
-        f"{n_watch}/{n_total} WATCH (30 ≤ cond < 100), "
-        f"{n_ok}/{n_total} OK (cond < 30)"
-    )
-
-    diag_out_dir = os.path.join(
-        main_data, "group/91k/rest/partial_corr/diagnostics"
-    )
-    os.makedirs(diag_out_dir, exist_ok=True)
-    diag_out_path = os.path.join(
-        diag_out_dir, "collinearity_condition_numbers_task-constrained.csv"
-    )
-    diag_df.to_csv(diag_out_path, index=False)
-    print(f"\nSaved diagnostic table: {diag_out_path}")
