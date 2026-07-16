@@ -346,8 +346,58 @@ def make_image_pycortex(data,
                                      maps_names=maps_names)
         return new_img
 
-def set_pycortex_config_file(cortex_folder):
+# def set_pycortex_config_file(cortex_folder):
 
+#     # Import necessary modules
+#     import os
+#     import sys
+#     import cortex
+#     from pathlib import Path
+
+#     # Get pycortex config file location
+#     pycortex_config_file  = cortex.options.usercfg
+
+#     # Define the filestore and colormaps path
+#     filestore_line = 'filestore={}/db/\n'.format(cortex_folder)
+#     colormaps_line = 'colormaps={}/colormaps/\n'.format(cortex_folder)
+    
+#     # Check if path correct
+#     with open(pycortex_config_file, 'r') as fileIn:
+#         for line in fileIn:
+#             if 'filestore' in line:
+#                 if line==filestore_line: correct_filestore = True
+#                 else: correct_filestore = False
+#             elif 'colormaps' in line:
+#                 if line==colormaps_line: correct_colormaps = True
+#                 else: correct_colormaps = False
+                    
+#     # Change config file
+#     if correct_filestore==False or correct_colormaps==False:
+
+#         # Create name of new config file that will be written
+#         new_pycortex_config_file = pycortex_config_file[:-4] + '_new.cfg'
+    
+#         # Create the new config file
+#         Path(new_pycortex_config_file).touch()
+    
+#         # Write back the two lines
+#         with open(pycortex_config_file, 'r') as fileIn:
+#             with open(new_pycortex_config_file, 'w') as fileOut:
+#                 for line in fileIn:
+#                     if 'filestore' in line:
+#                         fileOut.write(filestore_line)
+#                     elif 'colormaps' in line:
+#                         fileOut.write(colormaps_line)
+#                     else:
+#                         fileOut.write(line)
+                        
+#         # Renames the original config file
+#         os.rename(new_pycortex_config_file, pycortex_config_file)
+#         sys.exit('Pycortex config file changed: please restart your code')
+
+#     return None
+
+def set_pycortex_config_file(cortex_folder):
     # Import necessary modules
     import os
     import sys
@@ -355,46 +405,91 @@ def set_pycortex_config_file(cortex_folder):
     from pathlib import Path
 
     # Get pycortex config file location
-    pycortex_config_file  = cortex.options.usercfg
+    pycortex_config_file = cortex.options.usercfg
 
     # Define the filestore and colormaps path
     filestore_line = 'filestore={}/db/\n'.format(cortex_folder)
     colormaps_line = 'colormaps={}/colormaps/\n'.format(cortex_folder)
-    
-    # Check if path correct
+
+    # Define the curvature / webgl_viewopts settings to enforce
+    curvature_settings = {
+        'brightness': 'brightness = 0.1\n',
+        'contrast': 'contrast = 0.8\n',
+        'webgl_smooth': 'webgl_smooth = 1\n',
+    }
+    webgl_viewopts_settings = {
+        'specularity': 'specularity = 0\n',
+    }
+
+    # Check current values
+    correct_filestore = False
+    correct_colormaps = False
+    correct_curvature = {key: False for key in curvature_settings}
+    correct_webgl_viewopts = {key: False for key in webgl_viewopts_settings}
+
+    current_section = None
     with open(pycortex_config_file, 'r') as fileIn:
         for line in fileIn:
-            if 'filestore' in line:
-                if line==filestore_line: correct_filestore = True
-                else: correct_filestore = False
-            elif 'colormaps' in line:
-                if line==colormaps_line: correct_colormaps = True
-                else: correct_colormaps = False
-                    
-    # Change config file
-    if correct_filestore==False or correct_colormaps==False:
+            stripped = line.strip()
+            if stripped.startswith('[') and stripped.endswith(']'):
+                current_section = stripped[1:-1]
+                continue
 
-        # Create name of new config file that will be written
+            if 'filestore' in line:
+                correct_filestore = (line == filestore_line)
+            elif 'colormaps' in line:
+                correct_colormaps = (line == colormaps_line)
+
+            if current_section == 'curvature':
+                for key, target_line in curvature_settings.items():
+                    if line.strip().startswith(key):
+                        correct_curvature[key] = (line == target_line)
+
+            if current_section == 'webgl_viewopts':
+                for key, target_line in webgl_viewopts_settings.items():
+                    if line.strip().startswith(key):
+                        correct_webgl_viewopts[key] = (line == target_line)
+
+    all_correct = (
+        correct_filestore and correct_colormaps
+        and all(correct_curvature.values())
+        and all(correct_webgl_viewopts.values())
+    )
+
+    # Change config file
+    if not all_correct:
         new_pycortex_config_file = pycortex_config_file[:-4] + '_new.cfg'
-    
-        # Create the new config file
         Path(new_pycortex_config_file).touch()
-    
-        # Write back the two lines
+
+        current_section = None
         with open(pycortex_config_file, 'r') as fileIn:
             with open(new_pycortex_config_file, 'w') as fileOut:
                 for line in fileIn:
+                    stripped = line.strip()
+                    if stripped.startswith('[') and stripped.endswith(']'):
+                        current_section = stripped[1:-1]
+                        fileOut.write(line)
+                        continue
+
                     if 'filestore' in line:
                         fileOut.write(filestore_line)
                     elif 'colormaps' in line:
                         fileOut.write(colormaps_line)
+                    elif current_section == 'curvature' and any(
+                        stripped.startswith(key) for key in curvature_settings
+                    ):
+                        key = next(k for k in curvature_settings if stripped.startswith(k))
+                        fileOut.write(curvature_settings[key])
+                    elif current_section == 'webgl_viewopts' and any(
+                        stripped.startswith(key) for key in webgl_viewopts_settings
+                    ):
+                        key = next(k for k in webgl_viewopts_settings if stripped.startswith(k))
+                        fileOut.write(webgl_viewopts_settings[key])
                     else:
                         fileOut.write(line)
-                        
-        # Renames the original config file
+
         os.rename(new_pycortex_config_file, pycortex_config_file)
         sys.exit('Pycortex config file changed: please restart your code')
-
     return None
 
 def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB', cmap='Viridis',\

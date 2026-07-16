@@ -56,15 +56,17 @@ from settings_utils import load_settings
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
-save_svg = sys.argv[4]
+analysis_name = sys.argv[4]
+save_svg = sys.argv[5]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_info}-analysis.yml")
+analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings = load_settings([general_settings_path, analysis_settings_path, figure_settings_path])
 analysis_info = settings[0]
+
 if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 preproc_prep = analysis_info['preproc_prep']
@@ -123,7 +125,10 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                                                       normalization, rois_method_format)
             results = load_surface_pycortex(brain_fn=roi_fn)
             roi_mat = results['data_concat']
-                
+        
+        # Define overlay
+        overlay_fn = f"overlays_{rois_method_format}.svg"
+        
         rois_opacity = 0.5
         alpha_mat = roi_mat*0+rois_opacity
         alpha_mat[roi_mat==0]=0
@@ -142,10 +147,11 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                       'cmap_dict': colormap_dict,
                       'cortex_type': 'VertexRGB',
                       'description': 'ROIs',
-                      'curv_brightness': 1, 
-                      'curv_contrast': 0.25,
+                      'curv_brightness': 0.6, 
+                      'curv_contrast': 0.2,
                       'add_roi': save_svg,
                       'with_labels': True,
+                      'overlay_fn': overlay_fn,
                       'roi_name': roi_name}
                       
         # Draw flatmaps
