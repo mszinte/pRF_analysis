@@ -87,7 +87,7 @@ cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
 # Maps settings
-cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'Reds', 'Spectral'
+cmap_polar, cmap_uni, cmap_ecc_size = 'hsv', 'viridis', 'Spectral'
 col_offset = 1.0/14.0
 cmap_steps = 255
 
@@ -205,8 +205,8 @@ for avg_method in avg_methods:
                                      'cbar': 'discrete',
                                      'cortex_type': 'VertexRGB',
                                      'description': rsq_description,
-                                     'curv_brightness': 1,
-                                     'curv_contrast': 0.1,
+                                     'curv_brightness': 0.6,
+                                     'curv_contrast': 0.2,
                                      'add_roi': save_svg,
                                      'cbar_label': rsq_cbar_label,
                                      'overlay_fn': overlay_fn,
@@ -228,8 +228,8 @@ for avg_method in avg_methods:
                                        'cbar': 'polar',
                                        'col_offset': col_offset,
                                        'description': 'CSS pRF polar angle',
-                                       'curv_brightness': 0.1,
-                                       'curv_contrast': 0.25,
+                                       'curv_brightness': 0.6,
+                                       'curv_contrast': 0.2,
                                        'overlay_fn': overlay_fn,
                                        'add_roi': save_svg,
                                        'with_labels': True}
@@ -246,8 +246,8 @@ for avg_method in avg_methods:
                                      'cbar': 'ecc',
                                      'cortex_type': 'VertexRGB',
                                      'description': 'CSS pRF eccentricity',
-                                     'curv_brightness': 1,
-                                     'curv_contrast': 0.1,
+                                     'curv_brightness': 0.6,
+                                     'curv_contrast': 0.2,
                                      'add_roi': save_svg,
                                      'overlay_fn': overlay_fn,
                                      'with_labels': True}
@@ -263,8 +263,8 @@ for avg_method in avg_methods:
                                       'cbar': 'discrete',
                                       'cortex_type': 'VertexRGB',
                                       'description': 'CSS pRF size',
-                                      'curv_brightness': 1,
-                                      'curv_contrast': 0.1,
+                                      'curv_brightness': 0.6,
+                                      'curv_contrast': 0.2,
                                       'add_roi': False,
                                       'cbar_label': 'pRF size (dva)',
                                       'overlay_fn': overlay_fn,
@@ -281,8 +281,8 @@ for avg_method in avg_methods:
                                    'cbar': 'discrete',
                                    'cortex_type': 'VertexRGB',
                                    'description': 'CSS pRF n',
-                                   'curv_brightness': 1,
-                                   'curv_contrast': 0.1,
+                                   'curv_brightness': 0.6,
+                                   'curv_contrast': 0.2,
                                    'add_roi': False,
                                    'cbar_label': 'pRF n',
                                    'overlay_fn': overlay_fn,
@@ -301,8 +301,8 @@ for avg_method in avg_methods:
                                      'cbar': 'discrete',
                                      'cortex_type': 'VertexRGB',
                                      'description': 'CSS pRF CM',
-                                     'curv_brightness': 1,
-                                     'curv_contrast': 0.1,
+                                     'curv_brightness': 0.6,
+                                     'curv_contrast': 0.2,
                                      'add_roi': False,
                                      'cbar_label': 'pRF CM (mm/dva)',
                                      'overlay_fn': overlay_fn,
@@ -533,3 +533,7 @@ for avg_method in avg_methods:
                         dataset = cortex.Dataset(data=volumes)
                         dataset.save(dataset_file)
                         print(f"Saved dataset: {dataset_file}")
+                        
+                        
+                        
+                        
