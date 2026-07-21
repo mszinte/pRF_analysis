@@ -114,12 +114,31 @@ def fix_skullstripped_key(json_dir):
 
                 json.dump(data, jf, indent=4)
 
+def create_missing_rest_events(base_dir, subject, session):
+    """
+    Look for *_task-rest_*_events.json sidecars in func/,
+    and create the corresponding _events.tsv (empty onset, duration) if missing.
+    """
+    func_dir = os.path.join(base_dir, subject, session, "func")
+    if not os.path.exists(func_dir):
+        return
+
+    json_files = glob.glob(os.path.join(func_dir, "*_task-rest_*_events.json"))
+
+    for json_file in json_files:
+        tsv_file = json_file.replace("_events.json", "_events.tsv")
+        if not os.path.exists(tsv_file):
+            event_table = pd.DataFrame(columns=["onset", "duration"])
+            event_table.to_csv(tsv_file, sep="\t", index=False, na_rep="n/a")
+            print(f"Created empty events file: {tsv_file}")
+
 def bidsify_func(sub, ses, base_dir):
     """
     Apply BIDS-related JSON fixes to functional data.
     """
     func_dir = os.path.join(base_dir, sub, ses, "func")
     fix_skullstripped_key(func_dir)
+    create_missing_rest_events(base_dir=base_dir, subject=sub, session=ses)
 
 def bidsify_anat(sub, ses, base_dir):
     """

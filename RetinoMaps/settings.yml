@@ -19,6 +19,8 @@ cluster_name:
 subjects:
   description: "Subjects of the dataset"
   value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-11", "sub-12", "sub-13", "sub-14", "sub-17", "sub-20", "sub-21", "sub-22", "sub-23", "sub-24", "sub-25"]
+  # value: ["sub-02"]
+
 sessions:
   description: "Sessions of the dataset"
   value: ["ses-01", "ses-02", "ses-03"]
