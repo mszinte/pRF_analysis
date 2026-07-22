@@ -30,41 +30,15 @@ Self-correlation masking
 Standardize flag
   ConnectivityMeasure(standardize=False) because the concatenated XCP-D timeseries
   are already z-scored.  Using standardize=True on pre-standardised data would
-  re-scale and distort the covariance structure.  This is unrelated to the
-  covariance ESTIMATOR (see below) and is left unchanged regardless of which
-  estimator is selected.
+  re-scale and distort the covariance structure.
 
-Covariance estimator (added for consistency with the task-constrained script)
-  Conditioning here is on all 106 bilateral MMP parcels — a considerably larger
-  and likely more collinear regressor set than the 24 macro-regions used in the
-  task-constrained analysis, so the same collinearity concerns apply at least as
-  much here.  ESTIMATOR_TAG is passed in as sys.argv[1] by the SLURM submit
-  script (submit_nilearn_compute_partial_corr_job.py), which owns the choice of
-  estimator as a run-configuration decision — this script only validates the tag
-  and maps it to the corresponding sklearn estimator.  No silent default is used
-  on the cluster to keep every job's estimator choice explicit and traceable.
-
-  raw            : EmpiricalCovariance (unregularized) — Nilearn's default
-  ledoit-wolf    : LedoitWolf shrinkage (Ledoit & Wolf, 2004) — analytic
-                   shrinkage intensity, no cross-validation
-  graphical-lasso: GraphicalLassoCV — L1-regularized precision matrix,
-                   sparsity penalty selected by cross-validation (slower;
-                   produces a sparse precision matrix — a different
-                   scientific claim than shrinkage; see Peterson et al. 2025,
-                   Imaging Neuroscience, for the graphical lasso vs.
-                   graphical ridge distinction)
-
-  Output filenames are tagged with ESTIMATOR_TAG so that runs with different
-  estimators never overwrite each other on disk.
-
-Outputs (per subject, per run, per hemisphere, per estimator)
-  seed-task_by_mmp-parcel_partial_{run}_{hemi}_{estimator}.npy / .csv          — Pearson r
-  seed-task_by_mmp-parcel_partial_fisherz_{run}_{hemi}_{estimator}.npy / .csv  — Fisher z
-  seed-task_by_macro-region_partial_fisherz_{run}_{hemi}_{estimator}.npy / .csv — sanity check
+Outputs (per subject, per run, per hemisphere)
+  seed-task_by_mmp-parcel_partial_{run}_{hemi}.npy / .csv          — Pearson r
+  seed-task_by_mmp-parcel_partial_fisherz_{run}_{hemi}.npy / .csv  — Fisher z
+  seed-task_by_macro-region_partial_fisherz_{run}_{hemi}.npy / .csv — sanity check
 
 Group aggregation is handled by group_stats_partial_corr.py (always in Fisher-z
-space; back-transformed to r only at the reporting stage). That script must be
-updated to accept/propagate the same ESTIMATOR_TAG when reading these files.
+space; back-transformed to r only at the reporting stage).
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -76,49 +50,13 @@ import sys
 import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
-from sklearn.covariance import LedoitWolf, EmpiricalCovariance, GraphicalLassoCV
-
-# ============================================================
-# Covariance estimator
-#
-# See docstring above. Required as sys.argv[1] — no silent default.
-# ============================================================
-
-VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
-
-if len(sys.argv) < 2:
-    print(
-        "ERROR: no covariance estimator specified.\n"
-        f"  Usage: python {sys.argv[0]} <estimator>\n"
-        f"  Accepted: {', '.join(VALID_ESTIMATORS)}\n"
-        "  This should normally be set via submit_nilearn_compute_partial_corr_job.py, "
-        "not called directly."
-    )
-    sys.exit(1)
-
-ESTIMATOR_TAG = sys.argv[1]
-if ESTIMATOR_TAG not in VALID_ESTIMATORS:
-    print(
-        f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n"
-        f"  Accepted: {', '.join(VALID_ESTIMATORS)}"
-    )
-    sys.exit(1)
-
-if ESTIMATOR_TAG == "ledoit-wolf":
-    COV_ESTIMATOR = LedoitWolf()
-elif ESTIMATOR_TAG == "graphical-lasso":
-    COV_ESTIMATOR = GraphicalLassoCV()
-else:
-    COV_ESTIMATOR = EmpiricalCovariance()
-
-print(f"Covariance estimator: {ESTIMATOR_TAG}  (cov_estimator={COV_ESTIMATOR})")
 
 # ============================================================
 # Paths
 # ============================================================
 
 main_data    = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1"
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 
@@ -353,15 +291,9 @@ for subject in subjects:
             partial_r_contra  = np.full((n_clusters_used, n_contra_parcels), np.nan)
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
-            # Single ConnectivityMeasure instance reused for every (seed, target) pair.
-            # standardize=False left unchanged (see docstring); cov_estimator is the
-            # only axis of variation controlled by ESTIMATOR_TAG.
-            conn = ConnectivityMeasure(
-                kind="partial correlation",
-                cov_estimator=COV_ESTIMATOR,
-                standardize=False,
-                verbose=True,
-            )
+            # Single ConnectivityMeasure instance reused for every (seed, target) pair
+            # Standardize set to false because now XCP-D z-scores the concat runs
+            conn = ConnectivityMeasure(kind="partial correlation", standardize=False)
 
             for i_cl, cl_name in enumerate(cluster_names_used):
 
@@ -531,10 +463,6 @@ for subject in subjects:
 
             # ------------------------------------------------------
             # Step 7 — Save subject-level outputs
-            #
-            # ESTIMATOR_TAG is appended to every output filename so that runs
-            # with different covariance estimators coexist on disk rather than
-            # overwriting one another.
             # ------------------------------------------------------
 
             sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi/task-free"
@@ -544,48 +472,46 @@ for subject in subjects:
 
             # --- Ipsilateral outputs (primary; consumed by all downstream scripts) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.npy"),
                 filled_r,
             )
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.npy"),
                 filled_fz,
             )
             pd.DataFrame(filled_r,  index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.csv")
             )
             pd.DataFrame(filled_fz, index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.csv")
             )
 
             # --- Bilateral outputs ([ipsi | contra]; ipsi half = [:, :n_parcels]) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.npy"),
                 filled_r_bilateral,
             )
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.npy"),
                 filled_fz_bilateral,
             )
             pd.DataFrame(filled_r_bilateral,  index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.csv")
             )
             pd.DataFrame(filled_fz_bilateral, index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.csv")
             )
 
             # --- Macro-region-by-macro-region sanity check (Fisher-z, ipsi only) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.npy"),
                 cluster_by_cluster_fz,
             )
             pd.DataFrame(cluster_by_cluster_fz, index=clusters, columns=clusters).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.csv")
             )
 
             print(f"  [{label}] Saved to {sub_out}")
 
 print("\nDone. Run group_stats_partial_corr.py to aggregate across subjects.")
-print("NOTE: group_stats_partial_corr.py must be updated to accept/propagate")
-print(f"the same ESTIMATOR_TAG ('{ESTIMATOR_TAG}') used here when locating these files.")
 # ============================================================

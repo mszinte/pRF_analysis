@@ -37,21 +37,35 @@ Standardize flag
   since mean≈0, std≈1) and correct on non-z-scored individual runs.
   Forward-compatible with Nilearn ≥ 0.15.
 
-Collinearity diagnostic (NEW)
-  Before computing any partial correlations, the condition number of the
-  covariance matrix of the full conditioning-relevant region pool (all
-  loaded ipsi + contra macro-region timeseries stacked together) is
-  computed per subject × run × hemisphere.  A high condition number
-  indicates the sample covariance matrix is close to singular, which is
-  the classic driver of unstable / high-variance partial correlation
-  estimates (inverting a near-singular matrix amplifies noise).  As a
-  rule of thumb: cond < ~30 is unremarkable, 30-100 warrants a look,
-  > 100 suggests genuine multicollinearity in the conditioning set.
-  All records are collected and printed as a summary table (and saved
-  to CSV) at the end of the run, across all subjects/runs/hemis, so the
-  scale of the problem can be assessed before deciding whether to switch
-  to a regularized covariance estimator (e.g. Ledoit-Wolf).
-  This diagnostic does not change any of the saved partial-corr outputs.
+Collinearity diagnostic + regularized covariance estimator (UPDATED)
+  A first diagnostic pass (condition number of the covariance matrix of
+  the full conditioning-relevant region pool, computed per subject × run
+  × hemisphere) showed condition numbers in the hundreds to thousands for
+  every single subject/run/hemi in this dataset (120/120 flagged HIGH,
+  median ~1400, max ~8400).  This indicates the raw sample covariance
+  matrix is close to singular, which is the classic driver of unstable /
+  high-variance partial correlation estimates (inverting a near-singular
+  matrix amplifies noise disproportionately).
+
+  Given this, ConnectivityMeasure now uses cov_estimator=LedoitWolf()
+  instead of the default (unregularized) empirical covariance.  Ledoit-
+  Wolf shrinkage (Ledoit & Wolf, 2004) shrinks the sample covariance
+  matrix toward a scaled identity matrix by an amount computed
+  analytically from the data — no cross-validation or hyperparameter
+  tuning required — which stabilizes inversion without changing which
+  regions are in the conditioning set (so full-corr vs. partial-corr
+  comparability is preserved).  Conceptually related to the "graphical
+  ridge" estimator benchmarked in Peterson et al. (2025, Imaging
+  Neuroscience), which found regularized partial correlation improves
+  reliability over the unregularized estimate in fMRI FC.
+
+  The condition-number diagnostic is still computed for every
+  subject/run/hemi (on the RAW covariance, as before) so the shrinkage
+  benefit can be inspected quantitatively: after computing the raw
+  condition number, the same check is repeated on the covariance matrix
+  AFTER Ledoit-Wolf shrinkage, and both are logged side by side.  Neither
+  diagnostic changes the saved partial-corr outputs — only cov_estimator
+  does.
 
 Outputs (per subject, per run, per hemisphere)
   seed-task_by_macror-task_partial_{run}_{hemi}.npy / .csv           — Pearson r
@@ -65,6 +79,11 @@ Diagnostic output (all subjects/runs/hemis combined)
 Group aggregation: run group_stats_partial_corr_task-constrained.py 
 (Fisher-z space throughout)
 
+Reference: Peterson, K.L., Sanchez-Romero, R., Mill, R.D., & Cole, M.W. (2025).
+Regularized partial correlation provides reliable functional connectivity
+estimates while correcting for widespread confounding. Imaging Neuroscience.
+https://doi.org/10.1162/IMAG.a.162
+
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ---------------------------------------------------
@@ -75,6 +94,62 @@ import sys
 import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
+from sklearn.covariance import LedoitWolf, EmpiricalCovariance, GraphicalLassoCV
+
+# ============================================================
+# Covariance estimator
+#
+# ESTIMATOR_TAG is passed in as sys.argv[1] by the SLURM submit script
+# (submit_nilearn_compute_partial_corr_job.py), which owns the choice of
+# estimator as a run-configuration decision. This script only validates
+# the tag and maps it to the corresponding sklearn estimator — it does
+# NOT default silently, since running without an explicit choice on the
+# cluster would make it too easy to lose track of which variant a given
+# job produced.
+#
+# raw            : EmpiricalCovariance (unregularized) — Nilearn's default
+# ledoit-wolf    : LedoitWolf shrinkage (Ledoit & Wolf, 2004) — analytic
+#                  shrinkage intensity, no cross-validation
+# graphical-lasso: GraphicalLassoCV — L1-regularized precision matrix,
+#                  sparsity penalty selected by cross-validation. Slower
+#                  than the other two; produces a sparse (many-zero)
+#                  precision matrix, which is a different scientific claim
+#                  than shrinkage (see Peterson et al. 2025, Imaging
+#                  Neuroscience, for the graphical lasso vs. graphical
+#                  ridge distinction).
+#
+# Output filenames are tagged with ESTIMATOR_TAG so that runs with
+# different estimators never overwrite each other on disk.
+# ============================================================
+
+VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
+
+if len(sys.argv) < 2:
+    print(
+        "ERROR: no covariance estimator specified.\n"
+        f"  Usage: python {sys.argv[0]} <estimator>\n"
+        f"  Accepted: {', '.join(VALID_ESTIMATORS)}\n"
+        "  This should normally be set via submit_nilearn_compute_partial_corr_job.py, "
+        "not called directly."
+    )
+    sys.exit(1)
+
+ESTIMATOR_TAG = sys.argv[1]
+if ESTIMATOR_TAG not in VALID_ESTIMATORS:
+    print(
+        f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n"
+        f"  Accepted: {', '.join(VALID_ESTIMATORS)}"
+    )
+    sys.exit(1)
+
+if ESTIMATOR_TAG == "ledoit-wolf":
+    COV_ESTIMATOR = LedoitWolf()
+elif ESTIMATOR_TAG == "graphical-lasso":
+    COV_ESTIMATOR = GraphicalLassoCV()
+else:
+    COV_ESTIMATOR = EmpiricalCovariance()
+
+print(f"Covariance estimator: {ESTIMATOR_TAG}  (cov_estimator={COV_ESTIMATOR})")
 
 # ============================================================
 # Paths
@@ -142,36 +217,52 @@ RUNS          = rest_settings["runs"]
 diagnostic_records = []
 
 
+def _flag_cond(cond):
+    if cond < 30:
+        return "OK"
+    elif cond < 100:
+        return "WATCH"
+    else:
+        return "HIGH"
+
+
 def _condition_number_report(X, subject, run_tag, label, n_time):
     """
     Compute and log the condition number of the covariance matrix of X
-    (n_time × n_regions).  Appends a record to diagnostic_records but
-    does not alter any partial-corr computation — purely informational.
+    (n_time × n_regions), both RAW (empirical covariance, same estimator
+    Nilearn would use by default) and AFTER Ledoit-Wolf shrinkage (the
+    estimator actually used for the partial-corr computation below).
+    Appends a record to diagnostic_records but does not alter any
+    partial-corr computation — purely informational.
     """
     n_regions = X.shape[1]
-    cov = np.cov(X, rowvar=False)
-    cond = np.linalg.cond(cov)
 
-    if cond < 30:
-        flag = "OK"
-    elif cond < 100:
-        flag = "WATCH"
-    else:
-        flag = "HIGH"
+    cov_raw   = np.cov(X, rowvar=False)
+    cond_raw  = np.linalg.cond(cov_raw)
+
+    cov_lw    = LedoitWolf().fit(X).covariance_
+    cond_lw   = np.linalg.cond(cov_lw)
+
+    flag_raw = _flag_cond(cond_raw)
+    flag_lw  = _flag_cond(cond_lw)
 
     print(
         f"  [{label}] Collinearity check: {n_regions} regions, "
-        f"{n_time} timepoints, cond(cov) = {cond:.1f}  [{flag}]"
+        f"{n_time} timepoints — "
+        f"RAW cond(cov) = {cond_raw:.1f} [{flag_raw}]  →  "
+        f"Ledoit-Wolf cond(cov) = {cond_lw:.2f} [{flag_lw}]"
     )
 
     diagnostic_records.append({
-        "subject":     subject,
-        "run":         run_tag,
-        "hemi":        label,
-        "n_regions":   n_regions,
-        "n_timepoints": n_time,
-        "condition_number": cond,
-        "flag":        flag,
+        "subject":       subject,
+        "run":           run_tag,
+        "hemi":          label,
+        "n_regions":     n_regions,
+        "n_timepoints":  n_time,
+        "condition_number_raw":         cond_raw,
+        "flag_raw":                     flag_raw,
+        "condition_number_ledoit_wolf": cond_lw,
+        "flag_ledoit_wolf":             flag_lw,
     })
 
 
@@ -344,7 +435,16 @@ for subject in subjects:
             partial_r_contra  = np.full((n_rois, n_rois), np.nan)
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
-            conn = ConnectivityMeasure(kind="partial correlation", standardize="zscore_sample")
+            # cov_estimator is set by the ESTIMATOR_TAG toggle above (raw =
+            # EmpiricalCovariance/unregularized, matching Nilearn's default;
+            # ledoit-wolf = shrinkage-regularized). A fresh estimator instance
+            # is created per fit_transform call inside Nilearn internally, so
+            # reusing COV_ESTIMATOR across pairs here is safe.
+            conn = ConnectivityMeasure(
+                kind="partial correlation",
+                cov_estimator=COV_ESTIMATOR,
+                standardize=False,
+            )
 
             for seed_name in loaded_rois:
                 i_seed = clusters.index(seed_name)
@@ -440,16 +540,19 @@ for subject in subjects:
 
             tag = label.lower()  # lh / rh
 
-            # Build BIDS-like filename stem
+            # Build BIDS-like filename stem — ESTIMATOR_TAG appended at the
+            # end so raw and ledoit-wolf outputs never overwrite each other.
             if run:
                 stem = (
                     f"{subject}_task-rest_{run}"
                     f"_space-fsLR_den-91k_desc-fisher-z_{tag}_task-constrained"
+                    f"_{ESTIMATOR_TAG}"
                 )
             else:
                 stem = (
                     f"{subject}"
                     f"_task-rest_space-fsLR_den-91k_desc-fisher-z_{tag}_task-constrained"
+                    f"_{ESTIMATOR_TAG}"
                 )
 
             # ---------- primary outputs ----------
@@ -499,28 +602,47 @@ diag_df = pd.DataFrame(diagnostic_records)
 if diag_df.empty:
     print("No diagnostic records collected (no hemispheres processed).")
 else:
-    # Sort worst-first so problem cases are immediately visible
-    diag_df_sorted = diag_df.sort_values("condition_number", ascending=False)
+    # Sort worst-first (by RAW condition number) so problem cases are
+    # immediately visible; Ledoit-Wolf column sits right next to it for
+    # direct before/after comparison.
+    diag_df_sorted = diag_df.sort_values("condition_number_raw", ascending=False)
     print(diag_df_sorted.to_string(index=False))
 
-    print("\nSummary statistics for condition_number:")
-    print(diag_df["condition_number"].describe().to_string())
+    print("\nSummary statistics — RAW (empirical) covariance:")
+    print(diag_df["condition_number_raw"].describe().to_string())
 
-    n_high  = int((diag_df["flag"] == "HIGH").sum())
-    n_watch = int((diag_df["flag"] == "WATCH").sum())
-    n_ok    = int((diag_df["flag"] == "OK").sum())
+    print("\nSummary statistics — Ledoit-Wolf shrunk covariance:")
+    print(diag_df["condition_number_ledoit_wolf"].describe().to_string())
+
     n_total = len(diag_df)
+    for col, flag_col, tag in (
+        ("condition_number_raw",         "flag_raw",         "RAW"),
+        ("condition_number_ledoit_wolf", "flag_ledoit_wolf", "Ledoit-Wolf"),
+    ):
+        n_high  = int((diag_df[flag_col] == "HIGH").sum())
+        n_watch = int((diag_df[flag_col] == "WATCH").sum())
+        n_ok    = int((diag_df[flag_col] == "OK").sum())
+        print(
+            f"\n{tag} flags: {n_high}/{n_total} HIGH (cond ≥ 100), "
+            f"{n_watch}/{n_total} WATCH (30 ≤ cond < 100), "
+            f"{n_ok}/{n_total} OK (cond < 30)"
+        )
 
+    median_raw = diag_df["condition_number_raw"].median()
+    median_lw  = diag_df["condition_number_ledoit_wolf"].median()
     print(
-        f"\nFlags: {n_high}/{n_total} HIGH (cond ≥ 100), "
-        f"{n_watch}/{n_total} WATCH (30 ≤ cond < 100), "
-        f"{n_ok}/{n_total} OK (cond < 30)"
+        f"\nMedian condition number improved from {median_raw:.1f} (raw) "
+        f"to {median_lw:.2f} (Ledoit-Wolf) "
+        f"— {median_raw / median_lw:.0f}x reduction."
     )
 
     diag_out_dir = os.path.join(
         main_data, "group/91k/rest/partial_corr/diagnostics"
     )
     os.makedirs(diag_out_dir, exist_ok=True)
+    # Note: this diagnostic computes BOTH raw and Ledoit-Wolf condition
+    # numbers regardless of ESTIMATOR_TAG (see _condition_number_report),
+    # so the file content is identical across runs — no need to tag it.
     diag_out_path = os.path.join(
         diag_out_dir, "collinearity_condition_numbers_task-constrained.csv"
     )
