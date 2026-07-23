@@ -99,7 +99,7 @@ Outputs (per hemisphere × variant):
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_stats_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327 ledoit-wolf
+    $ python group_stats_partial_corr_by_hemi_task-constrained.py /scratch/mszinte/data RetinoMaps 327 b327
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -131,18 +131,13 @@ from rest_utils import RUN02_EXCLUDED, VARIANTS
 # ============================================================
 # Parse and validate arguments
 # ============================================================
-VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
-
 USAGE = (
     "Usage: python group_stats_partial_corr_by_hemi_task-constrained.py "
-    "<main_dir> <project_dir> <group> <server> [estimator]\n"
-    f"  estimator: one of {', '.join(VALID_ESTIMATORS)} (default: ledoit-wolf)\n"
-    "  Must match the ESTIMATOR_TAG used when running the subject-level\n"
-    "  nilearn_partial_corr_task_constrained.py script."
+    "<main_dir> <project_dir> <group> <server>"
 )
 
-if len(sys.argv) not in (5, 6):
-    print(f"ERROR: expected 4 or 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) != 5:
+    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
@@ -150,17 +145,12 @@ project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
 
-ESTIMATOR_TAG = sys.argv[5] if len(sys.argv) == 6 else "ledoit-wolf"
-if ESTIMATOR_TAG not in VALID_ESTIMATORS:
-    print(f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n{USAGE}")
-    sys.exit(1)
-
 # Percentile bounds for the subject distribution saved alongside group stats.
 PCT_LO, PCT_HI = 25.0, 75.0
 
 print("=" * 80)
 print("GROUP PARTIAL CORRELATION (TASK-CONSTRAINED) — Fisher-z statistics")
-print(f"Eye-field seeds × eye-field targets (5 × 10) — estimator: {ESTIMATOR_TAG}")
+print("Eye-field seeds × eye-field targets (5 × 10)")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
@@ -224,13 +214,12 @@ tables_folder.mkdir(parents=True, exist_ok=True)
 # ============================================================
 def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
     # Actual BIDS-style filename produced by the subject-level script:
-    #   sub-05_task-rest_run-01_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_ledoit-wolf_bilateral.npy  (per-run)
-    #   sub-05_task-rest_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_ledoit-wolf_bilateral.npy          (concat)
-    # ESTIMATOR_TAG must match what was used at the subject level (see USAGE).
+    #   sub-05_task-rest_run-01_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_bilateral.npy  (per-run)
+    #   sub-05_task-rest_space-fsLR_den-91k_desc-fisher-z_lh_task-constrained_bilateral.npy          (concat)
     run_entity = f"_{run_tag}" if run_tag is not None else ""
     fname = (
         f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
-        f"_desc-fisher-z_{hemi}_task-constrained_{ESTIMATOR_TAG}_bilateral.npy"
+        f"_desc-fisher-z_{hemi}_task-constrained_bilateral.npy"
     )
     return (
         main_data / subject
@@ -244,7 +233,7 @@ def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
 def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
     return (
         f"seed-task_by_macror-task_partial-corr"
-        f"_{space}_{stat}_{run_label}_{hemi}_{ESTIMATOR_TAG}"
+        f"_{space}_{stat}_{run_label}_{hemi}"
     )
 
 # ============================================================
@@ -292,7 +281,7 @@ def _save_reporting_tsvs(
 
         fname = (
             f"seed-task_by_macror-task_partial-corr"
-            f"_r_report_{side}_{hemi}_{ESTIMATOR_TAG}.tsv"
+            f"_r_report_{side}_{hemi}.tsv"
         )
         df.to_csv(tables_folder / fname, sep="\t", index=False,
                   float_format="%.4f")
@@ -414,10 +403,7 @@ for hemi in ("lh", "rh"):
                 print(f"    Saved: {stem}.npy / .csv")
 
         # ── Compressed archive with all arrays + metadata ─────────────────
-        npz_stem = (
-            f"seed-task_by_macror-task_partial-corr"
-            f"_{run_label}_{hemi}_{ESTIMATOR_TAG}"
-        )
+        npz_stem = f"seed-task_by_macror-task_partial-corr_{run_label}_{hemi}"
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
@@ -435,7 +421,6 @@ for hemi in ("lh", "rh"):
             target_columns    = np.array(TARGET_COLUMNS),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
-            cov_estimator     = np.array(ESTIMATOR_TAG),
         )
         print(f"    Saved: {npz_stem}.npz")
 

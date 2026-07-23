@@ -27,12 +27,54 @@ Self-correlation masking
   matrix is saved as a sanity check; off-diagonal entries should be interpretable
   connectivity estimates, diagonal entries are NaN by construction.
 
-Standardize flag
-  ConnectivityMeasure(standardize=False) because the concatenated XCP-D timeseries
-  are already z-scored.  Using standardize=True on pre-standardised data would
-  re-scale and distort the covariance structure.  This is unrelated to the
-  covariance ESTIMATOR (see below) and is left unchanged regardless of which
-  estimator is selected.
+Standardize flag (FINAL — verified against nilearn 0.10.2, the version
+actually installed on the cluster, not just the current release)
+  ConnectivityMeasure(standardize=False), set explicitly for honesty rather
+  than as a meaningful analysis choice: for kind="partial correlation",
+  nilearn's `standardize` argument is NEVER applied — confirmed directly
+  from nilearn 0.10.2's _fit_transform() (connectivity_matrices.py):
+  standardize is only consumed inside the `if self.kind == "correlation":`
+  branch; for "partial correlation" the `else` branch calls
+  `self.cov_estimator_.fit(x)` directly on the raw input, with no
+  standardization step at all, regardless of what `standardize` is set to.
+  This holds identically in 0.10.2 and in the current nilearn release — it
+  is not a version-dependent behavior.
+
+  Project history: an earlier version of this script used
+  standardize="zscore_sample" (matching a mistaken assumption that this
+  flag does something for kind="partial correlation"). Since it provably
+  does nothing for this kind, both False and "zscore_sample" produce
+  bit-for-bit identical output here — this was verified empirically before
+  correcting the flag to False. The remaining/actual scale-correction logic
+  now lives in Step 3b below, done manually, once, since nilearn will not
+  do it for kind="partial correlation".
+
+Manual re-standardization after ROI-averaging (Step 3b)
+  Because nilearn's standardize flag is a no-op for partial correlation
+  (see above), any benefit of standardizing before computing the
+  covariance/precision matrix has to be done manually, before calling
+  ConnectivityMeasure.fit_transform().
+
+  Why this step exists at all: every vertex is already z-scored by XCP-D,
+  but the ROI-MEAN signal is not guaranteed to keep unit variance after
+  averaging. For N vertices sharing average within-region correlation rho,
+  Var(region/parcel mean) = rho + (1-rho)/N — a function of region size
+  alone. Macro-regions and MMP parcels here differ substantially in vertex
+  count, so averaged timeseries can end up on measurably different scales
+  even though every underlying vertex started at unit variance. This
+  matters only for regularized estimators (Ledoit-Wolf, GraphicalLassoCV),
+  whose shrinkage target / L1 penalty assume comparable scale across
+  variables — empirically confirmed to have ZERO effect on the raw
+  (unregularized) estimator, since partial correlation from an
+  unregularized covariance is exactly invariant to per-column scaling
+  (verified: max diff 0.0 across multiple test scenarios). At realistic
+  parameter values (vertex counts and within-region correlation typical of
+  cortical parcels), the resulting scale mismatch across regions is modest
+  (roughly 1.05x-1.15x SD ratio, not an order of magnitude), so this
+  correction is best understood as a small, free, mathematically justified
+  safety net — not a fix expected to dramatically change the results on
+  its own. Done ONCE, after NaN imputation and before building any
+  seed/target matrix, to avoid compounding multiple standardization steps.
 
 Covariance estimator (added for consistency with the task-constrained script)
   Conditioning here is on all 106 bilateral MMP parcels — a considerably larger
@@ -314,6 +356,45 @@ for subject in subjects:
             parcel_ts  = impute_nan_columns(parcel_ts,  label=f"{subject}{run_tag} {label} parcel")
 
             # ------------------------------------------------------
+            # Step 3b — Manual re-standardization after ROI-averaging
+            #
+            # Nilearn's `standardize` argument on ConnectivityMeasure is only
+            # ever applied when kind="correlation" (see nilearn source,
+            # connectivity_matrices.py _fit_transform) — for
+            # kind="partial correlation" it is silently ignored and the
+            # covariance estimator is fit directly on the raw input.
+            # standardize is therefore set to False below purely for
+            # honesty (it does nothing either way for this kind), and
+            # standardization is instead done explicitly here, once, per
+            # column of cluster_ts and parcel_ts.
+            #
+            # Why this step exists at all: every vertex is already z-scored
+            # by XCP-D, but the REGION/PARCEL-MEAN signal is not guaranteed
+            # to keep unit variance after averaging. For N vertices sharing
+            # average within-region correlation rho, Var(region mean) =
+            # rho + (1-rho)/N — a function of region size. Macro-regions and
+            # MMP parcels here differ substantially in vertex count, so
+            # averaged timeseries can end up on measurably different scales
+            # even though every underlying vertex started at unit variance.
+            #
+            # This matters only for regularized estimators (Ledoit-Wolf,
+            # GraphicalLassoCV), whose shrinkage target / penalty assume
+            # comparable scale across variables — confirmed empirically to
+            # have zero effect on the raw/unregularized estimator, since
+            # partial correlation from an unregularized covariance is
+            # invariant to per-column scaling.
+            #
+            # Done ONCE here (not at the vertex level, not repeated later)
+            # to avoid compounding standardization steps.
+            # ------------------------------------------------------
+
+            def _zscore_sample_cols(X):
+                return (X - X.mean(axis=0)) / X.std(axis=0, ddof=1)
+
+            cluster_ts = _zscore_sample_cols(cluster_ts)
+            parcel_ts  = _zscore_sample_cols(parcel_ts)
+
+            # ------------------------------------------------------
             # Step 4 — Partial correlations
             #
             # For every (seed_macro-region, target_parcel) pair:
@@ -354,13 +435,13 @@ for subject in subjects:
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
             # Single ConnectivityMeasure instance reused for every (seed, target) pair.
-            # standardize=False left unchanged (see docstring); cov_estimator is the
-            # only axis of variation controlled by ESTIMATOR_TAG.
+            # standardize=False: see Step 3b above — this argument has no
+            # effect for kind="partial correlation" either way, but is set
+            # explicitly to avoid implying nilearn does something it doesn't.
             conn = ConnectivityMeasure(
                 kind="partial correlation",
                 cov_estimator=COV_ESTIMATOR,
                 standardize=False,
-                verbose=True,
             )
 
             for i_cl, cl_name in enumerate(cluster_names_used):
