@@ -8,14 +8,29 @@ Seeds on the y-axis, one figure per TARGET macro-region
 
 Reads from the concat_clean reporting TSVs produced by
 group_stats_partial_corr_by_hemi_task-constrained.py:
-    partial_corr/tables/seed-task_by_macror-task_partial-corr_r_report_ipsi_{hemi}.tsv
+    partial_corr/tables/seed-task_by_macror-task_partial-corr_r_report_ipsi_{hemi}_{estimator}.tsv
 
 TSV structure:
     subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
     (one row per subject × seed; GROUP row at the bottom)
 
 Only ipsilateral values are plotted (one table per hemisphere).
-The GROUP row is plotted as a diamond marker on top of each violin half.
+The GROUP row is plotted as a vertical line spanning each violin half.
+
+Covariance estimator: must match the ESTIMATOR_TAG used when running
+group_stats_partial_corr_by_hemi_task-constrained.py, which in turn must
+match what was used at the subject level (nilearn_partial_corr_task_constrained.py).
+Pass as sys.argv[1] (one of "raw", "ledoit-wolf", "graphical-lasso");
+defaults to "ledoit-wolf" if omitted. Run once per estimator to get
+directly comparable, separately-saved figure sets:
+
+    $ python violin_partial_corr_task_constrained.py raw
+    $ python violin_partial_corr_task_constrained.py ledoit-wolf
+    $ python violin_partial_corr_task_constrained.py graphical-lasso
+
+NOTE (filenames): this script's table/figure naming conventions still
+differ slightly from the full-corr violin script's — to be harmonized
+in a later pass.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -29,6 +44,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from pathlib import Path
+
+# ============================================================
+# Covariance estimator toggle
+# ============================================================
+VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
+
+if len(sys.argv) > 1:
+    ESTIMATOR_TAG = sys.argv[1]
+    if ESTIMATOR_TAG not in VALID_ESTIMATORS:
+        print(
+            "ERROR: unrecognised estimator '{}'.\n"
+            "  Accepted: {}".format(ESTIMATOR_TAG, ", ".join(VALID_ESTIMATORS))
+        )
+        sys.exit(1)
+else:
+    ESTIMATOR_TAG = "ledoit-wolf"
+
+print("Plotting estimator: {}".format(ESTIMATOR_TAG))
 
 # ============================================================
 # Paths & settings
@@ -56,7 +89,11 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings          = load_settings([settings_path, prf_settings_path])
 analysis_info     = settings[0]
 
-fig_dir = os.path.join(output_folder, "figures/violin_plots/task-constrained")
+# Figures tagged by estimator so raw / ledoit-wolf / graphical-lasso
+# outputs never overwrite each other on disk.
+fig_dir = os.path.join(
+    output_folder, "figures/violin_plots/task-constrained", ESTIMATOR_TAG
+)
 os.makedirs(fig_dir, exist_ok=True)
 
 # ============================================================
@@ -83,7 +120,8 @@ missing_tables = []
 for hemi in hemis:
     fname = (
         "seed-task_by_macror-task_partial-corr"
-        "_r_report_ipsi_{hemi}.tsv".format(hemi=hemi)
+        "_r_report_ipsi_{hemi}_{estimator}.tsv".format(
+            hemi=hemi, estimator=ESTIMATOR_TAG)
     )
     fpath = tables_folder / fname
     if not fpath.exists():
@@ -224,7 +262,8 @@ def plot_target_figure(target):
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
-    # GROUP diamond markers
+    # GROUP line markers — vertical line spanning the full violin half,
+    # drawn over individual subject dots so the group value is clearly visible.
     for i, seed in enumerate(seed_clusters):
         if seed == target:
             continue
@@ -233,12 +272,12 @@ def plot_target_figure(target):
             group_val  = group_rows[group_rows["seed"] == seed][target].values
             if len(group_val) == 0 or np.isnan(group_val[0]):
                 continue
-            ax.scatter(
-                group_val[0], i + y_offset,
-                marker="D", s=50,
+            ax.plot(
+                [group_val[0]] * 2,
+                [i + y_offset - 0.35, i + y_offset + 0.35],
                 color=MEDIAN_COLORS[hemi],
-                edgecolor="white", linewidth=0.8,
-                zorder=5,
+                linewidth=2.5,
+                zorder=6,
             )
 
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
@@ -246,18 +285,20 @@ def plot_target_figure(target):
                   fontsize=18, fontweight="bold")
     ax.set_ylabel("Seed Cluster", fontsize=18, fontweight="bold")
     ax.set_title(
-        "{} target -- concat_clean (task-constrained)".format(target),
+        "{} target -- concat_clean (task-constrained, {})".format(
+            target, ESTIMATOR_TAG),
         fontsize=18, fontweight="bold"
     )
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
-    ax.set_xlim(-0.25, 0.55)
+    ax.set_xlim(-1.0, 1.0)
 
     plt.tight_layout()
 
     outname = os.path.join(
         fig_dir,
-        "violin_target-{}_partial_corr_concat_clean_task-constrained.png".format(target)
+        "violin_target-{}_partial_corr_concat_clean_task-constrained_{}.png".format(
+            target, ESTIMATOR_TAG)
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
     print("  Saved: {}".format(outname))
@@ -268,6 +309,7 @@ def plot_target_figure(target):
 # Main loop
 # ============================================================
 
-print("\n=== Plotting partial corr task-constrained (concat_clean, ipsi) ===")
+print("\n=== Plotting partial corr task-constrained (concat_clean, ipsi, {}) ===".format(
+    ESTIMATOR_TAG))
 for target in target_clusters:
     plot_target_figure(target)

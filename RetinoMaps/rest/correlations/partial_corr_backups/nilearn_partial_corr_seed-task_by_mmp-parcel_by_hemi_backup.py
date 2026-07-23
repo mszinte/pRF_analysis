@@ -27,86 +27,18 @@ Self-correlation masking
   matrix is saved as a sanity check; off-diagonal entries should be interpretable
   connectivity estimates, diagonal entries are NaN by construction.
 
-Standardize flag (FINAL — verified against nilearn 0.10.2, the version
-actually installed on the cluster, not just the current release)
-  ConnectivityMeasure(standardize=False), set explicitly for honesty rather
-  than as a meaningful analysis choice: for kind="partial correlation",
-  nilearn's `standardize` argument is NEVER applied — confirmed directly
-  from nilearn 0.10.2's _fit_transform() (connectivity_matrices.py):
-  standardize is only consumed inside the `if self.kind == "correlation":`
-  branch; for "partial correlation" the `else` branch calls
-  `self.cov_estimator_.fit(x)` directly on the raw input, with no
-  standardization step at all, regardless of what `standardize` is set to.
-  This holds identically in 0.10.2 and in the current nilearn release — it
-  is not a version-dependent behavior.
+Standardize flag
+  ConnectivityMeasure(standardize=False) because the concatenated XCP-D timeseries
+  are already z-scored.  Using standardize=True on pre-standardised data would
+  re-scale and distort the covariance structure.
 
-  Project history: an earlier version of this script used
-  standardize="zscore_sample" (matching a mistaken assumption that this
-  flag does something for kind="partial correlation"). Since it provably
-  does nothing for this kind, both False and "zscore_sample" produce
-  bit-for-bit identical output here — this was verified empirically before
-  correcting the flag to False. The remaining/actual scale-correction logic
-  now lives in Step 3b below, done manually, once, since nilearn will not
-  do it for kind="partial correlation".
-
-Manual re-standardization after ROI-averaging (Step 3b)
-  Because nilearn's standardize flag is a no-op for partial correlation
-  (see above), any benefit of standardizing before computing the
-  covariance/precision matrix has to be done manually, before calling
-  ConnectivityMeasure.fit_transform().
-
-  Why this step exists at all: every vertex is already z-scored by XCP-D,
-  but the ROI-MEAN signal is not guaranteed to keep unit variance after
-  averaging. For N vertices sharing average within-region correlation rho,
-  Var(region/parcel mean) = rho + (1-rho)/N — a function of region size
-  alone. Macro-regions and MMP parcels here differ substantially in vertex
-  count, so averaged timeseries can end up on measurably different scales
-  even though every underlying vertex started at unit variance. This
-  matters only for regularized estimators (Ledoit-Wolf, GraphicalLassoCV),
-  whose shrinkage target / L1 penalty assume comparable scale across
-  variables — empirically confirmed to have ZERO effect on the raw
-  (unregularized) estimator, since partial correlation from an
-  unregularized covariance is exactly invariant to per-column scaling
-  (verified: max diff 0.0 across multiple test scenarios). At realistic
-  parameter values (vertex counts and within-region correlation typical of
-  cortical parcels), the resulting scale mismatch across regions is modest
-  (roughly 1.05x-1.15x SD ratio, not an order of magnitude), so this
-  correction is best understood as a small, free, mathematically justified
-  safety net — not a fix expected to dramatically change the results on
-  its own. Done ONCE, after NaN imputation and before building any
-  seed/target matrix, to avoid compounding multiple standardization steps.
-
-Covariance estimator (added for consistency with the task-constrained script)
-  Conditioning here is on all 106 bilateral MMP parcels — a considerably larger
-  and likely more collinear regressor set than the 24 macro-regions used in the
-  task-constrained analysis, so the same collinearity concerns apply at least as
-  much here.  ESTIMATOR_TAG is passed in as sys.argv[1] by the SLURM submit
-  script (submit_nilearn_compute_partial_corr_job.py), which owns the choice of
-  estimator as a run-configuration decision — this script only validates the tag
-  and maps it to the corresponding sklearn estimator.  No silent default is used
-  on the cluster to keep every job's estimator choice explicit and traceable.
-
-  raw            : EmpiricalCovariance (unregularized) — Nilearn's default
-  ledoit-wolf    : LedoitWolf shrinkage (Ledoit & Wolf, 2004) — analytic
-                   shrinkage intensity, no cross-validation
-  graphical-lasso: GraphicalLassoCV — L1-regularized precision matrix,
-                   sparsity penalty selected by cross-validation (slower;
-                   produces a sparse precision matrix — a different
-                   scientific claim than shrinkage; see Peterson et al. 2025,
-                   Imaging Neuroscience, for the graphical lasso vs.
-                   graphical ridge distinction)
-
-  Output filenames are tagged with ESTIMATOR_TAG so that runs with different
-  estimators never overwrite each other on disk.
-
-Outputs (per subject, per run, per hemisphere, per estimator)
-  seed-task_by_mmp-parcel_partial_{run}_{hemi}_{estimator}.npy / .csv          — Pearson r
-  seed-task_by_mmp-parcel_partial_fisherz_{run}_{hemi}_{estimator}.npy / .csv  — Fisher z
-  seed-task_by_macro-region_partial_fisherz_{run}_{hemi}_{estimator}.npy / .csv — sanity check
+Outputs (per subject, per run, per hemisphere)
+  seed-task_by_mmp-parcel_partial_{run}_{hemi}.npy / .csv          — Pearson r
+  seed-task_by_mmp-parcel_partial_fisherz_{run}_{hemi}.npy / .csv  — Fisher z
+  seed-task_by_macro-region_partial_fisherz_{run}_{hemi}.npy / .csv — sanity check
 
 Group aggregation is handled by group_stats_partial_corr.py (always in Fisher-z
-space; back-transformed to r only at the reporting stage). That script must be
-updated to accept/propagate the same ESTIMATOR_TAG when reading these files.
+space; back-transformed to r only at the reporting stage).
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -118,49 +50,13 @@ import sys
 import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
-from sklearn.covariance import LedoitWolf, EmpiricalCovariance, GraphicalLassoCV
-
-# ============================================================
-# Covariance estimator
-#
-# See docstring above. Required as sys.argv[1] — no silent default.
-# ============================================================
-
-VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
-
-if len(sys.argv) < 2:
-    print(
-        "ERROR: no covariance estimator specified.\n"
-        f"  Usage: python {sys.argv[0]} <estimator>\n"
-        f"  Accepted: {', '.join(VALID_ESTIMATORS)}\n"
-        "  This should normally be set via submit_nilearn_compute_partial_corr_job.py, "
-        "not called directly."
-    )
-    sys.exit(1)
-
-ESTIMATOR_TAG = sys.argv[1]
-if ESTIMATOR_TAG not in VALID_ESTIMATORS:
-    print(
-        f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n"
-        f"  Accepted: {', '.join(VALID_ESTIMATORS)}"
-    )
-    sys.exit(1)
-
-if ESTIMATOR_TAG == "ledoit-wolf":
-    COV_ESTIMATOR = LedoitWolf()
-elif ESTIMATOR_TAG == "graphical-lasso":
-    COV_ESTIMATOR = GraphicalLassoCV()
-else:
-    COV_ESTIMATOR = EmpiricalCovariance()
-
-print(f"Covariance estimator: {ESTIMATOR_TAG}  (cov_estimator={COV_ESTIMATOR})")
 
 # ============================================================
 # Paths
 # ============================================================
 
 main_data    = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1"
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 
@@ -356,45 +252,6 @@ for subject in subjects:
             parcel_ts  = impute_nan_columns(parcel_ts,  label=f"{subject}{run_tag} {label} parcel")
 
             # ------------------------------------------------------
-            # Step 3b — Manual re-standardization after ROI-averaging
-            #
-            # Nilearn's `standardize` argument on ConnectivityMeasure is only
-            # ever applied when kind="correlation" (see nilearn source,
-            # connectivity_matrices.py _fit_transform) — for
-            # kind="partial correlation" it is silently ignored and the
-            # covariance estimator is fit directly on the raw input.
-            # standardize is therefore set to False below purely for
-            # honesty (it does nothing either way for this kind), and
-            # standardization is instead done explicitly here, once, per
-            # column of cluster_ts and parcel_ts.
-            #
-            # Why this step exists at all: every vertex is already z-scored
-            # by XCP-D, but the REGION/PARCEL-MEAN signal is not guaranteed
-            # to keep unit variance after averaging. For N vertices sharing
-            # average within-region correlation rho, Var(region mean) =
-            # rho + (1-rho)/N — a function of region size. Macro-regions and
-            # MMP parcels here differ substantially in vertex count, so
-            # averaged timeseries can end up on measurably different scales
-            # even though every underlying vertex started at unit variance.
-            #
-            # This matters only for regularized estimators (Ledoit-Wolf,
-            # GraphicalLassoCV), whose shrinkage target / penalty assume
-            # comparable scale across variables — confirmed empirically to
-            # have zero effect on the raw/unregularized estimator, since
-            # partial correlation from an unregularized covariance is
-            # invariant to per-column scaling.
-            #
-            # Done ONCE here (not at the vertex level, not repeated later)
-            # to avoid compounding standardization steps.
-            # ------------------------------------------------------
-
-            def _zscore_sample_cols(X):
-                return (X - X.mean(axis=0)) / X.std(axis=0, ddof=1)
-
-            cluster_ts = _zscore_sample_cols(cluster_ts)
-            parcel_ts  = _zscore_sample_cols(parcel_ts)
-
-            # ------------------------------------------------------
             # Step 4 — Partial correlations
             #
             # For every (seed_macro-region, target_parcel) pair:
@@ -434,15 +291,9 @@ for subject in subjects:
             partial_r_contra  = np.full((n_clusters_used, n_contra_parcels), np.nan)
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
-            # Single ConnectivityMeasure instance reused for every (seed, target) pair.
-            # standardize=False: see Step 3b above — this argument has no
-            # effect for kind="partial correlation" either way, but is set
-            # explicitly to avoid implying nilearn does something it doesn't.
-            conn = ConnectivityMeasure(
-                kind="partial correlation",
-                cov_estimator=COV_ESTIMATOR,
-                standardize=False,
-            )
+            # Single ConnectivityMeasure instance reused for every (seed, target) pair
+            # Standardize set to false because now XCP-D z-scores the concat runs
+            conn = ConnectivityMeasure(kind="partial correlation", standardize=False)
 
             for i_cl, cl_name in enumerate(cluster_names_used):
 
@@ -612,10 +463,6 @@ for subject in subjects:
 
             # ------------------------------------------------------
             # Step 7 — Save subject-level outputs
-            #
-            # ESTIMATOR_TAG is appended to every output filename so that runs
-            # with different covariance estimators coexist on disk rather than
-            # overwriting one another.
             # ------------------------------------------------------
 
             sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi/task-free"
@@ -625,48 +472,46 @@ for subject in subjects:
 
             # --- Ipsilateral outputs (primary; consumed by all downstream scripts) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.npy"),
                 filled_r,
             )
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.npy"),
                 filled_fz,
             )
             pd.DataFrame(filled_r,  index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.csv")
             )
             pd.DataFrame(filled_fz, index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.csv")
             )
 
             # --- Bilateral outputs ([ipsi | contra]; ipsi half = [:, :n_parcels]) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.npy"),
                 filled_r_bilateral,
             )
             np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.npy"),
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.npy"),
                 filled_fz_bilateral,
             )
             pd.DataFrame(filled_r_bilateral,  index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.csv")
             )
             pd.DataFrame(filled_fz_bilateral, index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}_bilateral.csv")
+                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.csv")
             )
 
             # --- Macro-region-by-macro-region sanity check (Fisher-z, ipsi only) ---
             np.save(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.npy"),
+                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.npy"),
                 cluster_by_cluster_fz,
             )
             pd.DataFrame(cluster_by_cluster_fz, index=clusters, columns=clusters).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}_{ESTIMATOR_TAG}.csv")
+                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.csv")
             )
 
             print(f"  [{label}] Saved to {sub_out}")
 
 print("\nDone. Run group_stats_partial_corr.py to aggregate across subjects.")
-print("NOTE: group_stats_partial_corr.py must be updated to accept/propagate")
-print(f"the same ESTIMATOR_TAG ('{ESTIMATOR_TAG}') used here when locating these files.")
 # ============================================================

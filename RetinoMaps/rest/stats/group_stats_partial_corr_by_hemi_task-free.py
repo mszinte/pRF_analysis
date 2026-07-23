@@ -23,13 +23,19 @@ Goal:
         correct space for averaging and any subsequent parametric tests.
       - Raw Pearson r values have r-dependent variance and must never be
         averaged directly.
+
+    Covariance estimator (added for consistency with the task-constrained
+    group stats script): ESTIMATOR_TAG (raw / ledoit-wolf / graphical-lasso)
+    must match whatever was passed to nilearn_partial_corr_task_free.py at
+    the subject level — subject-level output filenames are tagged with it,
+    so this script needs the same tag to find the right files.
 ------------------------------------------------------------------------------------------
 Output filename convention (harmonized with full-corr group stats):
 
-    seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}.npz
+    seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}_{estimator}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}_{estimator}.npz
 
-    e.g. seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_rh.npy
+    e.g. seed-task_by_mmp-parcel_partial-corr_fisherz_median_concat_clean_rh_ledoit-wolf.npy
 
     Full-corr equivalent for reference:
     seed-task_by_macro_full-corr_fisherz_median_{run_label}_{hemi}.npy
@@ -50,20 +56,23 @@ Inputs (sys.argv):
     2: project name/directory   (e.g. RetinoMaps)
     3: server group             (e.g. 327)
     4: server project           (e.g. b327)
+    5: covariance estimator — one of "raw", "ledoit-wolf", "graphical-lasso"
+       (optional; default: ledoit-wolf). Must match the ESTIMATOR_TAG used
+       when running nilearn_partial_corr_task_free.py at the subject level.
 
 Outputs (per hemisphere × variant):
-    seed-task_by_mmp-parcel_partial-corr_fisherz_mean_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_fisherz_median_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_r_mean_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_r_median_{run_label}_{hemi}.npy / .csv
-    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}.npz
+    seed-task_by_mmp-parcel_partial-corr_fisherz_mean_{run_label}_{hemi}_{estimator}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_fisherz_median_{run_label}_{hemi}_{estimator}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_r_mean_{run_label}_{hemi}_{estimator}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_r_median_{run_label}_{hemi}_{estimator}.npy / .csv
+    seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}_{estimator}.npz
 
     Rows    : seed/cluster names  (n_clusters)
     Columns : parcel names in YAML-derived canonical order  (n_parcels)
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327
+    $ python group_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327 ledoit-wolf
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -79,13 +88,18 @@ from typing import List, Optional
 # ============================================================
 # Parse and validate arguments
 # ============================================================
+VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
+
 USAGE = (
     "Usage: python group_partial_corr_by_hemi_task-free.py "
-    "<main_dir> <project_dir> <group> <server>"
+    "<main_dir> <project_dir> <group> <server> [estimator]\n"
+    f"  estimator: one of {', '.join(VALID_ESTIMATORS)} (default: ledoit-wolf)\n"
+    "  Must match the ESTIMATOR_TAG used when running the subject-level\n"
+    "  nilearn_partial_corr_task_free.py script."
 )
 
-if len(sys.argv) != 5:
-    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) not in (5, 6):
+    print(f"ERROR: expected 4 or 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
@@ -93,8 +107,14 @@ project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
 
+ESTIMATOR_TAG = sys.argv[5] if len(sys.argv) == 6 else "ledoit-wolf"
+if ESTIMATOR_TAG not in VALID_ESTIMATORS:
+    print(f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n{USAGE}")
+    sys.exit(1)
+
 print("=" * 80)
 print("GROUP PARTIAL CORRELATION (task-free) — Fisher-z statistics")
+print(f"Estimator: {ESTIMATOR_TAG}")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
@@ -149,14 +169,25 @@ output_folder.mkdir(parents=True, exist_ok=True)
 #
 # Subject-level files live under:
 #   {subject}/91k/rest/corr/partial_corr/by_hemi/task-free/
-#       seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy
+#       seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}_{estimator}.npy
 #
 # Note: subject-level files use "partial" (no hyphen), not "partial-corr".
 #       The hyphenated form is only used in group output filenames.
+#
+# CORRECTED run_entity convention: the subject-level script
+# (nilearn_partial_corr_task_free.py) uses run_tag = f"_{run}" if run else ""
+# — i.e. NO suffix at all for the concat variant, not "_concat". This
+# matches the convention used everywhere else in the pipeline (e.g.
+# rest_utils.tsv_path). An earlier version of this function used "_concat"
+# as the concat fallback, which does not match any file the subject-level
+# script actually produces — fixed here.
 # ============================================================
 def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
-    run_entity = f"_{run_tag}" if run_tag is not None else "_concat"
-    fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.npy"
+    run_entity = f"_{run_tag}" if run_tag is not None else ""
+    fname      = (
+        f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}"
+        f"_{hemi}_{ESTIMATOR_TAG}.npy"
+    )
     return (
         main_data / subject
         / "91k/rest/corr/partial_corr/by_hemi/task-free"
@@ -166,13 +197,13 @@ def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
 # ============================================================
 # Output filename stem builder
 #
-# Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}
+# Pattern: seed-task_by_mmp-parcel_partial-corr_{space}_{stat}_{run_label}_{hemi}_{estimator}
 # Matches full-corr convention: seed-task_by_macro_full-corr_fisherz_{stat}_{run_label}_{hemi}
 # ============================================================
 def _stem(stat: str, space: str, run_label: str, hemi: str) -> str:
     return (
         f"seed-task_by_mmp-parcel_partial-corr"
-        f"_{space}_{stat}_{run_label}_{hemi}"
+        f"_{space}_{stat}_{run_label}_{hemi}_{ESTIMATOR_TAG}"
     )
 
 # ============================================================
@@ -268,7 +299,10 @@ for hemi in ("lh", "rh"):
             print(f"    Saved: {stem}.npy / .csv")
 
         # Compressed archive with all four arrays + metadata
-        npz_stem = f"seed-task_by_mmp-parcel_partial-corr_{run_label}_{hemi}"
+        npz_stem = (
+            f"seed-task_by_mmp-parcel_partial-corr"
+            f"_{run_label}_{hemi}_{ESTIMATOR_TAG}"
+        )
         np.savez_compressed(
             output_folder / f"{npz_stem}.npz",
             mean_fz           = mean_fz,
@@ -282,6 +316,7 @@ for hemi in ("lh", "rh"):
             parcels           = np.array(parcels),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
+            cov_estimator     = np.array(ESTIMATOR_TAG),
         )
         print(f"    Saved: {npz_stem}.npz")
 
