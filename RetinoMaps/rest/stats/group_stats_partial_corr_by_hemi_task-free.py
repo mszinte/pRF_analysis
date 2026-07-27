@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-group_partial_corr_by_hemi_task-free.py
+group_stats_partial_corr_by_hemi_task-free.py
 ------------------------------------------------------------------------------------------
 Goal:
     Compute group-level Fisher-z statistics from per-subject partial-correlation
@@ -72,7 +72,7 @@ Outputs (per hemisphere × variant):
 
 To run:
     $ cd projects/pRF_analysis/RetinoMaps/rest/stats
-    $ python group_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327 ledoit-wolf
+    $ python group_stats_partial_corr_by_hemi_task-free.py /scratch/mszinte/data RetinoMaps 327 b327 ledoit-wolf
 ------------------------------------------------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ------------------------------------------------------------------------------------------
@@ -169,24 +169,17 @@ output_folder.mkdir(parents=True, exist_ok=True)
 #
 # Subject-level files live under:
 #   {subject}/91k/rest/corr/partial_corr/by_hemi/task-free/
-#       seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}_{estimator}.npy
+#       {subject}_task-rest{run_entity}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.npy
 #
-# Note: subject-level files use "partial" (no hyphen), not "partial-corr".
-#       The hyphenated form is only used in group output filenames.
-#
-# CORRECTED run_entity convention: the subject-level script
-# (nilearn_partial_corr_task_free.py) uses run_tag = f"_{run}" if run else ""
-# — i.e. NO suffix at all for the concat variant, not "_concat". This
-# matches the convention used everywhere else in the pipeline (e.g.
-# rest_utils.tsv_path). An earlier version of this function used "_concat"
-# as the concat fallback, which does not match any file the subject-level
-# script actually produces — fixed here.
+# run_entity: "" for the concat variant (run_tag=None), "_run-01" /
+# "_run-02" otherwise — matches the convention used everywhere else in
+# the pipeline (e.g. rest_utils.tsv_path).
 # ============================================================
 def npy_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
     run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = (
-        f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}"
-        f"_{hemi}_{ESTIMATOR_TAG}.npy"
+    fname = (
+        f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
+        f"_desc-fisher-z_{hemi}_task-free_{ESTIMATOR_TAG}.npy"
     )
     return (
         main_data / subject

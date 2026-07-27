@@ -28,10 +28,6 @@ directly comparable, separately-saved figure sets:
     $ python violin_partial_corr_task_constrained.py ledoit-wolf
     $ python violin_partial_corr_task_constrained.py graphical-lasso
 
-NOTE (filenames): this script's table/figure naming conventions still
-differ slightly from the full-corr violin script's — to be harmonized
-in a later pass.
-
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
 ---------------------------------------------------
