@@ -42,41 +42,7 @@ actually installed on the cluster)
   `else` branch fits the covariance estimator directly on the raw input,
   with no standardization step at all, regardless of what `standardize`
   is set to. Confirmed identical in 0.10.2 and the current nilearn
-  release — not a version-dependent behavior.
-
-  An earlier version of this script used standardize="zscore_sample"
-  (mistakenly assuming this flag has an effect for kind="partial
-  correlation" — it does not; verified empirically that False and
-  "zscore_sample" give bit-for-bit identical output here). The actual
-  scale-correction logic now lives in Step 2c below, applied manually and
-  once, since nilearn will not do this for kind="partial correlation".
-
-Manual re-standardization after ROI-averaging (Step 2c)
-  Because nilearn's standardize flag is a no-op for partial correlation
-  (see above), any benefit of standardizing before computing the
-  covariance/precision matrix has to be done manually, before building
-  each seed/target X matrix.
-
-  Why this step exists at all: every vertex is already z-scored by XCP-D,
-  but the ROI-MEAN signal is not guaranteed to keep unit variance after
-  averaging. For N vertices sharing average within-region correlation rho,
-  Var(region mean) = rho + (1-rho)/N — a function of region size alone.
-  Macro-regions here differ substantially in vertex count (e.g. VO
-  aggregates 8 sub-parcels vs. mPCS's 3), so region-mean timeseries can
-  end up on measurably different scales even though every underlying
-  vertex started at unit variance. This matters only for regularized
-  estimators (Ledoit-Wolf, GraphicalLassoCV), whose shrinkage target / L1
-  penalty assume comparable scale across variables — empirically confirmed
-  to have ZERO effect on the raw (unregularized) estimator, since partial
-  correlation from an unregularized covariance is exactly invariant to
-  per-column scaling. At realistic parameter values, the resulting scale
-  mismatch across regions is modest (roughly 1.05x-1.15x SD ratio, not an
-  order of magnitude) — this correction is a small, free, mathematically
-  justified safety net, not expected to dramatically change results on its
-  own. Done ONCE, after NaN imputation (and after the collinearity
-  diagnostic, which intentionally uses PRE-standardization values so it
-  stays comparable to the run already reported), to avoid compounding
-  multiple standardization steps.
+  release — not a version-dependent behavior
 
 Collinearity diagnostic + regularized covariance estimator (UPDATED)
   A first diagnostic pass (condition number of the covariance matrix of
@@ -86,7 +52,7 @@ Collinearity diagnostic + regularized covariance estimator (UPDATED)
   median ~1400, max ~8400).  This indicates the raw sample covariance
   matrix is close to singular, which is the classic driver of unstable /
   high-variance partial correlation estimates (inverting a near-singular
-  matrix amplifies noise disproportionately).
+  matrix amplifies noise disproportionately)
 
   Given this, ConnectivityMeasure now uses cov_estimator=LedoitWolf()
   instead of the default (unregularized) empirical covariance.  Ledoit-
@@ -98,7 +64,7 @@ Collinearity diagnostic + regularized covariance estimator (UPDATED)
   comparability is preserved).  Conceptually related to the "graphical
   ridge" estimator benchmarked in Peterson et al. (2025, Imaging
   Neuroscience), which found regularized partial correlation improves
-  reliability over the unregularized estimate in fMRI FC.
+  reliability over the unregularized estimate in fMRI FC
 
   The condition-number diagnostic is still computed for every
   subject/run/hemi (on the RAW covariance, as before) so the shrinkage
@@ -106,7 +72,7 @@ Collinearity diagnostic + regularized covariance estimator (UPDATED)
   condition number, the same check is repeated on the covariance matrix
   AFTER Ledoit-Wolf shrinkage, and both are logged side by side.  Neither
   diagnostic changes the saved partial-corr outputs — only cov_estimator
-  does.
+  does
 
 Outputs (per subject, per run, per hemisphere)
   seed-task_by_macror-task_partial_{run}_{hemi}.npy / .csv           — Pearson r
@@ -442,49 +408,6 @@ for subject in subjects:
             _condition_number_report(
                 X_pool, subject, run_tag, label, n_time=X_pool.shape[0]
             )
-
-            # ------------------------------------------------------
-            # Step 2c — Manual re-standardization after ROI-averaging
-            #
-            # Nilearn's `standardize` argument on ConnectivityMeasure is only
-            # ever applied when kind="correlation" (see nilearn source,
-            # connectivity_matrices.py _fit_transform) — for
-            # kind="partial correlation" it is silently ignored and the
-            # covariance estimator is fit directly on the raw input.
-            # standardize is therefore set to False below purely for
-            # honesty (it does nothing either way for this kind), and
-            # standardization is instead done explicitly here, once.
-            #
-            # Why this step exists at all: every vertex is already z-scored
-            # by XCP-D, but the REGION-MEAN signal is not guaranteed to
-            # keep unit variance after averaging. For N vertices sharing
-            # average within-region correlation rho, Var(region mean) =
-            # rho + (1-rho)/N — a function of region size. Macro-regions
-            # here differ substantially in vertex count (e.g. VO aggregates
-            # 8 sub-parcels vs. mPCS's 3), so region-mean timeseries can
-            # end up on measurably different scales even though every
-            # underlying vertex started at unit variance.
-            #
-            # This matters only for regularized estimators (Ledoit-Wolf,
-            # GraphicalLassoCV), whose shrinkage target / penalty assume
-            # comparable scale across variables — confirmed empirically to
-            # have zero effect on the raw/unregularized estimator, since
-            # partial correlation from an unregularized covariance is
-            # invariant to per-column scaling.
-            #
-            # Done ONCE here (not at the vertex level, not repeated later)
-            # to avoid compounding standardization steps. The collinearity
-            # diagnostic above intentionally uses the PRE-standardization
-            # values so it stays comparable to the run already reported.
-            # ------------------------------------------------------
-
-            def _zscore_sample(x):
-                return (x - x.mean()) / x.std(ddof=1)
-
-            for roi in list(macro_ts.keys()):
-                macro_ts[roi] = _zscore_sample(macro_ts[roi])
-            for roi in list(macro_ts_contra.keys()):
-                macro_ts_contra[roi] = _zscore_sample(macro_ts_contra[roi])
 
             # ------------------------------------------------------
             # Step 3 — Partial correlations
