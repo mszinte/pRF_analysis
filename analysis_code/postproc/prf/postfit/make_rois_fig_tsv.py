@@ -475,9 +475,9 @@ for avg_method in avg_methods:
                     df_params_median_ci = pd.DataFrame()
                     for colname in colnames:
                         df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby([rois_to_plot]).apply(
-                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 2.5)) 
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 25)) 
                         df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby([rois_to_plot]).apply(
-                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 97.5)) 
+                            lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x[f'{rsq2use}_weighted_median'], 75)) 
             
                     df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
                     tsv_params_median_fn = f"{tsv_dir}/{subject}_{fn_spec}_{analysis_name}-css{dm_name}_params-median.tsv"

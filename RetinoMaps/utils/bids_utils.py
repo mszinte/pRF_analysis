@@ -155,29 +155,26 @@ def bidsify_fmap(sub, ses, base_dir):
     """
     fmap_dir = os.path.join(base_dir, sub, ses, "fmap")
     func_dir = os.path.join(base_dir, sub, ses, "func")
-
     if not os.path.exists(fmap_dir) or not os.path.exists(func_dir):
         return
-
     intended_for = [
         "{}/func/{}".format(ses, f)
         for f in sorted(os.listdir(func_dir))
         if f.endswith("_bold.nii.gz")
     ]
-
     for f in os.listdir(fmap_dir):
         if f.endswith(".json"):
             json_path = os.path.join(fmap_dir, f)
-
             with open(json_path, "r") as jf:
                 data = json.load(jf)
-
             data["IntendedFor"] = intended_for
-
             if "SkullStripped" not in data:
                 data["SkullStripped"] = False
-
             with open(json_path, "w") as jf:
                 json.dump(data, jf, indent=4)
-
+        elif f.endswith("_magnitude.nii.gz"):
+            json_path = os.path.join(fmap_dir, f.replace(".nii.gz", ".json"))
+            if not os.path.exists(json_path):
+                with open(json_path, "w") as jf:
+                    json.dump({"SkullStripped": False}, jf, indent=4)
     print("Fmap BIDS-ified for {} {}".format(sub, ses))

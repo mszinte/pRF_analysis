@@ -121,7 +121,7 @@ for ses_path in sessions:
                 check=True
             )
 
-# Change permissions and group
-print('Changing files permissions in {}'.format(dest_dir))
-os.system("chmod -Rf 771 {}".format(dest_dir))
-os.system("chgrp -Rf {} {}".format(group, dest_dir))
+# # Change permissions and group
+# print('Changing files permissions in {}'.format(dest_dir))
+# os.system("chmod -Rf 771 {}".format(dest_dir))
+# os.system("chgrp -Rf {} {}".format(group, dest_dir))
