@@ -24,41 +24,66 @@ Goal:
     since this was the only error-free mode in -cifti-parcellate when
     parcellating by macro-regions (some files have missing vertices).
 
-    REPORTING MATRIX FORMAT  (5 seeds × 10 targets):
-    Both seed rows and target columns are restricted to the 5 core eye-field
-    ROIs (mPCS, sPCS, iPCS, sIPS, iIPS).  Target columns are further split
-    into ipsilateral and contralateral halves, producing explicitly labelled
-    columns that require no downstream slicing:
-        mPCS_ipsi, sPCS_ipsi, iPCS_ipsi, sIPS_ipsi, iIPS_ipsi,
-        mPCS_contra, sPCS_contra, iPCS_contra, sIPS_contra, iIPS_contra
+    TWO REPORTING SCOPES are produced (EXTENDED — see below):
+
+    1. EYE-FIELD SCOPE  (5 seeds × 10 targets) — original/primary scope,
+       filenames UNCHANGED from before this extension so nothing downstream
+       (violin plots, co-author's work) breaks.
+       Both seed rows and target columns are restricted to the 5 core
+       eye-field ROIs (mPCS, sPCS, iPCS, sIPS, iIPS). Target columns split
+       into ipsi/contra halves:
+           mPCS_ipsi, sPCS_ipsi, iPCS_ipsi, sIPS_ipsi, iIPS_ipsi,
+           mPCS_contra, sPCS_contra, iPCS_contra, sIPS_contra, iIPS_contra
+
+    2. ALL-MACRO SCOPE  (12 seeds × 24 targets) — NEW, added for a
+       supplementary figure. Seed rows and target columns span ALL 12
+       macro-regions (not just the 5 eye-fields). Target columns split
+       into ipsi/contra halves, same principle as above but full breadth.
+       Filenames carry an extra "_all-macro" token so they never collide
+       with the eye-field-scope files.
+
+    Both scopes are derived from the SAME per-subject data: each subject's
+    12 seed TSVs (all macro-regions, not just eye-fields) are loaded ONCE
+    into a (12 × 24) Fisher-z matrix; the eye-field (5 × 10) matrix is a
+    slice of that full matrix, not a separately-loaded quantity — this
+    guarantees the eye-field-scope numbers are bit-for-bit identical to
+    before the extension (loading fewer TSVs than the full set would have
+    given identical values; loading the full set and slicing is equivalent
+    and avoids reading each seed TSV twice).
 
     For each hemisphere × variant the script:
         1. Resolves which TSV to load per subject (run variant logic, including
            concat_clean fallback for RUN02_EXCLUDED subjects).
-        2. Loads all seed TSVs for each subject in EYE_FIELDS order, extracts
-           ipsi + contra eye-field values, assembles a (5 × 10) Fisher-z matrix.
-        3. Stacks matrices across subjects → (n_subjects × 5 × 10).
-        4. Computes group mean and median in Fisher-z space.
-        5. Back-converts to Pearson r via tanh() at the reporting stage only.
-        6. Saves .npy + .csv for both spaces (fisherz and r) per hemisphere ×
-           variant, plus a compressed .npz archive with full metadata.
-        7. For concat_clean only: saves two long-format reporting TSVs
-           (one for ipsi targets, one for contra targets) with one row per
-           subject × seed, values in Pearson r, plus a GROUP row at the
-           bottom whose values come from tanh(nanmedian(Fisher-z)) — the
-           same group median already computed for the .npy outputs.
+        2. Loads ALL 12 macro-region seed TSVs per subject, assembles a
+           (12 × 24) Fisher-z matrix (ipsi + contra targets, all macro-regions).
+        3. Slices out the eye-field (5 × 10) sub-matrix for the original scope.
+        4. Stacks matrices across subjects for BOTH scopes independently
+           → (n_subjects × 5 × 10) and (n_subjects × 12 × 24).
+        5. Computes group mean/median/p25/p75 in Fisher-z space, per scope.
+        6. Back-converts to Pearson r via tanh() at the reporting stage only.
+        7. Saves .npy + .csv (both spaces) + a compressed .npz archive per
+           hemisphere × variant, EYE-FIELD SCOPE ONLY (as before — the
+           all-macro scope only produces the reporting TSVs described next,
+           not the full stat-array set; see note below if that's also needed).
+        8. For concat_clean only: saves TWO PAIRS of long-format reporting
+           TSVs (ipsi/contra) — one pair for eye-field scope (unchanged
+           filenames), one pair for all-macro scope (new). Each has one row
+           per subject × seed, values in Pearson r, plus a GROUP row from
+           tanh(nanmedian(Fisher-z)) — the same group median used for the
+           eye-field scope's saved .npy/.csv outputs.
 
     Averaging is always in Fisher-z space; Pearson r is recovered only at the
     final reporting stage via tanh().
 ------------------------------------------------------------------------------------------
 Output filename convention (harmonized with partial-corr group stats):
 
+    Eye-field scope (UNCHANGED filenames):
     seed-task_by_macror-task_full-corr_{space}_{stat}_{run_label}_{hemi}_legacy.npy / .csv
     seed-task_by_macror-task_full-corr_{run_label}_{hemi}_legacy.npz
+    seed-task_by_macror-task_full-corr_r_report_{side}_{hemi}_legacy.tsv
 
-    Reporting TSVs (concat_clean only):
-    seed-task_by_macror-task_full-corr_r_report_ipsi_{hemi}_legacy.tsv
-    seed-task_by_macror-task_full-corr_r_report_contra_{hemi}_legacy.tsv
+    All-macro scope (NEW — reporting TSVs only):
+    seed-task_by_macror-task_full-corr_r_report_{side}_all-macro_{hemi}_legacy.tsv
 
     Partial-corr equivalent for reference:
     seed-task_by_macror-task_partial-corr_fisherz_median_{run_label}_{hemi}.npy
@@ -79,6 +104,7 @@ Inputs (sys.argv):
     4: server project           (e.g. b327)
 
 Outputs (per hemisphere × variant):
+    Eye-field scope stat arrays (unchanged):
     seed-task_by_macror-task_full-corr_fisherz_mean_{run_label}_{hemi}_legacy.npy / .csv
     seed-task_by_macror-task_full-corr_fisherz_median_{run_label}_{hemi}_legacy.npy / .csv
     seed-task_by_macror-task_full-corr_r_mean_{run_label}_{hemi}_legacy.npy / .csv
@@ -88,21 +114,26 @@ Outputs (per hemisphere × variant):
     seed-task_by_macror-task_full-corr_{run_label}_{hemi}_legacy.npz
 
     Reporting TSVs (concat_clean only, per hemisphere):
-    seed-task_by_macror-task_full-corr_r_report_ipsi_{hemi}_legacy.tsv
-    seed-task_by_macror-task_full-corr_r_report_contra_{hemi}_legacy.tsv
+    Eye-field scope   : seed-task_by_macror-task_full-corr_r_report_ipsi_{hemi}_legacy.tsv
+                        seed-task_by_macror-task_full-corr_r_report_contra_{hemi}_legacy.tsv
+    All-macro scope   : seed-task_by_macror-task_full-corr_r_report_ipsi_all-macro_{hemi}_legacy.tsv
+                        seed-task_by_macror-task_full-corr_r_report_contra_all-macro_{hemi}_legacy.tsv
 
-    Reporting TSV structure:
-        subject   : subject ID (e.g. "sub-01") or "GROUP"
-        seed      : eye-field seed name (mPCS / sPCS / iPCS / sIPS / iIPS)
-        mPCS / sPCS / iPCS / sIPS / iIPS : Pearson r for each target region
-            (ipsi half in the ipsi table, contra half in the contra table)
-        GROUP row values = tanh(nanmedian(Fisher-z)) across subjects — the
-            same quantity saved in the _r_median_ .npy / .csv outputs.
-
-    Rows    : 5 eye-field seeds in canonical order (mPCS first)
-    Columns : 5 eye-field regions × 2 hemispheres (ipsi then contra)  (n = 10)
-              mPCS_ipsi, sPCS_ipsi, iPCS_ipsi, sIPS_ipsi, iIPS_ipsi,
-              mPCS_contra, sPCS_contra, iPCS_contra, sIPS_contra, iIPS_contra
+    Reporting TSV structure (both scopes):
+        subject   : subject ID (e.g. "sub-01"), or one of three summary
+                    labels: "GROUP", "GROUP_p25", "GROUP_p75"
+        seed      : seed macro-region name (5 eye-fields, or all 12 for
+                    all-macro scope)
+        <region columns> : Pearson r for each target region (ipsi half in
+            the ipsi table, contra half in the contra table) — 5 columns
+            for eye-field scope, 12 for all-macro scope
+        GROUP / GROUP_p25 / GROUP_p75 row values = tanh(nanmedian /
+            nanpercentile(25) / nanpercentile(75) of Fisher-z) across
+            subjects — for eye-field scope these are the same quantities
+            saved in the _r_median_ / _r_p25_ / _r_p75_ .npy / .csv
+            outputs. Added so each reporting TSV is self-contained for a
+            median + IQR heatmap without needing the separate stat-array
+            files.
 
 Filename example (input TSV, run-01, lh seed hMT+):
     sub-05_task-rest_run-01_space-fsLR_den-91k_desc-fisher-z_lh_hMT+
@@ -166,7 +197,7 @@ PCT_LO, PCT_HI = 25.0, 75.0
 
 print("=" * 80)
 print("GROUP FULL CORRELATION (TASK-CONSTRAINED) — Fisher-z statistics")
-print("Eye-field seeds x eye-field targets (5 x 10), legacy mode")
+print("Eye-field scope (5x10) + all-macro scope (12x24), legacy mode")
 print("=" * 80)
 print("  main_dir    : {0}".format(main_dir))
 print("  project_dir : {0}".format(project_dir))
@@ -186,7 +217,8 @@ subjects          = analysis_info["subjects"]  # type: List[str]
 # Macro-regions — full canonical list (mPCS first)
 #
 # The full list defines the TSV row order (12 per hemisphere block) and is
-# used to locate EYE_FIELDS within each block via EYE_FIELDS_IDX
+# used both as the ALL-MACRO scope's seed/target set, and to locate
+# EYE_FIELDS within it via EYE_FIELDS_IDX for the eye-field scope.
 # ============================================================
 macro_regions = list(analysis_info["rois-drawn"])
 macro_regions.reverse()   # mPCS first
@@ -200,11 +232,13 @@ HEMI_ROW_SLICE = {
 }  # type: Dict[str, slice]
 
 # ============================================================
-# Eye-field regions — the 5 core ROIs used for all outputs
+# Eye-field regions — the 5 core ROIs used for the original scope
 #
 # Derived positionally (first 5 of macro_regions after reversing rois-drawn)
 # so it stays correct as long as rois-drawn ordering is maintained.
-# The assertion below guards against any silent mismatch.
+# The assertion below guards against any silent mismatch, and is also what
+# makes EYE_FIELDS_IDX == [0, 1, 2, 3, 4] exactly — relied on below when
+# slicing the eye-field sub-matrix out of the full (12 x 24) matrix.
 # ============================================================
 N_EYE_FIELDS = 5
 EYE_FIELDS   = macro_regions[:N_EYE_FIELDS]  # type: List[str]
@@ -215,22 +249,35 @@ assert EYE_FIELDS == ["mPCS", "sPCS", "iPCS", "sIPS", "iIPS"], (
         EYE_FIELDS)
 )
 
-# Row indices of EYE_FIELDS within a 12-row hemisphere block
+# Row indices of EYE_FIELDS within a 12-row hemisphere block (== [0..4])
 EYE_FIELDS_IDX = [macro_regions.index(r) for r in EYE_FIELDS]
 
-# Column labels for the full (5 x 10) output matrices
+# Column labels — eye-field scope (5 seeds x 10 targets)
 TARGET_COLUMNS = (
     ["{0}_ipsi".format(r)  for r in EYE_FIELDS] +
     ["{0}_contra".format(r) for r in EYE_FIELDS]
+)  # type: List[str]
+
+# Column indices of the eye-field targets within the full (12 x 24) matrix's
+# 24 columns, which are laid out as [all-ipsi(12) | all-contra(12)] in
+# macro_regions order. Since EYE_FIELDS_IDX == [0..4] (asserted above),
+# eye-field ipsi columns are 0-4 and eye-field contra columns are 12-16.
+EYE_FIELD_COL_IDX = EYE_FIELDS_IDX + [N_MACRO + i for i in EYE_FIELDS_IDX]
+
+# Column labels — all-macro scope (12 seeds x 24 targets)
+ALL_TARGET_COLUMNS = (
+    ["{0}_ipsi".format(r)  for r in macro_regions] +
+    ["{0}_contra".format(r) for r in macro_regions]
 )  # type: List[str]
 
 print("\n  All macro-regions (n={0}): {1}".format(N_MACRO, macro_regions))
 print("  Eye-field regions (n={0}): {1}".format(N_EYE_FIELDS, EYE_FIELDS))
 print("  TSV layout   : {0} rows — LH rows 0-{1}, RH rows {2}-{3}".format(
     N_ROWS_TOTAL, N_MACRO - 1, N_MACRO, N_ROWS_TOTAL - 1))
-print("  Output shape : ({0} seeds x {1} targets)".format(
+print("  Eye-field output shape : ({0} seeds x {1} targets)".format(
     N_EYE_FIELDS, 2 * N_EYE_FIELDS))
-print("  Target cols  : {0}".format(TARGET_COLUMNS))
+print("  All-macro  output shape : ({0} seeds x {1} targets)".format(
+    N_MACRO, 2 * N_MACRO))
 
 # ============================================================
 # Paths
@@ -243,10 +290,15 @@ output_folder.mkdir(parents=True, exist_ok=True)
 tables_folder.mkdir(parents=True, exist_ok=True)
 
 # ============================================================
-# Output filename stem builder
+# Filename stem builders — pure functions, no Path objects, no I/O.
+# Directory joining is done inline at each call site instead of being
+# wrapped in a function, since the directory structure itself is static
+# and doesn't need testing the way filename construction does.
 # ============================================================
+
 def _stem(stat, space, run_label, hemi):
     # type: (str, str, str, str) -> str
+    """Eye-field scope stat-array filename stem (unchanged from before)."""
     return (
         "seed-task_by_macror-task_full-corr"
         "_{space}_{stat}_{run_label}_{hemi}_{mode}".format(
@@ -255,31 +307,63 @@ def _stem(stat, space, run_label, hemi):
     )
 
 
+def _report_stem(side, hemi, scope_token=""):
+    # type: (str, str, str) -> str
+    """
+    Reporting-TSV filename stem.
+
+    scope_token: "" for the eye-field scope (matches the original filename
+    exactly, so nothing downstream breaks); "_all-macro" for the new
+    all-macro scope.
+    """
+    return (
+        "seed-task_by_macror-task_full-corr"
+        "_r_report_{side}{scope}_{hemi}_{mode}".format(
+            side=side, scope=scope_token, hemi=hemi, mode=MODE_LABEL)
+    )
+
+
 # ============================================================
-# Reporting TSV builder (concat_clean only)
+# Reporting TSV builder — generalized over scope (eye-field or all-macro)
 #
 # Produces two long-format tables — one for ipsi targets, one for contra —
 # with the structure:
-#   subject | seed | mPCS | sPCS | iPCS | sIPS | iIPS
+#   subject | seed | <region columns...>
 #
 # Subject rows contain raw Pearson r values (tanh of individual Fisher-z,
-# never averaged).  The GROUP row at the bottom contains the group median
-# in Pearson r space: tanh(nanmedian(Fisher-z across subjects)).
+# never averaged). Three summary rows are appended per seed:
+#   GROUP      = tanh(nanmedian(Fisher-z across subjects))
+#   GROUP_p25  = tanh(nanpercentile(Fisher-z across subjects, 25))
+#   GROUP_p75  = tanh(nanpercentile(Fisher-z across subjects, 75))
+#
+# These three rows make the table self-contained for a median + IQR
+# heatmap without needing to cross-reference the separate .npy/.csv stat
+# files — added specifically because the reporting TSVs previously only
+# carried the median (as the plain "GROUP" row), which wasn't enough for
+# that purpose.
 #
 # Parameters
 # ----------
-# stacked_fz  : (n_subjects x N_EYE_FIELDS x 10) Fisher-z array
-# median_r    : (N_EYE_FIELDS x 10) group median in Pearson r space
-# subject_ids : list of subject ID strings, length n_subjects
-# hemi        : "lh" or "rh"
+# stacked_fz    : (n_subjects x n_seeds x n_targets) Fisher-z array
+# median_r      : (n_seeds x n_targets) group median in Pearson r space
+# pct_lo_r      : (n_seeds x n_targets) group 25th percentile in Pearson r
+# pct_hi_r      : (n_seeds x n_targets) group 75th percentile in Pearson r
+# subject_ids   : list of subject ID strings, length n_subjects
+# hemi          : "lh" or "rh"
+# seeds         : seed names in row order (EYE_FIELDS or macro_regions)
+# region_cols   : region names used as BOTH the per-side column set and the
+#                 seed set (EYE_FIELDS for eye-field scope, macro_regions
+#                 for all-macro scope) — n_targets == 2 * len(region_cols)
+# scope_token   : "" or "_all-macro", passed through to _report_stem()
 # ============================================================
-def _save_reporting_tsvs(stacked_fz, median_r, subject_ids, hemi):
-    # type: (np.ndarray, np.ndarray, List[str], str) -> None
+def _save_reporting_tsvs(stacked_fz, median_r, pct_lo_r, pct_hi_r,
+                          subject_ids, hemi, seeds, region_cols,
+                          scope_token=""):
+    # type: (np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[str], str, List[str], List[str], str) -> None
 
-    # Column indices for ipsi (first 5) and contra (last 5) within the 10-col
-    # matrices — defined positionally to match TARGET_COLUMNS construction.
-    ipsi_cols  = list(range(N_EYE_FIELDS))
-    contra_cols = list(range(N_EYE_FIELDS, 2 * N_EYE_FIELDS))
+    n_regions = len(region_cols)
+    ipsi_cols   = list(range(n_regions))
+    contra_cols = list(range(n_regions, 2 * n_regions))
 
     for side, col_idx in (("ipsi", ipsi_cols), ("contra", contra_cols)):
         rows = []  # type: List[Dict]
@@ -288,33 +372,32 @@ def _save_reporting_tsvs(stacked_fz, median_r, subject_ids, hemi):
         # Convert each subject's Fisher-z slice to Pearson r individually
         # (tanh applied per subject, not to an average)
         for s_idx, subj in enumerate(subject_ids):
-            subj_fz = stacked_fz[s_idx]          # (N_EYE_FIELDS x 10)
+            subj_fz = stacked_fz[s_idx]          # (n_seeds x n_targets)
             subj_r  = np.tanh(subj_fz)           # Pearson r, same shape
 
-            for seed_idx, seed in enumerate(EYE_FIELDS):
+            for seed_idx, seed in enumerate(seeds):
                 row = {"subject": subj, "seed": seed}
                 for t_idx, t_col in enumerate(col_idx):
-                    row[EYE_FIELDS[t_idx]] = subj_r[seed_idx, t_col]
+                    row[region_cols[t_idx]] = subj_r[seed_idx, t_col]
                 rows.append(row)
 
-        # ── GROUP row ─────────────────────────────────────────────────────
-        # Uses the pre-computed median_r which is tanh(nanmedian(Fisher-z))
-        # — never averaged Pearson r values
-        for seed_idx, seed in enumerate(EYE_FIELDS):
-            row = {"subject": "GROUP", "seed": seed}
-            for t_idx, t_col in enumerate(col_idx):
-                row[EYE_FIELDS[t_idx]] = median_r[seed_idx, t_col]
-            rows.append(row)
+        # ── GROUP summary rows ────────────────────────────────────────────
+        # median / p25 / p75 all use their respective pre-computed r arrays
+        # (each already tanh(percentile(Fisher-z)), never percentile(r))
+        for label, arr in (("GROUP", median_r),
+                            ("GROUP_p25", pct_lo_r),
+                            ("GROUP_p75", pct_hi_r)):
+            for seed_idx, seed in enumerate(seeds):
+                row = {"subject": label, "seed": seed}
+                for t_idx, t_col in enumerate(col_idx):
+                    row[region_cols[t_idx]] = arr[seed_idx, t_col]
+                rows.append(row)
 
         # ── Save ─────────────────────────────────────────────────────────
-        col_order = ["subject", "seed"] + EYE_FIELDS
+        col_order = ["subject", "seed"] + region_cols
         df = pd.DataFrame(rows, columns=col_order)
 
-        fname = (
-            "seed-task_by_macror-task_full-corr"
-            "_r_report_{side}_{hemi}_{mode}.tsv".format(
-                side=side, hemi=hemi, mode=MODE_LABEL)
-        )
+        fname = _report_stem(side, hemi, scope_token) + ".tsv"
         df.to_csv(tables_folder / fname, sep="\t", index=False,
                   float_format="%.4f")
         print("    Saved reporting TSV: {0}".format(fname))
@@ -338,7 +421,9 @@ for hemi in ("lh", "rh"):
         # visibility), regardless of the skip_excluded flag used in WTA scripts.
         print("\n  --- Variant: {0} ---".format(variant))
 
-        subject_matrices = []  # type: List[np.ndarray]
+        # Per-subject full (12 x 24) matrices — the single source both
+        # scopes are derived from.
+        full_matrices    = []  # type: List[np.ndarray]
         subject_ids      = []  # type: List[str]
         missing_subjects = []  # type: List[str]
 
@@ -355,7 +440,10 @@ for hemi in ("lh", "rh"):
             seed_rows     = {}   # type: Dict[str, np.ndarray]
             missing_files = []   # type: List[str]
 
-            for seed in EYE_FIELDS:
+            # Load ALL 12 macro-region seed TSVs (not just eye-fields) —
+            # needed for the all-macro scope, and the eye-field scope is
+            # sliced out of the same data rather than loaded separately.
+            for seed in macro_regions:
                 fname = (
                     "{subject}_task-rest{run}_space-fsLR_den-91k"
                     "_desc-fisher-z_{hemi}_{seed}"
@@ -383,10 +471,11 @@ for hemi in ("lh", "rh"):
                 ipsi_block   = raw.iloc[row_slice_ipsi,   0].values.astype(float)
                 contra_block = raw.iloc[row_slice_contra, 0].values.astype(float)
 
-                ipsi_ef   = ipsi_block[EYE_FIELDS_IDX]    # (5,)
-                contra_ef = contra_block[EYE_FIELDS_IDX]  # (5,)
-
-                seed_rows[seed] = np.concatenate([ipsi_ef, contra_ef])  # (10,)
+                # Full-breadth row: all 12 macro-regions ipsi, then all 12
+                # contra, in macro_regions order — no eye-field restriction
+                # applied here (that happens later, positionally, when
+                # slicing out the eye-field sub-matrix).
+                seed_rows[seed] = np.concatenate([ipsi_block, contra_block])  # (24,)
 
             if missing_files:
                 for f in missing_files:
@@ -396,14 +485,14 @@ for hemi in ("lh", "rh"):
                 missing_subjects.append(subject)
                 continue
 
-            mat = np.stack([seed_rows[s] for s in EYE_FIELDS], axis=0)
+            mat_full = np.stack([seed_rows[s] for s in macro_regions], axis=0)
 
-            if mat.shape != (N_EYE_FIELDS, 2 * N_EYE_FIELDS):
+            if mat_full.shape != (N_MACRO, 2 * N_MACRO):
                 raise ValueError(
-                    "[{0} {1} {2}] Unexpected matrix shape {3}, "
+                    "[{0} {1} {2}] Unexpected full matrix shape {3}, "
                     "expected ({4}, {5}).".format(
-                        subject, hemi, variant, mat.shape,
-                        N_EYE_FIELDS, 2 * N_EYE_FIELDS)
+                        subject, hemi, variant, mat_full.shape,
+                        N_MACRO, 2 * N_MACRO)
                 )
 
             if variant == "concat_clean" and is_excluded:
@@ -411,51 +500,77 @@ for hemi in ("lh", "rh"):
             else:
                 print("    {0}: OK".format(subject))
 
-            subject_matrices.append(mat)
+            full_matrices.append(mat_full)
             subject_ids.append(subject)
 
-        if not subject_matrices:
+        if not full_matrices:
             print("    ERROR: no valid subjects for {0} / {1} — skipping.".format(
                 hemi, variant))
             continue
 
-        n_valid = len(subject_matrices)
+        n_valid = len(full_matrices)
         print("\n    Valid subjects: {0}/{1}".format(n_valid, len(subjects)))
         if missing_subjects:
             print("    Missing       : {0}".format(missing_subjects))
 
-        # Stack -> (n_subjects x N_EYE_FIELDS x 10) in Fisher-z space
-        stacked_fz = np.stack(subject_matrices, axis=0)
+        # Stack -> (n_subjects x 12 x 24) in Fisher-z space — all-macro scope
+        stacked_fz_allmacro = np.stack(full_matrices, axis=0)
+        if stacked_fz_allmacro.shape != (n_valid, N_MACRO, 2 * N_MACRO):
+            raise ValueError(
+                "Unexpected all-macro stack shape {0} for {1} / {2}.".format(
+                    stacked_fz_allmacro.shape, hemi, variant)
+            )
 
+        # Slice out eye-field scope: rows = EYE_FIELDS_IDX, cols = EYE_FIELD_COL_IDX
+        # -> (n_subjects x 5 x 10), bit-for-bit identical to loading only the
+        # 5 eye-field seed TSVs directly (same underlying files, same indices).
+        stacked_fz = stacked_fz_allmacro[:, EYE_FIELDS_IDX, :][:, :, EYE_FIELD_COL_IDX]
         if stacked_fz.shape != (n_valid, N_EYE_FIELDS, 2 * N_EYE_FIELDS):
             raise ValueError(
-                "Unexpected stack shape {0} for {1} / {2}.".format(
+                "Unexpected eye-field stack shape {0} for {1} / {2}.".format(
                     stacked_fz.shape, hemi, variant)
             )
 
-        # ── Group statistics in Fisher-z space ───────────────────────────
+        # ── Group statistics in Fisher-z space — EYE-FIELD SCOPE ─────────
+        # (unchanged from before the extension: stat arrays are only saved
+        # for this scope, matching the original script's outputs exactly)
         mean_fz   = np.nanmean(  stacked_fz, axis=0)
         median_fz = np.nanmedian(stacked_fz, axis=0)
         pct_lo_fz = np.nanpercentile(stacked_fz, PCT_LO, axis=0)
         pct_hi_fz = np.nanpercentile(stacked_fz, PCT_HI, axis=0)
 
-        # ── Back-convert to Pearson r at reporting stage only ────────────
         mean_r   = np.tanh(mean_fz)
         median_r = np.tanh(median_fz)
         pct_lo_r = np.tanh(pct_lo_fz)
         pct_hi_r = np.tanh(pct_hi_fz)
 
-        print("    Fisher-z mean   range : [{0:.4f}, {1:.4f}]".format(
+        print("    [eye-field] Fisher-z mean   range : [{0:.4f}, {1:.4f}]".format(
             np.nanmin(mean_fz), np.nanmax(mean_fz)))
-        print("    Fisher-z median range : [{0:.4f}, {1:.4f}]".format(
+        print("    [eye-field] Fisher-z median range : [{0:.4f}, {1:.4f}]".format(
             np.nanmin(median_fz), np.nanmax(median_fz)))
+
+        # ── Group statistics in Fisher-z space — ALL-MACRO SCOPE ─────────
+        # median AND p25/p75 are needed for the reporting TSV's GROUP,
+        # GROUP_p25, GROUP_p75 rows (see _save_reporting_tsvs docstring) —
+        # not saved as standalone .npy/.csv stat-array files; ask if those
+        # are also wanted.
+        median_fz_allmacro = np.nanmedian(stacked_fz_allmacro, axis=0)
+        pct_lo_fz_allmacro  = np.nanpercentile(stacked_fz_allmacro, PCT_LO, axis=0)
+        pct_hi_fz_allmacro  = np.nanpercentile(stacked_fz_allmacro, PCT_HI, axis=0)
+
+        median_r_allmacro  = np.tanh(median_fz_allmacro)
+        pct_lo_r_allmacro  = np.tanh(pct_lo_fz_allmacro)
+        pct_hi_r_allmacro  = np.tanh(pct_hi_fz_allmacro)
+
+        print("    [all-macro] Fisher-z median range : [{0:.4f}, {1:.4f}]".format(
+            np.nanmin(median_fz_allmacro), np.nanmax(median_fz_allmacro)))
 
         run_label = normal_tag if normal_tag is not None else variant
 
         pct_lo_tag = "p{0:02d}".format(int(PCT_LO))
         pct_hi_tag = "p{0:02d}".format(int(PCT_HI))
 
-        # ── Save Fisher-z and r arrays (.npy + .csv) ─────────────────────
+        # ── Save Fisher-z and r arrays (.npy + .csv) — eye-field scope ───
         for space, arrays in (
             ("fisherz", (("mean",     mean_fz),
                          ("median",   median_fz),
@@ -477,7 +592,7 @@ for hemi in ("lh", "rh"):
                 )
                 print("    Saved: {0}.npy / .csv".format(stem))
 
-        # ── Compressed archive with all arrays + metadata ─────────────────
+        # ── Compressed archive with all arrays + metadata — eye-field scope
         npz_stem = (
             "seed-task_by_macror-task_full-corr"
             "_{run_label}_{hemi}_{mode}".format(
@@ -504,15 +619,25 @@ for hemi in ("lh", "rh"):
         )
         print("    Saved: {0}.npz".format(npz_stem))
 
-        # ── Reporting TSVs — concat_clean only ───────────────────────────
+        # ── Reporting TSVs — concat_clean only, BOTH scopes ──────────────
         if variant == "concat_clean":
-            _save_reporting_tsvs(stacked_fz, median_r, subject_ids, hemi)
+            _save_reporting_tsvs(
+                stacked_fz, median_r, pct_lo_r, pct_hi_r, subject_ids, hemi,
+                seeds=EYE_FIELDS, region_cols=list(EYE_FIELDS),
+                scope_token="",
+            )
+            _save_reporting_tsvs(
+                stacked_fz_allmacro, median_r_allmacro,
+                pct_lo_r_allmacro, pct_hi_r_allmacro, subject_ids, hemi,
+                seeds=macro_regions, region_cols=list(macro_regions),
+                scope_token="_all-macro",
+            )
 
 print("\n" + "=" * 80)
 print("ALL HEMISPHERES x VARIANTS COMPLETE")
 print("=" * 80)
-print("\nStats outputs : {0}".format(output_folder))
-print("Reporting TSVs: {0}".format(tables_folder))
+print("\nStats outputs (eye-field scope) : {0}".format(output_folder))
+print("Reporting TSVs (both scopes)     : {0}".format(tables_folder))
 print(
     "\nNote: Fisher-z outputs are in z-space. Apply np.tanh() to recover "
     "Pearson r only at the final reporting or plotting stage."
