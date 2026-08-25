@@ -22,6 +22,8 @@ Import from any script in rest/stats/ (run as `cd rest/stats/ && python script.p
         load_full_corr_matrix,
         compute_winners,
         append_group_and_consistency,
+        # Nilearn partial-corr helper
+        impute_nan_columns,
         # plotting
         MACRO_COLORS,
         SHADE_FACTORS,
@@ -384,10 +386,29 @@ def load_npy_hemi(filepath: str) -> Optional[np.ndarray]:
         return None
     return arr
 
-# Helper for Nilearn partial correlation
+
+# ============================================================
+# Nilearn partial-correlation helper
+#
+# Shared by nilearn_partial_corr_task_free.py and
+# nilearn_partial_corr_task_constrained.py.
+# ============================================================
+
 def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
     """Replace NaN values in a (n_time × n_signals) matrix before passing to
     Nilearn's ConnectivityMeasure, which cannot handle NaNs.
+
+    Parameters
+    ----------
+    X     : (n_time, n_signals) array, may contain NaN.
+    label : optional string prefix for warning messages (e.g. subject/hemi
+            context).
+
+    Returns
+    -------
+    np.ndarray, same shape as X, with NaN columns imputed:
+      - fully-NaN columns are replaced with zeros
+      - partially-NaN columns are imputed with the column mean
     """
     X_clean = X.copy()
     n_signals = X_clean.shape[1]
@@ -417,7 +438,8 @@ def impute_nan_columns(X: np.ndarray, label: str = "") -> np.ndarray:
             X_clean[nan_mask, j] = col_mean
 
     return X_clean
-    
+
+
 # ============================================================
 # Violin-plot visual constants
 # ============================================================
