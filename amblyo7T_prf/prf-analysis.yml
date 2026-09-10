@@ -220,11 +220,10 @@ rois-group-mmp:
     V4: ["V4"]
     V3A: ["V3A"]
     V3B: ["V3B"]
-    V3CD: ["V3CD"]
     LO1: ["LO1"]
     LO2: ["LO2"]
-    LO3: ["LO3"]
-    V8: ["V8"]
+  
+    
     
     
     
