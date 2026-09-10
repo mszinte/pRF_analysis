@@ -2,7 +2,7 @@
 # ------------- Main configuration -------------------
 analysis_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
+  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
   to_check_label: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
   full_analysis: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
 
@@ -185,6 +185,32 @@ rois-drawn:
 #     VO: ["V8", "PIT", "PH", "FFC", "VMV1", "VMV2", "VMV3", "VVC"]
 #     hMT+: ["V4t", "MST", "MT", "FST"]
 
+# rois-group-mmp:
+#   description: "List of Glasser MMP atlas parcelations"
+#   value:
+#     V1: ["V1"]
+#     V2: ["V2"]
+#     V3: ["V3"]
+#     V4: ["V4"]
+#     V3A: ["V3A"]
+#     V3B: ["V3B"]
+#     V3CD: ["V3CD"]
+#     LO1: ["LO1"]
+#     LO2: ["LO2"]
+#     LO3: ["LO3"]
+#     V8: ["V8"]
+#     PIT: ["PIT"]
+#     PH: ["PH"]
+#     FFC: ["FFC"]
+#     VMV1: ["VMV1"]
+#     VMV2: ["VMV2"]
+#     VMV3: ["VMV3"]
+#     VVC: ["VVC"]
+#     V4t: ["V4t"]
+#     MST: ["MST"]
+#     MT: ["MT"]
+#     FST: ["FST"]
+
 rois-group-mmp:
   description: "List of Glasser MMP atlas parcelations"
   value:
@@ -199,17 +225,15 @@ rois-group-mmp:
     LO2: ["LO2"]
     LO3: ["LO3"]
     V8: ["V8"]
-    PIT: ["PIT"]
-    PH: ["PH"]
-    FFC: ["FFC"]
-    VMV1: ["VMV1"]
-    VMV2: ["VMV2"]
-    VMV3: ["VMV3"]
-    VVC: ["VVC"]
-    V4t: ["V4t"]
-    MST: ["MST"]
-    MT: ["MT"]
-    FST: ["FST"]
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  
 

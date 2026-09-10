@@ -1016,6 +1016,7 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
     marker_size   = figure_info['ecc_comp_marker_size']
     roi_spacing   = figure_info['ecc_comp_roi_x_spacing']
     marker_offsets = figure_info['ecc_comp_marker_offset']
+    rois_to_plot         = figure_info['rois_to_plot']
 
     # Enforce fixed plotting order: FE-LE → AE-RE → CTRL
     fixed_order    = ['FE-LE', 'AE-RE', 'CTRL']
@@ -1192,7 +1193,7 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                     x_pos = x_center + cond_offsets[eye_cond]
 
                     df_row = df.loc[
-                        (df.roi == roi) &
+                        (df[rois_to_plot] == roi) &
                         (df.ecc_category == ecc_cat) &
                         (df.eye_condition == eye_cond)]
 
@@ -1228,7 +1229,7 @@ def ecc_comp_plot(df, df_stats, figure_info, eye_conditions, show_stats=True):
                             continue
 
                         stat_row = df_stats.loc[
-                            (df_stats.roi == roi) &
+                            (df_stats[rois_to_plot] == roi) &
                             (df_stats.ecc_category == ecc_cat) &
                             (df_stats.param == param) &
                             (((df_stats.cond_A == cond_a) & (df_stats.cond_B == cond_b)) |

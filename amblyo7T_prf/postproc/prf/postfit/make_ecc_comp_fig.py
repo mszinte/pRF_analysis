@@ -35,6 +35,9 @@ Written by Martin Szinte (martin.szinte@gmail.com)
 import warnings
 warnings.filterwarnings("ignore")
 
+import ipdb
+deb = ipdb.set_trace
+
 import os
 import sys
 import pandas as pd

@@ -498,7 +498,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                 with_curvature=True, with_labels=False, with_colorbar=False,\
                 with_borders=False, curv_brightness=0.95, curv_contrast=0.05, add_roi=False,\
                 roi_name='empty', col_offset=0, zoom_roi=None, zoom_hem=None, zoom_margin=0.0, cbar_label='', \
-                overlay_fn='None'):
+                overlay_fn='None', roi_list=None):
     """
     Plot brain data onto a previously saved flatmap.
     
@@ -534,6 +534,7 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
     zoom_hem            : hemifield fo the roi zoom
     zoom_margin         : margin in mm around the zoom
     overlay_fn          : file name of the overlay file (e.g. 'overlay_rois-drawn.svg')
+    roi_list            : List of rois borders to plot (e.g. ['V1', 'V2'])
     
     Returns
     -------
@@ -637,7 +638,8 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
                                      with_colorbar = with_colorbar,
                                      with_borders = with_borders,
                                      curvature_brightness = curv_brightness,
-                                     curvature_contrast = curv_contrast)
+                                     curvature_contrast = curv_contrast, 
+                                     roi_list=roi_list)
     if cbar == 'polar':
         try: base = plt.cm.get_cmap(cmap)
         except: base = cortex.utils.get_cmap(cmap)
