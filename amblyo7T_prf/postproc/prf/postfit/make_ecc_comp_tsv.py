@@ -147,7 +147,6 @@ for avg_method in avg_methods:
                 rois = list(analysis_info[rois_method_format].keys())
 
             for prf_task_eyes_names in prf_tasks_eyes_names:
-
                 fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
                     prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
                     preproc_prep, filtering, normalization, avg_method, rois_method_format)
@@ -218,6 +217,7 @@ for avg_method in avg_methods:
 
                         # Compute R²-weighted median + 2.5/97.5 CI per roi × ecc_category
                         rows_list = []
+
                         for roi in rois:
                             df_roi = data.loc[data[rois_to_plot] == roi]
                             for ecc_cat in ecc_categories:
@@ -262,7 +262,7 @@ for avg_method in avg_methods:
                         continue
 
                     df_subj = pd.concat(df_eyes, ignore_index=True)
-
+                    
                     # Add CTRL rows for controls (median of AE-RE and FE-LE per roi/ecc_cat)
                     if subject_group == 'control':
                         ctrl_rows = []
@@ -270,19 +270,22 @@ for avg_method in avg_methods:
                             for ecc_cat in ecc_categories:
                                 df_rc = df_subj.loc[
                                     (df_subj[rois_to_plot] == roi) & (df_subj.ecc_category == ecc_cat)]
+                                
                                 ctrl_row = {
                                     'subject':       subj,
                                     'subject_group': subject_group,
-                                    'roi':           roi,
+                                    rois_to_plot :           roi,
                                     'eye_condition': 'CTRL',
                                     'ecc_category':  ecc_cat,
                                     'n_vert':        df_rc['n_vert'].median(),
                                 }
+                                
                                 for param in params:
                                     ctrl_row[f'{param}_median'] = df_rc[f'{param}_median'].median()
                                     ctrl_row[f'{param}_ci_lo']  = np.nan
                                     ctrl_row[f'{param}_ci_hi']  = np.nan
                                 ctrl_rows.append(ctrl_row)
+                        
                         df_subj = pd.concat([df_subj, pd.DataFrame(ctrl_rows)], ignore_index=True)
 
                     # Save per-subject TSV
@@ -318,7 +321,6 @@ for avg_method in avg_methods:
                     continue
 
                 df_all = pd.concat(df_all_subjects, ignore_index=True)
-
                 out_dir = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
                     main_dir, project_dir, run_group, format_)
                 os.makedirs(out_dir, exist_ok=True)
@@ -352,7 +354,7 @@ for avg_method in avg_methods:
                     df_pat_full  = pd.concat([
                         df_pat.loc[df_pat.eye_condition.isin(['AE-RE', 'FE-LE'])],
                         df_ctrl_ctrl], ignore_index=True)
-                    df_pat_grp   = aggregate_group(df_pat_full, ['roi', 'ecc_category', 'eye_condition'])
+                    df_pat_grp   = aggregate_group(df_pat_full, [rois_to_plot, 'ecc_category', 'eye_condition'])
                     fn_pat = '{}/group-patient_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
                     print(f'Saving patient group TSV: {fn_pat}')
                     df_pat_grp.to_csv(fn_pat, sep='\t', na_rep='NaN', index=False)
@@ -361,12 +363,13 @@ for avg_method in avg_methods:
                     fn_pat_indiv = '{}/group-patient_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
                     df_pat_indiv.to_csv(fn_pat_indiv, sep='\t', na_rep='NaN', index=False)
 
+
                 # -- Fig 2: controls, AE-RE (RE) vs FE-LE (LE) + CTRL --
                 elif run_group == 'control':
                     df_ctrl      = df_all.loc[df_all.subject_group == 'control']
                     df_ctrl_grp  = aggregate_group(
                         df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE', 'CTRL'])],
-                        ['roi', 'ecc_category', 'eye_condition'])
+                        [rois_to_plot, 'ecc_category', 'eye_condition'])
                     fn_ctrl = '{}/group-control_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
                     print(f'Saving control group TSV: {fn_ctrl}')
                     df_ctrl_grp.to_csv(fn_ctrl, sep='\t', na_rep='NaN', index=False)
@@ -444,7 +447,7 @@ for avg_method in avg_methods:
                                                 p_unc = np.nan
 
                                     param_rows.append({
-                                        'roi':          roi,
+                                        rois_to_plot:          roi,
                                         'ecc_category': ecc_cat,
                                         'param':        param,
                                         'cond_A':       cond_a,
@@ -467,8 +470,8 @@ for avg_method in avg_methods:
                         rows_stats.append(df_param)
 
                     df_stats = pd.concat(rows_stats, ignore_index=True)
-                    df_stats['roi'] = pd.Categorical(df_stats['roi'], categories=rois, ordered=True)
-                    df_stats = df_stats.sort_values(['roi', 'ecc_category', 'param'])
+                    df_stats[rois_to_plot] = pd.Categorical(df_stats[rois_to_plot], categories=rois, ordered=True)
+                    df_stats = df_stats.sort_values([rois_to_plot, 'ecc_category', 'param'])
                     print(f'Saving stats TSV: {out_fn}')
                     df_stats.to_csv(out_fn, sep='\t', na_rep='NaN', index=False)
                     return df_stats

@@ -63,9 +63,9 @@ analysis_info = settings[0]
 
 # Get subjects for this group
 if 'patient' in group_label:
-    subjects_to_group = analysis_info['group_patient']
+    subjects_to_group = analysis_info['group-patient']
 elif 'control' in group_label:
-    subjects_to_group = analysis_info['group_control']
+    subjects_to_group = analysis_info['group-control']
 else:
     raise ValueError(f"Unknown group label: {group_label}")
 

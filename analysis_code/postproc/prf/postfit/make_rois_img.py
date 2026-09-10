@@ -9,7 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject (e.g. sub-01)
-sys.argv[4]: group (e.g. 327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
 Combined estimate nifti file and pRF derivative nifti file
@@ -18,13 +19,13 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
 2. run python command
->> python make_rois_img.py [main directory] [project name] [subject] [group]
+>> python make_rois_img.py [main directory] [project name] [subject] [analysis_mane] [group]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 327
-python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm 327
-python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 327
+python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
+python make_rois_img.py /scratch/mszinte/data RetinoMaps sub-hcp1.6mm prf 327
+python make_rois_img.py /scratch/mszinte/data amblyo7T_prf sub-03 prf 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 Edited by Martin Szinte (martin.szinte@gmail.com)

@@ -119,7 +119,6 @@ if subject != 'template_avg':
             prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
 
             for task_name in task_names:
-            
                 if format_ == 'fsnative':
                     # initial settings
                     pycortex_subject = subject

@@ -31,6 +31,18 @@ flatmap_tsnr_scale:
   description: "Color scale range for tSNR flatmaps [min, max]"
   value: [0, 150]
 
+# rois_colors:
+#   description: "Color in RGB used in different plots for each ROI"
+#   value:
+#     n/a: [255, 255, 255]
+#     V1: [243, 231, 155]
+#     V2: [250, 196, 132]
+#     V3: [248, 160, 126]
+#     V3AB: [235, 127, 134]
+#     LO: [150, 0, 90] 
+#     VO: [0, 0, 200]
+#     hMT+: [0, 25, 255]
+
 rois_colors:
   description: "Color in RGB used in different plots for each ROI"
   value:
@@ -38,10 +50,14 @@ rois_colors:
     V1: [243, 231, 155]
     V2: [250, 196, 132]
     V3: [248, 160, 126]
-    V3AB: [235, 127, 134]
-    LO: [150, 0, 90] 
-    VO: [0, 0, 200]
-    hMT+: [0, 25, 255]
+    V4: [240, 120, 100]
+    V3A: [220, 90, 120]
+    V3B: [200, 70, 140]
+    V3CD: [180, 50, 160]
+    LO1: [140, 20, 180]
+    LO2: [120, 10, 200]
+    LO3: [100, 0, 220]
+    V8: [60, 180, 180]
 
 # Main figures
 # roi_colors:
@@ -70,24 +86,21 @@ roi_colors:
     LO2: "rgb(120, 10, 200)"
     LO3: "rgb(100, 0, 220)"
     V8: "rgb(60, 180, 180)"
-    PIT: "rgb(40, 160, 200)"
-    PH: "rgb(20, 140, 220)"
-    FFC: "rgb(0, 120, 240)"
-    VMV1: "rgb(80, 200, 120)"
-    VMV2: "rgb(60, 180, 100)"
-    VMV3: "rgb(40, 160, 80)"
-    VVC: "rgb(20, 140, 60)"
-    V4t: "rgb(200, 150, 50)"
-    MST: "rgb(220, 100, 50)"
-    MT: "rgb(240, 60, 40)"
-    FST: "rgb(210, 80, 70)"
+
+# rois_groups_plot:
+#   description: "Grouping of ROIs in figures with grouped values"
+#   value:
+#     - ["V1", "V2"]
+#     - ["V3", "V3AB"]
+#     - ["LO", "VO", "hMT+"]
 
 rois_groups_plot:
   description: "Grouping of ROIs in figures with grouped values"
   value:
-    - ["V1", "V2"]
-    - ["V3", "V3AB"]
-    - ["LO", "VO", "hMT+"]
+    - ["V1", "V2", "V4", "V8"]
+    - ["V3A", "V3B", "V3CD"]
+    - ["LO1", "LO2", "LO3"]
+
 
 rois_fig_margin: 
   description: "Margin for figure with multiple ROIs"

@@ -45,6 +45,7 @@ deb = ipdb.set_trace
 import os
 import sys
 import cortex
+import pandas as pd
 import matplotlib.pyplot as plt
 
 # Personal imports
@@ -108,7 +109,16 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
     rois_methods_format = rois_methods[format_]
     
     for rois_method_format in rois_methods_format:
-    
+        
+        if rois_method_format == 'rois-drawn':
+            rois = analysis_info[rois_method_format]
+        elif rois_method_format == 'rois-group-mmp':
+            rois = list(analysis_info[rois_method_format].keys())
+        elif rois_method_format == 'rois-mmp':
+            mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+            rois = mmp_rois_numbers_df['roi_name'].tolist()
+
         if format_ == 'fsnative':
             roi_fn_L = '{}/{}_hemi-L_{}_{}_{}_{}.func.gii'.format(rois_dir, subject, 
                                                                   preproc_prep, filtering, 
@@ -152,6 +162,7 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
                       'add_roi': save_svg,
                       'with_labels': True,
                       'overlay_fn': overlay_fn,
+                      'roi_list':rois,
                       'roi_name': roi_name}
                       
         # Draw flatmaps
