@@ -47,17 +47,16 @@ rois_colors:
   description: "Color in RGB used in different plots for each ROI"
   value:
     n/a: [255, 255, 255]
-    V1: [243, 231, 155]
-    V2: [250, 196, 132]
-    V3: [248, 160, 126]
+    V1:  [250, 196, 132]
+    V2: [248, 160, 126]
+    V3: [235, 127, 134]
     V4: [240, 120, 100]
     V3A: [220, 90, 120]
     V3B: [200, 70, 140]
-    V3CD: [180, 50, 160]
     LO1: [140, 20, 180]
     LO2: [120, 10, 200]
-    LO3: [100, 0, 220]
-    V8: [60, 180, 180]
+  
+  
 
 # Main figures
 # roi_colors:
@@ -75,17 +74,14 @@ roi_colors:
   description: "Colors to use for each ROI"
   value:
     n/a: "rgb(255, 255, 255)"
-    V1: "rgb(243, 231, 155)"
-    V2: "rgb(250, 196, 132)"
-    V3: "rgb(248, 160, 126)"
+    V1: "rgb(250, 196, 132)"
+    V2: "rgb(248, 160, 126)"
+    V3: "rgb(235, 127, 134)"
     V4: "rgb(240, 120, 100)"
     V3A: "rgb(220, 90, 120)"
     V3B: "rgb(200, 70, 140)"
-    V3CD: "rgb(180, 50, 160)"
     LO1: "rgb(140, 20, 180)"
     LO2: "rgb(120, 10, 200)"
-    LO3: "rgb(100, 0, 220)"
-    V8: "rgb(60, 180, 180)"
 
 # rois_groups_plot:
 #   description: "Grouping of ROIs in figures with grouped values"
@@ -97,9 +93,8 @@ roi_colors:
 rois_groups_plot:
   description: "Grouping of ROIs in figures with grouped values"
   value:
-    - ["V1", "V2", "V4", "V8"]
-    - ["V3A", "V3B", "V3CD"]
-    - ["LO1", "LO2", "LO3"]
+    - ["V1", "V2", "V3", "V4"]
+    - ["V3A", "V3B", "LO1", "LO2"]
 
 
 rois_fig_margin: 

@@ -239,20 +239,20 @@ for avg_method in avg_methods:
                                     'ecc_category':         ecc_cat,
                                     'n_vert':               len(df_cat),
                                     'prf_rsq_median':       weighted_nan_median(df_cat[rsq2use].values, w)           if has else np.nan,
-                                    'prf_rsq_ci_lo':        weighted_nan_percentile(df_cat[rsq2use].values, w, 2.5)  if has else np.nan,
-                                    'prf_rsq_ci_hi':        weighted_nan_percentile(df_cat[rsq2use].values, w, 97.5) if has else np.nan,
+                                    'prf_rsq_ci_lo':        weighted_nan_percentile(df_cat[rsq2use].values, w, 25)  if has else np.nan,
+                                    'prf_rsq_ci_hi':        weighted_nan_percentile(df_cat[rsq2use].values, w, 75) if has else np.nan,
                                     'prf_size_median':      weighted_nan_median(df_cat['prf_size'].values, w)           if has else np.nan,
-                                    'prf_size_ci_lo':       weighted_nan_percentile(df_cat['prf_size'].values, w, 2.5)  if has else np.nan,
-                                    'prf_size_ci_hi':       weighted_nan_percentile(df_cat['prf_size'].values, w, 97.5) if has else np.nan,
+                                    'prf_size_ci_lo':       weighted_nan_percentile(df_cat['prf_size'].values, w, 25)  if has else np.nan,
+                                    'prf_size_ci_hi':       weighted_nan_percentile(df_cat['prf_size'].values, w, 75) if has else np.nan,
                                     'prf_ecc_median':       weighted_nan_median(df_cat['prf_ecc'].values, w)           if has else np.nan,
-                                    'prf_ecc_ci_lo':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 2.5)  if has else np.nan,
-                                    'prf_ecc_ci_hi':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 97.5) if has else np.nan,
+                                    'prf_ecc_ci_lo':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 25)  if has else np.nan,
+                                    'prf_ecc_ci_hi':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 75) if has else np.nan,
                                     'pcm_median_median':    weighted_nan_median(df_cat['pcm_median'].values, w)           if has else np.nan,
-                                    'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 2.5)  if has else np.nan,
-                                    'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 97.5) if has else np.nan,
+                                    'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 25)  if has else np.nan,
+                                    'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 75) if has else np.nan,
                                     'prf_n_median':         weighted_nan_median(df_cat['prf_n'].values, w)           if has else np.nan,
-                                    'prf_n_ci_lo':          weighted_nan_percentile(df_cat['prf_n'].values, w, 2.5)  if has else np.nan,
-                                    'prf_n_ci_hi':          weighted_nan_percentile(df_cat['prf_n'].values, w, 97.5) if has else np.nan,
+                                    'prf_n_ci_lo':          weighted_nan_percentile(df_cat['prf_n'].values, w, 25)  if has else np.nan,
+                                    'prf_n_ci_hi':          weighted_nan_percentile(df_cat['prf_n'].values, w, 75) if has else np.nan,
                                 }
                                 rows_list.append(row)
 
@@ -334,15 +334,15 @@ for avg_method in avg_methods:
                         row = dict(zip(group_cols, keys))
                         # n_vert: median across subjects
                         row['n_vert_median'] = weighted_nan_median(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)))
-                        row['n_vert_ci_lo']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 2.5)
-                        row['n_vert_ci_hi']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 97.5)
+                        row['n_vert_ci_lo']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 25)
+                        row['n_vert_ci_hi']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 75)
                         for p in params:
                             col = f'{p}_median'
                             vals = df_grp[col].values.astype(float)
                             w    = np.ones(len(vals))
                             row[f'{p}_median'] = weighted_nan_median(vals, w)
-                            row[f'{p}_ci_lo']  = weighted_nan_percentile(vals, w, 2.5)
-                            row[f'{p}_ci_hi']  = weighted_nan_percentile(vals, w, 97.5)
+                            row[f'{p}_ci_lo']  = weighted_nan_percentile(vals, w, 25)
+                            row[f'{p}_ci_hi']  = weighted_nan_percentile(vals, w, 75)
                         rows.append(row)
                     return pd.DataFrame(rows)
 
@@ -424,7 +424,7 @@ for avg_method in avg_methods:
                                                     within=group_col, subject='subject',
                                                     parametric=False,
                                                     alternative='two-sided')
-                                                p_unc = res['p_unc'].values[0]
+                                                p_unc = res['p-unc'].values[0]
                                             except Exception as e:
                                                 print(f"  Stat error (paired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
                                                 p_unc = np.nan
@@ -441,7 +441,7 @@ for avg_method in avg_methods:
                                                     between=group_col,
                                                     parametric=False,
                                                     alternative='two-sided')
-                                                p_unc = res['p_unc'].values[0]
+                                                p_unc = res['p-unc'].values[0]
                                             except Exception as e:
                                                 print(f"  Stat error (unpaired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
                                                 p_unc = np.nan
@@ -455,7 +455,6 @@ for avg_method in avg_methods:
                                         'paired':       paired,
                                         'p_unc':        p_unc,
                                     })
-
                         # FDR-BH correction per parameter family
                         df_param = pd.DataFrame(param_rows)
                         all_pvals  = df_param['p_unc'].values
