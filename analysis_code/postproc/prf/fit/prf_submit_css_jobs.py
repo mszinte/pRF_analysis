@@ -126,7 +126,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
         os.makedirs(prf_jobs_dir, exist_ok=True)
         prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
-    
+
     slurm_cmd = """\
 #!/bin/bash
 #SBATCH -p {cluster_name}

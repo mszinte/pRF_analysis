@@ -45,7 +45,7 @@ group       = sys.argv[4]
 # ── Load settings + events 
 base_dir      = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 settings_path = os.path.join(base_dir, project_dir, 'settings.yml')
-pmf_settings_path = os.path.join(base_dir, project_dir, 'pmf-settings.yml')
+pmf_settings_path = os.path.join(base_dir, project_dir, 'pmf-analysis.yml')
 settings = load_settings([settings_path, pmf_settings_path])[0]
 
 
@@ -137,4 +137,4 @@ vdm_concat = np.concatenate(vdm_runs, axis=-1)
 print(vdm_concat.shape)
 
 np.save(f"{save_fn}/{subject}_task-SacLoc_odm.npy", vdm_concat)
-print(f"Saved concatenated ODM: {save_fn}  shape={vdm_concat.shape}, range= {dm_range} dva")
+print(f"Saved concatenated ODM: {save_fn}/{subject}_task-SacLoc_odm.npy  shape={vdm_concat.shape}, range= {dm_range} dva")

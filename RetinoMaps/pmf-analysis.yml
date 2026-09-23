@@ -148,6 +148,18 @@ maps_names_css_stats:
   description: "PRF CSS stats maps names of gifti files"
   value: ["slope", "intercept", "rvalue", "pvalue", "stderr", "trs", "corr_pvalue_5pt", "corr_pvalue_1pt"]
 
+intertask_code_names:
+  description: "Correspondance between intertask numbers and signification"
+  value: 
+    "non_responding": 0 
+    "pursuit": 1 
+    "saccade": 2 
+    "pursuit_and_saccade": 3
+    "vision": 4 
+    "vision_and_pursuit": 5 
+    "vision_and_saccade": 6 
+    "vision_and_pursuit_and_saccade" : 7
+
 # ------------- ROIS -------------------
 rois_methods:
   description: "Method use to define ROIS, defined for each format"

@@ -203,7 +203,7 @@ def make_vdm_from_saccades_blob(
 
         # --- position of the circle centre on the canvas (convert from dva to pixels) ---
         cx = int(round((gx + dva_range) / (2 * dva_range) * (canvas_size - 1)))
-        cy = int(round((gy + dva_range) / (2 * dva_range) * (canvas_size - 1)))
+        cy = int(round(((-gy) + dva_range) / (2 * dva_range) * (canvas_size - 1)))
 
         # --- radius of the circle (in pixels) ---
         r_px = dot_dva * px_per_dva          # dot_dva [dva] × px_per_dva [px/dva] → px
@@ -255,7 +255,8 @@ def save_vdm_video(vdm, log_df, output_path, scan_start=0.0,
         else:
             frame_uint8 = np.zeros((vdm.shape[0], vdm.shape[1]), dtype=np.uint8)
 
-        writer.write(np.flipud(frame_uint8))
+        #writer.write(np.flipud(frame_uint8))
+        writer.write(frame_uint8)
 
     writer.release()
     size_mb = os.path.getsize(output_path) / 1e6
