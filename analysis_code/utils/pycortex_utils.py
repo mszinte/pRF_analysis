@@ -570,9 +570,11 @@ def draw_cortex(subject, data, vmin, vmax, description, cortex_type='VolumeRGB',
 
 
     if '_alpha' in cmap: base.colors = base.colors[1,:,:]
-    val = np.linspace(0, 1, cmap_steps, endpoint=False)
+    # val = np.linspace(0, 1, cmap_steps, endpoint=False)
     
-    colmap = colors.LinearSegmentedColormap.from_list('my_colmap', base(val), N=cmap_steps)
+    # colmap = colors.LinearSegmentedColormap.from_list('my_colmap', base(val), N=cmap_steps)
+    cols01 = [tuple(c/255 for c in v) for v in cmap_dict.values()]
+    colmap = colors.ListedColormap(cols01, N=cmap_steps)
 
     
     if cortex_type=='VolumeRGB':
