@@ -2,7 +2,7 @@
 # ------------- Main configuration -------------------
 analysis_task_names:
   description: "Names of the tasks analysed with pRF methods"
-  value: ["pRF", "pRFoccl", "pRFaniso", "pRFstrab"]
+  value: ["pRF"] #, "pRFoccl", "pRFaniso", "pRFstrab"
 
 n_runs_analysis_task: 
   description: "Numbers of runs of the pRF task"

@@ -137,6 +137,10 @@ ecc_pcm_axis:
   description: "Eccentricity and pCM bounds in the violin plot axis"
   value: [0, 10]
 
+ecc_bin_power:
+  description: "Power function exponent for eccentricity binning (1=linear, >1=finer near fovea)"
+  value: 1.5
+
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
   value: 9
