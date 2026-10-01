@@ -120,7 +120,7 @@ for run_idx in range(n_runs):
          scan_start=0.0,
          n_TRs=n_TRs,
          TR=TR,
-         canvas_size=100,
+         canvas_size=50,
          dva_range=dm_range, 
          dot_dva=target_radius
      )
