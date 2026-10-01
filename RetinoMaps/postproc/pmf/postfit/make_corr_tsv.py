@@ -74,6 +74,7 @@ cond_a = sys.argv[4]  # e.g. "pmf-css-rdm"
 cond_b = sys.argv[5]  # e.g. "pmf-css-odm" or "prf-css"
 
 RSQ_THRESHOLD = 0.1
+ECC_MAX, SIZE_MAX = 15, 20   # ECC_MAX = dm_range in pmf-analysis.yml: design-matrix half-width (dva)
 GRID_SIZE = 100
 rois_method_format = "rois-group-mmp"
 
@@ -221,9 +222,13 @@ if "group" not in subject:
                 r2_combined = (r2_a + r2_b) / 2
                 # exclude NaNs AND sub-threshold/negative-rsq vertices — gaussian_kde's
                 # weights must be >= 0, and low-rsq vertices are noise anyway
+                ecc_a, ecc_b = df_roi[f"prf_ecc_{label_a}"].values, df_roi[f"prf_ecc_{label_b}"].values
+                size_a, size_b = df_roi[f"prf_size_{label_a}"].values, df_roi[f"prf_size_{label_b}"].values
                 mask = (
                     ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
                     & (r2_a > RSQ_THRESHOLD) & (r2_b > RSQ_THRESHOLD)
+                    & (ecc_a <= ECC_MAX) & (ecc_b <= ECC_MAX)
+                    & (size_a > 0) & (size_a <= SIZE_MAX) & (size_b > 0) & (size_b <= SIZE_MAX)
                 )
                 x_vals, y_vals, r2_combined = x_vals[mask], y_vals[mask], r2_combined[mask]
                 n_vertex = len(x_vals)
