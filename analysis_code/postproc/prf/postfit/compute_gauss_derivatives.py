@@ -24,9 +24,9 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
-python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 prf 327
-python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps template_avg prf 327
-python compute_gauss_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327
+python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps sub-01 prf meso_0327
+python compute_gauss_derivatives.py /scratch/mszinte/data RetinoMaps template_avg prf meso_0327
+python compute_gauss_derivatives.py /scratch/mszinte/data amblyo7T_prf sub-01 prf meso_0327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -132,8 +132,11 @@ elif subject == 'template_avg':
                 prf_deriv_fns = []
                 for subject in subjects: 
                     prf_deriv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives'.format(main_dir, project_dir, subject, averaging_template_format, analysis_name)
-                    prf_deriv_fns_subject = "{}/{}_task-{}*{}*{}-gauss{}_deriv.dtseries.nii".format(prf_deriv_dir, subject, task_name, avg_method, analysis_name, dm_name)
-                    prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
+                    # [CORRECTION #17] nom de fichier explicite (un par sujet) : le glob *{avg_method}* pouvait aussi attraper des fichiers loo-avg-N
+                    # AVANT : prf_deriv_fns_subject = "{}/{}_task-{}*{}*{}-gauss{}_deriv.dtseries.nii".format(prf_deriv_dir, subject, task_name, avg_method, analysis_name, dm_name)
+                    # AVANT : prf_deriv_fns.extend(glob.glob(prf_deriv_fns_subject))
+                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-gauss{}_deriv.dtseries.nii".format(
+                        prf_deriv_dir, subject, task_name, preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)]
                 
                 # Median across subject
                 img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
@@ -149,7 +152,7 @@ elif subject == 'template_avg':
                     data=data_deriv_median, source_img=img, maps_names=maps_names_gauss)
                 nb.save(template_deriv_img, template_deriv_fn)
         
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
-os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir))
+# os.system("chgrp -Rf {group} {main_dir}/{project_dir}".format(main_dir=main_dir, project_dir=project_dir, group=group))

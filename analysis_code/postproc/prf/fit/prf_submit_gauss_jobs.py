@@ -25,8 +25,8 @@ python prf_submit_gauss_jobs.py [main directory] [project name] [subject] [analy
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 prf 327 b327
-python prf_submit_gauss_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data RetinoMaps sub-01 prf meso_0327 b327
+python prf_submit_gauss_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 prf meso_0327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -58,9 +58,9 @@ analysis_name = sys.argv[4]
 group = sys.argv[5]
 server_project = sys.argv[6]
 
-memory_val = 30
-hour_proc = 6
-nb_procs = 8
+memory_val = 120
+nb_procs = 48
+hour_proc = 4
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))

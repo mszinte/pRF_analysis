@@ -77,6 +77,9 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 #Set treshold
 if fdr_alpha == 0.05: fdr_p_map_idx = corr_pvalue_5pt_idx
 elif fdr_alpha == 0.01: fdr_p_map_idx = corr_pvalue_1pt_idx
+# [CORRECTION #43] seuil non prevu : fdr_p_map_idx serait indefini (NameError plus loin) -> erreur explicite
+# AVANT : (lignes ajoutees)
+else: raise ValueError('stats_th must be 0.05 or 0.01, got {}'.format(fdr_alpha))
 
 # find all the stats files 
 glm_stats_fns = []
@@ -111,12 +114,19 @@ else: stats_files_list = [stats_fns]
 # loop for different group of tasks (sac/pur, sacVE/purVE)
 for tasks in group_tasks: 
     for stats_files in stats_files_list:
+        # [CORRECTION #43] test de liste vide deplace avant le chargement : stats_files[0] levait IndexError si aucun fichier
+        # AVANT :         #  Load file to get size
+        # AVANT :         img, data = load_surface(fn=stats_files[0])
+        # AVANT :         final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
+        # AVANT :         
+        # AVANT :         if not stats_files:
+        # AVANT :             continue
+        if not stats_files:
+            continue
+        
         #  Load file to get size
         img, data = load_surface(fn=stats_files[0])
         final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
-        
-        if not stats_files:
-            continue
         
         if stats_files[0].find('hemi-L') != -1: hemi = 'hemi-L'
         elif stats_files[0].find('hemi-R') != -1: hemi = 'hemi-R'

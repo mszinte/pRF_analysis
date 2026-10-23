@@ -60,9 +60,9 @@ subject = sys.argv[3]
 analysis_name = sys.argv[4]
 group = sys.argv[5]
 server_project = sys.argv[6]
-memory_val = 30
-nb_procs = 12
-hour_proc = 10
+memory_val = 120
+nb_procs = 48
+hour_proc = 4
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
@@ -164,3 +164,4 @@ for fit_num, pp_fn in enumerate(pp_fns):
     # Submit jobs
     print("Submitting {} to queue".format(sh_fn))
     os.system("sbatch {}".format(sh_fn))
+    

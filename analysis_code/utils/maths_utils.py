@@ -49,7 +49,10 @@ def weighted_regression(x_reg, y_reg, weight_reg, model):
         if weight_reg_nan.size >= 2:
             # curve_fit expects sigma = uncertainty (smaller = more weight)
             # so we invert the weight to represent uncertainty correctly
-            sigma = 1 / np.maximum(weight_reg_nan, 1e-8)
+            # [CORRECTION #6] curve_fit minimise sum((r/sigma)^2) : sigma = 1/sqrt(w) donne une ponderation en w (comme LinearRegression(sample_weight=w)),
+            # [CORRECTION #6] sigma = 1/w ponderait en w^2
+            # AVANT : sigma = 1 / np.maximum(weight_reg_nan, 1e-8)
+            sigma = 1 / np.sqrt(np.maximum(weight_reg_nan, 1e-8))
             params, _ = curve_fit(
                 model_function, 
                 x_reg_nan, 
@@ -136,8 +139,17 @@ def weighted_nan_median(data, weights):
             raise ValueError("DataFrame weights must have exactly one column")
         weights = weights.iloc[:, 0]
 
-    # Mask NaN values in the data
-    mask = ~data.isna()
+    # [CORRECTION #30] un seul masque de validite (donnee numerique non NaN ET poids non NaN) applique aux donnees et aux poids :
+    # [CORRECTION #30] le dropna() apres to_numeric retirait des donnees (ex. 'non_computed') sans retirer les poids -> poids decales
+    # AVANT : # Mask NaN values in the data
+    # AVANT : mask = ~data.isna()
+    # AVANT :
+    # AVANT : # Apply the mask to data and weights
+    # AVANT : masked_data = data[mask].reset_index(drop=True)
+    # AVANT : masked_weights = weights[mask].reset_index(drop=True)
+    data = pd.to_numeric(data, errors='coerce').reset_index(drop=True)
+    weights = pd.to_numeric(weights, errors='coerce').reset_index(drop=True)
+    mask = data.notna() & weights.notna()
 
     # Apply the mask to data and weights
     masked_data = data[mask].reset_index(drop=True)
@@ -148,7 +160,8 @@ def weighted_nan_median(data, weights):
         return np.nan
 
     # Sort the data and corresponding weights
-    masked_data = pd.to_numeric(masked_data, errors='coerce').dropna()
+    # [CORRECTION #30] conversion numerique deja faite avant le masque
+    # AVANT : masked_data = pd.to_numeric(masked_data, errors='coerce').dropna()
     sorted_indices = np.argsort(masked_data)
     sorted_data = masked_data.iloc[sorted_indices].reset_index(drop=True)
     sorted_weights = masked_weights.iloc[sorted_indices].reset_index(drop=True)
@@ -158,6 +171,11 @@ def weighted_nan_median(data, weights):
 
     # Check if cumulative_weights is defined and has elements
     if cumulative_weights.size == 0:
+        return np.nan
+
+    # [CORRECTION #31] somme des poids nulle (ex. tous les r2 a 0) : mediane non definie -> NaN (searchsorted sur 0 renvoyait la valeur minimale)
+    # AVANT : (ligne(s) ajoutee(s))
+    if not cumulative_weights.iloc[-1] > 0:
         return np.nan
 
     # Find the median position
@@ -191,29 +209,39 @@ def weighted_nan_percentile(data, weights, percentile):
     if isinstance(weights, pd.Series):
         weights = weights.values
     
-    # Mask NaN values in the data
-    mask = ~np.isnan(data)
-    
+    # [CORRECTION #30] meme masque de validite que weighted_nan_median (donnee numerique non NaN ET poids non NaN) ;
+    # [CORRECTION #30] np.isnan echouait (TypeError) sur un tableau object (ex. contenant 'non_computed')
+    # AVANT : # Mask NaN values in the data
+    # AVANT : mask = ~np.isnan(data)
+    data = pd.to_numeric(pd.Series(np.asarray(data).ravel()), errors='coerce').values.astype(float)
+    weights = pd.to_numeric(pd.Series(np.asarray(weights).ravel()), errors='coerce').values.astype(float)
+    mask = ~np.isnan(data) & ~np.isnan(weights)
+
     # Apply the mask to data and weights
     masked_data = data[mask]
     masked_weights = weights[mask]
-    
+
     # Check if there are no valid data points
     if masked_data.size == 0 or masked_weights.size == 0:
         return np.nan
-    
+
     # Sort the data and corresponding weights
     sorted_indices = np.argsort(masked_data)
     sorted_data = masked_data[sorted_indices]
     sorted_weights = masked_weights[sorted_indices]
-    
+
     # Calculate the cumulative sum of weights
     cumulative_weights = np.cumsum(sorted_weights)
-    
+
     # Check if cumulative_weights is defined and has elements
     if cumulative_weights.size == 0:
         return np.nan
-    
+
+    # [CORRECTION #31] somme des poids nulle : percentile non defini -> NaN (searchsorted sur 0 renvoyait la valeur minimale)
+    # AVANT : (ligne(s) ajoutee(s))
+    if not cumulative_weights[-1] > 0:
+        return np.nan
+
     # Calculate the percentile weight
     percentile_weight = percentile / 100.0 * cumulative_weights[-1]
     
@@ -263,7 +291,8 @@ def css_2d(css_x, css_y, css_sigma, css_n, screen_side, grain=200):
     css_sigma : float
         Sigma CSS parameter in dva.
     css_n : float
-        Exponent CSS parameter.
+        Exponent CSS parameter (not used: in the CSS model the exponent is applied
+        to the summed response, not to the spatial profile of the pRF).
     screen_side : float
         Mesh screen side (square) in dva.
     grain : int
@@ -283,7 +312,10 @@ def css_2d(css_x, css_y, css_sigma, css_n, screen_side, grain=200):
     y = np.linspace(-screen_side/2, screen_side/2, grain)
     mesh_x, mesh_y = np.meshgrid(x, y)
 
-    css_z = 1 / (1 + ((np.sqrt((mesh_x - css_x)**2 + (mesh_y - css_y)**2)) / css_sigma)**css_n)
+    # [CORRECTION #32] profil spatial du pRF CSS = gaussienne isotrope exp(-r^2/(2 sigma^2)) (prfpy, gauss2D_iso_cart) ;
+    # [CORRECTION #32] l'exposant n porte sur la reponse sommee, pas sur le profil : 1/(1+(r/sigma)^n) n'est pas le pRF CSS (css_n n'est plus utilise)
+    # AVANT : css_z = 1 / (1 + ((np.sqrt((mesh_x - css_x)**2 + (mesh_y - css_y)**2)) / css_sigma)**css_n)
+    css_z = np.exp(-((mesh_x - css_x)**2 + (mesh_y - css_y)**2) / (2 * css_sigma**2))
     return x, y, css_z
 
 def bootstrap_ci_median(data, n_bootstrap=1000, ci_level=0.95):
@@ -498,16 +530,26 @@ def median_subject_template(fns):
     import numpy as np
     from surface_utils import load_surface
     
+    # [CORRECTION #1] la mediane de proche en proche (mediane de 2 valeurs = moyenne) donnait une moyenne ponderee dependant de l'ordre
+    # [CORRECTION #1] (poids 1/2 au dernier sujet) : vraie mediane sur tous les sujets empiles
+    # AVANT : for n_file, fn in enumerate(fns) :
+    # AVANT : print('adding {}'.format(fn))
+    # AVANT : # Load data
+    # AVANT : img, data = load_surface(fn=fn)
+    # AVANT : # Average without nan
+    # AVANT : if n_file == 0:
+    # AVANT : data_med = np.copy(data)
+    # AVANT : else:
+    # AVANT : data_med = np.nanmedian(np.array([data_med, data]), axis=0)
+    datas = []
     for n_file, fn in enumerate(fns) : 
         print('adding {}'.format(fn))
         # Load data
         img, data = load_surface(fn=fn)
+        datas.append(data)
         
-        # Average without nan
-        if n_file == 0:
-            data_med = np.copy(data)
-        else:
-            data_med = np.nanmedian(np.array([data_med, data]), axis=0)
+    # Median across all subjects at once, without nan
+    data_med = np.nanmedian(np.stack(datas, axis=0), axis=0)
          
     return img, data_med
 
@@ -658,6 +700,10 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, figure_info, h
     
     rois_to_plot = figure_info['rois_to_plot']
 
+    # [CORRECTION #33] df initialise avant la boucle : si la 1re ROI etait sautee (continue), df_barycentre n'existait jamais -> NameError
+    # AVANT : (ligne(s) ajoutee(s))
+    df_barycentre = pd.DataFrame()
+
     for j, roi in enumerate(rois) :
         # Create DataFrame for the region of interest
         df_roi = df_distribution[df_distribution[rois_to_plot] == roi]
@@ -693,7 +739,10 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, figure_info, h
         lower_ci_y, upper_ci_y = np.percentile(hot_zone_idx[0], [2.5]), np.percentile(hot_zone_idx[0], [97.5])
 
         # Convert positions to the correct reference frame
-        scale_factor = max_ecc / (grain / 2)
+        # [CORRECTION #33] meme correspondance pixel -> dva que la grille np.linspace(-max_ecc, max_ecc, grain) de css_2d :
+        # [CORRECTION #33] pas = 2*max_ecc/(grain-1) (et non max_ecc/(grain/2)), le pixel grain-1 vaut bien +max_ecc
+        # AVANT : scale_factor = max_ecc / (grain / 2)
+        scale_factor = 2 * max_ecc / (grain - 1)
         barycentre_x, barycentre_y = (barycentre_x * scale_factor) - max_ecc, (barycentre_y * scale_factor) - max_ecc
         lower_ci_x, upper_ci_x = (lower_ci_x * scale_factor) - max_ecc, (upper_ci_x * scale_factor) - max_ecc
         lower_ci_y, upper_ci_y = (lower_ci_y * scale_factor) - max_ecc, (upper_ci_y * scale_factor) - max_ecc
@@ -708,7 +757,10 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, figure_info, h
         df_barycentre_roi['lower_ci_y'] = lower_ci_y
         df_barycentre_roi['upper_ci_y'] = upper_ci_y
         
-        if j == 0: df_barycentre = df_barycentre_roi
+        # [CORRECTION #33] concatenation independante de l'indice j (la 1re ROI peut avoir ete sautee)
+        # AVANT : if j == 0: df_barycentre = df_barycentre_roi
+        # AVANT : else: df_barycentre = pd.concat([df_barycentre, df_barycentre_roi])
+        if df_barycentre.empty: df_barycentre = df_barycentre_roi
         else: df_barycentre = pd.concat([df_barycentre, df_barycentre_roi])
-        
+
     return df_barycentre

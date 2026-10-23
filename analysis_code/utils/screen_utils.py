@@ -7,7 +7,12 @@ def get_screen_settings(main_dir, project_dir, subject, task_name):
     from pathlib import Path
     import json
     
-    layout = BIDSLayout(f"{main_dir}/{project_dir}", validate=False, index_metadata=True)
+    try:
+        from bids.layout import BIDSLayoutIndexer
+        layout = BIDSLayout(f"{main_dir}/{project_dir}", validate=False,
+                            indexer=BIDSLayoutIndexer(index_metadata=True))
+    except (ImportError, TypeError):
+        layout = BIDSLayout(f"{main_dir}/{project_dir}", validate=False, index_metadata=True)
 
     # Get all JSONs for this task
     events_files = layout.get(

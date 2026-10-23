@@ -142,6 +142,13 @@ for full_brain_format, cortex_format in formats.items():
         masks_lh = [rois_mmp_masks_lh[roi] for roi in roi_list if roi in rois_mmp_masks_lh]
         masks_rh = [rois_mmp_masks_rh[roi] for roi in roi_list if roi in rois_mmp_masks_rh]
         masks_brain = [rois_mmp_masks_brain[roi] for roi in roi_list if roi in rois_mmp_masks_brain]
+        # [CORRECTION #44] avertissement si des parcelles du groupe sont absentes des masques (elles etaient ignorees en silence,
+        # [CORRECTION #44] ex. 7PL/7Pl) ; les masques construits sont inchanges
+        # AVANT : (lignes ajoutees)
+        for hemi_name, hemi_masks in zip(['hemi-L', 'hemi-R', 'brain'], [rois_mmp_masks_lh, rois_mmp_masks_rh, rois_mmp_masks_brain]):
+            missing_rois = [roi for roi in roi_list if roi not in hemi_masks]
+            if len(missing_rois) > 0:
+                print('WARNING: {} ({}) parcels not found: {}'.format(group_name, hemi_name, missing_rois))
     
         if len(masks_lh) > 0:
             rois_group_mmp_masks_lh[group_name] = np.logical_or.reduce(masks_lh)
@@ -203,7 +210,10 @@ for full_brain_format, cortex_format in formats.items():
     overlays_rois_group_mmp_fn = '{}/db/{}/overlays_rois-group-mmp.svg'.format(cortex_dir, subject)
 
     # Copy overlays 
-    shutil.copy(overlays_fn, overlays_rois_group_mmp_fn)
+    # [CORRECTION #72] copyfile copie le contenu sans chmod : shutil.copy echoue (Operation not permitted)
+    # [CORRECTION #72] quand le fichier cible appartient a un autre utilisateur du groupe
+    # AVANT : shutil.copy(overlays_fn, overlays_rois_group_mmp_fn)
+    shutil.copyfile(overlays_fn, overlays_rois_group_mmp_fn)
 
     # ROIs group MMP 
     rp = ROIpack(subject, '{}/{}_{}_rois-group-mmp.npz'.format(

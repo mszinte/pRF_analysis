@@ -44,6 +44,9 @@ import sys
 import glob
 import numpy as np
 import nibabel as nb
+# [CORRECTION #20] pandas necessaire pour lire la matrice de design (signe du beta de la tache)
+# AVANT : (ligne ajoutee)
+import pandas as pd
 from scipy import stats
 
 # personal imports
@@ -115,10 +118,29 @@ if subject != 'template_avg':
                 print(f'Loading bold: {glm_bold_fn}')
                 bold_img, bold_data = load_surface(glm_bold_fn)
                 
+                # [CORRECTION #20] on multiplie la prediction par le signe du beta de la tache : un vertex desactive (beta < 0) donne alors une pente
+                # [CORRECTION #20] negative et n'est plus compte comme 'actif' avec le test unilateral ci-dessous
+                # AVANT : (bloc ajoute)
+                # Sign of the task beta (prediction = beta_task * task regressor + constant)
+                dm_fn = '{}/{}/derivatives/pp_data/{}/{}/glm/designe_matrix/{}_task-{}_designe_matrix.tsv'.format(
+                    main_dir, project_dir, subject, format_, subject, task)
+                # [CORRECTION #40] verification : la matrice de design doit contenir exactement un regresseur de tache + 'constant',
+                # [CORRECTION #40] sinon iloc[:, 0] prendrait un regresseur arbitraire pour le signe du beta
+                # AVANT : task_reg = pd.read_table(dm_fn).drop(columns=['constant']).iloc[:, 0].values
+                task_dm = pd.read_table(dm_fn)
+                if task_dm.shape[1] != 2 or 'constant' not in task_dm.columns:
+                    raise ValueError('{} : expected 1 task regressor + constant, found columns {}'.format(
+                        dm_fn, list(task_dm.columns)))
+                task_reg = task_dm.drop(columns=['constant']).iloc[:, 0].values
+                beta_sign = np.sign(np.dot(task_reg - task_reg.mean(), pred_data - np.nanmean(pred_data, axis=0)))
+                pred_data = pred_data * beta_sign
+                
                 # Compute linear regression 
                 results = linear_regression_surf(bold_signal=bold_data, 
                                                  model_prediction=pred_data, 
-                                                 alternative='two-sided',
+                                                 # [CORRECTION #20] test unilateral : pente > 0 (vertex active par la tache et prediction repliquee sur le run laisse de cote)
+                                                 # AVANT : alternative='two-sided',
+                                                 alternative='greater',
                                                  correction='fdr_tsbh', 
                                                  alpha=fdr_alpha)
     
@@ -139,7 +161,9 @@ if subject != 'template_avg':
     for format_, extension in zip(formats, extensions):
         list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-*_glm-stats.{}".format(
             main_dir, project_dir, subject, format_, extension))
-        list_ = [item for item in list_ if "loo-median" not in item]
+        # [CORRECTION #19] on ne garde que les plis loo-avg-N : le fichier median loo-avg deja ecrit etait repris a chaque relance
+        # AVANT : list_ = [item for item in list_ if "loo-median" not in item]
+        list_ = [item for item in list_ if re.search(r'loo-avg-\d+_glm-stats', item)]
         glm_stats_loo_fns_list.extend(list_)
             
     # split filtered files  depending of their nature
@@ -182,10 +206,14 @@ if subject != 'template_avg':
                 if n_run == 0: loo_stats_data_median = np.copy(loo_stats_data)
                 else: loo_stats_data_median = np.nanmedian(np.array([loo_stats_data_median, loo_stats_data]), axis=0)
                 
-            # Compute two sided corrected p-values
+            # [CORRECTION #20] commentaire mis a jour : p-values unilaterales (t.sf), plus bilaterales
+            # AVANT : # Compute two sided corrected p-values
+            # Compute one sided (slope > 0) corrected p-values
             t_statistic = loo_stats_data_median[slope_idx, :] / loo_stats_data_median[stderr_idx, :]
             degrees_of_freedom = np.nanmax(loo_stats_data_median[trs_idx, :]) - 2
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+            # [CORRECTION #20] p unilateral (pente > 0), coherent avec alternative='greater'
+            # AVANT : p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
+            p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
             corrected_p_values = multipletests_surface(pvals=p_values, 
                                                        correction='fdr_tsbh', 
                                                        alpha=fdr_alpha)
@@ -224,10 +252,14 @@ elif subject == 'template_avg':
             # Computing median across subject
             img, data_stat_median = median_subject_template(fns=subjects_stats_task)
             
-            # Compute two sided corrected p-values
+            # [CORRECTION #20] commentaire mis a jour : p-values unilaterales (t.sf), plus bilaterales
+            # AVANT : # Compute two sided corrected p-values
+            # Compute one sided (slope > 0) corrected p-values
             t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
             degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+            # [CORRECTION #20] p unilateral (pente > 0), coherent avec alternative='greater'
+            # AVANT : p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
+            p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
             corrected_p_values = multipletests_surface(pvals=p_values, 
                                                        correction='fdr_tsbh', 
                                                        alpha=fdr_alpha)

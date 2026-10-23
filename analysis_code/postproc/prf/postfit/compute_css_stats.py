@@ -141,7 +141,9 @@ if subject != 'template_avg':
                     # Compute linear regression 
                     results = linear_regression_surf(bold_signal=bold_data, 
                                                      model_prediction=pred_data, 
-                                                     alternative='two-sided',
+                                                     # [CORRECTION #16] test unilateral : seule une correlation positive prediction/donnees laissees de cote compte comme significative
+                                                     # AVANT : alternative='two-sided',
+                                                     alternative='greater',
                                                      correction='fdr_tsbh', 
                                                      alpha=fdr_alpha)
                     
@@ -179,16 +181,27 @@ if subject != 'template_avg':
                             loo_prf_stats_fn =  f'{prf_deriv_dir}/{subject}_task-{task_name}{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{analysis_name}-css{dm_name}_stats.{extension}'
                             
                             # Compute median across LOO runs
+                            # [CORRECTION #1] vraie mediane sur les 5 plis LOO empiles (la mediane de proche en proche donnait des poids 1/16,1/16,1/8,1/4,1/2)
+                            # AVANT : for n_run, loo_stats_fn in enumerate(group_files):
+                            # AVANT : print(f'Loadding loo stats: {loo_stats_fn}')
+                            # AVANT : _, loo_prf_stats_run_data = load_surface(loo_stats_fn)
+                            # AVANT : if n_run == 0: loo_prf_stats = np.copy(loo_prf_stats_run_data)
+                            # AVANT : else: loo_prf_stats = np.nanmedian(np.array([loo_prf_stats, loo_prf_stats_run_data]), axis=0)
+                            loo_prf_stats_runs = []
                             for n_run, loo_stats_fn in enumerate(group_files):
                                 print(f'Loadding loo stats: {loo_stats_fn}')
                                 _, loo_prf_stats_run_data = load_surface(loo_stats_fn)
-                                if n_run == 0: loo_prf_stats = np.copy(loo_prf_stats_run_data)
-                                else: loo_prf_stats = np.nanmedian(np.array([loo_prf_stats, loo_prf_stats_run_data]), axis=0)
+                                loo_prf_stats_runs.append(loo_prf_stats_run_data)
+                            loo_prf_stats = np.nanmedian(np.stack(loo_prf_stats_runs, axis=0), axis=0)
                         
-                            # Recalculate p-values for median data
+                            # [CORRECTION #16] commentaire mis a jour : le test est desormais unilateral (pente > 0)
+                            # AVANT : # Recalculate p-values for median data
+                            # Recalculate one-sided (slope > 0) p-values for median data
                             t_statistic = loo_prf_stats[slope_idx, :] / loo_prf_stats[stderr_idx, :]
                             degrees_of_freedom = np.nanmax(loo_prf_stats[trs_idx, :]) - 2
-                            p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                            # [CORRECTION #16] p unilateral (pente > 0), coherent avec alternative='greater' ; t.sf evite aussi l'arrondi a 0 de 1-cdf
+                            # AVANT : p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                            p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
                             corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
                             
                             # Update median data with recalculated p-values
@@ -219,10 +232,14 @@ elif subject == 'template_avg':
                 # Computing  across subject
                 img, data_stat_median = median_subject_template(fns=prf_stats_fns)
                 
-                # Compute two sided corrected p-values
+                # [CORRECTION #16] commentaire mis a jour : le test est desormais unilateral (pente > 0)
+                # AVANT : # Compute two sided corrected p-values
+                # Compute one-sided (slope > 0) corrected p-values
                 t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
                 degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
-                p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                # [CORRECTION #16] p unilateral (pente > 0), coherent avec alternative='greater'
+                # AVANT : p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
+                p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
                 corrected_p_values = multipletests_surface(pvals=p_values, 
                                                            correction='fdr_tsbh', 
                                                            alpha=fdr_alpha)
@@ -241,7 +258,7 @@ elif subject == 'template_avg':
                                                        maps_names=maps_names)
                 nb.save(template_stat_img, template_stat_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

@@ -134,6 +134,9 @@ for avg_method in avg_methods:
                     # Threshold data (replace by nan)
                     if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
                     elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                    # [CORRECTION #37] else ajoute : toute autre valeur de stats_th laissait la variable indefinie (NameError plus loin)
+                    # AVANT : (ligne(s) ajoutee(s))
+                    else: raise ValueError(f"stats_th must be 0.05 or 0.01 (got {stats_threshold})")
                     data.loc[(data.amplitude < amplitude_threshold[0]) |
                              (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
                              (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
@@ -142,7 +145,15 @@ for avg_method in avg_methods:
                              (data[stats_col] > stats_threshold) | 
                              (~data[rois_to_plot].isin(rois))] = np.nan
                     
-                    data = data.dropna()
+                    # [CORRECTION #34] dropna limite aux colonnes de seuillage (NaN seulement pour les vertex seuilles ou invalides) :
+                    # [CORRECTION #34] dropna() sur toutes les colonnes retirait aussi les vertex a pCM NaN (n_neighbor<=1, patch rate) de TOUTES les figures
+                    # AVANT : data = data.dropna()
+                    data = data.dropna(subset=['amplitude', 'prf_ecc', 'prf_size', 'prf_n', rsq2use, stats_col, rois_to_plot])
+                    
+                    # [CORRECTION #35] pCM infini (distance pRF mediane nulle) mis a NaN dans la seule colonne pcm_median,
+                    # [CORRECTION #35] apres le filtre des vertex : il n'entre plus dans les medianes/percentiles/violons du pCM
+                    # AVANT : (ligne(s) ajoutee(s))
+                    data['pcm_median'] = data['pcm_median'].replace([np.inf, -np.inf], np.nan)
 
                     # ROI active proportion
                     # ---------------------
@@ -240,7 +251,9 @@ for avg_method in avg_methods:
                     ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data.loc[(data[rois_to_plot] == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
+                        # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                        # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins), observed=False)
                         df_ecc_size_bin = pd.DataFrame()
                         df_ecc_size_bin[rois_to_plot] = [roi]*ecc_size_num_bins
                         df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
@@ -265,7 +278,9 @@ for avg_method in avg_methods:
                     ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
                     for num_roi, roi in enumerate(rois):
                         df_roi = data_pcm.loc[(data[rois_to_plot] == roi)]
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
+                        # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                        # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
+                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins), observed=False)
                         df_ecc_pcm_bin = pd.DataFrame()
                         df_ecc_pcm_bin[rois_to_plot] = [roi]*ecc_pcm_num_bins
                         df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
@@ -293,7 +308,9 @@ for avg_method in avg_methods:
                         for j, roi in enumerate(rois): #
                             df = data.loc[(data[rois_to_plot]==roi) & (data.hemi.isin(hemi_values))]
                             if len(df): 
-                                df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
+                                # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                                # AVANT : df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
+                                df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins), observed=False)
                                 rsq_sum = df_bins[rsq2use].sum()
                             else: 
                                 rsq_sum = [np.nan]*polar_angle_num_bins

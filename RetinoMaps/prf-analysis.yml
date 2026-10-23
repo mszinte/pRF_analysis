@@ -112,6 +112,15 @@ vertex_pcm_rad:
   description: "Radius (in mm) of vertex-vertex geodesic distance for population cortical magnification analysis"
   value: 30 
 
+# [CORRECTION #7] surface utilisee pour les distances geodesiques de la pCM (avant : "flat" ecrit en dur dans compute_css_pcm.py)
+pcm_surf_type:
+  description: "Pycortex surface used for vertex-vertex geodesic distances of the population cortical magnification analysis"
+  value: "fiducial"
+  levels: ["fiducial", "flat"]
+  level-description:
+    fiducial: "3D mid-surface between white matter and pial surfaces (distances along the folded cortex)"
+    flat: "flattened surface (distances distorted by flattening and cuts)"
+
 maps_names_gauss: 
   description: "PRF Gaussian analysis maps names of gifti files"
   value: ["prf_rsq", "prf_ecc", "polar_real", "polar_imag", "prf_size", "amplitude", "baseline", "prf_x", "prf_y", "hrf_1", "hrf_2"]
@@ -151,7 +160,9 @@ rois_to_plot:
   description: "Wich rois to plot in rois plot"
   value: "roi"
   levels: ["roi", "roi_mmp"]
-  description:
+  # [CORRECTION #27] cle 'description' en double (la 2e ecrasait la 1re) : c'est la description des niveaux
+  # AVANT : description:
+  level-description:
     roi: "plot the rois defined in rois-drawn or keys rois-group-mmp"
     roi_mmp: "plot the subparcelation contain in values of rois-group-mmp"
 
