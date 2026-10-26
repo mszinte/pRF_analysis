@@ -13,7 +13,7 @@ webapp_dir:
 
 cluster_name: 
   description: "Name of the cluster to use in AMU mesocenter"
-  value: "skylake"
+  value: "genoa"
 
 # ------------------- Dataset description -------------------
 subjects:

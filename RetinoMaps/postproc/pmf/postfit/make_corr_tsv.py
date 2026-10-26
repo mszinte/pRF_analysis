@@ -36,13 +36,16 @@ sys.argv[2]: project name (corresponds to directory)
 sys.argv[3]: subject (e.g. sub-11) OR group name (e.g. group-all, defined in settings.yml)
 sys.argv[4]: condition A (e.g. pmf-css-rdm)
 sys.argv[5]: condition B (e.g. pmf-css-odm, or prf-css for a pmf-vs-prf comparison)
+sys.argv[6]: (optional) task of the pmf condition(s), e.g. SacLoc or PurLoc (default SacLoc)
+sys.argv[7]: (optional) task of condition B if it differs from condition A (e.g. SacLoc vs PurLoc)
+             prf conditions are always task-pRF
 -----------------------------------------------------------------------------------------
 Output(s), all under {main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format}/pmf/tsv :
-- {subject}_{cond_a}_vs_{cond_b}_deriv.tsv
+- {subject}_task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}_deriv.tsv
       merged per-vertex table for the two conditions (individual subjects only)
-- {subject}_{cond_a}_vs_{cond_b}_{corr_param}-corr.tsv
+- {subject}_task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}_{corr_param}-corr.tsv
       columns: roi, x_grid, y_grid, density
-- {subject}_{cond_a}_vs_{cond_b}_{corr_param}-regression.tsv
+- {subject}_task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}_{corr_param}-regression.tsv
       columns: roi, slope, intercept, r2_pearson, p_value, n_vertex, mean_r2_weight
       (+ *_ci_lower / *_ci_upper for group runs)
 -----------------------------------------------------------------------------------------
@@ -50,6 +53,8 @@ To run:
 cd ~/projects/pRF_analysis/RetinoMaps/postproc/pmf/postfit/
 python make_corr_tsv.py /scratch/mszinte/data RetinoMaps sub-11 pmf-css-rdm pmf-css-odm
 python make_corr_tsv.py /scratch/mszinte/data RetinoMaps group-all pmf-css-rdm pmf-css-odm
+python make_corr_tsv.py /scratch/mszinte/data RetinoMaps sub-11 pmf-css-odm prf-css PurLoc
+python make_corr_tsv.py /scratch/mszinte/data RetinoMaps sub-11 pmf-css-odm pmf-css-odm SacLoc PurLoc
 -----------------------------------------------------------------------------------------
 Adapted from Martin Szinte's make_corr_tsv.py / make_corr_fig.py (amblyo7T_prf) 
 -----------------------------------------------------------------------------------------
@@ -78,8 +83,6 @@ ECC_MAX, SIZE_MAX = 15, 20   # ECC_MAX = dm_range in pmf-analysis.yml: design-ma
 GRID_SIZE = 100
 rois_method_format = "rois-group-mmp"
 
-TASK_NAME_BY_ANALYSIS = {"pmf": "SacLoc", "prf": "pRF"}
-
 rois = ["V1", "V2", "V3", "V3AB", "LO", "VO", "hMT+", "iIPS", "sIPS", "iPCS", "sPCS", "mPCS"]
 
 corr_params = ["prf_x", "prf_y", "prf_ecc", "prf_size", "prf_rsq"]
@@ -95,6 +98,17 @@ corr_param_ranges = {
 analysis_type_a, analysis_type_b = cond_a.split("-")[0], cond_b.split("-")[0]
 label_a = cond_a.split("-")[-1].upper() if analysis_type_a == "pmf" else "PRF"
 label_b = cond_b.split("-")[-1].upper() if analysis_type_b == "pmf" else "PRF"
+
+# task of each condition: prf is always task-pRF; pmf from sys.argv[6] (A) / sys.argv[7] (B), default SacLoc
+pmf_tasks = sys.argv[6:8]
+task_a = "pRF" if analysis_type_a == "prf" else (pmf_tasks[0] if pmf_tasks else "SacLoc")
+task_b = "pRF" if analysis_type_b == "prf" else (pmf_tasks[-1] if pmf_tasks else "SacLoc")
+if label_a == label_b:      # same model in two tasks (e.g. SacLoc ODM vs PurLoc ODM): keep the column suffixes apart
+    if task_a == task_b:
+        sys.exit(f"cond A and cond B are identical ({cond_a}, task-{task_a})")
+    label_a, label_b = f"{label_a}-{task_a}", f"{label_b}-{task_b}"
+comp_name = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"     # used in every output file name
+print(f"Comparison: {comp_name}  (columns *_{label_a} vs *_{label_b})")
 
 # Load settings -- pmf-vs-prf comparisons need both analysis-specific yml files
 base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
@@ -140,10 +154,9 @@ if "group" not in subject:
         pycortex_subject = analysis_info["pycortex_subject_template"] if format_ == "170k" else subject
 
         # ── 1. load per-vertex data for the two conditions, split by ROI ────────────
-        dfs = {}
-        for cond, atype in ((cond_a, analysis_type_a), (cond_b, analysis_type_b)):
+        dfs = []    # [cond A, cond B] -- a list, so the same condition name can appear in two tasks
+        for cond, atype, task_name in ((cond_a, analysis_type_a, task_a), (cond_b, analysis_type_b, task_b)):
             info = analysis_info_by_type[atype]
-            task_name = TASK_NAME_BY_ANALYSIS[atype]
             preproc_prep, filtering, normalization = info["preproc_prep"], info["filtering"], info["normalization"]
             avg_method = info["avg_methods"][0]
             maps_names_css = info["maps_names_css_loo"] if "loo" in avg_method else info["maps_names_css"]
@@ -163,7 +176,7 @@ if "group" not in subject:
                     )
                     for hemi in ("hemi-L", "hemi-R")
                 }
-            print(f"loading {cond} for {subject} (avg_method={avg_method})")
+            print(f"loading task-{task_name} {cond} for {subject} (avg_method={avg_method})")
 
             # turn the derivative surface map(s) into a per-ROI, per-vertex dataframe
             df_cond = pd.DataFrame()
@@ -183,10 +196,10 @@ if "group" not in subject:
                     data_dict["hemi"] = hemi if hemi is not None else "both"
                     data_dict["num_vert"] = np.where(roi_verts[roi])[0]
                     df_cond = pd.concat([df_cond, pd.DataFrame(data_dict)], ignore_index=True)
-            dfs[cond] = df_cond
+            dfs.append(df_cond)
 
         # ── 2. merge the two conditions on shared vertices ───────────────────────────
-        df_a, df_b = dfs[cond_a], dfs[cond_b]
+        df_a, df_b = dfs
         data = pd.merge(df_a, df_b, on=["roi", "hemi", "num_vert"], suffixes=(f"_{label_a}", f"_{label_b}"))
         print(f"Merged {len(data)} vertices across {data['roi'].nunique()} rois ({label_a} vs {label_b})")
 
@@ -200,7 +213,7 @@ if "group" not in subject:
                     print(f"  NOTE: {p}_{lbl} has {n_railed} vertices at |value|~={bound:.3f} "
                           f"— check whether this is a grid-search bound (railed fits)")
 
-        deriv_fn = f"{tsv_dir}/{subject}_{cond_a}_vs_{cond_b}_deriv.tsv"
+        deriv_fn = f"{tsv_dir}/{subject}_{comp_name}_deriv.tsv"
         data.to_csv(deriv_fn, sep="\t", na_rep="NaN", index=False)
         print(f"Saving: {deriv_fn}")
 
@@ -262,11 +275,11 @@ if "group" not in subject:
             df_kde = pd.concat(kde_rows, ignore_index=True)
             df_reg = pd.DataFrame(reg_rows)
 
-            kde_fn = f"{tsv_dir}/{subject}_{cond_a}_vs_{cond_b}_{corr_param}-corr.tsv"
+            kde_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-corr.tsv"
             df_kde.to_csv(kde_fn, sep="\t", na_rep="NaN", index=False)
             print(f"Saving tsv: {kde_fn}")
 
-            reg_fn = f"{tsv_dir}/{subject}_{cond_a}_vs_{cond_b}_{corr_param}-regression.tsv"
+            reg_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-regression.tsv"
             df_reg.to_csv(reg_fn, sep="\t", na_rep="NaN", index=False)
             print(f"Saving tsv: {reg_fn}")
 
@@ -286,7 +299,7 @@ else:
             df_all_list = []
             for sub in subjects_to_group:
                 tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
-                kde_fn = f"{tsv_dir_indiv}/{sub}_{cond_a}_vs_{cond_b}_{corr_param}-corr.tsv"
+                kde_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-corr.tsv"
                 if not os.path.isfile(kde_fn):
                     print(f"[SKIP] missing {kde_fn} — run make_corr_tsv.py for {sub} first")
                     continue
@@ -294,7 +307,7 @@ else:
             df_all = pd.concat(df_all_list, ignore_index=True)
             df_group = df_all.groupby(["roi", "x_grid", "y_grid"], sort=False)[["density"]].mean().reset_index()
 
-            kde_fn_group = f"{tsv_dir_group}/{subject}_{cond_a}_vs_{cond_b}_{corr_param}-corr.tsv"
+            kde_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-corr.tsv"
             df_group.to_csv(kde_fn_group, sep="\t", na_rep="NaN", index=False)
             print(f"Saving tsv: {kde_fn_group}")
 
@@ -302,7 +315,7 @@ else:
             df_reg_all_list = []
             for sub in subjects_to_group:
                 tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
-                reg_fn = f"{tsv_dir_indiv}/{sub}_{cond_a}_vs_{cond_b}_{corr_param}-regression.tsv"
+                reg_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-regression.tsv"
                 if not os.path.isfile(reg_fn):
                     print(f"[SKIP] missing {reg_fn} — run make_corr_tsv.py for {sub} first")
                     continue
@@ -316,7 +329,7 @@ else:
                 df_reg_group[f"{col}_ci_lower"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.025).values
                 df_reg_group[f"{col}_ci_upper"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.975).values
 
-            reg_fn_group = f"{tsv_dir_group}/{subject}_{cond_a}_vs_{cond_b}_{corr_param}-regression.tsv"
+            reg_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-regression.tsv"
             df_reg_group.to_csv(reg_fn_group, sep="\t", na_rep="NaN", index=False)
             print(f"Saving tsv: {reg_fn_group}")
 

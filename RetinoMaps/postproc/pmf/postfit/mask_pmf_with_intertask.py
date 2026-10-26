@@ -79,14 +79,14 @@ for avg_method in avg_methods:
                         prf_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/prf_derivatives/{subject}_task-{task_name}_hemi-{hemi}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_pmf-css{dm_name}_deriv.{extension}"
                         prf_img, prf_data = load_surface(fn=prf_fn)
 
-                        intertask_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/intertask/intertask_derivatives/{subject}_task-Sac-Pur-pRF_hemi-{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.{extension}"
+                        intertask_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/intertask_old/intertask_derivatives/{subject}_task-Sac-Pur-pRF_hemi-{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.{extension}"
                         intertask_img, intertask_data = load_surface(fn=intertask_fn)
 
                     else:
                         prf_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/prf_derivatives/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_pmf-css{dm_name}_deriv.{extension}"
                         prf_img, prf_data = load_surface(fn=prf_fn)
 
-                        intertask_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/intertask/intertask_derivatives/{subject}_task-Sac-Pur-pRF_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.{extension}"
+                        intertask_fn = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/intertask_old/intertask_derivatives/{subject}_task-Sac-Pur-pRF_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.{extension}"
                         intertask_img, intertask_data = load_surface(fn=intertask_fn)
 
                     if prf_data.shape[1] != intertask_data.shape[1]:

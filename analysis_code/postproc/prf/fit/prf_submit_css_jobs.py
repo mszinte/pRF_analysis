@@ -9,8 +9,8 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: analysis name (e.g. prf) 
-sys.argv[5]: group (e.g. 327)
+sys.argv[4]: analysis name (e.g. prf)
+sys.argv[5]: group (e.g. meso_0327)
 sys.argv[6]: server project (e.g. b327)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -20,39 +20,39 @@ To run:
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
-python prf_submit_css_jobs.py [main directory] [project name] [subject] 
+python prf_submit_css_jobs.py [main directory] [project name] [subject]
                               [analysis name] [group] [server project]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 prf 327 b327
-python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data RetinoMaps sub-01 prf meso_0327 b327
+python prf_submit_css_jobs.py /scratch/mszinte/data amblyo7T_prf sub-01 prf meso_0327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
 edited by Sina Kling (sina.kling@outlook.de)
 -----------------------------------------------------------------------------------------
 """
-
+ 
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
-
-# Debug 
+ 
+# Debug
 import ipdb
 deb = ipdb.set_trace
-
+ 
 # General imports
 import os
 import sys
 import glob
-
+ 
 # Personal imports
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(os.path.join(script_dir, "../../../../analysis_code/utils")))
 from settings_utils import load_settings
 from pycortex_utils import set_pycortex_config_file
-
+ 
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
@@ -60,17 +60,17 @@ subject = sys.argv[3]
 analysis_name = sys.argv[4]
 group = sys.argv[5]
 server_project = sys.argv[6]
-memory_val = 30
-nb_procs = 12
-hour_proc = 10
-
+memory_val = 96
+nb_procs = 24
+hour_proc = 6
+ 
 # Load settings
 base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
 general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
-
+ 
 cluster_name  = analysis_info['cluster_name']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -78,23 +78,19 @@ task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
 normalization = analysis_info['normalization']
-avg_methods = analysis_info['avg_methods'] # selects input type 
+avg_methods = analysis_info['avg_methods'] # selects input type
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
-
-
+ 
+ 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
-
+ 
 # Define directories
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
-
-# define permission cmd
-chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
-chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
-
-# Define fns (filenames)
+ 
+# Define fns (filenames), keeping avg_method and task_name with each file
 pp_fns = []
 for avg_method in avg_methods:
     for task_name in task_names:
@@ -105,12 +101,12 @@ for avg_method in avg_methods:
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
         dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
             pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
-
+ 
         # Accumulate the results
-        pp_fns.extend(glob.glob(dct_avg_gii_fns))
-        pp_fns.extend(glob.glob(dct_avg_nii_fns))
-
-for fit_num, pp_fn in enumerate(pp_fns):
+        pp_fns.extend([(fn, avg_method, task_name) for fn in glob.glob(dct_avg_gii_fns)])
+        pp_fns.extend([(fn, avg_method, task_name) for fn in glob.glob(dct_avg_nii_fns)])
+ 
+for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
         prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
@@ -118,7 +114,7 @@ for fit_num, pp_fn in enumerate(pp_fns):
         os.makedirs(prf_jobs_dir, exist_ok=True)
         prf_logs_dir = "{}/{}/170k/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
-
+ 
     elif pp_fn.endswith('.gii'):
         prf_dir = "{}/{}/fsnative/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
@@ -126,7 +122,11 @@ for fit_num, pp_fn in enumerate(pp_fns):
         os.makedirs(prf_jobs_dir, exist_ok=True)
         prf_logs_dir = "{}/{}/fsnative/{}/log_outputs".format(pp_dir, subject, output_folder)
         os.makedirs(prf_logs_dir, exist_ok=True)
-
+ 
+    # define permission cmd (output folder only, team group read/write)
+    chmod_cmd = "chmod -Rf g+rwX {}".format(prf_dir)
+    chgrp_cmd = "chgrp -Rf {} {}".format(group, prf_dir)
+ 
     slurm_cmd = """\
 #!/bin/bash
 #SBATCH -p {cluster_name}
@@ -135,32 +135,34 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.out
-#SBATCH -J {subject}_{avg_method}-{analysis_name}-css{dm_name}_fit
-""".format(server_project=server_project, 
+#SBATCH -e {log_dir}/{subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.out
+#SBATCH -J {subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit
+""".format(server_project=server_project,
            cluster_name=cluster_name,
-           nb_procs=nb_procs, 
-           hour_proc=hour_proc, 
-           subject=subject, 
-           memory_val=memory_val, 
-           log_dir=prf_logs_dir, 
+           nb_procs=nb_procs,
+           hour_proc=hour_proc,
+           subject=subject,
+           memory_val=memory_val,
+           log_dir=prf_logs_dir,
+           task_name=task_name,
            avg_method=avg_method,
-           analysis_name=analysis_name, 
+           analysis_name=analysis_name,
            dm_name=dm_name)
-
+ 
     # Define fit cmd
     fit_cmd = "python prf_cssfit.py {} {} {} {} {} {}".format(
         main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
-    
+ 
     # Create shs
-    sh_fn = "{}/jobs/{}_{}-{}-css{}_fit-{}.sh".format(prf_dir, subject, avg_method, analysis_name, dm_name, fit_num)
-
+    sh_fn = "{}/jobs/{}_task-{}_{}-{}-css{}_fit-{}.sh".format(
+        prf_dir, subject, task_name, avg_method, analysis_name, dm_name, fit_num)
+ 
     of = open(sh_fn, 'w')
-    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd, 
+    of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd,
                                         chmod_cmd, chgrp_cmd))
     of.close()
-
+ 
     # Submit jobs
     print("Submitting {} to queue".format(sh_fn))
     os.system("sbatch {}".format(sh_fn))
