@@ -326,6 +326,6 @@ print("ALL HEMISPHERES × VARIANTS COMPLETE")
 print("=" * 80)
 print(f"\nOutputs written to: {output_folder}")
 print(
-    "\nNote: Fisher-z outputs are in z-space. Apply np.tanh() to recover Pearson r "
-    "only at the final reporting or plotting stage."
+    "\nNote: Pearson r group values are recovered back from Fisher-z outputs with np.tanh()"
+    "Use these values at the final reporting or plotting stage as is standard practice."
 )

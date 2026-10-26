@@ -23,16 +23,15 @@
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh pycortex_maps_rois.sh /home/mszinte/disks/meso_H/projects RetinoMaps 
-# /home/mszinte/disks/meso_S/data prf
+# sh pycortex_maps_rois.sh ~/disks/meso_H/projects RetinoMaps ~/disks/meso_shared prf n
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 # -----------------------------------------------------------------------------------------
 
 # Check if the base path, project name, and data path are provided as arguments
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <base_path> <project_name> <data_path> <analysis_name>"
+if [ "$#" -ne 5 ]; then
+    echo "Usage: $0 <base_path> <project_name> <data_path> <analysis_name> <save_in_overlay>]"
     exit 1
 fi
 
@@ -41,6 +40,7 @@ base_path="$1"
 project_name="$2"
 data_path="$3"
 analysis_name="$4"
+save_in_overlay="$5"
 
 # Define the path to the settings.yml file
 settings_file="${base_path}/pRF_analysis/${project_name}/settings.yml"
@@ -59,6 +59,6 @@ with open('$settings_file', 'r') as file:
 # Loop through each subject and run the Python code
 for subject in $subjects
 do
-    echo "Processing pycortex_maps_rois.py for: $subject"
-    python pycortex_maps_rois.py "$data_path" "$project_name" "$subject" "$analysis_name" n
+    echo "Processing pycortex_maps_css.py for: $subject"
+    python pycortex_maps_rois.py "$data_path" "$project_name" "$subject" "$analysis_name" "$save_in_overlay"
 done

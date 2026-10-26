@@ -41,13 +41,13 @@ mode = sys.argv[5] # "task-free" or "task-constrained"
 proc_time = sys.argv[6] #
 
 # Define which way you want to run correlations
-if mode == "task-free":
+if mode == "task-constrained":
     script_name = "connectome-workbench_seed-task_by_macror-task_full_corr_by_hemi.sh"
-elif mode == "task-constrained":
+elif mode == "task-free":
     script_name = "connectome-workbench_seed-task_by_mmp-parcel_full_corr_by_hemi.sh"
 else:
     raise ValueError(
-        "Invalid mode. Use either 'task-free' or 'task-constrained'. "
+        "Invalid mode. Use either 'task-constrained' or 'task-free'. "
         f"Got: {mode}"
     )
 
@@ -90,7 +90,7 @@ chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir}"
 chgrp_cmd = f"chgrp -Rf {group} {main_dir}/{project_dir}"
 
 # Create job script
-sh_fn = f"{job_dir}/all_{job_suffix}.sh"
+sh_fn = f"{job_dir}/all_full_corr_{job_suffix}.sh"
 with open(sh_fn, 'w') as of:
     of.write(f"{slurm_cmd}\n{main_cmd}\n{chmod_cmd}\n{chgrp_cmd}\n")
 

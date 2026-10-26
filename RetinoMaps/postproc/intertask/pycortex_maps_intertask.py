@@ -73,7 +73,7 @@ pycortex_subject_template = analysis_info['pycortex_subject_template']
 
 rsq2use = 'prf_loo_rsq'
 avg_method = 'loo-avg'
-prf_task_name = analysis_info['prf_task_names'][0]
+prf_task_name = analysis_info['analysis_task_names'][0]
 
 # Maps settings
 all_idx, pur_idx, sac_idx, pur_sac_idx, prf_idx, prf_pur_idx, prf_sac_idx, \
@@ -269,6 +269,7 @@ for tasks in group_tasks :
             
         # Create flatmaps  
         print('Creating flatmaps...')
+        overlay_fn = "overlays_rois-group-mmp.svg"
         maps_names = []        
         
         #  Creat the all flatmap
@@ -285,10 +286,11 @@ for tasks in group_tasks :
                      'vmax': interatsk_r2_max, 
                      'cbar': 'discrete',
                      'cortex_type': 'VertexRGB', 
-                     'description': 'intertask map', 
-                     'curv_brightness': 0.1, 
-                     'curv_contrast': 0.25, 
+                     'description': 'all', 
+                     'curv_brightness': 0.6, 
+                     'curv_contrast': 0.2, 
                      'add_roi': save_svg, 
+                     'overlay_fn': overlay_fn,
                      'cbar_label': '', 
                      'with_labels': True}
         maps_names.append('all')
@@ -311,10 +313,11 @@ for tasks in group_tasks :
                          'vmax': interatsk_r2_max, 
                          'cbar': 'discrete',
                          'cortex_type': 'VertexRGB', 
-                         'description': 'intertask map',
-                         'curv_brightness': 0.1, 
-                         'curv_contrast': 0.25, 
+                         'description': 'pursuit',
+                         'curv_brightness': 0.6, 
+                         'curv_contrast': 0.2, 
                          'add_roi': save_svg,
+                         'overlay_fn': overlay_fn,
                          'cbar_label': '', 
                          'with_labels': True}
         maps_names.append('pursuit')
@@ -334,10 +337,11 @@ for tasks in group_tasks :
                          'vmax': interatsk_r2_max, 
                          'cbar': 'discrete',
                          'cortex_type': 'VertexRGB', 
-                         'description': 'intertask map',
-                         'curv_brightness': 0.1, 
-                         'curv_contrast': 0.25, 
+                         'description': 'saccade',
+                         'curv_brightness': 0.6, 
+                         'curv_contrast': 0.2, 
                          'add_roi': save_svg,
+                         'overlay_fn': overlay_fn,
                          'cbar_label': '', 
                          'with_labels': True}
         maps_names.append('saccade')
@@ -356,10 +360,11 @@ for tasks in group_tasks :
                                      'vmax': interatsk_r2_max, 
                                      'cbar': 'discrete',
                                      'cortex_type': 'VertexRGB', 
-                                     'description': 'intertask map',
-                                     'curv_brightness': 0.1, 
-                                     'curv_contrast': 0.25, 
+                                     'description': 'pursuit and saccade',
+                                     'curv_brightness': 0.6, 
+                                     'curv_contrast': 0.2, 
                                      'add_roi': save_svg,
+                                     'overlay_fn': overlay_fn,
                                      'cbar_label': '', 
                                      'with_labels': True}
         maps_names.append('pursuit_and_saccade')
@@ -379,10 +384,11 @@ for tasks in group_tasks :
                         'vmax': interatsk_r2_max, 
                         'cbar': 'discrete',
                         'cortex_type': 'VertexRGB', 
-                        'description': 'intertask map',
-                        'curv_brightness': 0.1, 
-                        'curv_contrast': 0.25, 
+                        'description': 'vision',
+                        'curv_brightness': 0.6, 
+                        'curv_contrast': 0.2, 
                         'add_roi': save_svg,
+                        'overlay_fn': overlay_fn,
                         'cbar_label': '',
                         'with_labels': True}
         maps_names.append('vision')
@@ -400,10 +406,11 @@ for tasks in group_tasks :
                                     'vmax': interatsk_r2_max, 
                                     'cbar': 'discrete',
                                     'cortex_type': 'VertexRGB', 
-                                    'description': 'intertask map',
-                                    'curv_brightness': 0.1, 
-                                    'curv_contrast': 0.25, 
+                                    'description': 'vision and pursuit',
+                                    'curv_brightness': 0.6, 
+                                    'curv_contrast': 0.2, 
                                     'add_roi': save_svg,
+                                    'overlay_fn': overlay_fn,
                                     'cbar_label': '', 
                                     'with_labels': True}
         maps_names.append('vision_and_pursuit')
@@ -422,10 +429,11 @@ for tasks in group_tasks :
                                     'vmax': interatsk_r2_max, 
                                     'cbar': 'discrete',
                                     'cortex_type': 'VertexRGB', 
-                                    'description': 'intertask map',
-                                    'curv_brightness': 0.1, 
-                                    'curv_contrast': 0.25, 
+                                    'description': 'vision and saccade',
+                                    'curv_brightness': 0.6, 
+                                    'curv_contrast': 0.2, 
                                     'add_roi': save_svg,
+                                    'overlay_fn': overlay_fn,
                                     'cbar_label': '', 
                                     'with_labels': True}
         maps_names.append('vision_and_saccade')
@@ -444,10 +452,11 @@ for tasks in group_tasks :
                                                 'vmax': interatsk_r2_max, 
                                                 'cbar': 'discrete',
                                                 'cortex_type': 'VertexRGB', 
-                                                'description': 'intertask map', 
-                                                'curv_brightness': 0.1, 
-                                                'curv_contrast': 0.25, 
+                                                'description': 'visuomotor', 
+                                                'curv_brightness': 0.6, 
+                                                'curv_contrast': 0.2, 
                                                 'add_roi': save_svg, 
+                                                'overlay_fn': overlay_fn,
                                                 'cbar_label': '',  
                                                 'with_labels': True}
         maps_names.append('vision_and_pursuit_and_saccade')
@@ -455,7 +464,6 @@ for tasks in group_tasks :
         # draw flatmaps
         volumes = {}
         for maps_name in maps_names:
-        
             # create flatmap
             roi_name = '{}'.format(maps_name)
             roi_param = {'subject': pycortex_subject, 'xfmname': None, 'roi_name': roi_name}
@@ -469,10 +477,12 @@ for tasks in group_tasks :
             exec('vol_description = param_{}["description"]'.format(maps_name))
             exec('volume = volume_{}'.format(maps_name))
             volumes.update({vol_description:volume})
-        
+                
         # save dataset
         dataset_file = "{}/{}_intertask_{}.hdf".format(datasets_dir, subject, intertask_group)
+        if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
         dataset = cortex.Dataset(data=volumes)
         dataset.save(dataset_file)
+        print(f"Saved dataset: {dataset_file}")
         
     

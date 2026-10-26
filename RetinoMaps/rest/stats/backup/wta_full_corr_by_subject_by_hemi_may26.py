@@ -210,7 +210,7 @@ for hemi in ("lh", "rh"):
             run_tag = excluded_tag if is_excluded else normal_tag
 
             # load_full_corr_matrix() from rest_utils handles TSV loading,
-            # hemi-row slicing, and remap to canonical parcel order.
+            # hemi-row slicing, and remap to canonical parcel order
             df_corr = load_full_corr_matrix(
                 subject     = subject,
                 hemi        = hemi,
@@ -232,7 +232,7 @@ for hemi in ("lh", "rh"):
             else:
                 print(f"    {subject}: OK")
 
-            # compute_winners() from rest_utils masks self-seed parcels then argmax.
+            # compute_winners() from rest_utils masks self-seed parcels then argmax
             all_winners.append(
                 compute_winners(
                     df_corr         = df_corr,
@@ -251,7 +251,7 @@ for hemi in ("lh", "rh"):
         # append_group_and_consistency() from rest_utils computes GROUP via the
         # three-level tie-break cascade (votes → Fisher-z → lowest seed number).
         # group_median=None here: no group-level Fisher-z matrix is available at
-        # this stage, so ties fall through to level 3 (lowest seed number).
+        # this stage, so ties fall through to level 3 (lowest seed number)
         combined_df = append_group_and_consistency(
             subject_df     = subject_df,
             clusters       = clusters,

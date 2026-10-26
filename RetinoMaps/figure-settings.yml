@@ -5,7 +5,7 @@ flatmap_corr_scale:
 
 flatmap_rsq_scale:
   description: "pRF r-square flatmap colorscale"
-  value: [0, 1]
+  value: [0, 0.5]
 
 flatmap_ecc_scale: 
   description: "pRF eccentricity flatmap colorscale"

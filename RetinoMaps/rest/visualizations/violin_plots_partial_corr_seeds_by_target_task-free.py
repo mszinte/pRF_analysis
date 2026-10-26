@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Goal of the script:
-Full correlation violin plots split by hemisphere.
-Seeds are on the y-axis, one figure per TARGET macro-region
+Partial correlation violin plots split by hemisphere.
+Seeds are on the y-axis, one figure per TARGET cluster.
 
 Produces figures for four data variants:
   - concat        : both runs concatenated, all subjects
   - concat_clean  : both runs concatenated, excluding subjects with bad run-02
-  - run-01        : run-01 only, all subjects (skips subjects missing the file)
+  - run-01        : run-01 only, all subjects
   - run-02        : run-02 only, ALL subjects (including bad ones, to show artifact)
 
 Missing files are always skipped with a warning
@@ -33,7 +33,7 @@ from typing import Optional
 USER = os.environ["USER"]
 
 main_data     = Path("/scratch/mszinte/data/RetinoMaps/derivatives/pp_data")
-output_folder = main_data / "group/91k/rest/full_corr"
+output_folder = main_data / "group/91k/rest/partial_corr"
 output_folder.mkdir(parents=True, exist_ok=True)
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
@@ -50,7 +50,7 @@ from rest_utils import (
     MEDIAN_COLORS,
     MEDIAN_HALF_LEN,
     derive_hemi_color,
-    load_tsv_hemi,
+    load_npy_hemi,
 )
 
 project_dir       = "RetinoMaps"
@@ -88,7 +88,7 @@ for cl in seed_clusters:
 # Build parcel indices
 # ============================================================
 
-clusters = clusters_all   # alias — row order matches .npy/.tsv files
+clusters = clusters_all   # alias — row order matches .npy matrix files
 
 parcels = []
 for cl in clusters_all:
@@ -118,9 +118,8 @@ def get_fname(
     normal_tag: Optional[str],
     excluded_tag: Optional[str],
     hemi: str,
-    seed: str,
 ) -> str:
-    """Return the full-correlation TSV filepath for one subject/hemi/seed.
+    """Return the partial-correlation .npy filepath for one subject/hemi.
 
     For concat_clean, subjects with bad run-02 fall back to excluded_tag
     ("run-01") instead of being dropped.  For all other variants every
@@ -134,13 +133,13 @@ def get_fname(
         effective_tag = normal_tag
 
     if effective_tag is None:
-        return (
-            f"{sub_path}/{sub}_task-rest_space-fsLR_den-91k"
-            f"_desc-full_corr_{hemi}_{seed}_parcellated.tsv"
+        return os.path.join(
+            sub_path,
+            f"cluster_by_mmp-parcel_partial_{hemi}.npy"
         )
-    return (
-        f"{sub_path}/{sub}_task-rest_{effective_tag}_space-fsLR"
-        f"_den-91k_desc-full_corr_{hemi}_{seed}_parcellated.tsv"
+    return os.path.join(
+        sub_path,
+        f"seed-task_by_mmp-parcel_partial_{effective_tag}_{hemi}.npy"
     )
 
 # ============================================================
@@ -161,6 +160,12 @@ results = {
     for variant in VARIANTS
 }
 
+## Need to add this to get pearsonr not fisher-z
+#
+#     results[variant][seed][tc][hemi].append(
+#         float(np.tanh(np.nanmean(values[idx])))
+#     )
+
 missing_files = []   # global log — reported at end
 
 for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
@@ -174,39 +179,38 @@ for variant, (normal_tag, excluded_tag, skip_excluded) in VARIANTS.items():
             continue
 
         sub_path = os.path.join(
-            main_data, f"{sub}/91k/rest/corr/full_corr/by_hemi"
+            main_data, f"{sub}/91k/rest/corr/partial_corr/by_hemi/task-free"
         )
 
-        for seed in seed_clusters:
-            for hemi in hemis:
+        for hemi in hemis:
 
-                fname = get_fname(
-                    sub_path=sub_path,
-                    sub=sub,
-                    variant=variant,
-                    normal_tag=normal_tag,
-                    excluded_tag=excluded_tag,
-                    hemi=hemi,
-                    seed=seed,
-                )
+            fname = get_fname(
+                sub_path=sub_path,
+                sub=sub,
+                variant=variant,
+                normal_tag=normal_tag,
+                excluded_tag=excluded_tag,
+                hemi=hemi,
+            )
 
-                values = load_tsv_hemi(fname, hemi)
+            cluster_partial = load_npy_hemi(fname)
 
-                if values is None:
-                    missing_files.append((variant, fname))
-                    continue
+            if cluster_partial is None:
+                missing_files.append((variant, fname))
+                continue
 
-                print(
-                    f"  {sub} ({variant}, {hemi}, seed={seed}): "
-                    f"loaded {len(values)} parcel values"
-                )
+            print(f"  {sub} ({variant}, {hemi}): {cluster_partial.shape}")
+
+            for seed in seed_clusters:
+                seed_idx = clusters.index(seed)
 
                 for tc in target_clusters:
                     if tc == seed:
                         continue
-                    idx = cluster_to_parcel_idx[tc]
+                    parcel_idx = cluster_to_parcel_idx[tc]
+                    vals = cluster_partial[seed_idx, parcel_idx]
                     results[variant][seed][tc][hemi].append(
-                        float(np.nanmean(values[idx]))
+                        float(np.nanmean(vals))
                     )
 
 if missing_files:
@@ -331,9 +335,11 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
                        color="black", s=12, alpha=0.7,
                        edgecolor="none", zorder=3)
 
+    # hemisphere distinction is LH (dark) / RH (light) within each violin
+    # body; a manual legend can be added externally if needed
     ax.axvline(0, color="black", linestyle="-", alpha=0.2)
-    ax.set_xlabel("Full Correlation",  fontsize=18, fontweight="bold")
-    ax.set_ylabel("Seed Cluster",      fontsize=18, fontweight="bold")
+    ax.set_xlabel("Partial Correlation", fontsize=18, fontweight="bold")
+    ax.set_ylabel("Seed Cluster",        fontsize=18, fontweight="bold")
     ax.set_title(f"{target} target — {variant}", fontsize=18, fontweight="bold")
     ax.tick_params(axis="both", which="major", labelsize=16)
     ax.grid(axis="x", alpha=0.5, linestyle=":", linewidth=0.5)
@@ -343,7 +349,7 @@ def plot_target_figure(target: str, variant: str, res: dict) -> None:
 
     outname = os.path.join(
         fig_dir,
-        f"violin_target-{target}_full_corr_{variant}.png"
+        f"violin_target-{target}_partial_corr_{variant}.png"
     )
     plt.savefig(outname, dpi=300, bbox_inches="tight")
     print(f"  Saved: {outname}")

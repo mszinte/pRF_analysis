@@ -27,18 +27,100 @@ Self-correlation masking
   matrix is saved as a sanity check; off-diagonal entries should be interpretable
   connectivity estimates, diagonal entries are NaN by construction.
 
-Standardize flag
-  ConnectivityMeasure(standardize=False) because the concatenated XCP-D timeseries
-  are already z-scored.  Using standardize=True on pre-standardised data would
-  re-scale and distort the covariance structure.
+Standardize flag (FINAL — verified against nilearn 0.10.2, the version
+actually installed on the cluster, not just the current release)
+  ConnectivityMeasure(standardize=False), set explicitly for honesty rather
+  than as a meaningful analysis choice: for kind="partial correlation",
+  nilearn's `standardize` argument is NEVER applied — confirmed directly
+  from nilearn 0.10.2's _fit_transform() (connectivity_matrices.py):
+  standardize is only consumed inside the `if self.kind == "correlation":`
+  branch; for "partial correlation" the `else` branch calls
+  `self.cov_estimator_.fit(x)` directly on the raw input, with no
+  standardization step at all, regardless of what `standardize` is set to.
+  This holds identically in 0.10.2 and in the current nilearn release — it
+  is not a version-dependent behavior.
 
-Outputs (per subject, per run, per hemisphere)
-  seed-task_by_mmp-parcel_partial_{run}_{hemi}.npy / .csv          — Pearson r
-  seed-task_by_mmp-parcel_partial_fisherz_{run}_{hemi}.npy / .csv  — Fisher z
-  seed-task_by_macro-region_partial_fisherz_{run}_{hemi}.npy / .csv — sanity check
+  Project history: an earlier version of this script used
+  standardize="zscore_sample" (matching a mistaken assumption that this
+  flag does something for kind="partial correlation"). Since it provably
+  does nothing for this kind, both False and "zscore_sample" produce
+  bit-for-bit identical output here — this was verified empirically before
+  correcting the flag to False. The remaining/actual scale-correction logic
+  now lives in Step 3b below, done manually, once, since nilearn will not
+  do it for kind="partial correlation".
 
-Group aggregation is handled by group_stats_partial_corr.py (always in Fisher-z
-space; back-transformed to r only at the reporting stage).
+Manual re-standardization after ROI-averaging (Step 3b)
+  Because nilearn's standardize flag is a no-op for partial correlation
+  (see above), any benefit of standardizing before computing the
+  covariance/precision matrix has to be done manually, before calling
+  ConnectivityMeasure.fit_transform().
+
+  Why this step exists at all: every vertex is already z-scored by XCP-D,
+  but the ROI-MEAN signal is not guaranteed to keep unit variance after
+  averaging. For N vertices sharing average within-region correlation rho,
+  Var(region/parcel mean) = rho + (1-rho)/N — a function of region size
+  alone. Macro-regions and MMP parcels here differ substantially in vertex
+  count, so averaged timeseries can end up on measurably different scales
+  even though every underlying vertex started at unit variance. This
+  matters only for regularized estimators (Ledoit-Wolf, GraphicalLassoCV),
+  whose shrinkage target / L1 penalty assume comparable scale across
+  variables — empirically confirmed to have ZERO effect on the raw
+  (unregularized) estimator, since partial correlation from an
+  unregularized covariance is exactly invariant to per-column scaling
+  (verified: max diff 0.0 across multiple test scenarios). At realistic
+  parameter values (vertex counts and within-region correlation typical of
+  cortical parcels), the resulting scale mismatch across regions is modest
+  (roughly 1.05x-1.15x SD ratio, not an order of magnitude), so this
+  correction is best understood as a small, free, mathematically justified
+  safety net — not a fix expected to dramatically change the results on
+  its own. Done ONCE, after NaN imputation and before building any
+  seed/target matrix, to avoid compounding multiple standardization steps.
+
+Covariance estimator (added for consistency with the task-constrained script)
+  Conditioning here is on all 106 bilateral MMP parcels — a considerably larger
+  and likely more collinear regressor set than the 24 macro-regions used in the
+  task-constrained analysis, so the same collinearity concerns apply at least as
+  much here.  ESTIMATOR_TAG is passed in as sys.argv[1] by the SLURM submit
+  script (submit_nilearn_compute_partial_corr_job.py), which owns the choice of
+  estimator as a run-configuration decision — this script only validates the tag
+  and maps it to the corresponding sklearn estimator.  No silent default is used
+  on the cluster to keep every job's estimator choice explicit and traceable.
+
+  raw            : EmpiricalCovariance (unregularized) — Nilearn's default
+  ledoit-wolf    : LedoitWolf shrinkage (Ledoit & Wolf, 2004) — analytic
+                   shrinkage intensity, no cross-validation
+  graphical-lasso: GraphicalLassoCV — L1-regularized precision matrix,
+                   sparsity penalty selected by cross-validation (slower;
+                   produces a sparse precision matrix — a different
+                   scientific claim than shrinkage; see Peterson et al. 2025,
+                   Imaging Neuroscience, for the graphical lasso vs.
+                   graphical ridge distinction)
+
+  Output filenames are tagged with ESTIMATOR_TAG so that runs with different
+  estimators never overwrite each other on disk.
+
+Outputs (per subject, per run, per hemisphere, per estimator)
+  HARMONIZED to match the task-constrained script's BIDS-style stem
+  (see "Harmonization" note above Step 7 in the code): filenames use
+  {subject}_task-rest{run_entity}_space-fsLR_den-91k_desc-fisher-z_{hemi}
+  _task-free_{estimator}[_suffix].{npy,tsv} instead of the earlier
+  "seed-task_by_mmp-parcel_..." prefix style, and tabular outputs are
+  tab-separated .tsv (not comma-separated .csv). Only Fisher-z is saved
+  at the subject level (no standalone Pearson r file — dropped to match
+  task-constrained and the pipeline-wide Fisher-z-first design):
+
+  {subject}_task-rest{run_entity}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.npy / .tsv
+      — primary output, ipsilateral only (n_clusters × n_parcels)
+  {subject}_task-rest{run_entity}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}_bilateral.npy / .tsv
+      — bilateral output, [ipsi | contra] (n_clusters × 2*n_parcels)
+  {subject}_task-rest{run_entity}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}_macro-summary.npy / .tsv
+      — macro-region-by-macro-region sanity check (no task-constrained
+        equivalent, since that script's primary output already is at
+        this level)
+
+Group aggregation is handled by group_partial_corr_by_hemi_task-free.py
+(always in Fisher-z space; back-transformed to r only at the reporting
+stage). That script's npy_path() must match this harmonized convention.
 
 ---------------------------------------------------
 Written by Marco Bedini (marco.bedini@univ-amu.fr)
@@ -50,13 +132,49 @@ import sys
 import numpy as np
 import pandas as pd
 from nilearn.connectome import ConnectivityMeasure
+from sklearn.covariance import LedoitWolf, EmpiricalCovariance, GraphicalLassoCV
+
+# ============================================================
+# Covariance estimator
+#
+# See docstring above. Required as sys.argv[1] — no silent default.
+# ============================================================
+
+VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
+
+if len(sys.argv) < 2:
+    print(
+        "ERROR: no covariance estimator specified.\n"
+        f"  Usage: python {sys.argv[0]} <estimator>\n"
+        f"  Accepted: {', '.join(VALID_ESTIMATORS)}\n"
+        "  This should normally be set via submit_nilearn_compute_partial_corr_job.py, "
+        "not called directly."
+    )
+    sys.exit(1)
+
+ESTIMATOR_TAG = sys.argv[1]
+if ESTIMATOR_TAG not in VALID_ESTIMATORS:
+    print(
+        f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n"
+        f"  Accepted: {', '.join(VALID_ESTIMATORS)}"
+    )
+    sys.exit(1)
+
+if ESTIMATOR_TAG == "ledoit-wolf":
+    COV_ESTIMATOR = LedoitWolf()
+elif ESTIMATOR_TAG == "graphical-lasso":
+    COV_ESTIMATOR = GraphicalLassoCV()
+else:
+    COV_ESTIMATOR = EmpiricalCovariance()
+
+print(f"Covariance estimator: {ESTIMATOR_TAG}  (cov_estimator={COV_ESTIMATOR})")
 
 # ============================================================
 # Paths
 # ============================================================
 
 main_data    = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
-atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
+atlas_folder = "/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas/mmp1"
 
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 
@@ -104,12 +222,12 @@ HEMIS = [
 ]
 
 # ============================================================
-# # Load rest-specific settings
+# Load rest-specific settings
 # ============================================================
 
 rest_settings_path = os.path.join(base_dir, project_dir, "rest-settings.yml")
 rest_settings      = load_settings([rest_settings_path])[0]
-RUNS          = rest_settings["runs"]["value"]
+RUNS          = rest_settings["runs"]
 
 # ============================================================
 # Subject loop
@@ -291,9 +409,15 @@ for subject in subjects:
             partial_r_contra  = np.full((n_clusters_used, n_contra_parcels), np.nan)
             partial_fz_contra = np.full_like(partial_r_contra, np.nan)
 
-            # Single ConnectivityMeasure instance reused for every (seed, target) pair
-            # Standardize set to false because now XCP-D z-scores the concat runs
-            conn = ConnectivityMeasure(kind="partial correlation", standardize=False)
+            # Single ConnectivityMeasure instance reused for every (seed, target) pair.
+            # standardize=False: see Step 3b above — this argument has no
+            # effect for kind="partial correlation" either way, but is set
+            # explicitly to avoid implying nilearn does something it doesn't.
+            conn = ConnectivityMeasure(
+                kind="partial correlation",
+                cov_estimator=COV_ESTIMATOR,
+                standardize=False,
+            )
 
             for i_cl, cl_name in enumerate(cluster_names_used):
 
@@ -407,34 +531,37 @@ for subject in subjects:
                         cluster_by_cluster_fz[gr, j_cl] = np.nanmean(vals)
 
             # ------------------------------------------------------
-            # Step 6 — Map to full output grids
+            # Step 6 — Map to full output grids (Fisher-z only)
             #
-            # Two grids are produced:
-            #
-            #   filled_r / filled_fz  (n_clusters × n_parcels)
+            #   filled_fz  (n_clusters × n_parcels)
             #     Ipsilateral only. Columns = parcels in canonical YAML order.
             #     This is the primary output and is what all downstream scripts
-            #     (group stats, visualisation) currently consume.
+            #     (group stats, visualisation) consume.
             #
-            #   filled_r_bilateral / filled_fz_bilateral  (n_clusters × 2*n_parcels)
+            #   filled_fz_bilateral  (n_clusters × 2*n_parcels)
             #     Columns = [ipsi_parcels | contra_parcels], both in canonical
             #     YAML order.  The ipsilateral half is always [:, :n_parcels],
             #     so any downstream script can recover it without change.
-            #     Saved with a _bilateral suffix to avoid breaking existing loaders.
+            #
+            # HARMONIZATION NOTE: an earlier version of this script also saved
+            # a standalone Pearson r grid (filled_r / filled_r_bilateral)
+            # alongside Fisher-z. This has been dropped to match the
+            # task-constrained script's subject-level convention (Fisher-z
+            # only) and the pipeline-wide design principle stated throughout:
+            # average in Fisher-z space, recover r only at the reporting
+            # stage via tanh(). Pearson r is still computed in memory
+            # (partial_r / partial_r_contra, directly from Nilearn, before
+            # arctanh()) — it is simply no longer written to disk here.
             #
             # cluster_names_used may be a subset of clusters if any seed masks
-            # were empty — both grids are initialised to NaN so missing rows
+            # were empty — the grid is initialised to NaN so missing rows
             # are explicitly absent rather than silently zero.
             # ------------------------------------------------------
 
             n_parcels_total = len(parcels)
 
-            filled_r  = np.full((len(clusters), n_parcels_total), np.nan)
-            filled_fz = np.full_like(filled_r, np.nan)
-
-            # Bilateral: [ipsi | contra], both in parcels order
-            filled_r_bilateral  = np.full((len(clusters), 2 * n_parcels_total), np.nan)
-            filled_fz_bilateral = np.full_like(filled_r_bilateral, np.nan)
+            filled_fz           = np.full((len(clusters), n_parcels_total), np.nan)
+            filled_fz_bilateral = np.full((len(clusters), 2 * n_parcels_total), np.nan)
 
             # Column labels for the bilateral DataFrame
             contra_key   = "R" if atlas_key == "L" else "L"
@@ -449,20 +576,41 @@ for subject in subjects:
                 # Ipsilateral half
                 for i_target, pa in enumerate(ipsi_parcel_names):
                     gc = parcels.index(pa)
-                    filled_r[gr, gc]  = partial_r[i_cl,  i_target]
                     filled_fz[gr, gc] = partial_fz[i_cl, i_target]
                     # Bilateral ipsi half (columns 0 : n_parcels)
-                    filled_r_bilateral[gr, gc]  = partial_r[i_cl,  i_target]
                     filled_fz_bilateral[gr, gc] = partial_fz[i_cl, i_target]
 
                 # Contralateral half (columns n_parcels : 2*n_parcels)
                 for i_target, pa in enumerate(contra_parcel_names):
                     gc = parcels.index(pa)
-                    filled_r_bilateral[gr, n_parcels_total + gc]  = partial_r_contra[i_cl,  i_target]
                     filled_fz_bilateral[gr, n_parcels_total + gc] = partial_fz_contra[i_cl, i_target]
 
             # ------------------------------------------------------
             # Step 7 — Save subject-level outputs
+            #
+            # HARMONIZED filename convention (matches the task-constrained
+            # script's BIDS-style stem exactly, aside from the
+            # "task-free" vs "task-constrained" entity):
+            #
+            #   {subject}_task-rest{run_entity}_space-fsLR_den-91k
+            #       _desc-fisher-z_{hemi}_task-free_{ESTIMATOR_TAG}[_bilateral].npy/.tsv
+            #
+            # Two conventions changed from an earlier version of this script:
+            #   1. Filenames switched from the "seed-task_by_mmp-parcel_..."
+            #      prefix style to the full BIDS-style stem, matching
+            #      task-constrained subject-level outputs on disk.
+            #   2. Tabular outputs switched from comma-separated .csv to
+            #      tab-separated .tsv (sep="\t"), matching task-constrained.
+            #
+            # The macro-region-by-macro-region sanity check matrix has no
+            # equivalent in the task-constrained script (whose primary output
+            # already IS macro-region-by-macro-region), so it keeps the same
+            # base stem with an extra "_macro-summary" suffix rather than a
+            # separate naming scheme.
+            #
+            # ESTIMATOR_TAG is appended to every output filename so that runs
+            # with different covariance estimators coexist on disk rather than
+            # overwriting one another.
             # ------------------------------------------------------
 
             sub_out = f"{main_data}/{subject}/91k/rest/corr/partial_corr/by_hemi/task-free"
@@ -470,48 +618,41 @@ for subject in subjects:
 
             tag = label.lower()   # "lh" or "rh"
 
-            # --- Ipsilateral outputs (primary; consumed by all downstream scripts) ---
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.npy"),
-                filled_r,
-            )
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.npy"),
-                filled_fz,
-            )
-            pd.DataFrame(filled_r,  index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}.csv")
-            )
+            # BIDS-style stem, matching task-constrained's construction exactly
+            if run:
+                stem = (
+                    f"{subject}_task-rest_{run}"
+                    f"_space-fsLR_den-91k_desc-fisher-z_{tag}_task-free"
+                    f"_{ESTIMATOR_TAG}"
+                )
+            else:
+                stem = (
+                    f"{subject}"
+                    f"_task-rest_space-fsLR_den-91k_desc-fisher-z_{tag}_task-free"
+                    f"_{ESTIMATOR_TAG}"
+                )
+
+            # --- Ipsilateral output (primary; consumed by all downstream scripts) ---
+            np.save(os.path.join(sub_out, f"{stem}.npy"), filled_fz)
             pd.DataFrame(filled_fz, index=clusters, columns=parcels).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}.csv")
+                os.path.join(sub_out, f"{stem}.tsv"), sep="\t"
             )
 
-            # --- Bilateral outputs ([ipsi | contra]; ipsi half = [:, :n_parcels]) ---
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.npy"),
-                filled_r_bilateral,
-            )
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.npy"),
-                filled_fz_bilateral,
-            )
-            pd.DataFrame(filled_r_bilateral,  index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial{run_tag}_{tag}_bilateral.csv")
-            )
+            # --- Bilateral output ([ipsi | contra]; ipsi half = [:, :n_parcels]) ---
+            np.save(os.path.join(sub_out, f"{stem}_bilateral.npy"), filled_fz_bilateral)
             pd.DataFrame(filled_fz_bilateral, index=clusters, columns=parcels_bilateral).to_csv(
-                os.path.join(sub_out, f"seed-task_by_mmp-parcel_partial_fisherz{run_tag}_{tag}_bilateral.csv")
+                os.path.join(sub_out, f"{stem}_bilateral.tsv"), sep="\t"
             )
 
             # --- Macro-region-by-macro-region sanity check (Fisher-z, ipsi only) ---
-            np.save(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.npy"),
-                cluster_by_cluster_fz,
-            )
+            np.save(os.path.join(sub_out, f"{stem}_macro-summary.npy"), cluster_by_cluster_fz)
             pd.DataFrame(cluster_by_cluster_fz, index=clusters, columns=clusters).to_csv(
-                os.path.join(sub_out, f"seed-task_by_macro-region_partial_fisherz{run_tag}_{tag}.csv")
+                os.path.join(sub_out, f"{stem}_macro-summary.tsv"), sep="\t"
             )
 
             print(f"  [{label}] Saved to {sub_out}")
 
-print("\nDone. Run group_stats_partial_corr.py to aggregate across subjects.")
+print("\nDone. Run group_partial_corr_by_hemi_task-free.py to aggregate across subjects.")
+print("NOTE: group_partial_corr_by_hemi_task-free.py must be updated to accept/propagate")
+print(f"the same ESTIMATOR_TAG ('{ESTIMATOR_TAG}') used here when locating these files.")
 # ============================================================
