@@ -134,7 +134,11 @@ for tasks in group_tasks :
                          (data_vision_filtered.prf_n < n_threshold[0]) | (data_vision_filtered.prf_n > n_threshold[1]) | 
                          (data_vision_filtered[rsq2use] < rsqr_threshold) |
                          (data_vision_filtered[stats_col] > stats_threshold)] = np.nan
-                data_vision_filtered = data_vision_filtered.dropna()
+                # [CORRECTION #42] dropna restreint aux colonnes hors pCM : les vertex 'vision' purs sans pCM (n_neighbor <= 1, pCM = NaN,
+                # [CORRECTION #42] non remplace par 'non_computed') etaient retires du % 'vision' ; les lignes seuillees (toutes NaN) restent retirees
+                # AVANT : data_vision_filtered = data_vision_filtered.dropna()
+                pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                data_vision_filtered = data_vision_filtered.dropna(subset=[col for col in data_vision_filtered.columns if col not in pcm_cols])
     
                 for rois_type in ['roi', 'roi_mmp']:
                     if rois_type == 'roi':
@@ -154,7 +158,10 @@ for tasks in group_tasks :
                         #                                                      (data['saccade'] == 'saccade') & 
                         #                                                      (data['pursuit'] == 'pursuit') & 
                         #                                                      (data['vision'] == 'vision')].shape[0]
-                        n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & (data['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
+                        # [CORRECTION #4] conjonction comptée sur data_vision_filtered (mêmes filtres pRF que 'vision'),
+                        # afin qu'un vertex visuomoteur soit toujours un vertex visuel ; dénominateur n_vert_roi inchangé
+                        # AVANT : n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & (data['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
+                        n_vert_roi_vision_and_pursuit_and_saccade = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
 
                         # Compute percentage active vertex in rois
                         if n_vert_roi == 0 :
@@ -223,8 +230,12 @@ for tasks in group_tasks :
                     # Active Vertex roi
                     # -----------------                  
                     df_active_vertex_roi_median_df = df_active_vertex_roi.groupby([rois_type,'categorie'], sort=False).median(numeric_only=True).reset_index().rename(columns={'percentage_active': 'median'})
-                    df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.025, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
-                    df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
+                    # [CORRECTION #3] intervalle de groupe = 25e-75e percentiles entre participants (comme dans le manuscrit)
+                    # et non 2.5e-97.5e ; noms de colonnes ci_low/ci_high inchangés pour les scripts de figures
+                    # AVANT : df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.025, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
+                    # AVANT : df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
+                    df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.25, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
+                    df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.75, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
                     
                     group_active_vertex_roi_melt_df = pd.concat([df_active_vertex_roi_median_df, 
                                                                  df_active_vertex_roi_ci_low_df.drop(columns=[rois_type, 'categorie']), 
