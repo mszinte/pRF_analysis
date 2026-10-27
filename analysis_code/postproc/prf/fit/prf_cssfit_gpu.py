@@ -1,4 +1,3 @@
-# Skeleton python script for prfmodel css fit 
 """
 -----------------------------------------------------------------------------------------
 prf_cssfit_gpu.py
@@ -30,7 +29,7 @@ python prf_cssfit_gpu.py [main directory] [project name] [subject name]
 -----------------------------------------------------------------------------------------
 Exemple:
 for direct gpu test on mesocentre: 
-srun -p volta --gres=gpu:1 --cpus-per-task=4 --time=02:00:00 --pty bash -i
+srun -p hopper --gres=gpu:1 --cpus-per-task=4 --time=02:00:00 --pty bash -i
 python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_z-score_avg_bold.func.gii prf 32  
 python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/170k/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_fmriprep_dct_z-score_avg_bold.dtseries.nii prf 32
 
@@ -48,6 +47,7 @@ import ipdb
 deb = ipdb.set_trace
 
 import os
+os.environ["KERAS_BACKEND"] = "torch"                                               # must be set before keras/prfmodel are imported
 from importlib.util import find_spec
 import pandas as pd
 import numpy as np
@@ -56,8 +56,7 @@ import sys
 from keras import ops
 import nibabel as nb
 import keras
-
-#os.environ["KERAS_BACKEND"] = "torch" #only for local usage
+import torch
 from prfmodel.stimuli import PRFStimulus
 from prfmodel.impulse import DerivativeTwoGammaImpulse
 from prfmodel.models.prf import Gaussian2DPRFModel
@@ -69,12 +68,7 @@ from prfmodel.fitters.adapter import Adapter, ParameterTransform
 from prfmodel.utils import batched
 from prfmodel.models.compression import CompressiveEncoder
 from prfmodel.models.prf import PRFStimulusEncoder
-import tensorflow as tf
 from prfmodel.fitters.losses import CorrelationLoss
-
-tf.config.list_physical_devices('GPU')
-for gpu in tf.config.list_physical_devices("GPU"):
-    tf.config.experimental.set_memory_growth(gpu, True)
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -114,10 +108,6 @@ gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
 css_grid_nr = analysis_info['css_grid_nr']
 css_exponent_bounds = analysis_info['n_th']
-
-#NEW SETTINGS 
-#sgd_num_steps = #1000 
-#batch_size = = #100?
 
 # Load screen settings from subject dependent task-events.json
 task_name = input_fn.split("task-")[1].split("_")[0]  # from the file path
@@ -230,7 +220,7 @@ eccs   = max_ecc_size * np.linspace(0.1, 1, gauss_grid_nr)**2
 polars = np.linspace(0, 2 * np.pi, gauss_grid_nr)
 
 grid_fitter = GridFitter(model=polar_model, stimulus=stimulus, compile_step=True)
-_, grid_params = grid_fitter.fit(data=data_clean.T, batch_size=20, parameter_values={
+_, grid_params = grid_fitter.fit(data=data_clean.T, batch_size=216, parameter_values={   # 216 divides 36^3 = 46656: no recompile on last batch
     "ecc": eccs, "polar": polars, "sigma": sizes,
     "weight_deriv": [-0.5], "baseline": [0.0], "amplitude": [1.0]})
 
@@ -242,7 +232,7 @@ grid_params = polar_to_cartesian(grid_params)                                   
 print("Running least squares fit....")
 ls_fitter = LeastSquaresFitter(model=prf_model, stimulus=stimulus)
 _, gaussian_params = ls_fitter.fit(data=data_clean.T, parameters=grid_params,        #override the gaussian parameters
-                                   slope_name="amplitude", intercept_name="baseline", batch_size=10000)
+                                   slope_name="amplitude", intercept_name="baseline", batch_size=None)
 
 
 # ---------- ITERATIVE GAUSSIAN FIT --------------
@@ -271,14 +261,14 @@ n_grid = np.linspace(css_exponent_bounds[0], css_exponent_bounds[1], css_grid_nr
 best_r, best_n = np.full(len(data_clean.T), -np.inf), np.full(len(data_clean.T), n_grid[-1])
 for n_val in n_grid:
     params_n = gaussian_params.assign(gain=1.0, n=n_val, sigma=gaussian_params["sigma"] * np.sqrt(n_val))
-    pred_n = batched(css_model)(stimulus, params_n, batch_size=20000)
+    pred_n = batched(css_model)(stimulus, params_n, batch_size=len(params_n))
     r = -ops.convert_to_numpy(corr_loss(data_clean.T, pred_n))  # Pearson r per vertex
     is_better = r > best_r
     best_r[is_better], best_n[is_better] = r[is_better], n_val
 
 init_params = gaussian_params.assign(gain=1.0, n=best_n, sigma=gaussian_params["sigma"] * np.sqrt(best_n))
 _, init_params = LeastSquaresFitter(model=css_model, stimulus=stimulus).fit(
-    data=data_clean.T, parameters=init_params, slope_name="amplitude", intercept_name="baseline", batch_size=10000)
+    data=data_clean.T, parameters=init_params, slope_name="amplitude", intercept_name="baseline", batch_size=None)
 
 # --- Iterative CSS fit ---
 n_lo, n_hi = css_exponent_bounds                                                   # n_th = [0.01, 1]
@@ -293,9 +283,13 @@ css_history, css_params = css_sgd.fit(data=data_clean.T, init_parameters=init_pa
 
 print("All fitted!!")
 
+# SGD convergence check: mean loss every 100 steps (should plateau before num_steps)
+print("Gaussian SGD loss:", [round(float(v), 5) for v in gauss_history.history["loss"][::100]])
+print("CSS SGD loss:     ", [round(float(v), 5) for v in css_history.history["loss"][::100]])
+
 # ------------ PREDICTION FROM CSS AND SAVING ------------------
 # 3. Prediction = same CSS model + SGD parameters -> compressed response
-css_pred = batched(css_model)(stimulus, css_params, batch_size=200)                # the CSS model, NOT the Gaussian prf_model # np.ndarray, (n_valid_vertices, n_frames)
+css_pred = batched(css_model)(stimulus, css_params, batch_size=len(css_params))               # the CSS model, NOT the Gaussian prf_model # np.ndarray, (n_valid_vertices, n_frames)
 
 
 # Rearrange CSS results into the prf_cssfit.py layout (columns selected by name)
@@ -335,6 +329,11 @@ print(f"Saved fit to: {prf_fit_dir}/{css_fit_fn}")
 img_css_pred_mat = make_surface_image(data=css_pred_mat, source_img=img)           # no .T
 nb.save(img_css_pred_mat, '{}/{}'.format(prf_fit_dir, css_pred_fn))
 print(f"Saved prediction to: {prf_fit_dir}/{css_pred_fn}")
+
+# Peak GPU memory (to tune batch sizes)
+if torch.cuda.is_available():
+    print(f"Peak GPU memory: {torch.cuda.max_memory_allocated() / 1e9:.1f} GB "
+          f"/ {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
 # Print duration
 end_time = datetime.datetime.now()

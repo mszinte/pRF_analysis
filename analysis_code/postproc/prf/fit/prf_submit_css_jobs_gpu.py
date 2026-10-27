@@ -61,7 +61,7 @@ group = sys.argv[5]
 server_project = sys.argv[6]
  
 # GPU job settings
-cluster_name = 'volta'      # GPU 
+cluster_name = 'hopper'     # GPU 
 nb_gpus = 1                 # prfmodel uses a single GPU
 nb_procs = 4                # CPUs for data loading / saving 
 memory_val = 40             # RAM (GB): data, grid predictions and outputs on the host
@@ -107,9 +107,7 @@ conda_env = 'prfmodel'
 env_cmd = """\
 source {conda_dir}/etc/profile.d/conda.sh
 conda activate {conda_env}
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
-export KERAS_BACKEND=tensorflow
-export TF_FORCE_GPU_ALLOW_GROWTH=true
+export KERAS_BACKEND=torch
 cd {script_dir}
 echo "python: $(which python)"
 nvidia-smi""".format(conda_dir=conda_dir, conda_env=conda_env, script_dir=script_dir)
@@ -159,8 +157,8 @@ for fit_num, pp_fn in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_gpu_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_gpu_fit_%N_%j_%a.out
+#SBATCH -e {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_gpu_fit_%N_%j.err
+#SBATCH -o {log_dir}/{subject}_{avg_method}-{analysis_name}-css{dm_name}_gpu_fit_%N_%j.out
 #SBATCH -J {subject}_{avg_method}-{analysis_name}-css{dm_name}_gpu_fit
 """.format(server_project=server_project,
            cluster_name=cluster_name,
