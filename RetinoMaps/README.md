@@ -189,27 +189,94 @@ https://invibe.nohost.me/predicteye/
 
 # pMF 
 ---
-### *Subject-level analysis*
-Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format 
+Oculomotor population fields (pMF) for the eye-movement localizers of RetinoMaps:
+**SacLoc** (saccade out, saccade back), **PurLoc** (pursuit out, pursuit back) and the **pMF task** (pursuit out, saccade back).
+Question: do eye-movement responses carry a map of movement direction/amplitude, and is it aligned with the visual pRF map of the same vertex?
 
-#### PMF Gaussian fit
-### Preprocessing: 
-- [x] Create the visual matrix design with eye movements (retinal view vdm) & target vdm [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
-- [x] Create the motion design matrix for saccades [mdm_builder_sac_dir.py](postproc/pmf/fit/mdm_builder_sac_dir.py)
-- [x] Concatonate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
-### Analysis 1:  
+### *Subject-level analysis*
+Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) or their projection on the HCP cifti format (**170k**)
+
+---
+
+### Settings ([pmf-analysis.yml](pmf-analysis.yml))
+- [ ] Design matrix: `dm_range: 15`, `vdm_size_pix: [100, 100]`, `target_radius: 0.6` (identical for all tasks)
+- [ ] Fake screen: `fake_screen_size_cm` gives 2 x `dm_range` = 30 dva at the task viewing distance (64.31 cm at 120 cm)
+- [ ] Fit: `max_ecc_size: 15` (grid ecc and size stop at the design-matrix edge)
+- [ ] Fit script: positions bounded to +-15 dva and sigma >= 1 dva in both SGD stages [prf_cssfit_gpu.py](../analysis_code/postproc/prf/fit/prf_cssfit_gpu.py)
+- [ ] HRF: one fixed HRF, identical to the pRF fit, never fitted on the eye-movement tasks
+- [ ] `output_folder`: pmf
+
+### Reference: retinotopy (pRF) task
+- [x] CSS fit of the pRF task [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
+
+---
+## 1. SacLoc (saccade out, saccade back)
+### Preprocessing
+- [x] Create the visual design matrix with eye movements (retinal view vdm) & target vdm [vdm_builder_sacloc.py](postproc/pmf/fit/vdm_builder_sacloc.py)
+- [x] Create the oculomotor design matrix (outward at landing p, inward at -p) [odm_builder_sacloc.py](postproc/pmf/fit/odm_builder_sacloc.py)
+- [x] Concatenate SacLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+
+### Analysis 1:
 Fit SacLoc data using pRF with retinal design matrix
-- [x] CSS Fit retinal visual pRF model [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
-### Analysis 2: 
+- [x] CSS fit retinal visual pRF model [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [x] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
+### Analysis 2:
 Fit SacLoc data using pRF with oculomotor design matrix
-- [x] CSS Fit ocluomotor pMF model with bold baseline [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
-### Analysis 3: 
-Predict SacLoc data using retinotopy task pRF parameters and retinal design matrix and Fit SacLoc data residuals using pRF with oculomotor design matrix
+- [x] CSS fit oculomotor pMF model with bold baseline [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [x] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
+
+### Analysis 3:
+Predict SacLoc data from the retinotopy pRF parameters and the retinal design matrix, then fit the residuals with the oculomotor design matrix
 - [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
-- [x] Compute residuals [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
-- [ ] CSS Fit oculomotor pMF model with residuals [prf_submit_css_jobs.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs.py)
-### Postprocessing: 
-see RetinoMaps steps CSS 
+- [x] Compute residuals (scale + offset only) [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
+- [ ] CSS fit oculomotor pMF model with residuals (`avg_methods: concat-residuals`) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [ ] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
+- [ ] Report per ROI: visual R2, beta, ODM R2 on raw vs residual data
+
+---
+## 2. PurLoc (pursuit out, pursuit back)
+No peripheral visual stimulus (target foveated, dark background): a retinal-model residual analysis does not apply here.
+
+### Preprocessing
+- [x] Inspect eye stats h5 / gaze endpoints [purloc_h5_check.ipynb](postproc/pmf/notebooks/purloc_h5_check.ipynb)
+- [x] Create the oculomotor design matrix from gaze (mean of last 100 ms; frames `sacloc`) + video [odm_builder_purloc.py](postproc/pmf/fit/odm_builder_purloc.py) using [pmf_utils.py](postproc/pmf/utils/pmf_utils.py)
+- [x] Concatenate PurLoc runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+
+### Analysis 1:
+Fit PurLoc data using pRF with oculomotor design matrix
+- [x] CSS fit oculomotor pMF model (old settings) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [ ] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py) (TODO adapt regions selected for pursuit)
+
+---
+## 3. pMF task (pursuit out, saccade back)
+Outward pursuit = oculomotor only; return saccade = visual target and saccade vector both at -p.
+
+### Preprocessing
+- [ ] Build design matrices P (outward pursuit endpoint p), V (retinal target at return-saccade onset, ~ -p), B (block boxcar) [dm_builder_anchored.py](postproc/pmf/fit/dm_builder_anchored.py)
+- [ ] Concatenate runs [averaging_sbatch.py](../analysis_code/preproc/functional/averaging_sbatch.py) using [averaging.py](preproc/functional/averaging.py)
+
+### Analysis 1 (main):
+pRF-anchored GLM (P and V are half a sweep cycle apart, independent regressors)
+- [ ] Fit `bold ~ B + V + P` with frozen pRF parameters, cross-validated; dR2_V = (B+V) - B, dR2_P = (B+V+P) - (B+V) [anchored_glm.py](postproc/pmf/fit/anchored_glm.py)
+- [ ] Rotation null for dR2_P [anchored_glm.py](postproc/pmf/fit/anchored_glm.py) `--null`
+
+### Analysis 2 (exploratory):
+- [ ] Free CSS pMF fit of P alone (pursuit maps not aligned with the pRF) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+
+---
+## 4. Postprocessing (all tasks)
+- [x] Merge pMF / pRF derivatives per ROI and compute KDE + regression TSVs (task as argument) [make_corr_tsv.py](postproc/pmf/postfit/make_corr_tsv.py)
+  `python make_corr_tsv.py /scratch/mszinte/data RetinoMaps sub-0X pmf-css-odm prf-css SacLoc PurLoc`
+- [x] Correlation figures [make_corr_plots.py](postproc/pmf/postfit/make_corr_plots.py)
+- [x] Fit check: fair subset, within-hemisphere, per-ring, grid-stuck fits, flip checks (`TASK` switch) [pmf_fit_check.ipynb](postproc/pmf/notebooks/pmf_fit_check.ipynb)
+- [ ] Anchored-GLM summary per ROI: median dR2_P / dR2_V, fraction of vertices beating the rotation null *(new)* [anchored_glm_summary.py](postproc/pmf/postfit/anchored_glm_summary.py)
+- see RetinoMaps steps CSS
+
+---
+### *Group-level analysis*
+- [ ] Group TSVs (KDE grids averaged across subjects) [make_corr_tsv.py](postproc/pmf/postfit/make_corr_tsv.py) with `group-all`
+- [ ] Group figures [make_corr_plots.py](postproc/pmf/postfit/make_corr_plots.py) with `group-all`
+- [ ] Anchored GLM across subjects: one value per subject and ROI (median dR2_P, fraction significant), Wilcoxon against 0 / 5 % [anchored_glm_summary.py](postproc/pmf/postfit/anchored_glm_summary.py)
 
 
 

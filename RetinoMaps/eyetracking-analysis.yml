@@ -3,6 +3,10 @@ eye-tracking_task_names:
   description: "Names of the tasks for which we process eye tracking data"
   value: ["rest", "pRF", "PurLoc", "SacLoc"]
 
+prf_task_names: 
+  description: "Names of the tasks for which pRF was performed"
+  value: ['pRF']
+
 ppd: 
   description: "Pixel per degree: how many pixels were dispayed within one degree of visual angle. Derived from matlab set-up"
   value: 52.00031911320716

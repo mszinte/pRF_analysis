@@ -131,11 +131,11 @@ ecc_pcm_num_bins:
 
 ecc_pcm_max: 
   description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
-  value: [15, 15]
+  value: [10, 10]
 
 ecc_pcm_axis: 
   description: "Eccentricity and pCM bounds in the violin plot axis"
-  value: [0, 15]
+  value: [0, 10]
 
 polar_angle_num_bins: 
   description: "Number of bins in the polar angle plot"
@@ -200,3 +200,60 @@ distribution_screen_side:
 hot_zone_percent: 
   description: "Hot zone percent in the barycentre plot"
   value: 0.01
+
+# Correlation plots 
+corr_params:
+  description: "Parameters to correlate between pRF and pMF parameters"
+  value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc'] #'pcm_median'
+
+corr_grid_size:
+  description: "Number of bins along each axis of the 2D KDE evaluation grid"
+  value: 100
+
+prf_rsq_param_range:
+  description: "Axis range for pRF R² in the 2D correlation KDE plot"
+  value: [0, 0.8]
+
+prf_x_param_range:
+  description: "Axis range for pRF x coord in the 2D correlation KDE plot"
+  value: [-10, 10]
+
+prf_y_param_range:
+  description: "Axis range for pRF y coord in the 2D correlation KDE plot"
+  value: [-10, 10]
+
+prf_size_param_range:
+  description: "Axis range for pRF size in the 2D correlation KDE plot"
+  value: [0, 10]
+
+prf_ecc_param_range:
+  description: "Axis range for pRF eccentricity in the 2D correlation KDE plot"
+  value: [0, 10]
+
+pcm_median_param_range:
+  description: "Axis range for pRF CM in the 2D correlation KDE plot"
+  value: [0, 30]
+  
+rois_fig_margin: 
+  description: "Margin for figure with multiple ROIs"
+  value: [100, 50, 50, 75]
+  
+rois_hor_spacing: 
+  description: "Horizontal spacing between figure with multiple ROIs"
+  value: 100
+  
+rois_ver_spacing: 
+  description: "Vertical spacing between figure with multiple ROIs"
+  value: 50
+
+rois_bar_width: 
+  description: "Bar width of plots with multiple ROIs"
+  value: 50
+  
+rois_plot_height: 
+  description: "Figure height of figure with multiple ROIs"
+  value: 200
+  
+rois_plot_width:
+  description: "Figure width of figure with multiple ROIs"
+  value: 200

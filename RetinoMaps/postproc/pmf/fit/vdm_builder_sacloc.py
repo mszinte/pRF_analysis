@@ -143,7 +143,7 @@ for run in range(1, len(event_runs) + 1):
 
     eye_data = eye_data_runs[run - 1]
     gaze_x   = eye_data[:, 1]
-    gaze_y   = eye_data[:, 2]
+    gaze_y   = eye_data[:, 2] #no need to flip because was flipped earlier in convert to dva function
     eye_times = (eye_data[:, 0] - eye_data[0, 0]) * TIME_SCALE
     n_timepoints = len(gaze_x)
 
