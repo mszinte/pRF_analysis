@@ -219,17 +219,18 @@ Analyses are run on individual participant (**sub-0X**) surface (**fsnative**) o
 ### Analysis 1:
 Fit SacLoc data using pRF with retinal design matrix
 - [x] CSS fit retinal visual pRF model [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
-
+- [x] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
 ### Analysis 2:
 Fit SacLoc data using pRF with oculomotor design matrix
-- [x] CSS fit oculomotor pMF model with bold baseline (old settings) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
-- [ ] Refit with the section-0 settings (bounded, sigma floor, shared HRF)
+- [x] CSS fit oculomotor pMF model with bold baseline [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [x] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
 
 ### Analysis 3:
 Predict SacLoc data from the retinotopy pRF parameters and the retinal design matrix, then fit the residuals with the oculomotor design matrix
 - [x] Predict SacLoc timecourse from pRF parameters [prf_predict_timecourse_submit_jobs.py](postproc/pmf/fit/prf_predict_timecourse_submit_jobs.py)
 - [x] Compute residuals (scale + offset only) [compute_residuals.py](postproc/pmf/postfit/compute_residuals.py)
 - [ ] CSS fit oculomotor pMF model with residuals (`avg_methods: concat-residuals`) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [ ] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py)
 - [ ] Report per ROI: visual R2, beta, ODM R2 on raw vs residual data
 
 ---
@@ -244,6 +245,7 @@ No peripheral visual stimulus (target foveated, dark background): a retinal-mode
 ### Analysis 1:
 Fit PurLoc data using pRF with oculomotor design matrix
 - [x] CSS fit oculomotor pMF model (old settings) [prf_submit_css_jobs_gpu.py](../analysis_code/postproc/prf/fit/prf_submit_css_jobs_gpu.py)
+- [ ] mask with visuo-motor regions [mask_pmf_with_intertask.py](postproc/pmf/postfit/mask_pmf_with_intertask.py) (TODO adapt regions selected for pursuit)
 
 ---
 ## 3. pMF task (pursuit out, saccade back)
