@@ -24,8 +24,8 @@ To run:
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 prf 327 b327
-python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 prf 327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 prf meso_0327 b327
+python css_pcm_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 prf meso_0327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -68,9 +68,13 @@ analysis_info = settings[0]
 
 # Define cluster/server specific parameters
 cluster_name  = analysis_info['cluster_name']
-nb_procs = 8
-memory_val = 48
-hour_proc = 25
+# [CORRECTION #74] compute_css_pcm.py calcule maintenant les patchs geodesiques en parallele sur --cpus-per-task coeurs
+# AVANT : nb_procs = 8
+# AVANT : memory_val = 48
+# AVANT : hour_proc = 25
+nb_procs = 16
+memory_val = 200
+hour_proc = 4
 
 # Set folders
 log_dir = "{}/{}/derivatives/pp_data/{}/log_outputs".format(

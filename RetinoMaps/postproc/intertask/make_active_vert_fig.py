@@ -82,7 +82,9 @@ amplitude_th = analysis_info['prf_amp_th']
 stats_th = analysis_info['stats_th']
 n_th = analysis_info['n_th'] 
 rois_methods = analysis_info['rois_methods']
-prf_task_name = analysis_info['prf_task_names'][0]
+# [CORRECTION #41] cle 'prf_task_names' absente des yml RetinoMaps (KeyError) ; la cle de prf-analysis.yml est 'analysis_task_names'
+# AVANT : prf_task_name = analysis_info['prf_task_names'][0]
+prf_task_name = analysis_info['analysis_task_names'][0]
 
 avg_method = 'loo-avg'
 

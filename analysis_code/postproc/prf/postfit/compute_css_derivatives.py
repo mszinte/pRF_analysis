@@ -159,11 +159,18 @@ if subject != 'template_avg':
                                 preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
                             
                             # Compute median across LOO runs
+                            # [CORRECTION #1] vraie mediane sur les 5 plis LOO empiles (la mediane de proche en proche donnait des poids 1/16,1/16,1/8,1/4,1/2)
+                            # AVANT : for n_run, loo_deriv_fn in enumerate(group_files):
+                            # AVANT : print(f'Loadding loo deriv: {loo_deriv_fn}')
+                            # AVANT : _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
+                            # AVANT : if n_run == 0: loo_prf_deriv = np.copy(loo_prf_deriv_run_data)
+                            # AVANT : else: loo_prf_deriv = np.nanmedian(np.array([loo_prf_deriv, loo_prf_deriv_run_data]), axis=0)
+                            loo_prf_deriv_runs = []
                             for n_run, loo_deriv_fn in enumerate(group_files):
                                 print(f'Loadding loo deriv: {loo_deriv_fn}')
                                 _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
-                                if n_run == 0: loo_prf_deriv = np.copy(loo_prf_deriv_run_data)
-                                else: loo_prf_deriv = np.nanmedian(np.array([loo_prf_deriv, loo_prf_deriv_run_data]), axis=0)
+                                loo_prf_deriv_runs.append(loo_prf_deriv_run_data)
+                            loo_prf_deriv = np.nanmedian(np.stack(loo_prf_deriv_runs, axis=0), axis=0)
                             
                             # Save median results
                             loo_prf_deriv_img = make_surface_image(loo_prf_deriv, prf_deriv_img, maps_names)
@@ -211,7 +218,7 @@ elif subject == 'template_avg':
                                                         maps_names=maps_names)
                 nb.save(template_deriv_img, template_deriv_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

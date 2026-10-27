@@ -45,6 +45,9 @@ import sys
 import shutil
 import numpy as np
 import nibabel as nb
+# [CORRECTION #25] pandas pour lire mmp_rois_numbers.tsv (orthographe de reference des parcelles)
+# AVANT : (ligne ajoutee)
+import pandas as pd
 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
@@ -66,6 +69,11 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 rois_group_mmp = analysis_info['rois-group-mmp']
+# [CORRECTION #25] l'annot FreeSurfer ecrit '7PL' alors que le tsv et le YAML ecrivent '7Pl' : on renomme les parcelles
+# [CORRECTION #25] de l'annot avec l'orthographe du tsv (comparaison insensible a la casse)
+# AVANT : (bloc ajoute)
+mmp_rois_numbers_df = pd.read_table(os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv"), sep="\t")
+mmp_name_by_upper = {name.upper(): name for name in mmp_rois_numbers_df['roi_name']}
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -93,6 +101,9 @@ for label_id, roi_name in id_to_name_lh.items():
         roi_clean = roi_name
     if roi_clean.endswith("_ROI"):
         roi_clean = roi_clean[:-len("_ROI")]
+    # [CORRECTION #25] orthographe du tsv (ex. 7PL -> 7Pl)
+    # AVANT : (ligne ajoutee)
+    roi_clean = mmp_name_by_upper.get(roi_clean.upper(), roi_clean)
 
     rois_mmp_masks_lh[roi_clean] = (labels_lh == label_id)
     rois_mmp_masks_lh[roi_clean] = rois_mmp_masks_lh[roi_clean].squeeze()
@@ -116,6 +127,9 @@ for label_id, roi_name in id_to_name_rh.items():
         roi_clean = roi_name
     if roi_clean.endswith("_ROI"):
         roi_clean = roi_clean[:-len("_ROI")]
+    # [CORRECTION #25] orthographe du tsv (ex. 7PL -> 7Pl)
+    # AVANT : (ligne ajoutee)
+    roi_clean = mmp_name_by_upper.get(roi_clean.upper(), roi_clean)
 
     rois_mmp_masks_rh[roi_clean] = (labels_rh == label_id)
     rois_mmp_masks_rh[roi_clean] = rois_mmp_masks_rh[roi_clean].squeeze()
@@ -144,6 +158,13 @@ for group_name, roi_list in rois_group_mmp.items():
     masks_lh = [rois_mmp_masks_lh[roi] for roi in roi_list if roi in rois_mmp_masks_lh]
     masks_rh = [rois_mmp_masks_rh[roi] for roi in roi_list if roi in rois_mmp_masks_rh]
     masks_brain = [rois_mmp_masks_brain[roi] for roi in roi_list if roi in rois_mmp_masks_brain]
+    # [CORRECTION #44] avertissement si des parcelles du groupe sont absentes des masques (elles etaient ignorees en silence,
+    # [CORRECTION #44] ex. 7PL/7Pl) ; les masques construits sont inchanges
+    # AVANT : (lignes ajoutees)
+    for hemi_name, hemi_masks in zip(['hemi-L', 'hemi-R', 'brain'], [rois_mmp_masks_lh, rois_mmp_masks_rh, rois_mmp_masks_brain]):
+        missing_rois = [roi for roi in roi_list if roi not in hemi_masks]
+        if len(missing_rois) > 0:
+            print('WARNING: {} ({}) parcels not found: {}'.format(group_name, hemi_name, missing_rois))
 
     if len(masks_lh) > 0:
         rois_group_mmp_masks_lh[group_name] = np.logical_or.reduce(masks_lh)
@@ -173,8 +194,14 @@ overlays_rois_mmp_fn = '{}/db/{}/overlays_rois-mmp.svg'.format(cortex_dir, subje
 overlays_rois_group_mmp_fn = '{}/db/{}/overlays_rois-group-mmp.svg'.format(cortex_dir, subject)
 
 # Copy overlays 
-shutil.copy(overlays_fn, overlays_rois_mmp_fn)
-shutil.copy(overlays_fn, overlays_rois_group_mmp_fn)
+# [CORRECTION #72] copyfile copie le contenu sans chmod : shutil.copy echoue (Operation not permitted)
+# [CORRECTION #72] quand le fichier cible appartient a un autre utilisateur du groupe
+# AVANT : shutil.copy(overlays_fn, overlays_rois_mmp_fn)
+shutil.copyfile(overlays_fn, overlays_rois_mmp_fn)
+# [CORRECTION #72] copyfile copie le contenu sans chmod : shutil.copy echoue (Operation not permitted)
+# [CORRECTION #72] quand le fichier cible appartient a un autre utilisateur du groupe
+# AVANT : shutil.copy(overlays_fn, overlays_rois_group_mmp_fn)
+shutil.copyfile(overlays_fn, overlays_rois_group_mmp_fn)
 
 # ROIs MMP
 rp = ROIpack(subject, rois_mmp_brain_fn)
@@ -184,7 +211,7 @@ rp.to_svg(filename=overlays_rois_mmp_fn)
 rp = ROIpack(subject, rois_group_mmp_brain_fn)
 rp.to_svg(filename=overlays_rois_group_mmp_fn)
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

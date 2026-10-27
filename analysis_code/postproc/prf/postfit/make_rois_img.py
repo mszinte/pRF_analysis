@@ -119,8 +119,15 @@ for format_, extension in zip(formats, extensions):
                                           hemis=hemi)
 
                 array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)
+                # [CORRECTION #25] rois-mmp : le code ecrit est le roi_num du tsv (celui utilise pour decoder roi_mmp dans les TSV)
+                # [CORRECTION #25] et non la position dans le npz, qui se decalait des qu'une parcelle manquait (7PL)
+                # AVANT : for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
+                # AVANT : array_rois[mask] = i
                 for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
-                    array_rois[mask] = i
+                    if rois_method_format == 'rois-mmp':
+                        array_rois[mask] = mmp_rois_numbers_df.set_index('roi_name')['roi_num'][key]
+                    else:
+                        array_rois[mask] = i
                     
                 # Load data to have source img
                 data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
@@ -163,8 +170,15 @@ for format_, extension in zip(formats, extensions):
                                      )
 
             array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
+            # [CORRECTION #25] rois-mmp : le code ecrit est le roi_num du tsv (celui utilise pour decoder roi_mmp dans les TSV)
+            # [CORRECTION #25] et non la position dans le npz, qui se decalait des qu'une parcelle manquait (7PL)
+            # AVANT : for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
+            # AVANT : array_rois[mask] = i
             for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
-                array_rois[mask] = i
+                if rois_method_format == 'rois-mmp':
+                    array_rois[mask] = mmp_rois_numbers_df.set_index('roi_name')['roi_num'][key]
+                else:
+                    array_rois[mask] = i
                 
             # Define filename
             rois_fn = f'{subject}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
@@ -175,7 +189,7 @@ for format_, extension in zip(formats, extensions):
             nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
             print('Saving {}/{}'.format(rois_dir, rois_fn))
             
-# Change permission
-print('Changing permission in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Change permission
+# print('Changing permission in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

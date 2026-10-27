@@ -22,13 +22,13 @@
 # -----------------------------------------------------------------------------------------
 # Exemple:
 # cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-# sh merge_fig_prf.sh ~/projects amblyo7T_prf /scratch/mszinte/data prf
+# sh merge_fig_prf.sh ~/projects RetinoMaps /scratch/mszinte/data prf
 # -----------------------------------------------------------------------------------------
 # Written by Martin Szinte (martin.szinte@gmail.com)
 # -----------------------------------------------------------------------------------------
 
 # Check if the base path, project name, and data path are provided as arguments
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 4 ]; then
     echo "Usage: $0 <base_path> <project_name> <data_path> <analysis_name>"
     exit 1
 fi
