@@ -11,6 +11,7 @@ sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
 sys.argv[4]: analysisi name (e.g. prf)
 sys.argv[5]: save in svg (e.g. no)
+sys.argv[6]: (optional) -nopcm to run without pCM outputs
 -----------------------------------------------------------------------------------------
 Output(s):
 Pycortex flatmaps figures and dataset
@@ -20,7 +21,7 @@ To run:
 1. cd to function
 >> cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
 2. run python command
->> python pycortex_maps_css.py [main directory] [project] [subject] [analysis name] [save_svg_in] 
+>> python pycortex_maps_css.py [main directory] [project] [subject] [analysis name] [save_svg_in] [-nopcm (optional)]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/disks/meso_H/projects/pRF_analysis/analysis_code/postproc/prf/postfit/
@@ -59,6 +60,8 @@ project_dir = sys.argv[2]
 subject = sys.argv[3]
 analysis_name = sys.argv[4]
 save_svg = sys.argv[5]
+# Optional flag (default: pCM present)
+with_pcm = '-nopcm' not in sys.argv[1:]
 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
@@ -154,22 +157,22 @@ for avg_method in avg_methods:
                         deriv_fn_R = deriv_fn_L.replace('hemi-L', 'hemi-R')
                         stats_fn_L = deriv_fn_L.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_stats')
                         stats_fn_R = deriv_fn_R.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_stats')
-                        pcm_fn_L   = deriv_fn_L.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(
-                                         f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
-                        pcm_fn_R   = deriv_fn_R.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(
-                                         f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
-
+                       
                         print(f"Loading deriv: {os.path.basename(deriv_fn_L)}")
                         deriv_mat = load_surface_pycortex(L_fn=deriv_fn_L, R_fn=deriv_fn_R)['data_concat']
                         stats_mat = load_surface_pycortex(L_fn=stats_fn_L, R_fn=stats_fn_R)['data_concat']
-                        pcm_mat   = load_surface_pycortex(L_fn=pcm_fn_L,   R_fn=pcm_fn_R  )['data_concat']
-
+                    
                         # extract run_id from filename if present (single-run case)
                         fn_for_run_id = deriv_fn_L
                         run_id = '_' + os.path.basename(fn_for_run_id).split('_')[2] if 'run-' in os.path.basename(fn_for_run_id) else ''
 
                         # Combine mat
-                        all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
+                        mats = [deriv_mat, stats_mat]
+                        if with_pcm:
+                            pcm_fn_L = deriv_fn_L.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
+                            pcm_fn_R = deriv_fn_R.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
+                            mats.append(load_surface_pycortex(L_fn=pcm_fn_L, R_fn=pcm_fn_R)['data_concat'])
+                        all_deriv_mat = np.concatenate(mats)
 
                         # Threshold mat
                         all_deriv_mat_th = all_deriv_mat
@@ -290,24 +293,25 @@ for avg_method in avg_methods:
                         maps_names.append('n')
 
                         # pcm
-                        pcm_data = all_deriv_mat[pcm_median_idx,...]
-                        alpha_pcm = np.copy(alpha)
-                        alpha_pcm[np.isnan(pcm_data)] = 0
-                        param_pcm = {'data': pcm_data,
-                                     'cmap': cmap_ecc_size,
-                                     'alpha': alpha_pcm,
-                                     'vmin': pcm_scale[0],
-                                     'vmax': pcm_scale[1],
-                                     'cbar': 'discrete',
-                                     'cortex_type': 'VertexRGB',
-                                     'description': 'CSS pRF CM',
-                                     'curv_brightness': 0.6,
-                                     'curv_contrast': 0.2,
-                                     'add_roi': False,
-                                     'cbar_label': 'pRF CM (mm/dva)',
-                                     'overlay_fn': overlay_fn,
-                                     'with_labels': True}
-                        maps_names.append('pcm')
+                        if with_pcm:
+                            pcm_data = all_deriv_mat[pcm_median_idx,...]
+                            alpha_pcm = np.copy(alpha)
+                            alpha_pcm[np.isnan(pcm_data)] = 0
+                            param_pcm = {'data': pcm_data,
+                                         'cmap': cmap_ecc_size,
+                                         'alpha': alpha_pcm,
+                                         'vmin': pcm_scale[0],
+                                         'vmax': pcm_scale[1],
+                                         'cbar': 'discrete',
+                                         'cortex_type': 'VertexRGB',
+                                         'description': 'CSS pRF CM',
+                                         'curv_brightness': 1,
+                                         'curv_contrast': 0.1,
+                                         'add_roi': False,
+                                         'cbar_label': 'pRF CM (mm/dva)',
+                                         'overlay_fn': overlay_fn,
+                                         'with_labels': True}
+                            maps_names.append('pcm')
 
                         # draw flatmaps
                         volumes = {}
@@ -349,13 +353,11 @@ for avg_method in avg_methods:
 
                     for deriv_fn in deriv_fns:
                         stats_fn = deriv_fn.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_stats')
-                        pcm_fn   = deriv_fn.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
-
-
+                        
                         print(f"Loading deriv: {os.path.basename(deriv_fn)}")
                         deriv_mat = load_surface_pycortex(brain_fn=deriv_fn)['data_concat']
                         stats_mat = load_surface_pycortex(brain_fn=stats_fn)['data_concat']
-                        pcm_mat   = load_surface_pycortex(brain_fn=pcm_fn  )['data_concat']
+                        
 
                         if subject == 'sub-170k': save_svg = save_svg
                         else: save_svg = False
@@ -365,7 +367,11 @@ for avg_method in avg_methods:
                         run_id = '_' + os.path.basename(fn_for_run_id).split('_')[2] if 'run-' in os.path.basename(fn_for_run_id) else ''
 
                         # Combine mat
-                        all_deriv_mat = np.concatenate((deriv_mat, stats_mat, pcm_mat))
+                        mats = [deriv_mat, stats_mat]
+                        if with_pcm:
+                            pcm_fn = deriv_fn.replace(f'{analysis_name}-css{dm_name}_deriv', f'{analysis_name}-css{dm_name}_pcm').replace(f'_{avg_method}_', f'_{avg_method}_{rois_method_format}_')
+                            mats.append(load_surface_pycortex(brain_fn=pcm_fn)['data_concat'])
+                        all_deriv_mat = np.concatenate(mats)
 
                         # Threshold mat
                         all_deriv_mat_th = all_deriv_mat
@@ -486,24 +492,25 @@ for avg_method in avg_methods:
                         maps_names.append('n')
 
                         # pcm
-                        pcm_data = all_deriv_mat[pcm_median_idx,...]
-                        alpha_pcm = np.copy(alpha)
-                        alpha_pcm[np.isnan(pcm_data)] = 0
-                        param_pcm = {'data': pcm_data,
-                                     'cmap': cmap_ecc_size,
-                                     'alpha': alpha_pcm,
-                                     'vmin': pcm_scale[0],
-                                     'vmax': pcm_scale[1],
-                                     'cbar': 'discrete',
-                                     'cortex_type': 'VertexRGB',
-                                     'description': 'CSS pRF CM',
-                                     'curv_brightness': 1,
-                                     'curv_contrast': 0.1,
-                                     'add_roi': False,
-                                     'cbar_label': 'pRF CM (mm/dva)',
-                                     'overlay_fn': overlay_fn,
-                                     'with_labels': True}
-                        maps_names.append('pcm')
+                        if pcm: 
+                            pcm_data = all_deriv_mat[pcm_median_idx,...]
+                            alpha_pcm = np.copy(alpha)
+                            alpha_pcm[np.isnan(pcm_data)] = 0
+                            param_pcm = {'data': pcm_data,
+                                         'cmap': cmap_ecc_size,
+                                         'alpha': alpha_pcm,
+                                         'vmin': pcm_scale[0],
+                                         'vmax': pcm_scale[1],
+                                         'cbar': 'discrete',
+                                         'cortex_type': 'VertexRGB',
+                                         'description': 'CSS pRF CM',
+                                         'curv_brightness': 1,
+                                         'curv_contrast': 0.1,
+                                         'add_roi': False,
+                                         'cbar_label': 'pRF CM (mm/dva)',
+                                         'overlay_fn': overlay_fn,
+                                         'with_labels': True}
+                            maps_names.append('pcm')
 
                         # draw flatmaps
                         volumes = {}
