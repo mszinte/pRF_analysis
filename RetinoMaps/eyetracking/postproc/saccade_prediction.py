@@ -159,28 +159,44 @@ offset_all_trials_run_2 = np.zeros_like(time_end_trial[:, :, 1])
 # Loop through each trial and apply the conversion for run 1
 for i in range(time_start_trial.shape[0]):
     for j in range(time_start_trial.shape[1]):
-        onset_all_trials_run_1[i, j] = (time_start_trial[i, j, 0] - initial_timestamp_run_1) / 100
-        offset_all_trials_run_1[i, j] = (time_end_trial[i, j, 0] - initial_timestamp_run_1) / 100
+        # [CORRECTION #65] temps en ms (et non en pas de 100 ms tronques par int() plus bas : decalage de 0 a 100 ms)
+        # AVANT :         onset_all_trials_run_1[i, j] = (time_start_trial[i, j, 0] - initial_timestamp_run_1) / 100
+        # AVANT :         offset_all_trials_run_1[i, j] = (time_end_trial[i, j, 0] - initial_timestamp_run_1) / 100
+        onset_all_trials_run_1[i, j] = (time_start_trial[i, j, 0] - initial_timestamp_run_1)
+        offset_all_trials_run_1[i, j] = (time_end_trial[i, j, 0] - initial_timestamp_run_1)
 
 # Loop through each trial and apply the conversion for run 2
 for i in range(time_start_trial.shape[0]):
     for j in range(time_start_trial.shape[1]):
-        onset_all_trials_run_2[i, j] = (time_start_trial[i, j, 1] - initial_timestamp_run_2) / 100
-        offset_all_trials_run_2[i, j] = (time_end_trial[i, j, 1] - initial_timestamp_run_2) / 100
+        # [CORRECTION #65] temps en ms (et non en pas de 100 ms tronques par int() plus bas : decalage de 0 a 100 ms)
+        # AVANT :         onset_all_trials_run_2[i, j] = (time_start_trial[i, j, 1] - initial_timestamp_run_2) / 100
+        # AVANT :         offset_all_trials_run_2[i, j] = (time_end_trial[i, j, 1] - initial_timestamp_run_2) / 100
+        onset_all_trials_run_2[i, j] = (time_start_trial[i, j, 1] - initial_timestamp_run_2)
+        offset_all_trials_run_2[i, j] = (time_end_trial[i, j, 1] - initial_timestamp_run_2)
 
 # Flatten the arrays and filter out non-positive values for run 1
 onset_all_trials_flat_run_1 = np.ravel(onset_all_trials_run_1, order='F')
-onset_all_trials_flat_run_1 = onset_all_trials_flat_run_1[onset_all_trials_flat_run_1 > 0]
+# [CORRECTION #66] cases vides (essais 17-32 des sequences de fixation, = 0) reperees sur les temps bruts : le filtre
+# '> 0' apres soustraction retirait aussi l'essai 1 (onset = debut des donnees = 0) et decalait tous les indices d'un essai
+# AVANT : onset_all_trials_flat_run_1 = onset_all_trials_flat_run_1[onset_all_trials_flat_run_1 > 0]
+onset_all_trials_flat_run_1 = onset_all_trials_flat_run_1[np.ravel(time_start_trial[:, :, 0], order='F') > 0]
 
 offset_all_trials_flat_run_1 = np.ravel(offset_all_trials_run_1, order='F')
-offset_all_trials_flat_run_1 = offset_all_trials_flat_run_1[offset_all_trials_flat_run_1 > 0]
+# [CORRECTION #66] idem pour les offsets (un indice = un essai, 0-based, 208 essais)
+# AVANT : offset_all_trials_flat_run_1 = offset_all_trials_flat_run_1[offset_all_trials_flat_run_1 > 0]
+offset_all_trials_flat_run_1 = offset_all_trials_flat_run_1[np.ravel(time_end_trial[:, :, 0], order='F') > 0]
 
 # Flatten the arrays and filter out non-positive values for run 2
 onset_all_trials_flat_run_2 = np.ravel(onset_all_trials_run_2, order='F')
-onset_all_trials_flat_run_2 = onset_all_trials_flat_run_2[onset_all_trials_flat_run_2 > 0]
+# [CORRECTION #66] cases vides (essais 17-32 des sequences de fixation, = 0) reperees sur les temps bruts : le filtre
+# '> 0' apres soustraction retirait aussi l'essai 1 (onset = debut des donnees = 0) et decalait tous les indices d'un essai
+# AVANT : onset_all_trials_flat_run_2 = onset_all_trials_flat_run_2[onset_all_trials_flat_run_2 > 0]
+onset_all_trials_flat_run_2 = onset_all_trials_flat_run_2[np.ravel(time_start_trial[:, :, 1], order='F') > 0]
 
 offset_all_trials_flat_run_2 = np.ravel(offset_all_trials_run_2, order='F')
-offset_all_trials_flat_run_2 = offset_all_trials_flat_run_2[offset_all_trials_flat_run_2 > 0]
+# [CORRECTION #66] idem pour les offsets (un indice = un essai, 0-based, 208 essais)
+# AVANT : offset_all_trials_flat_run_2 = offset_all_trials_flat_run_2[offset_all_trials_flat_run_2 > 0]
+offset_all_trials_flat_run_2 = offset_all_trials_flat_run_2[np.ravel(time_end_trial[:, :, 1], order='F') > 0]
 
 # Generate Expected Position 
 sac_expected_x, sac_expected_y = predicted_saccade(main_dir=main_dir, project_dir=project_dir, df_run=dfs_runs[0], settings=task_settings)
@@ -197,11 +213,16 @@ trial_offsets_all = [offset_all_trials_flat_run_1,offset_all_trials_flat_run_2]
 
 for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in_filtered_dfs)):
     eye_data = eye_data_all_runs[run]
-    correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
-    correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    # [CORRECTION #65] temps des saccades en ms depuis le debut des donnees (et non en pas de 100 ms tronques par int())
+    # AVANT :     correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0])
+    correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0])
 
-    correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
-    correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0])
+    correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0])
 
     trial_onsets = trial_onsets_all[run]
     trial_offsets = trial_offsets_all[run]
@@ -215,6 +236,16 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     current_index = 0
 
     for idx, (trial_in, trial_out) in enumerate(zip(trials_in, trials_out)):
+        # [CORRECTION #66] indices d'essais 0-based coherents (design locEMexp : 16 essais de fixation puis 32 essais
+        # alternant out/in). trials_out (yml) = numeros 1-based des essais 'out' (17, 19, ...) ; l'essai 'in' qui suit est
+        # g_in = g_out + 1 (trials_in du yml, 16, 18, ..., ne correspond a aucun des deux et n'est plus utilise).
+        # Cible (constConfig.m) : saut centre -> peripherie a onset(g_out) + 100 ms, retour au centre a onset(g_in) + 100 ms.
+        # NB : sac_expected_x/y[trial_out] = position de l'image 1 de l'essai 0-based trial_out = g_in, c.-a-d. la cible
+        # peripherique de la saccade 'out' : indexation correcte, conservee.
+        # AVANT : (ligne(s) ajoutee(s))
+        g_out = trial_out - 1
+        g_in = g_out + 1
+        saccade_fix_ms = 100    # const.saccade_fix_dur
         onset_out = int(list(correct_sac_out_seconds_on)[idx])
         offset_out = int(list(correct_sac_out_seconds_off)[idx])
         onset_in = int(list(correct_sac_in_seconds_on)[idx])
@@ -224,8 +255,12 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
         # Case 4: Both saccade outwards and inwards are missing
         if onset_out < 0 and onset_in < 0:
             print("case 4")
-            onset_out = int(trial_onsets[trial_out - 2 ])
-            offset_in = int(trial_offsets[trial_in])
+            # [CORRECTION #66] temps de repli = temps des sauts de la cible (avant : trial_onsets[trial_out - 2] = un essai trop
+            # tot si l'essai 1 n'etait pas retire, et fin de l'essai trial_in = 16 (0-based) = essai 'out')
+            # AVANT :             onset_out = int(trial_onsets[trial_out - 2 ])
+            # AVANT :             offset_in = int(trial_offsets[trial_in])
+            onset_out = int(trial_onsets[g_out] + saccade_fix_ms)
+            offset_in = int(trial_onsets[g_in] + saccade_fix_ms)
             model_x[current_index:onset_out] = 0
             model_x[onset_out:offset_in] = sac_expected_x[trial_out]
             current_index = offset_in
@@ -234,7 +269,9 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
         # Case 2: Saccade outwards is missing
         if onset_out < 0 or offset_out < 0:
             print("case 2")
-            onset_out = int(list(trial_onsets)[trial_out - 2])
+            # [CORRECTION #66] saut de la cible vers la peripherie (essai g_out, 0-based)
+            # AVANT :             onset_out = int(list(trial_onsets)[trial_out - 2])
+            onset_out = int(trial_onsets[g_out] + saccade_fix_ms)
             onset_in = int(list(correct_sac_in_seconds_on)[idx])
             model_x[current_index:onset_out] = 0
             model_x[onset_out:onset_in] = sac_expected_x[trial_out]
@@ -248,7 +285,9 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
             print("case 3")
             onset_out = int(list(correct_sac_out_seconds_on)[idx])
             offset_out = int(list(correct_sac_out_seconds_off)[idx])
-            offset_in = int(list(trial_offsets)[trial_in])
+            # [CORRECTION #66] retour de la cible au centre (essai g_in, 0-based)
+            # AVANT :             offset_in = int(list(trial_offsets)[trial_in])
+            offset_in = int(trial_onsets[g_in] + saccade_fix_ms)
             model_x[current_index:onset_out] = 0
             model_x[onset_out:offset_out] = np.interp(np.arange(onset_out, offset_out), [onset_out, offset_out], [0, sac_expected_x[trial_out]])
             model_x[offset_out:offset_in] = sac_expected_x[trial_out]
@@ -296,11 +335,16 @@ trial_offsets_all = [offset_all_trials_flat_run_1,offset_all_trials_flat_run_2]
 
 for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in_filtered_dfs)):
     eye_data = eye_data_all_runs[run]
-    correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
-    correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    # [CORRECTION #65] temps des saccades en ms depuis le debut des donnees (et non en pas de 100 ms tronques par int())
+    # AVANT :     correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
+    # AVANT :     correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    correct_sac_out_seconds_on = (out_filtered_df['sac_t_onset'] - eye_data[0, 0])
+    correct_sac_out_seconds_off = (out_filtered_df['sac_t_offset'] - eye_data[0, 0])
 
-    correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0]) / 100
-    correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0]) / 100
+    correct_sac_in_seconds_on = (in_filtered_df['sac_t_onset'] - eye_data[0, 0])
+    correct_sac_in_seconds_off = (in_filtered_df['sac_t_offset'] - eye_data[0, 0])
 
     trial_onsets = trial_onsets_all[run]
     trial_offsets = trial_offsets_all[run]
@@ -314,6 +358,16 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
     current_index = 0
 
     for idx, (trial_in, trial_out) in enumerate(zip(trials_in, trials_out)):
+        # [CORRECTION #66] indices d'essais 0-based coherents (design locEMexp : 16 essais de fixation puis 32 essais
+        # alternant out/in). trials_out (yml) = numeros 1-based des essais 'out' (17, 19, ...) ; l'essai 'in' qui suit est
+        # g_in = g_out + 1 (trials_in du yml, 16, 18, ..., ne correspond a aucun des deux et n'est plus utilise).
+        # Cible (constConfig.m) : saut centre -> peripherie a onset(g_out) + 100 ms, retour au centre a onset(g_in) + 100 ms.
+        # NB : sac_expected_x/y[trial_out] = position de l'image 1 de l'essai 0-based trial_out = g_in, c.-a-d. la cible
+        # peripherique de la saccade 'out' : indexation correcte, conservee.
+        # AVANT : (ligne(s) ajoutee(s))
+        g_out = trial_out - 1
+        g_in = g_out + 1
+        saccade_fix_ms = 100    # const.saccade_fix_dur
         onset_out = int(list(correct_sac_out_seconds_on)[idx])
         offset_out = int(list(correct_sac_out_seconds_off)[idx])
         onset_in = int(list(correct_sac_in_seconds_on)[idx])
@@ -322,8 +376,12 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
         # Case 4: Both saccade outwards and inwards are missing
         if onset_out < 0 and onset_in < 0:
             print("case 4")
-            onset_out = int(trial_onsets[trial_out - 2 ])
-            offset_in = int(trial_offsets[trial_in])
+            # [CORRECTION #66] temps de repli = temps des sauts de la cible (avant : trial_onsets[trial_out - 2] = un essai trop
+            # tot si l'essai 1 n'etait pas retire, et fin de l'essai trial_in = 16 (0-based) = essai 'out')
+            # AVANT :             onset_out = int(trial_onsets[trial_out - 2 ])
+            # AVANT :             offset_in = int(trial_offsets[trial_in])
+            onset_out = int(trial_onsets[g_out] + saccade_fix_ms)
+            offset_in = int(trial_onsets[g_in] + saccade_fix_ms)
             # 0 until trial outwards onset
             model_y[current_index:onset_out] = 0
             # Expected position until trial inwards offset
@@ -334,7 +392,9 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
         # Case 2: Saccade outwards is missing
         if onset_out < 0 or offset_out < 0:
             print("case 2")
-            onset_out = int(list(trial_onsets)[trial_out - 2])
+            # [CORRECTION #66] saut de la cible vers la peripherie (essai g_out, 0-based)
+            # AVANT :             onset_out = int(list(trial_onsets)[trial_out - 2])
+            onset_out = int(trial_onsets[g_out] + saccade_fix_ms)
             onset_in = int(list(correct_sac_in_seconds_on)[idx])
             offset_in = int(list(correct_sac_in_seconds_off)[idx])
             # 0 until trial outwards onset 
@@ -351,7 +411,9 @@ for run, (out_filtered_df, in_filtered_df) in enumerate(zip(out_filtered_dfs, in
             print("case 3")
             onset_out = int(list(correct_sac_out_seconds_on)[idx])
             offset_out = int(list(correct_sac_out_seconds_off)[idx])
-            offset_in = int(list(trial_offsets)[trial_in])
+            # [CORRECTION #66] retour de la cible au centre (essai g_in, 0-based)
+            # AVANT :             offset_in = int(list(trial_offsets)[trial_in])
+            offset_in = int(trial_onsets[g_in] + saccade_fix_ms)
             # 0 until saccade outwards onset
             model_y[current_index:onset_out] = 0
             # Interpolate between saccade outwards onset and offset

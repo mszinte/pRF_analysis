@@ -58,7 +58,11 @@ settings = load_settings([eye_tracking_settings_path, settings_path])
 analysis_info = settings[0]  
 
 tasks = analysis_info['eye-tracking_task_names']
-prf_task_name = analysis_info['prf_task_names'][0]
+# [CORRECTION #60] cle 'prf_task_names' absente de tous les yml (KeyError) : nom de la tache pRF lu dans
+# prf-analysis.yml ('analysis_task_names'), charge a part pour ne pas ecraser les cles eye-tracking
+# AVANT : prf_task_name = analysis_info['prf_task_names'][0]
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+prf_task_name = load_settings([prf_settings_path])[0]['analysis_task_names'][0]
 
 tasks.remove('rest')
 tasks.remove('pRF')
