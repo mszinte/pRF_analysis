@@ -74,9 +74,12 @@ ang_steps:
   description: "Angular step size (in degrees) used to discretize saccade directions. Defines evenly spaced polar angles around 360° from which saccade directions are selected (e.g., 22.5° → 16 possible directions)"
   value: 22.5
 
+# [CORRECTION #65] modele de saccade en ms (et non en pas de 100 ms) : 250 s = 250000 ms
+# AVANT :   description: "Total length of the created saccade model in seconds"
+# AVANT :   value: 2500
 total_len_sac_model: 
-  description: "Total length of the created saccade model in seconds"
-  value: 2500
+  description: "Total length of the created saccade model in milliseconds"
+  value: 250000
 
 first_trial_pattern:
   description: "Regex pattern specifiying first trial onset in eye tracking message files"

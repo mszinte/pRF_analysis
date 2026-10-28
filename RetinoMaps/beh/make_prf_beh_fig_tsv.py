@@ -96,8 +96,12 @@ if 'group' not in subject:
     perf_runs_indiv = np.zeros(stair_runs_indiv_concat.shape[0])
     stair_runs_indiv = np.zeros(stair_runs_indiv_concat.shape[0])
     for t in range(stair_runs_indiv_concat.shape[0]):
-                    perf_runs_indiv[t] = np.nanmean(perf_runs_indiv_concat[0:t])
-                    stair_runs_indiv[t] = np.nanmean(stair_runs_indiv_concat[0:t])
+                    # [CORRECTION #9] la moyenne cumulee inclut maintenant l'essai t ([0:t+1]) : avec [0:t] la premiere
+                    # valeur etait NaN et les courbes perf/kappa etaient decalees d'un essai.
+                    # AVANT :                     perf_runs_indiv[t] = np.nanmean(perf_runs_indiv_concat[0:t])
+                    # AVANT :                     stair_runs_indiv[t] = np.nanmean(stair_runs_indiv_concat[0:t])
+                    perf_runs_indiv[t] = np.nanmean(perf_runs_indiv_concat[0:t+1])
+                    stair_runs_indiv[t] = np.nanmean(stair_runs_indiv_concat[0:t+1])
                     
     # Make DF 
     # Trials DF
@@ -196,10 +200,18 @@ else :
     # Median DF
     # Exclude outliers
     prf_beh_median_df_group_filtered = prf_beh_median_df_group[~prf_beh_median_df_group['subject'].isin(subject_excluded)]
-    prf_beh_median_df_group_excluded = prf_beh_median_df_group[prf_beh_median_df_group['subject'].isin(['sub-07', 'sub-12'])]
+    # [CORRECTION #67] liste des outliers lue dans settings.yml (outlier_prf_beh, subject_excluded) au lieu d'etre codee en dur
+    # AVANT :     prf_beh_median_df_group_excluded = prf_beh_median_df_group[prf_beh_median_df_group['subject'].isin(['sub-07', 'sub-12'])]
+    prf_beh_median_df_group_excluded = prf_beh_median_df_group[prf_beh_median_df_group['subject'].isin(subject_excluded)]
     
     # Cpmpute median
+    # [CORRECTION #9] ligne 'group' : bornes = 25e/75e percentiles ENTRE participants des medianes individuelles (ce que dit le texte),
+    # [CORRECTION #9] au lieu de la mediane des quantiles 2.5/97.5 intra-participant
     median_values = prf_beh_median_df_group_filtered.drop(columns=['subject']).median()
+    # AVANT : (3 lignes ajoutees ; median_values contenait la mediane des quantiles 2.5/97.5 individuels)
+    for param in ['perf', 'stair']:
+        median_values[f'{param}_ci_low'] = prf_beh_median_df_group_filtered[f'{param}_median'].quantile(0.25)
+        median_values[f'{param}_ci_up'] = prf_beh_median_df_group_filtered[f'{param}_median'].quantile(0.75)
     
     # concat DF 
     prf_beh_df_median_subject = pd.DataFrame(median_values).T

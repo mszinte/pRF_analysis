@@ -130,6 +130,11 @@ for tasks in group_tasks :
                 data = pd.read_table(tsv_fn, sep="\t")
     
                 # replace nan in pcm by non_computed 
+                # [CORRECTION #76] colonnes pCM passees en object avant d'y ecrire 'non_computed' : pandas >= 3 refuse d'ecrire du texte
+                # dans une colonne float64 (TypeError) ; pandas 2 faisait cette conversion en object implicitement (meme resultat)
+                # AVANT : (ligne ajoutee)
+                pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                data[pcm_cols] = data[pcm_cols].astype(object)
                 data.loc[data['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
@@ -137,12 +142,17 @@ for tasks in group_tasks :
                 # Threshold data (replace by nan)
                 if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
                 elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                # [CORRECTION #78] vertex a p-value pRF NaN (fit rate : amplitude 0, stats non calculables) aussi retires :
+                # [CORRECTION #78] une comparaison avec NaN vaut False, ils passaient le seuil (ex. 1202 vertex 'pursuit_and_saccade' en 170k pour sub-01) ;
+                # [CORRECTION #78] meme regle que make_rois_fig_tsv.py (dropna sur la colonne de stats)
+                # AVANT : (data[stats_col] > stats_threshold)] = np.nan
                 data.loc[(data.amplitude < amplitude_threshold[0]) |
                          (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
                          (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
                          (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
                          (data[rsq2use] < rsqr_threshold) |
-                         (data[stats_col] > stats_threshold)] = np.nan
+                         (data[stats_col] > stats_threshold) |
+                         (data[stats_col].isna())] = np.nan
     
                 # loop over categories
                 for categorie_to_plot in categories_to_plot : 
@@ -435,10 +445,16 @@ for tasks in group_tasks :
                         tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
                             tsv_category_dir, subject_to_group, fn_spec_cate)
                         df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
-                        mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
-                        others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
-                        if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
-                        else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
+                        # [CORRECTION #79] distribution vide chez un sujet (categorie sans vertex pRF, ex. pursuit_and_saccade) :
+                        # [CORRECTION #79] fichier sans colonnes roi/x/y -> ignore ; les mesh sont empiles dans une liste
+                        # [CORRECTION #79] (l'empilement par i == 0 supposait que le 1er sujet ait des donnees)
+                        # AVANT : mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
+                        # AVANT : others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
+                        # AVANT : if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
+                        # AVANT : else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
+                        if i == 0: mesh_list = []
+                        if {'roi', 'x', 'y'}.issubset(df_distribution_indiv.columns):
+                            mesh_list.append(df_distribution_indiv)
                       
                     # Median and saving tsv
                     tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
@@ -458,10 +474,16 @@ for tasks in group_tasks :
                     df_params_median = df_violins
                     colnames = ['{}'.format(rsq2use), 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
                     if df_violins.empty:
-                        df_params_median = pd.DataFrame(columns=['roi', 'subject', '{}_weighted_median'.format(rsq2use)] + 
-                                                        ['{}_weighted_median'.format(col) for col in colnames] + 
-                                                        ['{}_ci_down'.format(col) for col in colnames] + 
-                                                        ['{}_ci_up'.format(col) for col in colnames])
+                        # [CORRECTION #79] categorie vide : une ligne NaN par ROI avec les colonnes ecrites dans le cas normal (comme le fichier sujet),
+                        # [CORRECTION #79] au lieu d'un tableau sans ligne aux colonnes differentes (roi, subject, ...)
+                        # AVANT : df_params_median = pd.DataFrame(columns=['roi', 'subject', '{}_weighted_median'.format(rsq2use)] +
+                        # AVANT : ['{}_weighted_median'.format(col) for col in colnames] +
+                        # AVANT : ['{}_ci_down'.format(col) for col in colnames] +
+                        # AVANT : ['{}_ci_up'.format(col) for col in colnames])
+                        df_params_median = pd.DataFrame({'roi': rois})
+                        for col in colnames:
+                            for suffix in ['_weighted_median', '_ci_down', '_ci_up']:
+                                df_params_median[col + suffix] = np.nan
                     
                     else:
                         df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['{}'.format(rsq2use)]].apply(
@@ -486,7 +508,9 @@ for tasks in group_tasks :
                             df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
                                 lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 75))
                 
-                    df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
+                        # [CORRECTION #79] concat deplace dans le else : si df_violins est vide, df_params_med_median n'existe pas (NameError)
+                        # AVANT : df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()  (hors du else)
+                        df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
                     tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(
                             tsv_category_dir, subject, fn_spec_cate)
                     print('Saving tsv: {}'.format(tsv_params_median_fn))
@@ -536,11 +560,28 @@ for tasks in group_tasks :
                     tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
                             tsv_category_dir, subject, fn_spec_cate)
                     print('Saving tsv: {}'.format(tsv_distribution_fn))
-                    median_mesh = np.median(mesh_group, axis=0)
-                    df_distribution = pd.DataFrame(median_mesh)
-            
-                    # Concatenating non-numeric columns back to the dataframe
-                    df_distribution = pd.concat([others_columns, df_distribution], axis=1)
+                    # [CORRECTION #79] mediane sur les sujets ayant une distribution ; aucun -> tableau vide (comme au niveau sujet)
+                    # AVANT : median_mesh = np.median(mesh_group, axis=0)
+                    # AVANT : df_distribution = pd.DataFrame(median_mesh)
+                    # AVANT : df_distribution = pd.concat([others_columns, df_distribution], axis=1)
+                    # [CORRECTION #79] un sujet peut ne pas avoir une ROI x hemi dans la categorie (ex. sub-21 : mPCS hemi-R absent) :
+                    # [CORRECTION #79] les mesh sont alignes par (roi, hemi, y) sur le sujet le plus complet ; ROI absente = NaN, ignoree par nanmedian
+                    if len(mesh_list) > 0:
+                        ref = max(mesh_list, key=len)[['roi', 'x', 'y', 'hemi']].reset_index(drop=True)
+                        mesh_key = lambda d: d['roi'].astype(str) + '|' + d['hemi'].astype(str) + '|' + d['y'].round(6).astype(str)
+                        ref_key = mesh_key(ref)
+                        mesh_aligned = []
+                        for df_mesh in mesh_list:
+                            values = df_mesh.drop(columns=['roi', 'x', 'y', 'hemi'])
+                            values.index = mesh_key(df_mesh)
+                            mesh_aligned.append(values.reindex(ref_key).values)
+                        median_mesh = np.nanmedian(np.stack(mesh_aligned, axis=0), axis=0)
+                        df_distribution = pd.DataFrame(median_mesh)
+                
+                        # Concatenating non-numeric columns back to the dataframe
+                        df_distribution = pd.concat([ref, df_distribution], axis=1)
+                    else:
+                        df_distribution = pd.DataFrame(columns=['hemi'])
                     df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
 
                     # Spatial distribution hot zone barycentre 

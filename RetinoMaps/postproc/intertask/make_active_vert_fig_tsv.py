@@ -121,6 +121,11 @@ for tasks in group_tasks :
                 data_vision_filtered = data.copy() 
                 
                 # replace nan in pcm by non_computed 
+                # [CORRECTION #76] colonnes pCM passees en object avant d'y ecrire 'non_computed' : pandas >= 3 refuse d'ecrire du texte
+                # dans une colonne float64 (TypeError) ; pandas 2 faisait cette conversion en object implicitement (meme resultat)
+                # AVANT : (ligne ajoutee)
+                pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                data_vision_filtered[pcm_cols] = data_vision_filtered[pcm_cols].astype(object)
                 data_vision_filtered.loc[data_vision_filtered['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
     ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
