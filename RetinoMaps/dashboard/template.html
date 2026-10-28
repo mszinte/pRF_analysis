@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipeline status</title>
+<style>
+:root{--bg:#f7f7f5;--panel:#fff;--ink:#1d1d1b;--mute:#6b6b66;--line:#e2e1dc;
+--ok:#2e9d5b;--okbg:#dff3e6;--stale:#d0393e;--stalebg:#fbe0e0;--up:#e07b7e;--upbg:#fdf0f0;
+--part:#d98a1c;--partbg:#fcefd9;--orph:#a35bc9;--orphbg:#f1e4f8;--miss:#b9b8b2;--missbg:#f0efeb;--na:#f7f7f5}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--panel:#1f1f1d;--ink:#ecebe6;--mute:#9a998f;--line:#33322f;
+--okbg:#173a26;--stalebg:#45191b;--upbg:#2f1c1d;--partbg:#3c2c12;--orphbg:#2f1d3a;--missbg:#262623;--na:#1a1a19}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{padding:16px 20px 8px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:baseline}
+h1{font-size:18px;margin:0}.mute{color:var(--mute)}
+.bar{padding:0 20px 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tab{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 12px;border-radius:6px;cursor:pointer;font:inherit}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.leg{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto}.leg span{display:inline-flex;gap:5px;align-items:center}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;border-left:3px solid}
+main{display:flex;gap:0;align-items:flex-start}
+.wrap{overflow:auto;max-height:calc(100vh - 110px);flex:1;margin:0 0 0 20px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:separate;border-spacing:0}
+th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0}
+thead th{position:sticky;background:var(--panel);z-index:2;font-weight:600}
+thead tr:first-child th{top:0;height:24px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+thead tr:nth-child(2) th{top:24px;height:34px;font-size:11px;padding:2px 4px;min-width:66px;max-width:80px;line-height:1.15}
+th.sub,td.sub{position:sticky;left:0;background:var(--panel);z-index:1;padding:0 10px;font-weight:600;white-space:nowrap}
+thead th.sub{z-index:3}
+td.c{height:36px;min-width:66px;cursor:pointer;text-align:center;font-size:11px;line-height:1.15;border-left:3px solid transparent;position:relative;font-variant-numeric:tabular-nums}
+td.c:hover{outline:2px solid var(--ink);outline-offset:-2px}
+td.c.sel{outline:2px solid var(--ink);outline-offset:-2px}
+.ok{background:var(--okbg);border-left-color:var(--ok)!important}
+.stale{background:var(--stalebg);border-left-color:var(--stale)!important}
+.upstream{background:var(--upbg);border-left-color:var(--up)!important}
+.partial{background:var(--partbg);border-left-color:var(--part)!important}
+.orphan{background:var(--orphbg);border-left-color:var(--orph)!important}
+.missing{background:var(--missbg);border-left-color:var(--miss)!important;color:var(--mute)}
+.na{background:var(--na);color:var(--line)}
+.flag{position:absolute;top:1px;right:3px;font-size:10px}
+.n{color:var(--mute);font-size:10px}
+tfoot td{position:sticky;bottom:0;background:var(--panel);font-size:10px;text-align:center;color:var(--mute);height:26px}
+aside{width:420px;max-width:45vw;margin:0 20px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;max-height:calc(100vh - 110px);overflow:auto;position:sticky;top:0}
+aside h2{font-size:15px;margin:0 0 4px}aside h3{font-size:12px;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute)}
+aside table{width:100%;font-size:12px}aside td{border:none;padding:2px 4px;vertical-align:top}
+.files{font-family:ui-monospace,Menlo,monospace;font-size:11px;word-break:break-all}
+.pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;border-left:3px solid}
+.warn{background:var(--partbg);padding:6px 8px;border-radius:6px;margin:4px 0;font-size:12px}
+label.chk{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
+@media (max-width:800px){main{flex-direction:column}aside{width:auto;max-width:none;margin:12px 20px}}
+</style></head><body>
+<header><h1 id="title"></h1><span class="mute" id="meta"></span></header>
+<div class="bar" id="bar"></div>
+<main><div class="wrap"><table id="grid"></table></div>
+<aside id="side"><p class="mute">Clique sur une case pour voir le détail : dates, fichiers, dépendances, logs et historique.</p><div id="changes"></div></aside></main>
+<script>
+const D=/*__DATA__*/null;
+const LAB={ok:"à jour",stale:"périmé",upstream:"amont périmé",partial:"incomplet",orphan:"dépendance absente",missing:"absent",na:"n/a"};
+const EXPL={ok:"Fichiers complets et plus récents que toutes les dépendances.",
+stale:"Une dépendance a été (re)générée APRÈS cette étape : à relancer.",
+upstream:"Cette étape est plus récente que ses dépendances, mais une étape en amont est périmée : à relancer après elle.",
+partial:"Moins de fichiers que prévu.",orphan:"Des fichiers existent mais une dépendance est absente.",
+missing:"Aucun fichier trouvé.",na:"Aucun sujet n'a de fichier pour cette étape dans ce format."};
+const fd=t=>{if(!t)return"–";const d=new Date(t*1000);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"2-digit"})+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})};
+const fs=t=>{if(!t)return"";const d=new Date(t*1000);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})+(new Date().getFullYear()!==d.getFullYear()?"/"+String(d.getFullYear()).slice(2):"")};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let fmt=D.formats[0],onlyPb=false,sel=null;
+try{fmt=localStorage.getItem("ps_fmt")||fmt;if(!D.formats.includes(fmt))fmt=D.formats[0]}catch(e){}
+document.getElementById("title").textContent=(D.project||"Pipeline")+" — suivi des étapes";
+document.getElementById("meta").textContent=`scan du ${fd(D.scanned)} · ${D.subjects.length} sujets · ${Math.round(D.duration)} s · tolérance ${D.tolerance} min`;
+function bar(){const b=document.getElementById("bar");b.innerHTML="";
+D.formats.forEach(f=>{const x=document.createElement("button");x.className="tab"+(f===fmt?" on":"");x.textContent=f||"—";x.onclick=()=>{fmt=f;try{localStorage.setItem("ps_fmt",f)}catch(e){};bar();grid()};b.appendChild(x)});
+const l=document.createElement("label");l.className="chk";l.innerHTML=`<input type="checkbox" ${onlyPb?"checked":""}> sujets avec problème seulement`;l.querySelector("input").onchange=e=>{onlyPb=e.target.checked;grid()};b.appendChild(l);
+const lg=document.createElement("div");lg.className="leg";
+lg.innerHTML=["ok","stale","upstream","partial","orphan","missing"].map(s=>`<span><i class="sw ${s}"></i>${LAB[s]}</span>`).join("")+`<span>⚠ alerte</span>`;b.appendChild(lg)}
+function steps(){return D.steps.filter(s=>s.formats.includes(fmt))}
+function grid(){const st=steps(),T=document.getElementById("grid");
+let secs=[];st.forEach(s=>{if(secs.length&&secs[secs.length-1].n===s.section)secs[secs.length-1].c++;else secs.push({n:s.section,c:1})});
+let h=`<thead><tr><th class="sub" rowspan="2">sujet</th>${secs.map(x=>`<th colspan="${x.c}">${esc(x.n)}</th>`).join("")}</tr><tr>${st.map(s=>`<th title="${esc(s.script)}">${esc(s.label)}</th>`).join("")}</tr></thead><tbody>`;
+const tot={};
+D.subjects.forEach(sub=>{const cs=st.map(s=>D.cells[`${sub}|${fmt}|${s.id}`]);
+ if(onlyPb&&!cs.some(c=>c&&(["stale","upstream","partial","orphan"].includes(c.status)||c.flags.length)))return;
+ h+=`<tr><td class="sub">${sub}</td>`;
+ cs.forEach((c,i)=>{const s=st[i];if(!c){h+=`<td class="c na"></td>`;return}
+  const t=tot[s.id]=tot[s.id]||{ok:0,all:0};t.all++;if(c.status==="ok")t.ok++;
+  const k=`${sub}|${fmt}|${s.id}`;
+  const nn=c.expected?`${c.n}/${c.expected}`:c.n;
+  h+=`<td class="c ${c.status}${sel===k?" sel":""}" data-k="${k}" title="${LAB[c.status]}${c.flags.length?"\n⚠ "+c.flags.join("\n⚠ "):""}">${c.flags.length?'<span class="flag">⚠</span>':""}${c.n?fs(c.newest):(c.status==="na"?"":"—")}<br><span class="n">${c.status==="na"?"":nn}</span></td>`});
+ h+=`</tr>`});
+h+=`</tbody><tfoot><tr><td class="sub">à jour</td>${st.map(s=>{const t=tot[s.id];return`<td>${t?t.ok+"/"+t.all:""}</td>`}).join("")}</tr></tfoot>`;
+T.innerHTML=h;T.querySelectorAll("td.c[data-k]").forEach(td=>td.onclick=()=>{sel=td.dataset.k;T.querySelectorAll(".sel").forEach(x=>x.classList.remove("sel"));td.classList.add("sel");side(sel)})}
+function side(k){const c=D.cells[k],[sub,f,sid]=k.split("|"),s=D.steps.find(x=>x.id===sid),A=document.getElementById("side");
+let h=`<h2>${sub} · ${esc(s.label)} <span class="mute">(${f})</span></h2><div class="mute">${esc(s.script||"")}</div>
+<p><span class="pill ${c.status}">${LAB[c.status]}</span> ${EXPL[c.status]}</p>`;
+c.flags.forEach(x=>h+=`<div class="warn">⚠ ${esc(x)}</div>`);
+h+=`<h3>Fichiers</h3><table><tr><td>nombre</td><td>${c.n}${c.expected?` / ${c.expected} attendus <span class="mute">(${c.expected_src})</span>`:""}</td></tr>
+<tr><td>plus ancien</td><td>${fd(c.oldest)}</td></tr><tr><td>plus récent</td><td>${fd(c.newest)}</td></tr></table>`;
+if(c.deps.length){h+=`<h3>Dépendances</h3><table>`;c.deps.forEach(d=>{h+=`<tr><td><span class="pill ${d.status}">${esc(d.step)}</span>${d.filter?` <span class="mute">${esc(d.filter)}</span>`:""}</td><td>${d.n?fd(d.newest):"absente"}${d.newer?` <b style="color:var(--stale)">&gt; plus récente</b>`:""}${d.newer?`<div class="files mute">${esc(d.newest_file)}</div>`:""}</td></tr>`});h+=`</table>`}
+if(c.logs){const l=c.logs;h+=`<h3>Logs / jobs (indicatif)</h3><table><tr><td>dernier</td><td>${fd(l.last)}<div class="files mute">${esc(l.last_file)}</div></td></tr>${l.end_time?`<tr><td>End time</td><td>${esc(l.end_time)}</td></tr>`:""}${l.duration?`<tr><td>durée</td><td>${esc(l.duration)}</td></tr>`:""}${(l.suspect||[]).map(x=>`<tr><td>.err</td><td>${esc(x)}</td></tr>`).join("")}</table>`}
+if(c.history&&c.history.length>1){h+=`<h3>Historique des scans</h3><table>`;c.history.slice().reverse().forEach(x=>h+=`<tr><td>${fd(x.scan)}</td><td>${x.n} fichiers, plus récent ${fd(x.newest)}</td></tr>`);h+=`</table>`}
+if(c.unreadable&&c.unreadable.length){h+=`<h3>Illisibles</h3><div class="files">${c.unreadable.map(esc).join("<br>")}</div>`}
+if(c.files.length){h+=`<h3>Liste (${c.files.length}${c.n>c.files.length?" derniers":""})</h3><table class="files">`;c.files.slice().reverse().forEach(([p,t])=>h+=`<tr><td style="white-space:nowrap">${fd(t)}</td><td>${esc(p.split("/").pop())}</td></tr>`);h+=`</table>`}
+A.innerHTML=h}
+function changes(){if(!D.changes.length)return;let h=`<h3>Changements depuis le scan précédent (${D.changes.length})</h3><table>`;
+D.changes.slice(-60).reverse().forEach(x=>h+=`<tr><td>${x.sub}</td><td>${esc(x.step)} <span class="mute">${x.fmt}</span></td><td>${x.before.n}→${x.after.n}, ${fs(x.after.newest)}</td></tr>`);document.getElementById("changes").innerHTML=h+`</table>`}
+bar();grid();changes();
+</script></body></html>

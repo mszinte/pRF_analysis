@@ -1,0 +1,192 @@
+# ---------------------------------------------------------------------------
+# Description du pipeline RetinoMaps pour pipeline_status.py
+#
+#   outputs   : motif(s) glob relatifs à `root`. {sub} et {fmt} sont remplacés.
+#               Peut être un dict par format (fsnative: ..., 170k: ...).
+#   depends   : étapes amont. Forme courte "etape" ou
+#               {step: etape, filter: "*task-pRF*"} pour ne comparer qu'aux
+#               fichiers pertinents (ex. le fit pRF ne dépend que de la tâche pRF).
+#   expected  : nb de fichiers attendus (optionnel ; sinon = nb le plus fréquent
+#               chez les autres sujets). Int ou dict par format.
+#   exclude   : motifs de noms de fichiers à ignorer pour cette étape.
+#   logs      : motifs des .sh/.out/.err (optionnel, info seulement).
+#   formats   : restreint l'étape à certains formats.
+# ---------------------------------------------------------------------------
+project: RetinoMaps
+root: /scratch/mszinte/data/RetinoMaps/derivatives
+subjects_glob: pp_data/sub-*
+exclude_subjects: [sub-hcp1.6mm, sub-15]   # sub-15 absent du BIDS
+formats: [fsnative, 170k]
+tolerance_minutes: 10        # écart toléré entre une étape et sa dépendance
+spread_warning_days: 3       # alerte si les fichiers d'une étape s'étalent sur + de N jours
+history_file: pipeline_status_history.json
+ignore:
+  - "*_old/*"
+  - "*/old/*"
+  - "*to_delete*"
+  - "*.ipynb_checkpoints*"
+
+steps:
+  # ------------------------------------------------------------ Preproc
+  - id: fmriprep
+    section: Preproc
+    label: fMRIprep
+    script: fmriprep_sbatch.py
+    outputs:
+      fsnative: "fmriprep/fmriprep/{sub}/ses-*/func/*_space-fsnative_bold.func.gii"
+      170k: "fmriprep/fmriprep/{sub}/ses-*/func/*_space-fsLR_den-170k_bold.dtseries.nii"
+
+  - id: preproc_end
+    section: Preproc
+    label: preproc_end
+    script: preproc_end_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/func/fmriprep_dct_z-score/*"
+    depends: [fmriprep]
+    logs: ["pp_data/{sub}/log_outputs/{sub}_preproc_end_*", "pp_data/{sub}/jobs/{sub}_preproc_end*.sh"]
+
+  - id: averaging
+    section: Preproc
+    label: averaging
+    script: averaging_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/func/fmriprep_dct_z-score_avg/*"
+    depends: [preproc_end]
+    logs: ["pp_data/{sub}/log_outputs/{sub}_averaging_*", "pp_data/{sub}/jobs/{sub}_averaging*.sh"]
+
+  - id: concat
+    section: Preproc
+    label: concat
+    script: averaging_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/func/fmriprep_dct_z-score_concat/*"
+    depends: [preproc_end]
+
+  - id: loo_avg
+    section: Preproc
+    label: loo-avg
+    script: averaging_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/func/fmriprep_dct_z-score_loo-avg/*"
+    depends: [preproc_end]
+
+  # ------------------------------------------------------------ Inter-run corr
+  - id: run_corr
+    section: Inter-run corr
+    label: run corr
+    script: compute_run_corr_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/corr/fmriprep_dct_z-score_corr/*"
+    depends: [preproc_end]
+    logs: ["pp_data/{sub}/log_outputs/{sub}_run_corr_*", "pp_data/{sub}/jobs/{sub}_run_corr*.sh"]
+
+  - id: run_corr_maps
+    section: Inter-run corr
+    label: corr maps
+    script: pycortex_maps_run_corr.py
+    formats: [fsnative]
+    outputs: "pp_data/{sub}/{fmt}/corr/pycortex/flatmaps_corr/*"
+    depends: [run_corr]
+
+  # ------------------------------------------------------------ pRF gauss
+  - id: gauss_fit
+    section: pRF gauss
+    label: gauss fit
+    script: prf_submit_gauss_jobs.py
+    outputs: "pp_data/{sub}/{fmt}/prf/fit/*_avg_prf-gauss_*"
+    depends: [{step: averaging, filter: "*task-pRF*"}]
+    logs: ["pp_data/{sub}/{fmt}/prf/log_outputs/{sub}_prf-gauss_*", "pp_data/{sub}/{fmt}/prf/jobs/{sub}_prf-gauss_*.sh"]
+
+  - id: gauss_deriv
+    section: pRF gauss
+    label: gauss deriv
+    script: compute_gauss_derivatives.py
+    outputs: "pp_data/{sub}/{fmt}/prf/prf_derivatives/*_prf-gauss_deriv*"
+    depends: [gauss_fit]
+
+  - id: gauss_maps
+    section: pRF gauss
+    label: gauss maps
+    script: pycortex_maps_gauss.py
+    outputs: "pp_data/{sub}/{fmt}/prf/pycortex/flatmaps_gauss/*"
+    depends: [gauss_deriv]
+
+  # ------------------------------------------------------------ ROIs
+  - id: rois
+    section: ROIs
+    label: rois img
+    script: make_rois_img.py
+    outputs: "pp_data/{sub}/{fmt}/rois/*_rois-*"
+    depends: [preproc_end]
+
+  - id: rois_maps
+    section: ROIs
+    label: rois maps
+    script: pycortex_maps_rois.py
+    outputs: "pp_data/{sub}/{fmt}/rois/pycortex/flatmaps_rois/*"
+    depends: [rois]
+
+  # ------------------------------------------------------------ pRF CSS
+  - id: css_fit
+    section: pRF CSS
+    label: css fit
+    script: prf_submit_css_jobs.py
+    outputs: ["pp_data/{sub}/{fmt}/prf/fit/*_prf-css_fit*", "pp_data/{sub}/{fmt}/prf/fit/*_prf-css_pred*"]
+    # prf_cssfit.py refait son propre gauss en interne et ne lit que les
+    # données moyennées : pas de dépendance au gauss_fit ni aux ROIs.
+    depends: [{step: averaging, filter: "*task-pRF*"}, {step: loo_avg, filter: "*task-pRF*"}]
+    logs: ["pp_data/{sub}/{fmt}/prf/log_outputs/{sub}_*prf-css_fit*", "pp_data/{sub}/{fmt}/prf/jobs/{sub}_*prf-css_fit*.sh"]
+
+  - id: css_stats
+    section: pRF CSS
+    label: css stats
+    script: css_stats_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/prf/prf_derivatives/*_prf-css_stats*"
+    depends: [css_fit]
+    logs: ["pp_data/{sub}/log_outputs/{sub}_css_stats_*", "pp_data/{sub}/jobs/{sub}_css_stats*.sh"]
+
+  - id: css_deriv
+    section: pRF CSS
+    label: css deriv
+    script: compute_css_derivatives.py
+    outputs: "pp_data/{sub}/{fmt}/prf/prf_derivatives/*_prf-css_deriv*"
+    depends: [css_fit]
+
+  - id: css_pcm
+    section: pRF CSS
+    label: css pCM
+    script: css_pcm_sbatch.py
+    outputs: "pp_data/{sub}/{fmt}/prf/prf_derivatives/*_prf-css_pcm*"
+    depends: [css_deriv, rois]
+    logs: ["pp_data/{sub}/log_outputs/{sub}_pcm_*", "pp_data/{sub}/jobs/{sub}_*css_pcm*.sh"]
+
+  - id: css_maps
+    section: pRF CSS
+    label: css maps
+    script: pycortex_maps_css.py
+    outputs: "pp_data/{sub}/{fmt}/prf/pycortex/flatmaps_css/*"
+    depends: [css_deriv, css_stats, css_pcm]
+
+  - id: css_tsv
+    section: pRF CSS
+    label: tsv css
+    script: make_tsv_css.py
+    outputs: "pp_data/{sub}/{fmt}/prf/tsv/*_prf-css_deriv.tsv"
+    depends: [css_deriv, css_stats, css_pcm, rois]
+
+  - id: rois_fig_tsv
+    section: pRF CSS
+    label: fig tsv
+    script: make_rois_fig_tsv.py
+    outputs: "pp_data/{sub}/{fmt}/prf/tsv/*.tsv"
+    exclude: ["*_prf-css_deriv.tsv"]
+    depends: [css_tsv]
+
+  - id: rois_fig
+    section: pRF CSS
+    label: figures
+    script: make_rois_fig.py
+    outputs: "pp_data/{sub}/{fmt}/prf/figures/*"
+    depends: [rois_fig_tsv]
+
+  - id: merge_fig
+    section: pRF CSS
+    label: merge
+    script: merge_fig_prf.py
+    outputs: "pp_data/{sub}/{fmt}/prf/merged/*"
+    depends: [rois_fig, css_maps, gauss_maps]
