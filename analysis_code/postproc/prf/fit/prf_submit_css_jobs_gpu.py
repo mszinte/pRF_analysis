@@ -27,7 +27,7 @@ python prf_submit_css_jobs_gpu.py [main directory] [project name] [subject]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_submit_css_jobs_gpu.py /scratch/mszinte/data amsterdam24 sub-03 prf 327 b327
+python prf_submit_css_jobs_gpu.py /scratch/mszinte/data amsterdam24 sub-03 prf meso_0327 b327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
 adapted from Uriel Lascombes (uriel.lascombes@laposte.net)
