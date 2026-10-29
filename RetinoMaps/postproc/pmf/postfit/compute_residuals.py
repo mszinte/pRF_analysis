@@ -112,7 +112,8 @@ for normalization in normalizations:
                 # Find pred files 
                 # [NORMALIZATION] glob restricted to the current normalization (otherwise pred files of all normalizations are mixed)
                 # AVANT : pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
-                pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
+                pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}*_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-prfpred_pred.{extension}')
+                
 
                 if not pred_fns:
                     print(f'No pred files found in: {fit_dir}')
