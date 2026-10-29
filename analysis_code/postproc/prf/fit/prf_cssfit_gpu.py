@@ -78,7 +78,7 @@ from screen_utils import get_screen_settings
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import load_surface ,make_surface_image
 from prfmodel.models.prf.canonical import CanonicalPRFModel
-from prfmodel_utils import PolarGaussian2DPRFTuning, polar_to_cartesian, bounded_transform, clip_to_bounds
+from prfmodel_utils import PolarGaussian2DPRFTuning, polar_to_cartesian, bounded_transform, clip_to_bounds, host_safe
 
 # Get inputs
 start_time = datetime.datetime.now()
@@ -237,7 +237,7 @@ _, gaussian_params = ls_fitter.fit(data=data_clean.T, parameters=grid_params,   
 
 # ---------- ITERATIVE GAUSSIAN FIT --------------
 gauss_sgd = SGDFitter(model=prf_model, stimulus=stimulus, compile_step=True,
-                      adapter=Adapter([ParameterTransform(["sigma"], ops.log, ops.exp)]),
+                      adapter=Adapter([ParameterTransform(["sigma"], host_safe(ops.log), host_safe(ops.exp))]),
                       optimizer=keras.optimizers.Adam(learning_rate=0.01))
 gauss_history, gaussian_params = gauss_sgd.fit(data=data_clean.T, init_parameters=gaussian_params,
                                                fixed_parameters=["weight_deriv"], num_steps=1000)
@@ -245,7 +245,7 @@ gauss_history, gaussian_params = gauss_sgd.fit(data=data_clean.T, init_parameter
 
 # -----------CSS FIT WITH SGD ----------------
 css_adapter = Adapter([
-    ParameterTransform(["sigma", "n"], ops.log, ops.exp)                             #adapter that log-transforms sigma and n during parameter optimization, forcing them to stay positive.
+    ParameterTransform(["sigma", "n"], host_safe(ops.log), host_safe(ops.exp))                             #adapter that log-transforms sigma and n during parameter optimization, forcing them to stay positive.
 ])
 
 # 1. CSS model (compression here)
@@ -272,7 +272,7 @@ _, init_params = LeastSquaresFitter(model=css_model, stimulus=stimulus).fit(
 
 # --- Iterative CSS fit ---
 n_lo, n_hi = css_exponent_bounds                                                   # n_th = [0.01, 1]
-css_adapter = Adapter([ParameterTransform(["sigma"], ops.log, ops.exp),
+css_adapter = Adapter([ParameterTransform(["sigma"], host_safe(ops.log), host_safe(ops.exp)),
                        bounded_transform(["n"], n_lo, n_hi)])
 init_params = clip_to_bounds(init_params, {"n": (n_lo, n_hi)})                     # the n grid ends exactly at 1.0
 

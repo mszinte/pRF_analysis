@@ -4,7 +4,17 @@ from prfmodel.models.base import BaseTuning
 from prfmodel.models.prf import predict_gaussian_response
 from prfmodel.stimuli import PRFStimulus, PRFStimulusTensors
 from prfmodel.fitters.adapter import ParameterTransform
- 
+
+import pandas as pd
+
+def host_safe(fun):
+    def wrapped(x):
+        out = fun(x)
+        if isinstance(x, (pd.Series, np.ndarray)):   # step 1: pandas input -> give back numpy
+            return ops.convert_to_numpy(out)
+        return out                                   # step 2: tensor input -> keep tensor
+    return wrapped
+    
  
 class PolarGaussian2DPRFTuning(BaseTuning[PRFStimulus, PRFStimulusTensors]):
     """
@@ -73,11 +83,13 @@ def bounded_transform(parameter_names, lower, upper):
     -------
     transform : prfmodel.fitters.adapter.ParameterTransform
         Transform to put inside an Adapter.
+
     """
     return ParameterTransform(
         parameter_names,
-        lambda p: ops.log((p - lower) / (upper - p)),          # natural -> unbounded
-        lambda u: lower + (upper - lower) * ops.sigmoid(u))    # unbounded -> natural
+        host_safe(lambda p: ops.log((p - lower) / (upper - p))),             # natural -> unbounded
+        host_safe(lambda u: lower + (upper - lower) * ops.sigmoid(u)))       # unbounded -> natural
+     
  
  
 def clip_to_bounds(params, bounds, margin=1e-3):
