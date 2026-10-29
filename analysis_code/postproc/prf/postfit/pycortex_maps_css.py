@@ -496,7 +496,7 @@ for normalization in normalizations:
                             maps_names.append('n')
 
                             # pcm
-                            if pcm: 
+                            if with_pcm: 
                                 pcm_data = all_deriv_mat[pcm_median_idx,...]
                                 alpha_pcm = np.copy(alpha)
                                 alpha_pcm[np.isnan(pcm_data)] = 0
