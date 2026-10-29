@@ -67,6 +67,11 @@ analysis_info = settings[0]
 
 prf_task_name = analysis_info['analysis_task_names'][0]
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+# [NORMALIZATION] preprocessing labels loaded (were hard-coded in the file names)
+# AVANT : (lignes ajoutees)
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalizations = analysis_info['normalization']
 
 format_ = "170k"
 
@@ -80,51 +85,61 @@ rois_datasets_dir = '{}/rois/pycortex/datasets_rois'.format(pp_dir)
 css_dataset_dir = "{}/prf/pycortex/datasets_css".format(pp_dir)
 intertask_dataset_dir = "{}/intertask/pycortex/datasets_stats".format(pp_dir)
 
-# Define filenames
-overlay_fn = "{}/db/{}/overlays_rois-group-mmp.svg".format(cortex_dir, pycortex_subject_template)
-rois_datasets_fn = "{}/{}_fmriprep_dct_z-score_rois-group-mmp.hdf".format(rois_datasets_dir, subject )  
-css_datasets_fn = "{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_rois-group-mmp_prf-css.hdf".format(css_dataset_dir, subject, prf_task_name)
-intertask_datasets_fn = "{}/{}_intertask_Sac-Pur-pRF.hdf".format(intertask_dataset_dir, subject)
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # Define filenames
+    overlay_fn = "{}/db/{}/overlays_rois-group-mmp.svg".format(cortex_dir, pycortex_subject_template)
+    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+    # AVANT : rois_datasets_fn = "{}/{}_fmriprep_dct_z-score_rois-group-mmp.hdf".format(rois_datasets_dir, subject )
+    rois_datasets_fn = "{}/{}_{preproc_prep}_{filtering}_{normalization}_rois-group-mmp.hdf".format(rois_datasets_dir, subject , preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)  
+    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+    # AVANT : css_datasets_fn = "{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_rois-group-mmp_prf-css.hdf".format(css_dataset_dir, subject, prf_task_name)
+    css_datasets_fn = "{}/{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_rois-group-mmp_prf-css.hdf".format(css_dataset_dir, subject, prf_task_name, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+    # [NORMALIZATION] intertask dataset name now contains the normalization (see pycortex_maps_intertask.py)
+    # AVANT : intertask_datasets_fn = "{}/{}_intertask_Sac-Pur-pRF.hdf".format(intertask_dataset_dir, subject)
+    intertask_datasets_fn = "{}/{}_{}_intertask_Sac-Pur-pRF.hdf".format(intertask_dataset_dir, subject, normalization)
 
-# Concatenate filenames
-dataset_list_fns = []
-dataset_list_fns.append([rois_datasets_fn])
-dataset_list_fns.append([css_datasets_fn])
-dataset_list_fns.append([intertask_datasets_fn])
+    # Concatenate filenames
+    dataset_list_fns = []
+    dataset_list_fns.append([rois_datasets_fn])
+    dataset_list_fns.append([css_datasets_fn])
+    dataset_list_fns.append([intertask_datasets_fn])
 
-# Load datasets and combine them
-list_dataset = ''
-dataset_num = 0
-for dataset_fn_list in dataset_list_fns:
-    for dataset_fn in dataset_fn_list:
-        dataset_num += 1
-        exec("dataset_{} = cortex.load(dataset_fn)".format(dataset_num))
-        list_dataset += "dataset_{}=dataset_{}, ".format(dataset_num, dataset_num)
-exec("new_dataset = cortex.Dataset({})".format(list_dataset))
+    # Load datasets and combine them
+    list_dataset = ''
+    dataset_num = 0
+    for dataset_fn_list in dataset_list_fns:
+        for dataset_fn in dataset_fn_list:
+            dataset_num += 1
+            exec("dataset_{} = cortex.load(dataset_fn)".format(dataset_num))
+            list_dataset += "dataset_{}=dataset_{}, ".format(dataset_num, dataset_num)
+    exec("new_dataset = cortex.Dataset({})".format(list_dataset))
 
-views_to_keep = ['ROIs', 'CSS pRF CM', 'CSS pRF eccentricity', 'CSS pRF n', 'CSS pRF polar angle', 'CSS pRF size', 'saccade', 'pursuit', 'vision', 'visuomotor']
-new_dataset = cortex.Dataset(**{k: new_dataset.views[k] for k in views_to_keep})
+    views_to_keep = ['ROIs', 'CSS pRF CM', 'CSS pRF eccentricity', 'CSS pRF n', 'CSS pRF polar angle', 'CSS pRF size', 'saccade', 'pursuit', 'vision', 'visuomotor']
+    new_dataset = cortex.Dataset(**{k: new_dataset.views[k] for k in views_to_keep})
 
-# Make webgl
-webgl_dir = "{}/{}/derivatives/webgl/{}/{}".format(main_dir, project_dir, subject, format_)
-os.makedirs(webgl_dir, exist_ok=True)
-print("Saving: {}".format(webgl_dir))
-if os.path.isdir(webgl_dir):os.system("rm -Rfvd {}".format(webgl_dir))    
-labels_visible = ('rois')
+    # Make webgl
+    # [NORMALIZATION] one webgl per normalization
+    # AVANT : webgl_dir = "{}/{}/derivatives/webgl/{}/{}".format(main_dir, project_dir, subject, format_)
+    webgl_dir = "{}/{}/derivatives/webgl/{}/{}/{}".format(main_dir, project_dir, subject, format_, normalization)
+    os.makedirs(webgl_dir, exist_ok=True)
+    print("Saving: {}".format(webgl_dir))
+    if os.path.isdir(webgl_dir):os.system("rm -Rfvd {}".format(webgl_dir))    
+    labels_visible = ('rois')
 
 
-cortex.webgl.make_static(outpath=webgl_dir,
-                         data=new_dataset,
-                         overlays_visible=labels_visible,
-                         labels_visible=labels_visible, 
-                         overlay_file = overlay_fn,
-                         title="Project:{}; Subject:{}; Format:{}".format(project_dir, subject, format_),
-                         recache=recache, 
-                         # curvature_brightness=0.1,  
-                         # curvature_contrast=0.8, 
-                         # curvature_smoothness=1, 
-                         # surface_specularity=0
-                         )
+    cortex.webgl.make_static(outpath=webgl_dir,
+                             data=new_dataset,
+                             overlays_visible=labels_visible,
+                             labels_visible=labels_visible, 
+                             overlay_file = overlay_fn,
+                             title="Project:{}; Subject:{}; Format:{}; Normalization:{}".format(project_dir, subject, format_, normalization),  # [NORMALIZATION]
+                             recache=recache, 
+                             # curvature_brightness=0.1,  
+                             # curvature_contrast=0.8, 
+                             # curvature_smoothness=1, 
+                             # surface_specularity=0
+                             )
 
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

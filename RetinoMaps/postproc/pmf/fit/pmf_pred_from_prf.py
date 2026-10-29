@@ -78,6 +78,14 @@ TR = pmf_info['TR']
 dm_range = pmf_info['dm_range']
 task_name = input_fn.split("task-")[1].split("_")[0]
 
+# [NORMALIZATION] read from the input file name (e.g. ..._fmriprep_dct_psc_concat_bold.func.gii -> 'psc')
+input_fn_parts = os.path.basename(input_fn).split('_')
+normalization_found = [n for n in pmf_info['prf_amp_th'] if n in input_fn_parts]
+if len(normalization_found) != 1:
+    raise ValueError('Cannot identify normalization {} in {}'.format(list(pmf_info['prf_amp_th']), input_fn))
+normalization = normalization_found[0]
+prf_amp_th = pmf_info['prf_amp_th'][normalization]
+
 # ── pRF derivatives of the retinotopy task (same file make_corr_tsv.py reads) ─────────
 file_format = "170k" if input_fn.endswith(".nii") else "fsnative"
 hemi_tag = "" if file_format == "170k" else ("_hemi-L" if "hemi-L" in input_fn else "_hemi-R")

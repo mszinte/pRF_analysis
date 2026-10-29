@@ -31,6 +31,10 @@ import ipdb
 deb = ipdb.set_trace
 
 # General imports
+# [CORRECTION #63] os et sys utilises (sys.path.append, os.getcwd, os.system) mais jamais importes (NameError)
+# AVANT : (ligne(s) ajoutee(s))
+import os
+import sys
 import numpy as np 
 import scipy.io
 
@@ -57,8 +61,14 @@ const = cfg0['const'][0][0]
 design_coordinates_X = const['saccade_matX'][0]
 design_coordinates_Y = const['saccade_matY'][0]
 
-np.save(f"{main_dir}/{project_dir}/exp_design/design_coordinates_x", design_coordinates_X)
-np.save(f"{main_dir}/{project_dir}/exp_design/design_coordinates_y", design_coordinates_Y)
+# [CORRECTION #62] ecriture dans <root>/derivatives/exp_design/, la ou predicted_saccade / predicted_pursuit
+# (sac_utils.py) lisent les coordonnees (avant : <root>/exp_design/, dossier jamais lu et non cree)
+# AVANT : np.save(f"{main_dir}/{project_dir}/exp_design/design_coordinates_x", design_coordinates_X)
+# AVANT : np.save(f"{main_dir}/{project_dir}/exp_design/design_coordinates_y", design_coordinates_Y)
+exp_design_dir = f"{main_dir}/{project_dir}/derivatives/exp_design"
+os.makedirs(exp_design_dir, exist_ok=True)
+np.save(f"{exp_design_dir}/design_coordinates_x", design_coordinates_X)
+np.save(f"{exp_design_dir}/design_coordinates_y", design_coordinates_Y)
 
 
 # Define permission cmd

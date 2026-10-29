@@ -90,7 +90,9 @@ extensions = analysis_info['extensions']
 rois_methods = analysis_info['rois_methods']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 rois_to_plot = analysis_info['rois_to_plot']
@@ -98,7 +100,8 @@ rois_to_plot = analysis_info['rois_to_plot']
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
-amplitude_threshold = analysis_info['prf_amp_th']
+# [NORMALIZATION] prf_amp_th is now a dict {normalization: [min, max]}, picked inside the normalization loop
+# AVANT : amplitude_threshold = analysis_info['prf_amp_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
 
@@ -125,196 +128,200 @@ else:
         subjects_to_group = analysis_info['group-control']
 
 # Main loop
-for avg_method in avg_methods:
-    if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
-    else: rsq2use = 'prf_rsq'
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] amplitude threshold of the current normalization
+    amplitude_threshold = analysis_info['prf_amp_th'][normalization]
+    for avg_method in avg_methods:
+        if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
+        else: rsq2use = 'prf_rsq'
 
-    for format_, extension in zip(formats, extensions):
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+        for format_, extension in zip(formats, extensions):
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_eyes_names in prf_tasks_eyes_names:
+                for prf_task_eyes_names in prf_tasks_eyes_names:
 
-                fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
-                    prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
+                        prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                # Individual subject analysis
-                # ---------------------------
-                if 'group' not in subject:
+                    # Individual subject analysis
+                    # ---------------------------
+                    if 'group' not in subject:
 
-                    print(f'Processing make_ecc_size_pcm_tsv.py for: {subject}')
+                        print(f'Processing make_ecc_size_pcm_tsv.py for: {subject}')
 
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subject, format_)
 
-                    if not os.path.isdir(tsv_dir):
-                        print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
-                        continue
+                        if not os.path.isdir(tsv_dir):
+                            print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                            continue
 
-                    df_eyes = []
+                        df_eyes = []
 
-                    for prf_task_eye_name in prf_task_eyes_names:
+                        for prf_task_eye_name in prf_task_eyes_names:
 
-                        print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
+                            print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
 
-                        fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
-                            prf_task_eye_name, preproc_prep, filtering,
-                            normalization, avg_method, rois_method_format)
-                        tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
+                            fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
+                                prf_task_eye_name, preproc_prep, filtering,
+                                normalization, avg_method, rois_method_format)
+                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
 
-                        data = pd.read_table(tsv_fn, sep="\t")
+                            data = pd.read_table(tsv_fn, sep="\t")
 
-                        # Threshold data
-                        if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                        elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                        data.loc[(data.amplitude < amplitude_threshold[0]) |
-                                 (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                                 (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
-                                 (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
-                                 (data[rsq2use] < rsqr_threshold) | (data[stats_col] > stats_threshold)] = np.nan
-                        data = data.dropna()
-                        data = data.reset_index(drop=True)
+                            # Threshold data
+                            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                            data.loc[(data.amplitude < amplitude_threshold[0]) |
+                                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
+                                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
+                                     (data[rsq2use] < rsqr_threshold) | (data[stats_col] > stats_threshold)] = np.nan
+                            data = data.dropna()
+                            data = data.reset_index(drop=True)
 
-                        # Get eye_val and eye_condition
-                        if 'RightEye' in prf_task_eye_name:
-                            eye_val = 'right eye'
-                        elif 'LeftEye' in prf_task_eye_name:
-                            eye_val = 'left eye'
+                            # Get eye_val and eye_condition
+                            if 'RightEye' in prf_task_eye_name:
+                                eye_val = 'right eye'
+                            elif 'LeftEye' in prf_task_eye_name:
+                                eye_val = 'left eye'
 
-                        if subject_group == 'patient':
-                            amblyopic_side = amblyopic_eye[0]
-                            if eye_val == 'right eye' and amblyopic_side == 'R': eye_type = 'amblyopic eye'
-                            elif eye_val == 'right eye' and amblyopic_side == 'L': eye_type = 'fellow eye'
-                            elif eye_val == 'left eye' and amblyopic_side == 'L': eye_type = 'amblyopic eye'
-                            elif eye_val == 'left eye' and amblyopic_side == 'R': eye_type = 'fellow eye'
-                        elif subject_group == 'control':
-                            eye_type = eye_val
+                            if subject_group == 'patient':
+                                amblyopic_side = amblyopic_eye[0]
+                                if eye_val == 'right eye' and amblyopic_side == 'R': eye_type = 'amblyopic eye'
+                                elif eye_val == 'right eye' and amblyopic_side == 'L': eye_type = 'fellow eye'
+                                elif eye_val == 'left eye' and amblyopic_side == 'L': eye_type = 'amblyopic eye'
+                                elif eye_val == 'left eye' and amblyopic_side == 'R': eye_type = 'fellow eye'
+                            elif subject_group == 'control':
+                                eye_type = eye_val
 
-                        if eye_type in ['amblyopic eye', 'right eye']: eye_condition = 'AE-RE'
-                        else: eye_condition = 'FE-LE'
+                            if eye_type in ['amblyopic eye', 'right eye']: eye_condition = 'AE-RE'
+                            else: eye_condition = 'FE-LE'
 
-                        # Ecc bins for size: power function spacing, finer near fovea
-                        ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
-                        # Ecc bins for pCM: power function spacing, finer near fovea
-                        ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
+                            # Ecc bins for size: power function spacing, finer near fovea
+                            ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
+                            # Ecc bins for pCM: power function spacing, finer near fovea
+                            ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
 
-                        for num_roi, roi in enumerate(rois):
-                            df_roi = data.loc[(data[rois_to_plot] == roi)]
+                            for num_roi, roi in enumerate(rois):
+                                df_roi = data.loc[(data[rois_to_plot] == roi)]
 
-                            # Size bins
-                            df_size_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
-                            # pCM bins
-                            df_pcm_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
+                                # Size bins
+                                df_size_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
+                                # pCM bins
+                                df_pcm_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
 
-                            df_bin = pd.DataFrame()
-                            df_bin['roi'] = [roi] * ecc_size_num_bins
-                            df_bin['eye_condition'] = eye_condition
-                            df_bin['num_bins'] = np.arange(ecc_size_num_bins)
-                            df_bin['subject'] = subject
+                                df_bin = pd.DataFrame()
+                                df_bin['roi'] = [roi] * ecc_size_num_bins
+                                df_bin['eye_condition'] = eye_condition
+                                df_bin['num_bins'] = np.arange(ecc_size_num_bins)
+                                df_bin['subject'] = subject
 
-                            df_bin['prf_ecc_bins'] = df_size_bins.apply(
-                                lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
-                            df_bin['prf_size_bins_median'] = df_size_bins.apply(
-                                lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
-                            df_bin['prf_size_bins_ci_upper_bound'] = df_size_bins.apply(
-                                lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
-                            df_bin['prf_size_bins_ci_lower_bound'] = df_size_bins.apply(
-                                lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
-                            df_bin[f'{rsq2use}_bins_median'] = df_size_bins.apply(
-                                lambda x: weighted_nan_median(x[rsq2use].values, x[rsq2use].values)).values
-                            df_bin[f'{rsq2use}_bins_ci_upper_bound'] = df_size_bins.apply(
-                                lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 75)).values
-                            df_bin[f'{rsq2use}_bins_ci_lower_bound'] = df_size_bins.apply(
-                                lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 25)).values
-                            df_bin['n_vert_bins'] = df_size_bins.size().values
-                            df_bin['prf_pcm_bins_median'] = df_pcm_bins.apply(
-                                lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
-                            df_bin['prf_pcm_bins_ci_upper_bound'] = df_pcm_bins.apply(
-                                lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 75)).values
-                            df_bin['prf_pcm_bins_ci_lower_bound'] = df_pcm_bins.apply(
-                                lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 25)).values
+                                df_bin['prf_ecc_bins'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
+                                df_bin['prf_size_bins_median'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
+                                df_bin['prf_size_bins_ci_upper_bound'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
+                                df_bin['prf_size_bins_ci_lower_bound'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
+                                df_bin[f'{rsq2use}_bins_median'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_median(x[rsq2use].values, x[rsq2use].values)).values
+                                df_bin[f'{rsq2use}_bins_ci_upper_bound'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 75)).values
+                                df_bin[f'{rsq2use}_bins_ci_lower_bound'] = df_size_bins.apply(
+                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 25)).values
+                                df_bin['n_vert_bins'] = df_size_bins.size().values
+                                df_bin['prf_pcm_bins_median'] = df_pcm_bins.apply(
+                                    lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
+                                df_bin['prf_pcm_bins_ci_upper_bound'] = df_pcm_bins.apply(
+                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 75)).values
+                                df_bin['prf_pcm_bins_ci_lower_bound'] = df_pcm_bins.apply(
+                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 25)).values
 
-                            if num_roi == 0: df_bins = df_bin
-                            else: df_bins = pd.concat([df_bins, df_bin])
+                                if num_roi == 0: df_bins = df_bin
+                                else: df_bins = pd.concat([df_bins, df_bin])
 
-                        df_eyes.append(df_bins)
+                            df_eyes.append(df_bins)
 
-                    # Combine both eye conditions
-                    df_ecc_size_pcm = pd.concat(df_eyes, ignore_index=True)
+                        # Combine both eye conditions
+                        df_ecc_size_pcm = pd.concat(df_eyes, ignore_index=True)
 
-                    # For control subjects: add CTRL condition as weighted median (equal weights)
-                    # of medians across AE-RE (RE) and FE-LE (LE) per roi/num_bins
-                    if subject_group == 'control':
+                        # For control subjects: add CTRL condition as weighted median (equal weights)
+                        # of medians across AE-RE (RE) and FE-LE (LE) per roi/num_bins
+                        if subject_group == 'control':
+                            median_cols = ['prf_ecc_bins',
+                                           'prf_size_bins_median', 'prf_size_bins_ci_upper_bound', 'prf_size_bins_ci_lower_bound',
+                                           'prf_pcm_bins_median', 'prf_pcm_bins_ci_upper_bound', 'prf_pcm_bins_ci_lower_bound',
+                                           f'{rsq2use}_bins_median', f'{rsq2use}_bins_ci_upper_bound', f'{rsq2use}_bins_ci_lower_bound',
+                                           'n_vert_bins']
+                            df_ctrl = (df_ecc_size_pcm
+                                       .groupby(['roi', 'num_bins'], sort=False)[median_cols]
+                                       .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
+                                                                   for col in median_cols}))
+                                       .reset_index())
+                            df_ctrl['eye_condition'] = 'CTRL'
+                            df_ctrl['subject'] = subject
+                            df_ecc_size_pcm = pd.concat([df_ecc_size_pcm, df_ctrl], ignore_index=True)
+
+                        # Save TSV
+                        tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir, subject, fn_spec_combined)
+                        print('Saving tsv: {}'.format(tsv_fn))
+                        df_ecc_size_pcm.to_csv(tsv_fn, sep='\t', na_rep='NaN', index=False)
+
+                    # Group analysis
+                    # --------------
+                    else:
+                        print(f'Group: {subject} - {avg_method} - {format_}')
+
+                        for i, subject_to_group in enumerate(subjects_to_group):
+                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subject_to_group, format_)
+                            tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(
+                                tsv_dir_indiv, subject_to_group, fn_spec_combined)
+                            df_indiv = pd.read_table(tsv_fn, sep="\t")
+                            if i == 0: df_all = df_indiv.copy()
+                            else: df_all = pd.concat([df_all, df_indiv])
+
+                        # Weighted median (equal weights) across subjects per roi/eye_condition/bin
+                        # For group-control this includes CTRL rows from each individual
                         median_cols = ['prf_ecc_bins',
                                        'prf_size_bins_median', 'prf_size_bins_ci_upper_bound', 'prf_size_bins_ci_lower_bound',
                                        'prf_pcm_bins_median', 'prf_pcm_bins_ci_upper_bound', 'prf_pcm_bins_ci_lower_bound',
                                        f'{rsq2use}_bins_median', f'{rsq2use}_bins_ci_upper_bound', f'{rsq2use}_bins_ci_lower_bound',
                                        'n_vert_bins']
-                        df_ctrl = (df_ecc_size_pcm
-                                   .groupby(['roi', 'num_bins'], sort=False)[median_cols]
-                                   .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
-                                                               for col in median_cols}))
-                                   .reset_index())
-                        df_ctrl['eye_condition'] = 'CTRL'
-                        df_ctrl['subject'] = subject
-                        df_ecc_size_pcm = pd.concat([df_ecc_size_pcm, df_ctrl], ignore_index=True)
+                        df_group = (df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[median_cols]
+                                    .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
+                                                                for col in median_cols}))
+                                    .reset_index())
 
-                    # Save TSV
-                    tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir, subject, fn_spec_combined)
-                    print('Saving tsv: {}'.format(tsv_fn))
-                    df_ecc_size_pcm.to_csv(tsv_fn, sep='\t', na_rep='NaN', index=False)
+                        # CI across subjects using weighted percentile (equal weights, 2.5/97.5)
+                        for col in ['prf_size_bins_median', 'prf_pcm_bins_median',
+                                    f'{rsq2use}_bins_median', 'n_vert_bins']:
+                            df_group[f'{col}_ci_lower'] = (
+                                df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
+                                .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 2.5))
+                                .reset_index()[col])
+                            df_group[f'{col}_ci_upper'] = (
+                                df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
+                                .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 97.5))
+                                .reset_index()[col])
 
-                # Group analysis
-                # --------------
-                else:
-                    print(f'Group: {subject} - {avg_method} - {format_}')
-
-                    for i, subject_to_group in enumerate(subjects_to_group):
-                        tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject_to_group, format_)
-                        tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(
-                            tsv_dir_indiv, subject_to_group, fn_spec_combined)
-                        df_indiv = pd.read_table(tsv_fn, sep="\t")
-                        if i == 0: df_all = df_indiv.copy()
-                        else: df_all = pd.concat([df_all, df_indiv])
-
-                    # Weighted median (equal weights) across subjects per roi/eye_condition/bin
-                    # For group-control this includes CTRL rows from each individual
-                    median_cols = ['prf_ecc_bins',
-                                   'prf_size_bins_median', 'prf_size_bins_ci_upper_bound', 'prf_size_bins_ci_lower_bound',
-                                   'prf_pcm_bins_median', 'prf_pcm_bins_ci_upper_bound', 'prf_pcm_bins_ci_lower_bound',
-                                   f'{rsq2use}_bins_median', f'{rsq2use}_bins_ci_upper_bound', f'{rsq2use}_bins_ci_lower_bound',
-                                   'n_vert_bins']
-                    df_group = (df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[median_cols]
-                                .apply(lambda x: pd.Series({col: weighted_nan_median(x[col].values, np.ones(len(x)))
-                                                            for col in median_cols}))
-                                .reset_index())
-
-                    # CI across subjects using weighted percentile (equal weights, 2.5/97.5)
-                    for col in ['prf_size_bins_median', 'prf_pcm_bins_median',
-                                f'{rsq2use}_bins_median', 'n_vert_bins']:
-                        df_group[f'{col}_ci_lower'] = (
-                            df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
-                            .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 2.5))
-                            .reset_index()[col])
-                        df_group[f'{col}_ci_upper'] = (
-                            df_all.groupby(['roi', 'eye_condition', 'num_bins'], sort=False)[col]
-                            .apply(lambda x: weighted_nan_percentile(x.values, np.ones(len(x)), 97.5))
-                            .reset_index()[col])
-
-                    # Save group TSV
-                    tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
-                    os.makedirs(tsv_dir_group, exist_ok=True)
-                    tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir_group, subject, fn_spec_combined)
-                    print('Saving tsv: {}'.format(tsv_fn))
-                    df_group.to_csv(tsv_fn, sep='\t', na_rep='NaN', index=False)
+                        # Save group TSV
+                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subject, format_)
+                        os.makedirs(tsv_dir_group, exist_ok=True)
+                        tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir_group, subject, fn_spec_combined)
+                        print('Saving tsv: {}'.format(tsv_fn))
+                        df_group.to_csv(tsv_fn, sep='\t', na_rep='NaN', index=False)
 
 # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

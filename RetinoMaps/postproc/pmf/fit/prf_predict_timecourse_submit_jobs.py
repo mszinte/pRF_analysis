@@ -80,7 +80,9 @@ prf_task_names = analysis_info['prf_task_names']
 pmf_task_names = analysis_info['pmf_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
 # Set pycortex db and colormaps
@@ -133,23 +135,29 @@ for subject in subjects:
 
     # Define fns (filenames): SacLoc task only, concat averaging method only
     pp_fns = []
-    for avg_method in avg_methods:
-        if avg_method != 'concat':
-            continue  # only concat
+    # [NORMALIZATION] loop over normalizations: input files of every normalization are collected and submitted
+    for normalization in normalizations:
+        for avg_method in avg_methods:
+            if avg_method != 'concat':
+                continue  # only concat
 
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*{}*.func.gii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, pmf_task_names[0], avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*{}*.dtseries.nii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, pmf_task_names[0], avg_method)
+            dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}*{}*.func.gii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, pmf_task_names[0], avg_method)
+            dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}*{}*.dtseries.nii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, pmf_task_names[0], avg_method)
 
-        pp_fns.extend(glob.glob(dct_avg_gii_fns))
-        pp_fns.extend(glob.glob(dct_avg_nii_fns))
+            # [NORMALIZATION] normalization kept with each file
+            # AVANT : pp_fns.extend(glob.glob(dct_avg_gii_fns))
+            # AVANT : pp_fns.extend(glob.glob(dct_avg_nii_fns))
+            pp_fns.extend([(fn, normalization) for fn in glob.glob(dct_avg_gii_fns)])
+            pp_fns.extend([(fn, normalization) for fn in glob.glob(dct_avg_nii_fns)])
 
     if not pp_fns:
         print("WARNING: No preprocessed files found for subject {}, skipping.".format(subject))
         continue
 
-    for fit_num, pp_fn in enumerate(pp_fns):
+    # [NORMALIZATION] AVANT : for fit_num, pp_fn in enumerate(pp_fns):
+    for fit_num, (pp_fn, normalization) in enumerate(pp_fns):
 
         if pp_fn.endswith('.nii'):
             pmf_dir = "{}/{}/170k/pmf".format(pp_dir, subject)

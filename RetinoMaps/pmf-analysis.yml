@@ -79,11 +79,19 @@ max_ecc_size:
 
 prf_amplitude_bounds:
   description: "Scaling factor of the pRF response (signal gain)"
-  value: [0, 5]
+  # [NORMALIZATION] value is now a dict {normalization: bounds}, the code picks the
+  # entry matching the normalization being processed (KeyError if missing).
+  # AVANT : value: [0, 5]
+  value:
+    z-score: [0, 5]
 
 prf_baseline_bounds:
   description: "Additive baseline (offset) of the BOLD signal"
-  value: [-2, 2]
+  # [NORMALIZATION] value is now a dict {normalization: bounds}, the code picks the
+  # entry matching the normalization being processed (KeyError if missing).
+  # AVANT : value: [-2, 2]
+  value:
+    z-score: [-2, 2]
 
 hrf_1_bounds:
   description: "Primary HRF parameter"
@@ -118,7 +126,11 @@ rsqr_th:
 
 prf_amp_th: 
   description: "pRF amplitude range threshold for pRF post-fit analysis"
-  value: [0, 6]
+  # [NORMALIZATION] value is now a dict {normalization: bounds}, the code picks the
+  # entry matching the normalization being processed (KeyError if missing).
+  # AVANT : value: [0, 6]
+  value:
+    z-score: [0, 6]
 
 stats_th: 
   description: "p value minimum threshold for pRF post-fit analysis"

@@ -300,8 +300,12 @@ def moving_average_smoothing(dataframe, eyetracking_rate, window_duration):
     
 
     # Calculate SMA
-    dataframe['x'] = dataframe['x'].rolling(window=window_size).mean()
-    dataframe['y'] = dataframe['y'].rolling(window=window_size).mean()
+    # [CORRECTION #23] moyenne glissante centree (center=True) : la version causale donnait window_size-1 NaN en debut
+    # de serie et retardait le signal d'environ window_size/2 echantillons (~25 ms pour 50 ms a 1000 Hz).
+    # AVANT :     dataframe['x'] = dataframe['x'].rolling(window=window_size).mean()
+    # AVANT :     dataframe['y'] = dataframe['y'].rolling(window=window_size).mean()
+    dataframe['x'] = dataframe['x'].rolling(window=window_size, center=True).mean()
+    dataframe['y'] = dataframe['y'].rolling(window=window_size, center=True).mean()
 
     plt_2 = plt.figure(figsize=(15, 6))
     plt.title("Smoothed timeseries")

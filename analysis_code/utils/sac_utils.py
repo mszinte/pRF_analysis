@@ -123,23 +123,35 @@ def microsacc_merge(x,y,vx,vy,velocity_th,min_dur,merge_interval):
 
     # merge saccades
     if nsac > 0:
-        msac = np.copy(sac)
-        s    = 0
-        sss  = True
-        nsac = 1
-        while s < nsac-1:
-            if sss == False:
-                nsac += 1
-                msac[nsac,:] = sac[s,:]
-            if sac[s+1,0]-sac[s,1] <= merge_interval:
-                msac[1] = sac[s+1,1]
-                sss = True
+        # [CORRECTION #8] fusion fidele (Engbert & Mergenthaler) : nsac n'etait remis a 1 avant la boucle (boucle jamais executee,
+        # aucune fusion) et msac[1] ecrasait toute la ligne 1. sac n'a que 2 colonnes (debut, fin) : on garde le debut de la
+        # premiere et la fin de la derniere ; les autres parametres (vpeak, dx, dy, dX, dY) sont recalcules plus bas sur msac.
+        # AVANT :         msac = np.copy(sac)
+        # AVANT :         s    = 0
+        # AVANT :         sss  = True
+        # AVANT :         nsac = 1
+        # AVANT :         while s < nsac-1:
+        # AVANT :             if sss == False:
+        # AVANT :                 nsac += 1
+        # AVANT :                 msac[nsac,:] = sac[s,:]
+        # AVANT :             if sac[s+1,0]-sac[s,1] <= merge_interval:
+        # AVANT :                 msac[1] = sac[s+1,1]
+        # AVANT :                 sss = True
+        # AVANT :             else:
+        # AVANT :                 sss = False
+        # AVANT :             s += 1
+        # AVANT :         if sss == False:
+        # AVANT :             nsac += 1
+        # AVANT :             msac[nsac,:] = sac[s,:]
+        sac = np.atleast_2d(sac)  # sac est 1D quand une seule saccade est detectee
+        merged = [sac[0].copy()]
+        for s in range(1, sac.shape[0]):
+            if sac[s, 0] - merged[-1][1] <= merge_interval:
+                merged[-1][1] = sac[s, 1]
             else:
-                sss = False
-            s += 1
-        if sss == False:
-            nsac += 1
-            msac[nsac,:] = sac[s,:]
+                merged.append(sac[s].copy())
+        msac = np.vstack(merged)
+        nsac = msac.shape[0]
     else:
         msac = []
         nsac = 0
@@ -529,7 +541,9 @@ def predicted_pursuit(main_dir, project_dir, df_run,settings):
     import os
     path = os.path.join(main_dir,project_dir, "derivatives", "exp_design")
     pursuit_coord_x = np.load(f"{path}/design_coordinates_x.npy")
-    pursuit_coord_y = np.load(f"{path}design_coordinates_y.npy")
+    # [CORRECTION #61] separateur '/' manquant dans le chemin (fichier introuvable), comme pour x
+    # AVANT :     pursuit_coord_y = np.load(f"{path}design_coordinates_y.npy")
+    pursuit_coord_y = np.load(f"{path}/design_coordinates_y.npy")
 
     amplitude = list(df_run['eyemov_amplitude'])
     seq_trial = list(df_run['sequence_trial'])
@@ -560,8 +574,29 @@ def predicted_pursuit(main_dir, project_dir, df_run,settings):
     purs_expected_y =  -1.0*((np.array(purs_expected_y) - (settings["center"][1]))/settings["ppd"])
 
     #TODO this should come from settings
-    purs_x_intpl = interp1d(purs_expected_x, new_len=settings["exp_len"]) # align with length of 1 run 
-    purs_y_intpl = interp1d(purs_expected_y, new_len=settings["exp_len"])  # align with length of 1 run 
+    # [CORRECTION #64] les 208 positions (1 par essai/TR) etaient etirees sur exp_len echantillons (1 TR = 1201.9 ms au lieu
+    # de 1200 ms, derive jusqu'a ~0.4 s en fin de run) et reliees lineairement sur tout le TR. Position attendue a chaque ms,
+    # temps zero = debut des donnees oculaires (message 'sequence 1 trial 1 onset', cf. extract_eye_data_and_triggers),
+    # essai k de k*1200 a (k+1)*1200 ms (constConfig.m de locEMexp) : fixation 100 ms sur la position de depart (valeur
+    # de l'essai k), poursuite lineaire de 1000 ms vers la position de depart de l'essai k+1, puis fixation 100 ms.
+    # Meme longueur de sortie qu'avant (exp_len echantillons a eyetrack_sampling Hz).
+    # AVANT :     purs_x_intpl = interp1d(purs_expected_x, new_len=settings["exp_len"]) # align with length of 1 run 
+    # AVANT :     purs_y_intpl = interp1d(purs_expected_y, new_len=settings["exp_len"])  # align with length of 1 run 
+    TR_ms = 1200                # const.TR_dur
+    pursuit_fix_ms = 100        # const.pursuit_fix_dur (fixation avant la poursuite)
+    pursuit_ms = 1000           # const.pursuit_dur (duree de la poursuite)
+    # [CORRECTION #82] corrige #64 : les essais ne durent pas exactement 1200 ms (onsets reels des events BIDS :
+    # 1201.0-1201.4 ms en moyenne, derive de 0.2-0.3 s en fin de run avec 1200 ms fixes, precision 90.2 % -> 83.0 %).
+    # Onsets reels des essais (colonne 'onset' des events, en s), temps zero = onset du 1er essai (= debut des donnees oculaires)
+    # AVANT :     trial_onsets_ms = np.arange(len(purs_expected_x)) * TR_ms
+    trial_onsets_ms = (np.asarray(df_run['onset'], dtype=float) - float(df_run['onset'].iloc[0])) * 1000.0
+    knots_t = np.ravel(np.column_stack((trial_onsets_ms + pursuit_fix_ms,
+                                        trial_onsets_ms + pursuit_fix_ms + pursuit_ms)))
+    knots_x = np.ravel(np.column_stack((purs_expected_x, np.append(purs_expected_x[1:], purs_expected_x[-1]))))
+    knots_y = np.ravel(np.column_stack((purs_expected_y, np.append(purs_expected_y[1:], purs_expected_y[-1]))))
+    time_ms = np.arange(settings["exp_len"]) * 1000.0 / settings["eyetrack_sampling"]
+    purs_x_intpl = np.interp(time_ms, knots_t, knots_x) # align with length of 1 run 
+    purs_y_intpl = np.interp(time_ms, knots_t, knots_y) # align with length of 1 run 
 
     return purs_x_intpl,purs_y_intpl
 
@@ -602,7 +637,9 @@ def predicted_saccade(main_dir, project_dir, df_run,settings):
 
 
 def load_sac_model(file_dir_save, subject, run, eye_data): 
-    time_seconds = (eye_data[:, 0] - eye_data[0, 0]) / 100
+    # [CORRECTION #65] modele de saccade en ms (saccade_prediction.py) : temps des echantillons en ms
+    # AVANT :     time_seconds = (eye_data[:, 0] - eye_data[0, 0]) / 100
+    time_seconds = (eye_data[:, 0] - eye_data[0, 0])
     model_x = np.load(f"{file_dir_save}/models/{subject}_run-0{run+1}_saccade_model_x.npy")
     model_y = np.load(f"{file_dir_save}/models/{subject}_run-0{run+1}_saccade_model_y.npy")
 
@@ -628,9 +665,13 @@ def fraction_under_threshold(pred, eucl_dist):
     thresholds = np.linspace(0, 9.0, 100)
     precision = []
 
+    # [CORRECTION #70] les echantillons NaN (distance non definie) restaient au denominateur (len(pred)) et comptaient
+    # comme des erreurs : fraction calculee sur les seuls echantillons valides (seuils inchanges : 0 a 9 dva)
+    # AVANT :         fraction = count / len(pred) 
+    n_valid = np.sum(~np.isnan(eucl_dist))
     for thr in thresholds: 
         count = np.sum(eucl_dist < thr)
-        fraction = count / len(pred) 
+        fraction = count / n_valid 
         precision.append(fraction)
     
     return precision
@@ -639,7 +680,9 @@ def fraction_under_one_threshold(pred, eucl_dist, threshold):
     import numpy as np
 
     count = np.sum(eucl_dist < threshold)
-    fraction = count / len(pred) 
+    # [CORRECTION #70] denominateur = echantillons valides (non NaN), comme fraction_under_threshold
+    # AVANT :     fraction = count / len(pred) 
+    fraction = count / np.sum(~np.isnan(eucl_dist)) 
     
     return fraction
 
@@ -692,7 +735,10 @@ def add_missing_sac_rows(correct_saccades, direction):
             new_row['no_saccade'] = 1
             new_row['run'] = 0
             new_row['sequence'] = i + 1
-            datafr = datafr._append(new_row, ignore_index=True)
+            # [CORRECTION #81] DataFrame._append (methode privee) supprimee dans pandas >= 3 (AttributeError) :
+            # pd.concat equivalent (meme ligne ajoutee en fin, index reinitialise)
+            # AVANT :             datafr = datafr._append(new_row, ignore_index=True)
+            datafr = pd.concat([datafr, pd.DataFrame([new_row])], ignore_index=True)
 
         # Sort by 'trial' column to maintain order 
         datafr = datafr.sort_values(by='trial')

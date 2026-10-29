@@ -81,7 +81,9 @@ extensions           = analysis_info['extensions']
 rois_methods         = analysis_info['rois_methods']
 preproc_prep         = analysis_info['preproc_prep']
 filtering            = analysis_info['filtering']
-normalization        = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods          = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 rois_to_plot         = analysis_info['rois_to_plot']
@@ -89,7 +91,8 @@ rois_to_plot         = analysis_info['rois_to_plot']
 ecc_threshold        = analysis_info['ecc_th']
 size_threshold       = analysis_info['size_th']
 rsqr_threshold       = analysis_info['rsqr_th']
-amplitude_threshold  = analysis_info['prf_amp_th']
+# [NORMALIZATION] prf_amp_th is now a dict {normalization: [min, max]}, picked inside the normalization loop
+# AVANT : amplitude_threshold  = analysis_info['prf_amp_th']
 stats_threshold      = analysis_info['stats_th']
 n_threshold          = analysis_info['n_th']
 foveal_bound         = analysis_info['foveal_ecc_bound']
@@ -134,258 +137,262 @@ def pval_to_stars(p):
 # -----------------------------------------------------------------------------------------
 # Main loop over avg_method / format / rois_method / task
 # -----------------------------------------------------------------------------------------
-for avg_method in avg_methods:
-    rsq2use = 'prf_loo_rsq' if 'loo' in avg_method else 'prf_rsq'
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] amplitude threshold of the current normalization
+    amplitude_threshold = analysis_info['prf_amp_th'][normalization]
+    for avg_method in avg_methods:
+        rsq2use = 'prf_loo_rsq' if 'loo' in avg_method else 'prf_rsq'
 
-    for format_, extension in zip(formats, extensions):
-        rois_methods_format = rois_methods[format_]
+        for format_, extension in zip(formats, extensions):
+            rois_methods_format = rois_methods[format_]
 
-        for rois_method_format in rois_methods_format:
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+            for rois_method_format in rois_methods_format:
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_eyes_names in prf_tasks_eyes_names:
-                fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
-                    prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                for prf_task_eyes_names in prf_tasks_eyes_names:
+                    fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
+                        prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                # ------------------------------------------------------------------
-                # STEP 1: Per-subject TSV
-                # ------------------------------------------------------------------
-                # For group-combined we still need all subjects for stats,
-                # but skip saving individual TSVs (they were already saved)
-                all_subjects_for_stats = patients + controls
-                df_all_subjects = []
+                    # ------------------------------------------------------------------
+                    # STEP 1: Per-subject TSV
+                    # ------------------------------------------------------------------
+                    # For group-combined we still need all subjects for stats,
+                    # but skip saving individual TSVs (they were already saved)
+                    all_subjects_for_stats = patients + controls
+                    df_all_subjects = []
 
-                for subj in (indiv_subjects if indiv_subjects is not None else []):
-                    subject_group  = subject_groups[subj]
-                    amblyopic_eye  = amblyopic_eyes[subj]
+                    for subj in (indiv_subjects if indiv_subjects is not None else []):
+                        subject_group  = subject_groups[subj]
+                        amblyopic_eye  = amblyopic_eyes[subj]
 
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subj, format_)
-                    if not os.path.isdir(tsv_dir):
-                        print(f"[SKIP] {subj}: tsv_dir not found: {tsv_dir}")
-                        continue
-
-                    df_eyes = []
-
-                    for prf_task_eye_name in prf_task_eyes_names:
-                        fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
-                            prf_task_eye_name, preproc_prep, filtering,
-                            normalization, avg_method, rois_method_format)
-                        tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subj, fn_spec)
-                        if not os.path.isfile(tsv_fn):
-                            print(f"[SKIP] {subj}: file not found: {tsv_fn}")
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subj, format_)
+                        if not os.path.isdir(tsv_dir):
+                            print(f"[SKIP] {subj}: tsv_dir not found: {tsv_dir}")
                             continue
 
-                        data = pd.read_table(tsv_fn, sep="\t")
+                        df_eyes = []
 
-                        # Apply same thresholds as make_ecc_size_pcm_tsv.py
-                        if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                        elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                        data.loc[
-                            (data.amplitude < amplitude_threshold[0]) |
-                            (data.prf_ecc   < ecc_threshold[0])  | (data.prf_ecc  > ecc_threshold[1]) |
-                            (data.prf_size  < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
-                            (data.prf_n     < n_threshold[0])    | (data.prf_n    > n_threshold[1]) |
-                            (data[rsq2use]  < rsqr_threshold) |
-                            (data[stats_col] > stats_threshold)] = np.nan
-                        data = data.dropna().reset_index(drop=True)
+                        for prf_task_eye_name in prf_task_eyes_names:
+                            fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
+                                prf_task_eye_name, preproc_prep, filtering,
+                                normalization, avg_method, rois_method_format)
+                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subj, fn_spec)
+                            if not os.path.isfile(tsv_fn):
+                                print(f"[SKIP] {subj}: file not found: {tsv_fn}")
+                                continue
 
-                        # Eye labeling
-                        if 'RightEye' in prf_task_eye_name:
-                            eye_val = 'right eye'
-                        else:
-                            eye_val = 'left eye'
+                            data = pd.read_table(tsv_fn, sep="\t")
 
-                        if subject_group == 'patient':
-                            amblyopic_side = amblyopic_eye[0]
-                            if   eye_val == 'right eye' and amblyopic_side == 'R': eye_type = 'amblyopic eye'
-                            elif eye_val == 'right eye' and amblyopic_side == 'L': eye_type = 'fellow eye'
-                            elif eye_val == 'left eye'  and amblyopic_side == 'L': eye_type = 'amblyopic eye'
-                            elif eye_val == 'left eye'  and amblyopic_side == 'R': eye_type = 'fellow eye'
-                        else:
-                            eye_type = eye_val
+                            # Apply same thresholds as make_ecc_size_pcm_tsv.py
+                            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                            data.loc[
+                                (data.amplitude < amplitude_threshold[0]) |
+                                (data.prf_ecc   < ecc_threshold[0])  | (data.prf_ecc  > ecc_threshold[1]) |
+                                (data.prf_size  < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
+                                (data.prf_n     < n_threshold[0])    | (data.prf_n    > n_threshold[1]) |
+                                (data[rsq2use]  < rsqr_threshold) |
+                                (data[stats_col] > stats_threshold)] = np.nan
+                            data = data.dropna().reset_index(drop=True)
 
-                        eye_condition = 'AE-RE' if eye_type in ['amblyopic eye', 'right eye'] else 'FE-LE'
+                            # Eye labeling
+                            if 'RightEye' in prf_task_eye_name:
+                                eye_val = 'right eye'
+                            else:
+                                eye_val = 'left eye'
 
-                        # Eccentricity category
-                        data.loc[data.prf_ecc <= foveal_bound, 'ecc_category'] = 'foveal'
-                        data.loc[data.prf_ecc >  foveal_bound, 'ecc_category'] = 'peripheral'
+                            if subject_group == 'patient':
+                                amblyopic_side = amblyopic_eye[0]
+                                if   eye_val == 'right eye' and amblyopic_side == 'R': eye_type = 'amblyopic eye'
+                                elif eye_val == 'right eye' and amblyopic_side == 'L': eye_type = 'fellow eye'
+                                elif eye_val == 'left eye'  and amblyopic_side == 'L': eye_type = 'amblyopic eye'
+                                elif eye_val == 'left eye'  and amblyopic_side == 'R': eye_type = 'fellow eye'
+                            else:
+                                eye_type = eye_val
 
-                        # Compute R²-weighted median + 2.5/97.5 CI per roi × ecc_category
-                        rows_list = []
+                            eye_condition = 'AE-RE' if eye_type in ['amblyopic eye', 'right eye'] else 'FE-LE'
 
-                        for roi in rois:
-                            df_roi = data.loc[data[rois_to_plot] == roi]
-                            for ecc_cat in ecc_categories:
-                                if ecc_cat == 'all':
-                                    df_cat = df_roi
-                                elif ecc_cat == 'foveal':
-                                    df_cat = df_roi.loc[df_roi.prf_ecc <= foveal_bound]
-                                else:
-                                    df_cat = df_roi.loc[df_roi.prf_ecc > foveal_bound]
+                            # Eccentricity category
+                            data.loc[data.prf_ecc <= foveal_bound, 'ecc_category'] = 'foveal'
+                            data.loc[data.prf_ecc >  foveal_bound, 'ecc_category'] = 'peripheral'
 
-                                w   = df_cat[rsq2use].values if len(df_cat) > 0 else np.array([])
-                                has = len(df_cat) > 0
+                            # Compute R²-weighted median + 2.5/97.5 CI per roi × ecc_category
+                            rows_list = []
 
-                                row = {
-                                    'subject':              subj,
-                                    'subject_group':        subject_group,
-                                    rois_to_plot:                  roi,
-                                    'eye_condition':        eye_condition,
-                                    'ecc_category':         ecc_cat,
-                                    'n_vert':               len(df_cat),
-                                    'prf_rsq_median':       weighted_nan_median(df_cat[rsq2use].values, w)           if has else np.nan,
-                                    'prf_rsq_ci_lo':        weighted_nan_percentile(df_cat[rsq2use].values, w, 25)  if has else np.nan,
-                                    'prf_rsq_ci_hi':        weighted_nan_percentile(df_cat[rsq2use].values, w, 75) if has else np.nan,
-                                    'prf_size_median':      weighted_nan_median(df_cat['prf_size'].values, w)           if has else np.nan,
-                                    'prf_size_ci_lo':       weighted_nan_percentile(df_cat['prf_size'].values, w, 25)  if has else np.nan,
-                                    'prf_size_ci_hi':       weighted_nan_percentile(df_cat['prf_size'].values, w, 75) if has else np.nan,
-                                    'prf_ecc_median':       weighted_nan_median(df_cat['prf_ecc'].values, w)           if has else np.nan,
-                                    'prf_ecc_ci_lo':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 25)  if has else np.nan,
-                                    'prf_ecc_ci_hi':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 75) if has else np.nan,
-                                    'pcm_median_median':    weighted_nan_median(df_cat['pcm_median'].values, w)           if has else np.nan,
-                                    'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 25)  if has else np.nan,
-                                    'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 75) if has else np.nan,
-                                    'prf_n_median':         weighted_nan_median(df_cat['prf_n'].values, w)           if has else np.nan,
-                                    'prf_n_ci_lo':          weighted_nan_percentile(df_cat['prf_n'].values, w, 25)  if has else np.nan,
-                                    'prf_n_ci_hi':          weighted_nan_percentile(df_cat['prf_n'].values, w, 75) if has else np.nan,
-                                }
-                                rows_list.append(row)
+                            for roi in rois:
+                                df_roi = data.loc[data[rois_to_plot] == roi]
+                                for ecc_cat in ecc_categories:
+                                    if ecc_cat == 'all':
+                                        df_cat = df_roi
+                                    elif ecc_cat == 'foveal':
+                                        df_cat = df_roi.loc[df_roi.prf_ecc <= foveal_bound]
+                                    else:
+                                        df_cat = df_roi.loc[df_roi.prf_ecc > foveal_bound]
 
-                        df_eyes.append(pd.DataFrame(rows_list))
+                                    w   = df_cat[rsq2use].values if len(df_cat) > 0 else np.array([])
+                                    has = len(df_cat) > 0
 
-                    if not df_eyes:
+                                    row = {
+                                        'subject':              subj,
+                                        'subject_group':        subject_group,
+                                        rois_to_plot:                  roi,
+                                        'eye_condition':        eye_condition,
+                                        'ecc_category':         ecc_cat,
+                                        'n_vert':               len(df_cat),
+                                        'prf_rsq_median':       weighted_nan_median(df_cat[rsq2use].values, w)           if has else np.nan,
+                                        'prf_rsq_ci_lo':        weighted_nan_percentile(df_cat[rsq2use].values, w, 25)  if has else np.nan,
+                                        'prf_rsq_ci_hi':        weighted_nan_percentile(df_cat[rsq2use].values, w, 75) if has else np.nan,
+                                        'prf_size_median':      weighted_nan_median(df_cat['prf_size'].values, w)           if has else np.nan,
+                                        'prf_size_ci_lo':       weighted_nan_percentile(df_cat['prf_size'].values, w, 25)  if has else np.nan,
+                                        'prf_size_ci_hi':       weighted_nan_percentile(df_cat['prf_size'].values, w, 75) if has else np.nan,
+                                        'prf_ecc_median':       weighted_nan_median(df_cat['prf_ecc'].values, w)           if has else np.nan,
+                                        'prf_ecc_ci_lo':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 25)  if has else np.nan,
+                                        'prf_ecc_ci_hi':        weighted_nan_percentile(df_cat['prf_ecc'].values, w, 75) if has else np.nan,
+                                        'pcm_median_median':    weighted_nan_median(df_cat['pcm_median'].values, w)           if has else np.nan,
+                                        'pcm_median_ci_lo':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 25)  if has else np.nan,
+                                        'pcm_median_ci_hi':     weighted_nan_percentile(df_cat['pcm_median'].values, w, 75) if has else np.nan,
+                                        'prf_n_median':         weighted_nan_median(df_cat['prf_n'].values, w)           if has else np.nan,
+                                        'prf_n_ci_lo':          weighted_nan_percentile(df_cat['prf_n'].values, w, 25)  if has else np.nan,
+                                        'prf_n_ci_hi':          weighted_nan_percentile(df_cat['prf_n'].values, w, 75) if has else np.nan,
+                                    }
+                                    rows_list.append(row)
+
+                            df_eyes.append(pd.DataFrame(rows_list))
+
+                        if not df_eyes:
+                            continue
+
+                        df_subj = pd.concat(df_eyes, ignore_index=True)
+                    
+                        # Add CTRL rows for controls (median of AE-RE and FE-LE per roi/ecc_cat)
+                        if subject_group == 'control':
+                            ctrl_rows = []
+                            for roi in rois:
+                                for ecc_cat in ecc_categories:
+                                    df_rc = df_subj.loc[
+                                        (df_subj[rois_to_plot] == roi) & (df_subj.ecc_category == ecc_cat)]
+                                
+                                    ctrl_row = {
+                                        'subject':       subj,
+                                        'subject_group': subject_group,
+                                        rois_to_plot :           roi,
+                                        'eye_condition': 'CTRL',
+                                        'ecc_category':  ecc_cat,
+                                        'n_vert':        df_rc['n_vert'].median(),
+                                    }
+                                
+                                    for param in params:
+                                        ctrl_row[f'{param}_median'] = df_rc[f'{param}_median'].median()
+                                        ctrl_row[f'{param}_ci_lo']  = np.nan
+                                        ctrl_row[f'{param}_ci_hi']  = np.nan
+                                    ctrl_rows.append(ctrl_row)
+                        
+                            df_subj = pd.concat([df_subj, pd.DataFrame(ctrl_rows)], ignore_index=True)
+
+                        # Save per-subject TSV
+                        tsv_fn_out = '{}/{}_{}_ecc-comp.tsv'.format(tsv_dir, subj, fn_spec_combined)
+                        print(f'Saving per-subject TSV ({subj}): {tsv_fn_out}')
+                        df_subj.to_csv(tsv_fn_out, sep='\t', na_rep='NaN', index=False)
+                        df_all_subjects.append(df_subj)
+
+                    # ------------------------------------------------------------------
+                    # STEP 2: Group aggregation + stats (only when run_group is set)
+                    # ------------------------------------------------------------------
+                    if run_group is None:
                         continue
 
-                    df_subj = pd.concat(df_eyes, ignore_index=True)
-                    
-                    # Add CTRL rows for controls (median of AE-RE and FE-LE per roi/ecc_cat)
-                    if subject_group == 'control':
-                        ctrl_rows = []
-                        for roi in rois:
-                            for ecc_cat in ecc_categories:
-                                df_rc = df_subj.loc[
-                                    (df_subj[rois_to_plot] == roi) & (df_subj.ecc_category == ecc_cat)]
-                                
-                                ctrl_row = {
-                                    'subject':       subj,
-                                    'subject_group': subject_group,
-                                    rois_to_plot :           roi,
-                                    'eye_condition': 'CTRL',
-                                    'ecc_category':  ecc_cat,
-                                    'n_vert':        df_rc['n_vert'].median(),
-                                }
-                                
-                                for param in params:
-                                    ctrl_row[f'{param}_median'] = df_rc[f'{param}_median'].median()
-                                    ctrl_row[f'{param}_ci_lo']  = np.nan
-                                    ctrl_row[f'{param}_ci_hi']  = np.nan
-                                ctrl_rows.append(ctrl_row)
-                        
-                        df_subj = pd.concat([df_subj, pd.DataFrame(ctrl_rows)], ignore_index=True)
+                    # For group-patient, group-control, group-combined:
+                    # reload individual TSVs from disk
+                    if not df_all_subjects:
+                        subjects_to_load = {
+                            'patient': all_subjects_for_stats,  # needs controls for CTRL
+                            'control': controls,
+                        }[run_group]
+                        for subj in subjects_to_load:
+                            td = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subj, format_)
+                            tf = '{}/{}_{}_ecc-comp.tsv'.format(td, subj, fn_spec_combined)
+                            if os.path.isfile(tf):
+                                df_all_subjects.append(pd.read_table(tf, sep='\t'))
+                            else:
+                                print(f"[SKIP] individual TSV not found: {tf}")
 
-                    # Save per-subject TSV
-                    tsv_fn_out = '{}/{}_{}_ecc-comp.tsv'.format(tsv_dir, subj, fn_spec_combined)
-                    print(f'Saving per-subject TSV ({subj}): {tsv_fn_out}')
-                    df_subj.to_csv(tsv_fn_out, sep='\t', na_rep='NaN', index=False)
-                    df_all_subjects.append(df_subj)
+                    if not df_all_subjects:
+                        print(f"[SKIP] No subject data for group stats: {fn_spec_combined}")
+                        continue
 
-                # ------------------------------------------------------------------
-                # STEP 2: Group aggregation + stats (only when run_group is set)
-                # ------------------------------------------------------------------
-                if run_group is None:
-                    continue
+                    df_all = pd.concat(df_all_subjects, ignore_index=True)
+                    out_dir = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
+                        main_dir, project_dir, run_group, format_)
+                    os.makedirs(out_dir, exist_ok=True)
 
-                # For group-patient, group-control, group-combined:
-                # reload individual TSVs from disk
-                if not df_all_subjects:
-                    subjects_to_load = {
-                        'patient': all_subjects_for_stats,  # needs controls for CTRL
-                        'control': controls,
-                    }[run_group]
-                    for subj in subjects_to_load:
-                        td = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subj, format_)
-                        tf = '{}/{}_{}_ecc-comp.tsv'.format(td, subj, fn_spec_combined)
-                        if os.path.isfile(tf):
-                            df_all_subjects.append(pd.read_table(tf, sep='\t'))
-                        else:
-                            print(f"[SKIP] individual TSV not found: {tf}")
+                    def aggregate_group(df_in, group_cols):
+                        """Compute median and 2.5/97.5 CI across subjects using uniform weights."""
+                        rows = []
+                        for keys, df_grp in df_in.groupby(group_cols):
+                            if not isinstance(keys, tuple):
+                                keys = (keys,)
+                            row = dict(zip(group_cols, keys))
+                            # n_vert: median across subjects
+                            row['n_vert_median'] = weighted_nan_median(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)))
+                            row['n_vert_ci_lo']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 25)
+                            row['n_vert_ci_hi']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 75)
+                            for p in params:
+                                col = f'{p}_median'
+                                vals = df_grp[col].values.astype(float)
+                                w    = np.ones(len(vals))
+                                row[f'{p}_median'] = weighted_nan_median(vals, w)
+                                row[f'{p}_ci_lo']  = weighted_nan_percentile(vals, w, 25)
+                                row[f'{p}_ci_hi']  = weighted_nan_percentile(vals, w, 75)
+                            rows.append(row)
+                        return pd.DataFrame(rows)
 
-                if not df_all_subjects:
-                    print(f"[SKIP] No subject data for group stats: {fn_spec_combined}")
-                    continue
+                    # -- Fig 1: patients AE-RE vs FE-LE + CTRL from controls --
+                    if run_group == 'patient':
+                        df_pat       = df_all.loc[df_all.subject_group == 'patient']
+                        df_ctrl      = df_all.loc[df_all.subject_group == 'control']
+                        df_ctrl_ctrl = df_ctrl.loc[df_ctrl.eye_condition == 'CTRL'].copy()
+                        df_pat_full  = pd.concat([
+                            df_pat.loc[df_pat.eye_condition.isin(['AE-RE', 'FE-LE'])],
+                            df_ctrl_ctrl], ignore_index=True)
+                        df_pat_grp   = aggregate_group(df_pat_full, [rois_to_plot, 'ecc_category', 'eye_condition'])
+                        fn_pat = '{}/group-patient_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
+                        print(f'Saving patient group TSV: {fn_pat}')
+                        df_pat_grp.to_csv(fn_pat, sep='\t', na_rep='NaN', index=False)
 
-                df_all = pd.concat(df_all_subjects, ignore_index=True)
-                out_dir = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
-                    main_dir, project_dir, run_group, format_)
-                os.makedirs(out_dir, exist_ok=True)
-
-                def aggregate_group(df_in, group_cols):
-                    """Compute median and 2.5/97.5 CI across subjects using uniform weights."""
-                    rows = []
-                    for keys, df_grp in df_in.groupby(group_cols):
-                        if not isinstance(keys, tuple):
-                            keys = (keys,)
-                        row = dict(zip(group_cols, keys))
-                        # n_vert: median across subjects
-                        row['n_vert_median'] = weighted_nan_median(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)))
-                        row['n_vert_ci_lo']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 25)
-                        row['n_vert_ci_hi']  = weighted_nan_percentile(df_grp['n_vert'].values.astype(float), np.ones(len(df_grp)), 75)
-                        for p in params:
-                            col = f'{p}_median'
-                            vals = df_grp[col].values.astype(float)
-                            w    = np.ones(len(vals))
-                            row[f'{p}_median'] = weighted_nan_median(vals, w)
-                            row[f'{p}_ci_lo']  = weighted_nan_percentile(vals, w, 25)
-                            row[f'{p}_ci_hi']  = weighted_nan_percentile(vals, w, 75)
-                        rows.append(row)
-                    return pd.DataFrame(rows)
-
-                # -- Fig 1: patients AE-RE vs FE-LE + CTRL from controls --
-                if run_group == 'patient':
-                    df_pat       = df_all.loc[df_all.subject_group == 'patient']
-                    df_ctrl      = df_all.loc[df_all.subject_group == 'control']
-                    df_ctrl_ctrl = df_ctrl.loc[df_ctrl.eye_condition == 'CTRL'].copy()
-                    df_pat_full  = pd.concat([
-                        df_pat.loc[df_pat.eye_condition.isin(['AE-RE', 'FE-LE'])],
-                        df_ctrl_ctrl], ignore_index=True)
-                    df_pat_grp   = aggregate_group(df_pat_full, [rois_to_plot, 'ecc_category', 'eye_condition'])
-                    fn_pat = '{}/group-patient_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
-                    print(f'Saving patient group TSV: {fn_pat}')
-                    df_pat_grp.to_csv(fn_pat, sep='\t', na_rep='NaN', index=False)
-
-                    df_pat_indiv = df_pat_full.copy()
-                    fn_pat_indiv = '{}/group-patient_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
-                    df_pat_indiv.to_csv(fn_pat_indiv, sep='\t', na_rep='NaN', index=False)
+                        df_pat_indiv = df_pat_full.copy()
+                        fn_pat_indiv = '{}/group-patient_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
+                        df_pat_indiv.to_csv(fn_pat_indiv, sep='\t', na_rep='NaN', index=False)
 
 
-                # -- Fig 2: controls, AE-RE (RE) vs FE-LE (LE) + CTRL --
-                elif run_group == 'control':
-                    df_ctrl      = df_all.loc[df_all.subject_group == 'control']
-                    df_ctrl_grp  = aggregate_group(
-                        df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE', 'CTRL'])],
-                        [rois_to_plot, 'ecc_category', 'eye_condition'])
-                    fn_ctrl = '{}/group-control_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
-                    print(f'Saving control group TSV: {fn_ctrl}')
-                    df_ctrl_grp.to_csv(fn_ctrl, sep='\t', na_rep='NaN', index=False)
+                    # -- Fig 2: controls, AE-RE (RE) vs FE-LE (LE) + CTRL --
+                    elif run_group == 'control':
+                        df_ctrl      = df_all.loc[df_all.subject_group == 'control']
+                        df_ctrl_grp  = aggregate_group(
+                            df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE', 'CTRL'])],
+                            [rois_to_plot, 'ecc_category', 'eye_condition'])
+                        fn_ctrl = '{}/group-control_{}_ecc-comp.tsv'.format(out_dir, fn_spec_combined)
+                        print(f'Saving control group TSV: {fn_ctrl}')
+                        df_ctrl_grp.to_csv(fn_ctrl, sep='\t', na_rep='NaN', index=False)
 
-                    df_ctrl_indiv = df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE'])]
-                    fn_ctrl_indiv = '{}/group-control_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
-                    df_ctrl_indiv.to_csv(fn_ctrl_indiv, sep='\t', na_rep='NaN', index=False)
+                        df_ctrl_indiv = df_ctrl.loc[df_ctrl.eye_condition.isin(['AE-RE', 'FE-LE'])]
+                        fn_ctrl_indiv = '{}/group-control_{}_ecc-comp_indiv.tsv'.format(out_dir, fn_spec_combined)
+                        df_ctrl_indiv.to_csv(fn_ctrl_indiv, sep='\t', na_rep='NaN', index=False)
 
 
 
-                # ------------------------------------------------------------------
-                # STEP 3: Statistics
-                # ------------------------------------------------------------------
+                    # ------------------------------------------------------------------
+                    # STEP 3: Statistics
+                    # ------------------------------------------------------------------
 
-                def run_stats(df_indiv, comparisons, paired_map, group_col, out_fn):
-                    """
+                    def run_stats(df_indiv, comparisons, paired_map, group_col, out_fn):
+                        """
                     Run pairwise Wilcoxon/Mann-Whitney tests per roi/ecc_category/param.
 
                     Parameters
@@ -396,106 +403,106 @@ for avg_method in avg_methods:
                     group_col  : column used as grouping variable (e.g. 'eye_condition')
                     out_fn     : output filename
                     """
-                    rows_stats = []
-                    for param in params:
-                        # Collect all raw p-values for this parameter (family)
-                        param_rows = []
-                        for roi in rois:
-                            for ecc_cat in ecc_categories:
-                                df_rc = df_indiv.loc[
-                                    (df_indiv[rois_to_plot] == roi) & (df_indiv.ecc_category == ecc_cat)]
-                                for (cond_a, cond_b) in comparisons:
-                                    paired = paired_map[(cond_a, cond_b)]
-                                    df_ab  = df_rc.loc[df_rc[group_col].isin([cond_a, cond_b])].copy()
+                        rows_stats = []
+                        for param in params:
+                            # Collect all raw p-values for this parameter (family)
+                            param_rows = []
+                            for roi in rois:
+                                for ecc_cat in ecc_categories:
+                                    df_rc = df_indiv.loc[
+                                        (df_indiv[rois_to_plot] == roi) & (df_indiv.ecc_category == ecc_cat)]
+                                    for (cond_a, cond_b) in comparisons:
+                                        paired = paired_map[(cond_a, cond_b)]
+                                        df_ab  = df_rc.loc[df_rc[group_col].isin([cond_a, cond_b])].copy()
 
-                                    if paired:
-                                        # Matched subjects — pivot and drop NaN pairs
-                                        df_piv = df_ab.pivot_table(
-                                            index='subject', columns=group_col, values=f'{param}_median')
-                                        df_piv = df_piv.dropna()
-                                        if len(df_piv) < 2:
-                                            p_unc = np.nan
-                                        else:
-                                            df_long = df_piv.reset_index().melt(
-                                                id_vars='subject', var_name=group_col, value_name=f'{param}_median')
-                                            try:
-                                                res   = pg.pairwise_tests(
-                                                    data=df_long, dv=f'{param}_median',
-                                                    within=group_col, subject='subject',
-                                                    parametric=False,
-                                                    alternative='two-sided')
-                                                p_unc = res['p-unc'].values[0]
-                                            except Exception as e:
-                                                print(f"  Stat error (paired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
+                                        if paired:
+                                            # Matched subjects — pivot and drop NaN pairs
+                                            df_piv = df_ab.pivot_table(
+                                                index='subject', columns=group_col, values=f'{param}_median')
+                                            df_piv = df_piv.dropna()
+                                            if len(df_piv) < 2:
                                                 p_unc = np.nan
-                                    else:
-                                        # Unpaired Mann-Whitney
-                                        data_a = df_ab.loc[df_ab[group_col] == cond_a, f'{param}_median'].dropna()
-                                        data_b = df_ab.loc[df_ab[group_col] == cond_b, f'{param}_median'].dropna()
-                                        if len(data_a) < 2 or len(data_b) < 2:
-                                            p_unc = np.nan
+                                            else:
+                                                df_long = df_piv.reset_index().melt(
+                                                    id_vars='subject', var_name=group_col, value_name=f'{param}_median')
+                                                try:
+                                                    res   = pg.pairwise_tests(
+                                                        data=df_long, dv=f'{param}_median',
+                                                        within=group_col, subject='subject',
+                                                        parametric=False,
+                                                        alternative='two-sided')
+                                                    p_unc = res['p-unc'].values[0]
+                                                except Exception as e:
+                                                    print(f"  Stat error (paired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
+                                                    p_unc = np.nan
                                         else:
-                                            try:
-                                                res   = pg.pairwise_tests(
-                                                    data=df_ab, dv=f'{param}_median',
-                                                    between=group_col,
-                                                    parametric=False,
-                                                    alternative='two-sided')
-                                                p_unc = res['p-unc'].values[0]
-                                            except Exception as e:
-                                                print(f"  Stat error (unpaired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
+                                            # Unpaired Mann-Whitney
+                                            data_a = df_ab.loc[df_ab[group_col] == cond_a, f'{param}_median'].dropna()
+                                            data_b = df_ab.loc[df_ab[group_col] == cond_b, f'{param}_median'].dropna()
+                                            if len(data_a) < 2 or len(data_b) < 2:
                                                 p_unc = np.nan
+                                            else:
+                                                try:
+                                                    res   = pg.pairwise_tests(
+                                                        data=df_ab, dv=f'{param}_median',
+                                                        between=group_col,
+                                                        parametric=False,
+                                                        alternative='two-sided')
+                                                    p_unc = res['p-unc'].values[0]
+                                                except Exception as e:
+                                                    print(f"  Stat error (unpaired) {roi}/{ecc_cat}/{param}/{cond_a}v{cond_b}: {e}")
+                                                    p_unc = np.nan
 
-                                    param_rows.append({
-                                        rois_to_plot:          roi,
-                                        'ecc_category': ecc_cat,
-                                        'param':        param,
-                                        'cond_A':       cond_a,
-                                        'cond_B':       cond_b,
-                                        'paired':       paired,
-                                        'p_unc':        p_unc,
-                                    })
-                        # FDR-BH correction per parameter family
-                        df_param = pd.DataFrame(param_rows)
-                        all_pvals  = df_param['p_unc'].values
-                        valid_mask = ~np.isnan(all_pvals)
-                        p_corr     = np.full(len(all_pvals), np.nan)
-                        if valid_mask.sum() > 0:
-                            _, p_corr_valid = pg.multicomp(all_pvals[valid_mask], method='fdr_bh')
-                            p_corr[valid_mask] = p_corr_valid
-                        df_param['p_corr'] = p_corr
-                        df_param['stars']  = df_param['p_corr'].apply(
-                            lambda p: pval_to_stars(p) if not np.isnan(p) else 'ns')
-                        rows_stats.append(df_param)
+                                        param_rows.append({
+                                            rois_to_plot:          roi,
+                                            'ecc_category': ecc_cat,
+                                            'param':        param,
+                                            'cond_A':       cond_a,
+                                            'cond_B':       cond_b,
+                                            'paired':       paired,
+                                            'p_unc':        p_unc,
+                                        })
+                            # FDR-BH correction per parameter family
+                            df_param = pd.DataFrame(param_rows)
+                            all_pvals  = df_param['p_unc'].values
+                            valid_mask = ~np.isnan(all_pvals)
+                            p_corr     = np.full(len(all_pvals), np.nan)
+                            if valid_mask.sum() > 0:
+                                _, p_corr_valid = pg.multicomp(all_pvals[valid_mask], method='fdr_bh')
+                                p_corr[valid_mask] = p_corr_valid
+                            df_param['p_corr'] = p_corr
+                            df_param['stars']  = df_param['p_corr'].apply(
+                                lambda p: pval_to_stars(p) if not np.isnan(p) else 'ns')
+                            rows_stats.append(df_param)
 
-                    df_stats = pd.concat(rows_stats, ignore_index=True)
-                    df_stats[rois_to_plot] = pd.Categorical(df_stats[rois_to_plot], categories=rois, ordered=True)
-                    df_stats = df_stats.sort_values([rois_to_plot, 'ecc_category', 'param'])
-                    print(f'Saving stats TSV: {out_fn}')
-                    df_stats.to_csv(out_fn, sep='\t', na_rep='NaN', index=False)
-                    return df_stats
+                        df_stats = pd.concat(rows_stats, ignore_index=True)
+                        df_stats[rois_to_plot] = pd.Categorical(df_stats[rois_to_plot], categories=rois, ordered=True)
+                        df_stats = df_stats.sort_values([rois_to_plot, 'ecc_category', 'param'])
+                        print(f'Saving stats TSV: {out_fn}')
+                        df_stats.to_csv(out_fn, sep='\t', na_rep='NaN', index=False)
+                        return df_stats
 
-                # Fig 1 stats: FE vs AE (paired), FE vs CTRL, AE vs CTRL (unpaired)
-                if run_group == 'patient':
-                    run_stats(
-                        df_indiv    = df_pat_indiv,
-                        comparisons = [('FE-LE', 'AE-RE'), ('FE-LE', 'CTRL'), ('AE-RE', 'CTRL')],
-                        paired_map  = {
-                            ('FE-LE', 'AE-RE'): True,
-                            ('FE-LE', 'CTRL'):  False,
-                            ('AE-RE', 'CTRL'):  False,
-                        },
-                        group_col   = 'eye_condition',
-                        out_fn      = '{}/group-patient_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
+                    # Fig 1 stats: FE vs AE (paired), FE vs CTRL, AE vs CTRL (unpaired)
+                    if run_group == 'patient':
+                        run_stats(
+                            df_indiv    = df_pat_indiv,
+                            comparisons = [('FE-LE', 'AE-RE'), ('FE-LE', 'CTRL'), ('AE-RE', 'CTRL')],
+                            paired_map  = {
+                                ('FE-LE', 'AE-RE'): True,
+                                ('FE-LE', 'CTRL'):  False,
+                                ('AE-RE', 'CTRL'):  False,
+                            },
+                            group_col   = 'eye_condition',
+                            out_fn      = '{}/group-patient_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
 
-                # Fig 2 stats: RE vs LE only (paired, within controls)
-                elif run_group == 'control':
-                    run_stats(
-                        df_indiv    = df_ctrl_indiv,
-                        comparisons = [('FE-LE', 'AE-RE')],
-                        paired_map  = {('FE-LE', 'AE-RE'): True},
-                        group_col   = 'eye_condition',
-                        out_fn      = '{}/group-control_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
+                    # Fig 2 stats: RE vs LE only (paired, within controls)
+                    elif run_group == 'control':
+                        run_stats(
+                            df_indiv    = df_ctrl_indiv,
+                            comparisons = [('FE-LE', 'AE-RE')],
+                            paired_map  = {('FE-LE', 'AE-RE'): True},
+                            group_col   = 'eye_condition',
+                            out_fn      = '{}/group-control_{}_ecc-comp_stats.tsv'.format(out_dir, fn_spec_combined))
 
 
 

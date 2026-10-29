@@ -68,7 +68,9 @@ formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 # [CORRECTION #21] la cle 'prf_task_names' n'existe pas dans prf-analysis.yml (KeyError)
 # AVANT : prf_task_name = analysis_info['prf_task_names'][0]
@@ -89,167 +91,189 @@ maps_names = maps_names_css + maps_names_pcm + maps_names_css_stats + maps_names
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
 set_pycortex_config_file(cortex_dir)
 
-for tasks in group_tasks : 
-    if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
-    else : intertask_group = 'Sac-Pur-pRF'
-    # Loop over format
-    for format_ in formats:
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for tasks in group_tasks : 
+        if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
+        else : intertask_group = 'Sac-Pur-pRF'
+        # Loop over format
+        for format_ in formats:
         
-        # define list of rois for each format
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+            # define list of rois for each format
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
             
-            # Define directories and fn
-            prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
-            prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
-            intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/intertask_derivatives".format(main_dir, project_dir, subject, format_)
+                # Define directories and fn
+                prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(main_dir, project_dir, subject, format_)
+                prf_deriv_dir = "{}/prf_derivatives".format(prf_dir)
+                intertask_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/intertask_derivatives".format(main_dir, project_dir, subject, format_)
             
-            if not os.path.isdir(prf_dir):
-                print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
-                continue
+                if not os.path.isdir(prf_dir):
+                    print(f"[SKIP] prf_dir not found for format={format_}: {prf_dir}")
+                    continue
             
-            tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(
-                main_dir, project_dir, subject, format_)
-            os.makedirs(tsv_dir, exist_ok=True)
+                tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(
+                    main_dir, project_dir, subject, format_)
+                os.makedirs(tsv_dir, exist_ok=True)
             
-            fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                intertask_group, preproc_prep, filtering,
-                normalization, avg_method, rois_method_format)
-            tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
-                tsv_dir, subject, fn_spec)
+                fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                    intertask_group, preproc_prep, filtering,
+                    normalization, avg_method, rois_method_format)
+                tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
+                    tsv_dir, subject, fn_spec)
 
-            # Load all data
-            df_rois = pd.DataFrame()
-            if format_ == 'fsnative':
-                pycortex_subject = subject
-                for hemi in ['hemi-L', 'hemi-R']:
+                # Load all data
+                df_rois = pd.DataFrame()
+                if format_ == 'fsnative':
+                    pycortex_subject = subject
+                    for hemi in ['hemi-L', 'hemi-R']:
                     
-                    # pRF derivatives
-                    deriv_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_prf-css_deriv.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, hemi)
+                        # pRF derivatives
+                        # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                        # AVANT : deriv_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_prf-css_deriv.func.gii'.format(
+                        deriv_median_fn = '{}/{}_task-{}_{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_prf-css_deriv.func.gii'.format(
+                            prf_deriv_dir, subject, prf_task_name, hemi, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+                        deriv_img, deriv_mat = load_surface(deriv_median_fn)
+                    
+                        # pCM
+                        # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                        # AVANT : pcm_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_{}_prf-css_pcm.func.gii'.format(
+                        pcm_median_fn = '{}/{}_task-{}_{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{}_prf-css_pcm.func.gii'.format(
+                            prf_deriv_dir, subject, prf_task_name, hemi, rois_method_format, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+                        pcm_img, pcm_mat = load_surface(pcm_median_fn)
+        
+                        # Stats
+                        # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                        # AVANT : stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(
+                        stats_median_fn = '{}/{}_task-{}_{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_prf-css_stats.func.gii'.format(
+                            prf_deriv_dir, subject, prf_task_name, hemi, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+                        stats_img, stats_mat = load_surface(stats_median_fn)
+                                    
+                        # Inter task
+                        # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                        # AVANT : intertask_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(intertask_dir, subject, intertask_group, hemi)
+                        intertask_fn = '{}/{}_task-{}_{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.func.gii' .format(intertask_dir, subject, intertask_group, hemi, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+                        intertask_img, intertask_mat = load_surface(intertask_fn)
+        
+                        # Combine all derivatives
+                        all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, intertask_mat))
+                    
+                        # get MMP rois img
+                        roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+                        # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                        # AVANT : roi_fn = '{}/{}_{}_fmriprep_dct_z-score_rois-mmp.func.gii'.format(roi_dir, subject, hemi)
+                        roi_fn = '{}/{}_{}_{preproc_prep}_{filtering}_{normalization}_rois-mmp.func.gii'.format(roi_dir, subject, hemi, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
+                        roi_img, roi_mat = load_surface(roi_fn)
+                
+                        # get MMP rois numbers tsv
+                        mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+                        mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+                    
+                        # Replace rois nums by names
+                        roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
+                                                                        mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
+    
+                        # Get roi mask
+                        roi_verts = get_rois(subject=pycortex_subject, 
+                                              surf_format=format_, 
+                                              rois_type=rois_method_format, 
+                                              mask=True,
+                                              rois=rois, 
+                                              hemis=hemi)
+    
+                        # Create and combine pandas df for each roi and brain hemisphere
+                        print('Creating dataframe...')
+                        for roi in roi_verts.keys():
+                            data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
+                            data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
+                            data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['num_vert'] = np.where(roi_verts[roi])[0]
+                            df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
+        
+                elif format_ == '170k':
+                    pycortex_subject = pycortex_subject_template
+                
+                    # Derivatives
+                    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                    # AVANT : deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_prf-css_deriv.dtseries.nii'.format(
+                    deriv_median_fn = '{}/{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_prf-css_deriv.dtseries.nii'.format(
+                        prf_deriv_dir, subject, prf_task_name, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
                     deriv_img, deriv_mat = load_surface(deriv_median_fn)
-                    
-                    # pCM
-                    pcm_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_{}_prf-css_pcm.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, hemi, rois_method_format)
+                
+                    # CM
+                    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                    # AVANT : pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_{}_prf-css_pcm.dtseries.nii'.format(
+                    pcm_median_fn = '{}/{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{}_prf-css_pcm.dtseries.nii'.format(
+                        prf_deriv_dir, subject, prf_task_name, rois_method_format, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
                     pcm_img, pcm_mat = load_surface(pcm_median_fn)
         
                     # Stats
-                    stats_median_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_prf-css_stats.func.gii'.format(
-                        prf_deriv_dir, subject, prf_task_name, hemi)
+                    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                    # AVANT : stats_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_prf-css_stats.dtseries.nii'.format(
+                    stats_median_fn = '{}/{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_prf-css_stats.dtseries.nii'.format(
+                        prf_deriv_dir, subject, prf_task_name, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
                     stats_img, stats_mat = load_surface(stats_median_fn)
-                                    
+                
                     # Inter task
-                    intertask_fn = '{}/{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(intertask_dir, subject, intertask_group, hemi)
+                    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                    # AVANT : intertask_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(intertask_dir, subject, intertask_group)
+                    intertask_fn = '{}/{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.dtseries.nii' .format(intertask_dir, subject, intertask_group, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
                     intertask_img, intertask_mat = load_surface(intertask_fn)
         
                     # Combine all derivatives
                     all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, intertask_mat))
-                    
+        
                     # get MMP rois img
                     roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
-                    roi_fn = '{}/{}_{}_fmriprep_dct_z-score_rois-mmp.func.gii'.format(roi_dir, subject, hemi)
+                    # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                    # AVANT : roi_fn = '{}/{}_fmriprep_dct_z-score_rois-mmp.dtseries.nii'.format(roi_dir, subject)
+                    roi_fn = '{}/{}_{preproc_prep}_{filtering}_{normalization}_rois-mmp.dtseries.nii'.format(roi_dir, subject, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
                     roi_img, roi_mat = load_surface(roi_fn)
-                
+            
                     # get MMP rois numbers tsv
                     mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
                     mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
-                    
+                
                     # Replace rois nums by names
                     roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
                                                                     mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
-    
-                    # Get roi mask
-                    roi_verts = get_rois(subject=pycortex_subject, 
-                                          surf_format=format_, 
-                                          rois_type=rois_method_format, 
-                                          mask=True,
-                                          rois=rois, 
-                                          hemis=hemi)
-    
+        
                     # Create and combine pandas df for each roi and brain hemisphere
                     print('Creating dataframe...')
-                    for roi in roi_verts.keys():
-                        data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
-                        data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
-                        data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['num_vert'] = np.where(roi_verts[roi])[0]
-                        df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
+                    for hemi in ['hemi-L', 'hemi-R']:
+                        # Get roi masks
+                        roi_verts = get_rois(subject=pycortex_subject, 
+                                              surf_format=format_, 
+                                              rois_type=rois_method_format, 
+                                              mask=True,
+                                              rois=rois, 
+                                              hemis=hemi)
         
-            elif format_ == '170k':
-                pycortex_subject = pycortex_subject_template
-                
-                # Derivatives
-                deriv_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_prf-css_deriv.dtseries.nii'.format(
-                    prf_deriv_dir, subject, prf_task_name)
-                deriv_img, deriv_mat = load_surface(deriv_median_fn)
-                
-                # CM
-                pcm_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_{}_prf-css_pcm.dtseries.nii'.format(
-                    prf_deriv_dir, subject, prf_task_name, rois_method_format)
-                pcm_img, pcm_mat = load_surface(pcm_median_fn)
-        
-                # Stats
-                stats_median_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_prf-css_stats.dtseries.nii'.format(
-                    prf_deriv_dir, subject, prf_task_name)
-                stats_img, stats_mat = load_surface(stats_median_fn)
-                
-                # Inter task
-                intertask_fn = '{}/{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(intertask_dir, subject, intertask_group)
-                intertask_img, intertask_mat = load_surface(intertask_fn)
-        
-                # Combine all derivatives
-                all_deriv_mat = np.concatenate((deriv_mat, pcm_mat, stats_mat, intertask_mat))
-        
-                # get MMP rois img
-                roi_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
-                roi_fn = '{}/{}_fmriprep_dct_z-score_rois-mmp.dtseries.nii'.format(roi_dir, subject)
-                roi_img, roi_mat = load_surface(roi_fn)
-            
-                # get MMP rois numbers tsv
-                mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
-                mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
-                
-                # Replace rois nums by names
-                roi_mat_names = np.vectorize(lambda x: dict(zip(mmp_rois_numbers_df['roi_num'], 
-                                                                mmp_rois_numbers_df['roi_name'])).get(x, x))(roi_mat)
-        
-                # Create and combine pandas df for each roi and brain hemisphere
-                print('Creating dataframe...')
-                for hemi in ['hemi-L', 'hemi-R']:
-                    # Get roi masks
-                    roi_verts = get_rois(subject=pycortex_subject, 
-                                          surf_format=format_, 
-                                          rois_type=rois_method_format, 
-                                          mask=True,
-                                          rois=rois, 
-                                          hemis=hemi)
-        
-                    for roi in roi_verts.keys():
-                        data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
-                        data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
-                        data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
-                        data_dict['num_vert'] = np.where(roi_verts[roi])[0]
-                        df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
+                        for roi in roi_verts.keys():
+                            data_dict = {col: all_deriv_mat[col_idx, roi_verts[roi]] for col_idx, col in enumerate(maps_names)}
+                            data_dict['roi'] = np.array([roi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['roi_mmp'] = roi_mat_names[0, roi_verts[roi]]                                
+                            data_dict['subject'] = np.array([subject] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['hemi'] = np.array([hemi] * all_deriv_mat[:, roi_verts[roi]].shape[1])
+                            data_dict['num_vert'] = np.where(roi_verts[roi])[0]
+                            df_rois = pd.concat([df_rois, pd.DataFrame(data_dict)], ignore_index=True)
 
-            # Replace numbers by code value 
-            code_to_name = {v: k for k, v in glm_code_names.items()}
-            for column in maps_names_intertask:
-                if column in df_rois.columns:
-                    df_rois[column] = df_rois[column].map(code_to_name)
+                # Replace numbers by code value 
+                code_to_name = {v: k for k, v in glm_code_names.items()}
+                for column in maps_names_intertask:
+                    if column in df_rois.columns:
+                        df_rois[column] = df_rois[column].map(code_to_name)
                     
-            print('Saving tsv: {}'.format(tsv_fn))
-            df_rois[['hrf_1', 'hrf_2']] = df_rois[['hrf_1', 'hrf_2']].fillna('non_computed')
-            df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+                print('Saving tsv: {}'.format(tsv_fn))
+                df_rois[['hrf_1', 'hrf_2']] = df_rois[['hrf_1', 'hrf_2']].fillna('non_computed')
+                df_rois.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
 ## Define permission cmd
 #print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

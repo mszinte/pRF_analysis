@@ -79,6 +79,11 @@ tasks = analysis_info['task_glm']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 tasks_session = analysis_info['tasks_session']
+# [NORMALIZATION] preprocessing labels loaded (were hard-coded in the file names)
+# AVANT : (lignes ajoutees)
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalizations = analysis_info['normalization']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -91,85 +96,89 @@ for format_, extension in zip(formats, extensions):
         main_dir, project_dir, subject, format_)
     os.makedirs(glm_dir, exist_ok=True)
     
-    for task in tasks:
-        print(task)
-        func_session = tasks_session[task]
-        # Sub-01 exeption 
-        if subject == 'sub-01' and task in ('SacLoc', 'PurLoc'): func_session = 'ses-01'
-        elif subject == 'sub-01' and task in ('SacVELoc', 'PurVELoc'): func_session = 'ses-03'
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        for task in tasks:
+            print(task)
+            func_session = tasks_session[task]
+            # Sub-01 exeption 
+            if subject == 'sub-01' and task in ('SacLoc', 'PurLoc'): func_session = 'ses-01'
+            elif subject == 'sub-01' and task in ('SacVELoc', 'PurVELoc'): func_session = 'ses-03'
 
-        # prepoc files name
-        preproc_fns = glob.glob('{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_z-score_loo-avg/*task-{}*loo-*.{}'.format(
-            main_dir, project_dir, subject, format_, task, extension))
+            # prepoc files name
+            # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+            # AVANT : preproc_fns = glob.glob('{}/{}/derivatives/pp_data/{}/{}/func/fmriprep_dct_z-score_loo-avg/*task-{}*loo-*.{}'.format(
+            preproc_fns = glob.glob('{}/{}/derivatives/pp_data/{}/{}/func/{preproc_prep}_{filtering}_{normalization}_loo-avg/*task-{}*loo-*.{}'.format(
+                main_dir, project_dir, subject, format_, task, extension, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization))
         
-        for preproc_fn in preproc_fns :        
-            # find the events and confounds files 
-            event_dir = '{}/{}/{}/{}/func/'.format(
-                main_dir, project_dir, subject, func_session)
+            for preproc_fn in preproc_fns :        
+                # find the events and confounds files 
+                event_dir = '{}/{}/{}/{}/func/'.format(
+                    main_dir, project_dir, subject, func_session)
             
-            # Find the event files 
-            event_file = glob.glob("{}/{}_{}_task-{}_run-01_events.tsv".format(
-                event_dir, subject, func_session, task))
+                # Find the event files 
+                event_file = glob.glob("{}/{}_{}_task-{}_run-01_events.tsv".format(
+                    event_dir, subject, func_session, task))
 
-            # make the designe matrixe  
-            events = eventsMatrix(design_file=event_file[0], task=task, tr=TR)
+                # make the designe matrixe  
+                events = eventsMatrix(design_file=event_file[0], task=task, tr=TR)
             
-            frame_times = np.arange(TRs) * TR
-            design_matrix = make_first_level_design_matrix(frame_times,
-                                                       events=events,
-                                                       hrf_model='spm',
-                                                       drift_model=None)
+                frame_times = np.arange(TRs) * TR
+                design_matrix = make_first_level_design_matrix(frame_times,
+                                                           events=events,
+                                                           hrf_model='spm',
+                                                           drift_model=None)
             
-            design_matrix = design_matrix.drop(columns=['Fix', 'SacExo', 'PurExo'], errors='ignore')
+                design_matrix = design_matrix.drop(columns=['Fix', 'SacExo', 'PurExo'], errors='ignore')
             
-            #  Save the designe matrix 
-            dm_dir = '{}/{}/derivatives/pp_data/{}/{}/glm/designe_matrix'.format(
-                main_dir, project_dir, subject, format_)
-            os.makedirs(dm_dir, exist_ok=True)
-            design_matrix.to_csv('{}/{}_task-{}_designe_matrix.tsv'.format(
-                dm_dir, subject, task), sep="\t", na_rep='NaN', index=False)
+                #  Save the designe matrix 
+                dm_dir = '{}/{}/derivatives/pp_data/{}/{}/glm/designe_matrix'.format(
+                    main_dir, project_dir, subject, format_)
+                os.makedirs(dm_dir, exist_ok=True)
+                design_matrix.to_csv('{}/{}_task-{}_designe_matrix.tsv'.format(
+                    dm_dir, subject, task), sep="\t", na_rep='NaN', index=False)
             
-            print('Save {}/{}_task-{}_designe_matrix.pdf'.format(
-                dm_dir, subject, task))
-            plt.figure()
-            plot_design_matrix(design_matrix)
-            plt.savefig('{}/{}_task-{}_designe_matrix.pdf'.format(
-                dm_dir, subject, task))
-            plt.close()
+                print('Save {}/{}_task-{}_designe_matrix.pdf'.format(
+                    dm_dir, subject, task))
+                plt.figure()
+                plot_design_matrix(design_matrix)
+                plt.savefig('{}/{}_task-{}_designe_matrix.pdf'.format(
+                    dm_dir, subject, task))
+                plt.close()
              
-            # Load data
-            img, data = load_surface(fn=preproc_fn)
+                # Load data
+                img, data = load_surface(fn=preproc_fn)
 
-            # Exclude vertices with all-NaN timeseries to avoid errors during fitting
-            valid_vertices = ~np.isnan(data).any(axis=0)
-            valid_vertices_idx = np.where(valid_vertices)[0]
+                # Exclude vertices with all-NaN timeseries to avoid errors during fitting
+                valid_vertices = ~np.isnan(data).any(axis=0)
+                valid_vertices_idx = np.where(valid_vertices)[0]
 
-            # Filter data to only include valid vertices
-            data_clean = data[:, valid_vertices]
+                # Filter data to only include valid vertices
+                data_clean = data[:, valid_vertices]
 
-            n_excluded = data.shape[1] - data_clean.shape[1]
-            if n_excluded > 0:
-                print(f"Excluded {n_excluded} vertices with all-NaN values")
-            print(f"Fitting {valid_vertices.sum()} valid vertices")
+                n_excluded = data.shape[1] - data_clean.shape[1]
+                if n_excluded > 0:
+                    print(f"Excluded {n_excluded} vertices with all-NaN values")
+                print(f"Fitting {valid_vertices.sum()} valid vertices")
             
-            # Run the glm
-            labels, estimates = run_glm(data_clean, design_matrix.values, noise_model="ols")
+                # Run the glm
+                labels, estimates = run_glm(data_clean, design_matrix.values, noise_model="ols")
             
-            # extract glm predictions and r2       
-            glm_pred, glm_r2 = extract_predictions_r2(labels=labels, 
-                                                      estimate=estimates, 
-                                                      source_data=data_clean)
+                # extract glm predictions and r2       
+                glm_pred, glm_r2 = extract_predictions_r2(labels=labels, 
+                                                          estimate=estimates, 
+                                                          source_data=data_clean)
             
-            glm_pred_brain = np.full((data.shape), np.nan, dtype=float)
-            for vert, roi_idx in enumerate(valid_vertices_idx):
-                glm_pred_brain[:,roi_idx] = glm_pred[:,vert]
+                glm_pred_brain = np.full((data.shape), np.nan, dtype=float)
+                for vert, roi_idx in enumerate(valid_vertices_idx):
+                    glm_pred_brain[:,roi_idx] = glm_pred[:,vert]
         
-            # export pred
-            glm_pred_fn = preproc_fn.split('/')[-1].replace('bold', 'glm-pred') 
-            print('Save {}/{}'.format(glm_dir, glm_pred_fn))
-            pred_img = make_surface_image(data=glm_pred_brain, 
-                                          source_img=img)
-            nb.save(pred_img,'{}/{}'.format(glm_dir, glm_pred_fn)) 
+                # export pred
+                glm_pred_fn = preproc_fn.split('/')[-1].replace('bold', 'glm-pred') 
+                print('Save {}/{}'.format(glm_dir, glm_pred_fn))
+                pred_img = make_surface_image(data=glm_pred_brain, 
+                                              source_img=img)
+                nb.save(pred_img,'{}/{}'.format(glm_dir, glm_pred_fn)) 
                     
 end_time = datetime.datetime.now()
 print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".format(

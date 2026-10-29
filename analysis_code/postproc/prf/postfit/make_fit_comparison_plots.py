@@ -87,7 +87,9 @@ task_names = analysis_info['analysis_task_names']
 avg_methods = analysis_info['avg_methods']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 output_folder = analysis_info['output_folder']
 dm_name = analysis_info['dm_name']
 rois_methods = analysis_info['rois_methods']
@@ -115,7 +117,9 @@ set_pycortex_config_file(cortex_dir)
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────────────
-def fit_fns(fit_dir, format_, extension, task_name, avg_method):
+# [NORMALIZATION] normalization passed as argument (was read from the global variable)
+# AVANT : def fit_fns(fit_dir, format_, extension, task_name, avg_method):
+def fit_fns(fit_dir, format_, extension, task_name, normalization, avg_method):
     """Fit file names as written by the fit scripts (fsnative: one file per hemisphere)."""
     base = f"{subject}_task-{task_name}_{{hemi}}{preproc_prep}_{filtering}_{normalization}_{avg_method}"
     suffix = f"{analysis_name}-css{dm_name}_fit.{extension}"
@@ -195,88 +199,92 @@ for format_, extension in zip(formats, extensions):
     rois = (list(analysis_info[rois_method].keys()) if rois_method == 'rois-group-mmp'
             else analysis_info[rois_method])
 
-    for avg_method in avg_methods:
-        for task_name in task_names:
-            print(f"\n=== {format_} - {avg_method} - {task_name} ===")
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        for avg_method in avg_methods:
+            for task_name in task_names:
+                print(f"\n=== {format_} - {avg_method} - {task_name} ===")
 
-            # both fits must exist
-            fns_a = fit_fns(f"{prf_dir}/{fit_folder_a}", format_, extension, task_name, avg_method)
-            fns_b = fit_fns(f"{prf_dir}/{fit_folder_b}", format_, extension, task_name, avg_method)
-            missing = [fn for fn in fns_a + fns_b if not os.path.isfile(fn)]
-            if missing:
-                print(f"[SKIP] not found in {prf_dir}: {[fn.replace(prf_dir + '/', '') for fn in missing]}")
-                continue
+                # both fits must exist
+                fns_a = fit_fns(f"{prf_dir}/{fit_folder_a}", format_, extension, task_name, normalization, avg_method)  # [NORMALIZATION]
+                fns_b = fit_fns(f"{prf_dir}/{fit_folder_b}", format_, extension, task_name, normalization, avg_method)  # [NORMALIZATION]
+                missing = [fn for fn in fns_a + fns_b if not os.path.isfile(fn)]
+                if missing:
+                    print(f"[SKIP] not found in {prf_dir}: {[fn.replace(prf_dir + '/', '') for fn in missing]}")
+                    continue
 
-            fit_a, fit_b = load_fit(fns_a), load_fit(fns_b)
-            if len(fit_a) != len(fit_b):
-                print(f"[SKIP] different number of vertices: {len(fit_a)} vs {len(fit_b)}")
-                continue
-            roi = roi_labels(format_, rois_method, len(fit_a))
-            rois_found = [r for r in rois if r in set(roi)]
+                fit_a, fit_b = load_fit(fns_a), load_fit(fns_b)
+                if len(fit_a) != len(fit_b):
+                    print(f"[SKIP] different number of vertices: {len(fit_a)} vs {len(fit_b)}")
+                    continue
+                roi = roi_labels(format_, rois_method, len(fit_a))
+                rois_found = [r for r in rois if r in set(roi)]
 
-            rsq_a, rsq_b = fit_a['r_squared'].to_numpy(), fit_b['r_squared'].to_numpy()
-            r2_combined = (rsq_a + rsq_b) / 2
+                rsq_a, rsq_b = fit_a['r_squared'].to_numpy(), fit_b['r_squared'].to_numpy()
+                r2_combined = (rsq_a + rsq_b) / 2
 
-            # ROI x parameter grid of KDE panels
-            fig, axes = plt.subplots(len(rois_found), len(corr_params), squeeze=False,
-                                     figsize=(2.6 * len(corr_params), 2.6 * len(rois_found)))
-            stats_rows = []
-            for j, roi_name in enumerate(rois_found):
-                roi_color = roi_colors.get(roi_name, np.array([0.3, 0.3, 0.3]))
-                for l, (param, (axis_label, param_range)) in enumerate(corr_params.items()):
-                    ax = axes[j, l]
-                    x_vals = fit_a[param].to_numpy()
-                    y_vals = fit_b[param].to_numpy()
+                # ROI x parameter grid of KDE panels
+                fig, axes = plt.subplots(len(rois_found), len(corr_params), squeeze=False,
+                                         figsize=(2.6 * len(corr_params), 2.6 * len(rois_found)))
+                stats_rows = []
+                for j, roi_name in enumerate(rois_found):
+                    roi_color = roi_colors.get(roi_name, np.array([0.3, 0.3, 0.3]))
+                    for l, (param, (axis_label, param_range)) in enumerate(corr_params.items()):
+                        ax = axes[j, l]
+                        x_vals = fit_a[param].to_numpy()
+                        y_vals = fit_b[param].to_numpy()
 
-                    # ROI vertices, no NaN, R2 above threshold in both fits (KDE weights must be > 0)
-                    mask = ((roi == roi_name) & ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
-                            & (rsq_a > RSQ_THRESHOLD) & (rsq_b > RSQ_THRESHOLD))
-                    x_vals, y_vals, weights = x_vals[mask], y_vals[mask], r2_combined[mask]
-                    n_vertex = len(x_vals)
+                        # ROI vertices, no NaN, R2 above threshold in both fits (KDE weights must be > 0)
+                        mask = ((roi == roi_name) & ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
+                                & (rsq_a > RSQ_THRESHOLD) & (rsq_b > RSQ_THRESHOLD))
+                        x_vals, y_vals, weights = x_vals[mask], y_vals[mask], r2_combined[mask]
+                        n_vertex = len(x_vals)
 
-                    # KDE panel
-                    ax.plot(param_range, param_range, color="k", ls="--", lw=1, alpha=0.5)
-                    if n_vertex > 2:
-                        grid, density = weighted_kde(x_vals, y_vals, weights, param_range)
-                        if density is not None:
-                            cmap = LinearSegmentedColormap.from_list(roi_name, [(*roi_color, 0), (*roi_color, 1)])
-                            ax.contourf(grid, grid, density, levels=np.arange(0.05, 1.0001, 0.05),
-                                        cmap=cmap, vmin=0, vmax=1)
-                    ax.set_xlim(param_range)
-                    ax.set_ylim(param_range)
-                    ax.set_aspect("equal")
-                    ax.spines[["top", "right"]].set_visible(False)
-                    ax.text(0.95, 0.05, roi_name, transform=ax.transAxes, ha="right", va="bottom",
-                            color=roi_color, fontsize=10, fontweight="bold")
-                    ax.set_ylabel(f"{label_b} – {axis_label}", fontsize=8)
-                    if j == len(rois_found) - 1:
-                        ax.set_xlabel(f"{label_a} – {axis_label}", fontsize=8)
+                        # KDE panel
+                        ax.plot(param_range, param_range, color="k", ls="--", lw=1, alpha=0.5)
+                        if n_vertex > 2:
+                            grid, density = weighted_kde(x_vals, y_vals, weights, param_range)
+                            if density is not None:
+                                cmap = LinearSegmentedColormap.from_list(roi_name, [(*roi_color, 0), (*roi_color, 1)])
+                                ax.contourf(grid, grid, density, levels=np.arange(0.05, 1.0001, 0.05),
+                                            cmap=cmap, vmin=0, vmax=1)
+                        ax.set_xlim(param_range)
+                        ax.set_ylim(param_range)
+                        ax.set_aspect("equal")
+                        ax.spines[["top", "right"]].set_visible(False)
+                        ax.text(0.95, 0.05, roi_name, transform=ax.transAxes, ha="right", va="bottom",
+                                color=roi_color, fontsize=10, fontweight="bold")
+                        ax.set_ylabel(f"{label_b} – {axis_label}", fontsize=8)
+                        if j == len(rois_found) - 1:
+                            ax.set_xlabel(f"{label_a} – {axis_label}", fontsize=8)
 
-                    # statistics
-                    if n_vertex > 2:
-                        slope, intercept = weighted_deming_regression(x_vals, y_vals, weights)
-                        r_val, p_val = pearsonr(x_vals, y_vals)
-                    else:
-                        slope = intercept = r_val = p_val = np.nan
-                    stats_rows.append({
-                        "roi": roi_name, "corr_param": param, "n_vertex": n_vertex,
-                        "r_pearson": r_val, "r2_pearson": r_val ** 2, "p_value": p_val,
-                        "slope": slope, "intercept": intercept,
-                        "median_diff": np.nanmedian(y_vals - x_vals) if n_vertex else np.nan,
-                        "mean_r2_weight": np.nanmean(weights) if n_vertex else np.nan})
+                        # statistics
+                        if n_vertex > 2:
+                            slope, intercept = weighted_deming_regression(x_vals, y_vals, weights)
+                            r_val, p_val = pearsonr(x_vals, y_vals)
+                        else:
+                            slope = intercept = r_val = p_val = np.nan
+                        stats_rows.append({
+                            "roi": roi_name, "corr_param": param, "n_vertex": n_vertex,
+                            "r_pearson": r_val, "r2_pearson": r_val ** 2, "p_value": p_val,
+                            "slope": slope, "intercept": intercept,
+                            "median_diff": np.nanmedian(y_vals - x_vals) if n_vertex else np.nan,
+                            "mean_r2_weight": np.nanmean(weights) if n_vertex else np.nan})
 
-            fig.suptitle(f"{subject} · {format_} · {avg_method} · task-{task_name}: "
-                         f"{label_a} (x) vs {label_b} (y), R² > {RSQ_THRESHOLD} in both",
-                         x=0.01, ha="left", fontsize=12)
-            plt.tight_layout(rect=(0, 0, 1, 0.98))
+                fig.suptitle(f"{subject} · {format_} · {avg_method} · task-{task_name}: "
+                             f"{label_a} (x) vs {label_b} (y), R² > {RSQ_THRESHOLD} in both",
+                             x=0.01, ha="left", fontsize=12)
+                plt.tight_layout(rect=(0, 0, 1, 0.98))
 
-            fn_base = f"{subject}_task-{task_name}_{avg_method}_{label_a}_vs_{label_b}_corr"
-            fig.savefig(f"{fig_dir}/{fn_base}.pdf")
-            plt.close(fig)
-            print(f"Saved figure: {fig_dir}/{fn_base}.pdf")
+                # [NORMALIZATION] normalization added to the figure name (otherwise overwritten by the next normalization)
+                # AVANT : fn_base = f"{subject}_task-{task_name}_{avg_method}_{label_a}_vs_{label_b}_corr"
+                fn_base = f"{subject}_task-{task_name}_{normalization}_{avg_method}_{label_a}_vs_{label_b}_corr"
+                fig.savefig(f"{fig_dir}/{fn_base}.pdf")
+                plt.close(fig)
+                print(f"Saved figure: {fig_dir}/{fn_base}.pdf")
 
-            df_stats = pd.DataFrame(stats_rows)
-            df_stats.to_csv(f"{tsv_dir}/{fn_base}.tsv", sep="\t", na_rep="NaN", index=False)
-            print(f"Saved tsv: {tsv_dir}/{fn_base}.tsv")
-            print(df_stats.pivot(index="roi", columns="corr_param", values="r_pearson")
-                  .loc[rois_found, list(corr_params)].round(2).to_string())
+                df_stats = pd.DataFrame(stats_rows)
+                df_stats.to_csv(f"{tsv_dir}/{fn_base}.tsv", sep="\t", na_rep="NaN", index=False)
+                print(f"Saved tsv: {tsv_dir}/{fn_base}.tsv")
+                print(df_stats.pivot(index="roi", columns="corr_param", values="r_pearson")
+                      .loc[rois_found, list(corr_params)].round(2).to_string())

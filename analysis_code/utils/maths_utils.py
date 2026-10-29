@@ -704,6 +704,13 @@ def make_prf_barycentre_df(df_distribution, rois, max_ecc, grain, figure_info, h
     # AVANT : (ligne(s) ajoutee(s))
     df_barycentre = pd.DataFrame()
 
+    # [CORRECTION #77] distribution vide (categorie sans aucun vertex pRF, ex. pursuit_and_saccade depuis #2) :
+    # [CORRECTION #77] pas de colonne ROI -> KeyError ; on renvoie un tableau vide avec les colonnes attendues
+    # AVANT : (ligne(s) ajoutee(s))
+    if df_distribution.empty or rois_to_plot not in df_distribution.columns:
+        return pd.DataFrame(columns=[rois_to_plot, 'barycentre_x', 'barycentre_y',
+                                     'lower_ci_x', 'upper_ci_x', 'lower_ci_y', 'upper_ci_y'])
+
     for j, roi in enumerate(rois) :
         # Create DataFrame for the region of interest
         df_roi = df_distribution[df_distribution[rois_to_plot] == roi]

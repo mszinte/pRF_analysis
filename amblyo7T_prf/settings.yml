@@ -13,7 +13,7 @@ webapp_dir:
 
 cluster_name: 
   description: "Name of the cluster to use in AMU mesocenter"
-  value: "skylake"
+  value: "genoa"
 
 # ----------- Dataset description ----------------
 subjects:
@@ -34,7 +34,7 @@ sessions:
 
 task_names: 
   description: "Names of the tasks of the dataset"
-  value: ["BarsLeftEye", "BarsRightEye", "RingsLeftEye", "RingsRightEye", "WedgesLeftEye", "WedgesLeftEye"]
+  value: ["BarsLeftEye", "BarsRightEye", "RingsLeftEye", "RingsRightEye", "WedgesLeftEye", "WedgesRightEye"]
 
 func_session:
   description: "Session containing the pRF tasks"
@@ -74,8 +74,14 @@ ending_TR:
   value: null
 
 normalization: 
-  description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
-  value: "z-score"
+  # [NORMALIZATION] value is now a LIST: every script loops over it.
+  # Allowed labels: "z-score", "psc" (percent signal change), "raw" (high-pass filtered only).
+  # Labels must not contain "_" (filenames are split on "_").
+  # AVANT : value: "z-score"
+  description : "List of preprocessing normalizations to compute/analyse (z-score, psc, raw)"
+  # [NORMALIZATION] amblyo7T_prf: PSC for ocular dominance (amplitudes comparable between eyes).
+  # Add "z-score" to the list to (re)compute both versions.
+  value: ["psc"]
 
 filtering:
   description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"

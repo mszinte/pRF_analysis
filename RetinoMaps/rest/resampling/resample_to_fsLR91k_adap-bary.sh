@@ -33,6 +33,10 @@ fi
 
 # Get the intertask results path
 TASK_RESULTS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data"
+# [NORMALIZATION] preprocessing label of the intertask results to resample (was hard-coded as fmriprep_dct_z-score)
+# NORMALIZATION must be one of the normalizations listed in RetinoMaps/settings.yml
+NORMALIZATION="z-score"
+PREPROC_LABEL="fmriprep_dct_${NORMALIZATION}"
 ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 
 	for i in 01 02 03 04 05 06 07 08 09 11 12 13 14 17 20 21 22 23 24 25;
@@ -47,11 +51,11 @@ ATLAS="/scratch/mszinte/data/RetinoMaps/derivatives/pp_data/atlas"
 	OUT_DIR3="$TASK_RESULTS/sub-${i}/91k/rest/target"
 
 		### 1. Separate the results by hemisphere
-		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii" \
+		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_${PREPROC_LABEL}_loo-avg_intertask.dtseries.nii" \
 			COLUMN -metric CORTEX_LEFT \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_left_hemi.shape.gii";
 
-		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii" \
+		wb_command -cifti-separate "$TASK_RESULTS/sub-${i}/170k/intertask/intertask_derivatives/sub-${i}_task-Sac-Pur-pRF_${PREPROC_LABEL}_loo-avg_intertask.dtseries.nii" \
 			COLUMN -metric CORTEX_RIGHT \
 			"$OUT_DIR1/sub-${i}_170k_intertask_Sac-Pur-pRF_right_hemi.shape.gii";
 

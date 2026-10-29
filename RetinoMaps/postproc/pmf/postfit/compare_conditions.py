@@ -55,7 +55,9 @@ subjects = analysis_info['subjects']
 task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 averaging_templates = analysis_info['averaging_templates']
 output_folder = analysis_info["output_folder"]
@@ -337,59 +339,64 @@ def make_final_comparison_plots(data_sub):
 
 
 # ── 1. load per-subject data for the 3 conditions ───────────────────────────
-for format_ in formats: 
-    task_name = task_names[0]
-    out_path = f"{main_dir}/{project_dir}/derivatives/pp_data/group/{format_}/pmf/figures"
-    subject_dirs = sorted(glob.glob(f"{main_dir}/{project_dir}/derivatives/pp_data/sub-*/{format_}"))
-    print(subject_dirs)
-    print(f"Found {len(subjects)} subjects")
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for format_ in formats: 
+        task_name = task_names[0]
+        # [NORMALIZATION] one figure sub-folder per normalization (figure names do not contain the normalization)
+        # AVANT : out_path = f"{main_dir}/{project_dir}/derivatives/pp_data/group/{format_}/pmf/figures"
+        out_path = f"{main_dir}/{project_dir}/derivatives/pp_data/group/{format_}/pmf/figures/{normalization}"
+        os.makedirs(out_path, exist_ok=True)
+        subject_dirs = sorted(glob.glob(f"{main_dir}/{project_dir}/derivatives/pp_data/sub-*/{format_}"))
+        print(subject_dirs)
+        print(f"Found {len(subjects)} subjects")
 
-    dfs = []
-    for subject in subjects:
-        print(f"loading data from subject {subject}")
-        for dm, am in conditions:
-            fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                task_name, preproc_prep, filtering, normalization, am, rois_method_format
-            )
-            path = (f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv/"
-                    f"{subject}_{fn_spec}_{dm}_params-median.tsv")
-            if not os.path.exists(path):
-                print(f"  Missing: {path}")
-                continue
-            df = pd.read_csv(path, sep="\t")
-            df["subject"] = subject
-            df["dm"] = dm
-            df["avg_method"] = am
-            dfs.append(df)
+        dfs = []
+        for subject in subjects:
+            print(f"loading data from subject {subject}")
+            for dm, am in conditions:
+                fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                    task_name, preproc_prep, filtering, normalization, am, rois_method_format
+                )
+                path = (f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv/"
+                        f"{subject}_{fn_spec}_{dm}_params-median.tsv")
+                if not os.path.exists(path):
+                    print(f"  Missing: {path}")
+                    continue
+                df = pd.read_csv(path, sep="\t")
+                df["subject"] = subject
+                df["dm"] = dm
+                df["avg_method"] = am
+                dfs.append(df)
 
-    data_sub = pd.concat(dfs, ignore_index=True)
-    print(
-        f"Loaded {len(data_sub)} rows | subjects: {data_sub['subject'].nunique()} "
-        f"| rois: {list(data_sub['roi'].unique())}"
-    )
-# ── 2. group plot: median + bootstrap 95% CI per roi x condition ─────────── 
-    make_group_plot(data_sub, os.path.join(out_path, "group_plot_sacloc.pdf"))
-    
-# ── 3. significance testing between the 3 conditions ────────────────────────
-    all_results = []
-    for cond_a, cond_b in combinations(conditions, 2):
-        res = paired_permutation_test_between_conditions(data_sub, VALUE_COL, cond_a, cond_b)
-        if res.empty:
-            continue
-        _, res["p_fdr"], _, _ = multipletests(res["p_value"], method="fdr_bh")
-        res["significant"] = res["p_fdr"] < FDR_ALPHA
-        all_results.append(res)
-
-        print(f"\n── {condition_label(*cond_a)}  vs  {condition_label(*cond_b)} ──")
+        data_sub = pd.concat(dfs, ignore_index=True)
         print(
-            res[["roi", "mean_diff", "p_value", "p_fdr", "significant", "n"]]
-            .sort_values("p_fdr")
-            .to_string(index=False)
+            f"Loaded {len(data_sub)} rows | subjects: {data_sub['subject'].nunique()} "
+            f"| rois: {list(data_sub['roi'].unique())}"
         )
+    # ── 2. group plot: median + bootstrap 95% CI per roi x condition ─────────── 
+        make_group_plot(data_sub, os.path.join(out_path, "group_plot_sacloc.pdf"))
+    
+    # ── 3. significance testing between the 3 conditions ────────────────────────
+        all_results = []
+        for cond_a, cond_b in combinations(conditions, 2):
+            res = paired_permutation_test_between_conditions(data_sub, VALUE_COL, cond_a, cond_b)
+            if res.empty:
+                continue
+            _, res["p_fdr"], _, _ = multipletests(res["p_value"], method="fdr_bh")
+            res["significant"] = res["p_fdr"] < FDR_ALPHA
+            all_results.append(res)
 
-    results_df = pd.concat(all_results, ignore_index=True)
-    #results_df.to_csv(out_path, index=False)
-    print(f"\nSaved significance table -> {out_path}")
+            print(f"\n── {condition_label(*cond_a)}  vs  {condition_label(*cond_b)} ──")
+            print(
+                res[["roi", "mean_diff", "p_value", "p_fdr", "significant", "n"]]
+                .sort_values("p_fdr")
+                .to_string(index=False)
+            )
 
-# ── 4. final comparison plots (bar + per-subject lines, one subplot per ROI) ─
-    make_final_comparison_plots(data_sub)
+        results_df = pd.concat(all_results, ignore_index=True)
+        #results_df.to_csv(out_path, index=False)
+        print(f"\nSaved significance table -> {out_path}")
+
+    # ── 4. final comparison plots (bar + per-subject lines, one subplot per ROI) ─
+        make_final_comparison_plots(data_sub)

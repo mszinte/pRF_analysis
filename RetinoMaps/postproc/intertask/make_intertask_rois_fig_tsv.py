@@ -70,13 +70,16 @@ rois_methods = analysis_info['rois_methods']
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
-amplitude_threshold = analysis_info['prf_amp_th']
+# [NORMALIZATION] prf_amp_th is now a dict {normalization: [min, max]}, picked inside the normalization loop
+# AVANT : amplitude_threshold = analysis_info['prf_amp_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
 subjects_to_group = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 ecc_size_num_bins = analysis_info['ecc_size_num_bins']
@@ -95,472 +98,517 @@ rsq2use = 'prf_loo_rsq'
 avg_method = 'loo-avg'
 prf_task_name = analysis_info['analysis_task_names'][0]
 
-for tasks in group_tasks : 
-    if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
-    else : intertask_group = 'Sac-Pur-pRF'
-    # Format loop
-    for format_, extension in zip(formats, extensions):
-        print(format_)
-        # define list of rois for each format
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] amplitude threshold of the current normalization
+    amplitude_threshold = analysis_info['prf_amp_th'][normalization]
+    for tasks in group_tasks : 
+        if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
+        else : intertask_group = 'Sac-Pur-pRF'
+        # Format loop
+        for format_, extension in zip(formats, extensions):
+            print(format_)
+            # define list of rois for each format
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
         
-            # Individual subject analysis
-            if 'group' not in subject:
-                print('Subject {} is processed'.format(subject))
+                # Individual subject analysis
+                if 'group' not in subject:
+                    print('Subject {} is processed'.format(subject))
                 
-                fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                    intertask_group, preproc_prep, filtering,
-                    normalization, avg_method, rois_method_format)
-                
-                tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
-                tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
-                    tsv_dir, subject, fn_spec)
-                
-                # Exception if no data for one format (e.g template subject)
-                if not os.path.isdir(tsv_dir):
-                    print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
-                    continue
-                
-                data = pd.read_table(tsv_fn, sep="\t")
-    
-                # replace nan in pcm by non_computed 
-                data.loc[data['all'] != 'vision', 
-    ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
-    ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
-    
-                # Threshold data (replace by nan)
-                if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                data.loc[(data.amplitude < amplitude_threshold[0]) |
-                         (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                         (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
-                         (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
-                         (data[rsq2use] < rsqr_threshold) |
-                         (data[stats_col] > stats_threshold)] = np.nan
-    
-                # loop over categories
-                for categorie_to_plot in categories_to_plot : 
-                    fn_spec_cate = "task-{}_{}_{}_{}_{}_{}_{}".format(
+                    fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                         intertask_group, preproc_prep, filtering,
-                        normalization, avg_method, rois_method_format, categorie_to_plot)
-                    tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
-                        main_dir, project_dir, subject, format_, categorie_to_plot)
-                    os.makedirs(tsv_category_dir, exist_ok=True)
-                    # [CORRECTION #2] ajout de .copy() : data_categorie est modifié plus bas (prf_polar_angle),
-                    # on évite ainsi le SettingWithCopyWarning / l'écriture sur une vue de data
-                    # AVANT : data_categorie = data.loc[data['all'] == categorie_to_plot]
-                    data_categorie = data.loc[data['all'] == categorie_to_plot].copy()
-                    
-                    # Violins
-                    # -------
-                    df_violins = data_categorie
-                    tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_violins_fn))
-                    df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Parameters median
-                    # ------------------
-                    for num_roi, roi in enumerate(rois):
-                        # [CORRECTION #2] médianes calculées sur les vertex de la catégorie (data_categorie)
-                        # et non sur tous les vertex passant les filtres pRF (data)
-                        # AVANT : df_roi = data.loc[(data.roi == roi)]
-                        df_roi = data_categorie.loc[(data_categorie.roi == roi)]
-
-                        df_params_median_roi = pd.DataFrame()
-                        df_params_median_roi['roi'] = [roi]
-                    
-                        df_params_median_roi[f'{rsq2use}_weighted_median'] = weighted_nan_median(df_roi[rsq2use], weights=df_roi[rsq2use])
-                        df_params_median_roi[f'{rsq2use}_ci_down'] = weighted_nan_percentile(df_roi[rsq2use], df_roi[rsq2use], 25)
-                        df_params_median_roi[f'{rsq2use}_ci_up'] = weighted_nan_percentile(df_roi[rsq2use], df_roi[rsq2use], 75)
-                        
-                        df_params_median_roi['prf_size_weighted_median'] = weighted_nan_median(df_roi.prf_size, weights=df_roi[rsq2use])
-                        df_params_median_roi['prf_size_ci_down'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 25)
-                        df_params_median_roi['prf_size_ci_up'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 75)
+                        normalization, avg_method, rois_method_format)
+                
+                    tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
+                    tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
+                        tsv_dir, subject, fn_spec)
+                
+                    # Exception if no data for one format (e.g template subject)
+                    if not os.path.isdir(tsv_dir):
+                        print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                        continue
+                
+                    data = pd.read_table(tsv_fn, sep="\t")
     
-                        df_params_median_roi['prf_ecc_weighted_median'] = weighted_nan_median(df_roi.prf_ecc, weights=df_roi[rsq2use])
-                        df_params_median_roi['prf_ecc_ci_down'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 25)
-                        df_params_median_roi['prf_ecc_ci_up'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 75)
-                        
-                        df_params_median_roi['prf_n_weighted_median'] = weighted_nan_median(df_roi.prf_n, weights=df_roi[rsq2use])
-                        df_params_median_roi['prf_n_ci_down'] = weighted_nan_percentile(df_roi.prf_n, df_roi[rsq2use], 25)
-                        df_params_median_roi['prf_n_ci_up'] = weighted_nan_percentile(df_roi.prf_n, df_roi[rsq2use], 75)
-                        
-                        pcm_median_col = df_roi.loc[df_roi.pcm_median != 'non_computed', 'pcm_median'].values.astype(float)
-                        prf_loo_r2_col = df_roi.loc[df_roi.pcm_median != 'non_computed', '{}'.format(rsq2use)].values.astype(float)
+                    # replace nan in pcm by non_computed 
+                    # [CORRECTION #76] colonnes pCM passees en object avant d'y ecrire 'non_computed' : pandas >= 3 refuse d'ecrire du texte
+                    # dans une colonne float64 (TypeError) ; pandas 2 faisait cette conversion en object implicitement (meme resultat)
+                    # AVANT : (ligne ajoutee)
+                    pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                    data[pcm_cols] = data[pcm_cols].astype(object)
+                    data.loc[data['all'] != 'vision', 
+        ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
+        ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
     
-                        
-                        df_params_median_roi['pcm_median_weighted_median'] = weighted_nan_median(data=pcm_median_col, weights=prf_loo_r2_col)
-                        df_params_median_roi['pcm_median_ci_down'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=25)
-                        df_params_median_roi['pcm_median_ci_up'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=75)
-                
-                        if num_roi == 0: df_params_median = df_params_median_roi
-                        else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
-            
-                    tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_params_median_fn))
-                    df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+                    # Threshold data (replace by nan)
+                    if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                    elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                    # [CORRECTION #78] vertex a p-value pRF NaN (fit rate : amplitude 0, stats non calculables) aussi retires :
+                    # [CORRECTION #78] une comparaison avec NaN vaut False, ils passaient le seuil (ex. 1202 vertex 'pursuit_and_saccade' en 170k pour sub-01) ;
+                    # [CORRECTION #78] meme regle que make_rois_fig_tsv.py (dropna sur la colonne de stats)
+                    # AVANT : (data[stats_col] > stats_threshold)] = np.nan
+                    data.loc[(data.amplitude < amplitude_threshold[0]) |
+                             (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                             (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
+                             (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) | 
+                             (data[rsq2use] < rsqr_threshold) |
+                             (data[stats_col] > stats_threshold) |
+                             (data[stats_col].isna())] = np.nan
     
-                    # Ecc.size
-                    # --------
-                    # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
-                    ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
-                    for num_roi, roi in enumerate(rois):
-                        # [CORRECTION #2] relation ecc-taille calculée sur les vertex de la catégorie (data_categorie)
-                        # AVANT : df_roi = data.loc[(data.roi == roi)]
-                        df_roi = data_categorie.loc[(data_categorie.roi == roi)]
-                        # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
-                        # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins), observed=False)
-                        df_ecc_size_bin = pd.DataFrame()
-                        df_ecc_size_bin['roi'] = [roi]*ecc_size_num_bins
-                        df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
-                        df_ecc_size_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
-                        df_ecc_size_bin['prf_size_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
-                        df_ecc_size_bin[f'{rsq2use}_bins_median'] = np.array(df_bins[rsq2use].median())
-                        df_ecc_size_bin['prf_size_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
-                        df_ecc_size_bin['prf_size_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
-                        if num_roi == 0: df_ecc_size_bins = df_ecc_size_bin
-                        else: df_ecc_size_bins = pd.concat([df_ecc_size_bins, df_ecc_size_bin]) 
-                    
-
-                    df_ecc_size = df_ecc_size_bins
-                    
-                    tsv_ecc_size_fn = "{}/{}_{}_intertask_ecc-size.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_ecc_size_fn))
-                    df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Ecc.pCM
-                    # --------
-                    data_pcm = data_categorie.loc[data_categorie.pcm_median != 'non_computed']
-                    # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_pcm_num_bins+1) 
-                    ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
-                    for num_roi, roi in enumerate(rois):
-                        # [CORRECTION #2] masque booléen construit sur data_pcm lui-même (et non sur data)
-                        # AVANT : df_roi = data_pcm.loc[(data.roi == roi)]
-                        df_roi = data_pcm.loc[data_pcm.roi == roi]
-                        # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
-                        # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
-                        df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins), observed=False)
-                        df_ecc_pcm_bin = pd.DataFrame()
-                        df_ecc_pcm_bin['roi'] = [roi]*ecc_pcm_num_bins
-                        df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
-                        df_ecc_pcm_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
-                        df_ecc_pcm_bin['prf_pcm_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
-                        df_ecc_pcm_bin['{}_bins_median'.format(rsq2use)] = np.array(df_bins[rsq2use].median())
-                        df_ecc_pcm_bin['prf_pcm_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x[rsq2use].values.astype(float), 75)).values
-                        df_ecc_pcm_bin['prf_pcm_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x[rsq2use].values.astype(float), 25)).values
-                        if num_roi == 0: df_ecc_pcm_bins = df_ecc_pcm_bin
-                        else: df_ecc_pcm_bins = pd.concat([df_ecc_pcm_bins, df_ecc_pcm_bin])  
-                
-                    df_ecc_pcm = df_ecc_pcm_bins
-                    
-                    df_ecc_pcm = df_ecc_pcm_bins
-            
-                    tsv_ecc_pcm_fn = "{}/{}_{}_intertask_ecc-pcm.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
-                    df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Polar angle
-                    # -----------
-                    theta_slices = np.linspace(0, 360, polar_angle_num_bins, endpoint=False)
-                    # [CORRECTION #2] angle polaire calculé sur data_categorie (vertex de la catégorie)
-                    # AVANT : data['prf_polar_angle'] = np.mod(np.degrees(np.angle(data.polar_real + 1j * data.polar_imag)), 360)
-                    data_categorie['prf_polar_angle'] = np.mod(np.degrees(np.angle(data_categorie.polar_real + 1j * data_categorie.polar_imag)), 360)
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                    for i, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        for j, roi in enumerate(rois): #
-                            # [CORRECTION #2] histogramme d'angle polaire sur les vertex de la catégorie (data_categorie)
-                            # AVANT : df = data.loc[(data.roi==roi) & (data.hemi.isin(hemi_values))]
-                            df = data_categorie.loc[(data_categorie.roi==roi) & (data_categorie.hemi.isin(hemi_values))]
-                            if len(df): 
-                                # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
-                                # AVANT : df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
-                                df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins), observed=False)
-                                rsq_sum = df_bins[rsq2use].sum()
-                            else: 
-                                rsq_sum = [np.nan]*polar_angle_num_bins
-                
-                            df_polar_angle_bin = pd.DataFrame()
-                            df_polar_angle_bin['roi'] = [roi]*(polar_angle_num_bins)
-                            df_polar_angle_bin['hemi'] = [hemi]*(polar_angle_num_bins)
-                            df_polar_angle_bin['num_bins'] = np.arange((polar_angle_num_bins))
-                            df_polar_angle_bin['theta_slices'] = np.array(theta_slices)
-                            df_polar_angle_bin['rsq_sum'] = np.array(rsq_sum)                        
-                            if j == 0 and i == 0: df_polar_angle_bins = df_polar_angle_bin
-                            else: df_polar_angle_bins = pd.concat([df_polar_angle_bins, df_polar_angle_bin])  
-                                
-                    df_polar_angle = df_polar_angle_bins
-            
-                    tsv_polar_angle_fn = "{}/{}_{}_intertask_polar-angle.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_polar_angle_fn))
-                    df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Contralaterality
-                    # ----------------         
-                    for j, roi in enumerate(rois):
-                        # [CORRECTION #2] controlatéralité calculée sur les vertex de la catégorie (data_categorie)
-                        # AVANT : df_rh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-R')]
-                        # AVANT : df_lh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-L')]
-                        df_rh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-R')]
-                        df_lh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-L')]
-                        try: 
-                            contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0][rsq2use]) + \
-                                                     sum(df_lh.loc[df_lh.prf_x > 0][rsq2use])) / \
-                                                    (sum(df_rh[rsq2use]) + sum(df_lh[rsq2use]))
-                        except: 
-                            contralaterality_prct = np.nan
-                        
-                        df_contralaterality_roi = pd.DataFrame()
-                        df_contralaterality_roi['roi'] = [roi]
-                        df_contralaterality_roi['contralaterality_prct'] = np.array(contralaterality_prct)
-                
-                        if j == 0: df_contralaterality = df_contralaterality_roi
-                        else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_roi]) 
-            
-                    tsv_contralaterality_fn = "{}/{}_{}_intertask_contralaterality.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_contralaterality_fn))
-                    df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
-                        
-                    # Spatial distribution 
-                    # --------------------  
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                    for i, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        # [CORRECTION #2] distribution spatiale calculée sur les vertex de la catégorie (data_categorie)
-                        # AVANT : data_hemi = data.loc[data.hemi.isin(hemi_values)]
-                        data_hemi = data_categorie.loc[data_categorie.hemi.isin(hemi_values)]
-                        df_distribution_hemi = make_prf_distribution_df(
-                            data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use, analysis_info)
-                
-                        df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
-                        if i == 0: df_distribution = df_distribution_hemi
-                        else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
-            
-                    tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_distribution_fn))
-                    df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Spatial distribution hot zone barycentre
-                    # ----------------------------------------
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                    
-                    for i, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                        df_barycentre_hemi = make_prf_barycentre_df(
-                            df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
-                        
-                        df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                        if i == 0: df_barycentre = df_barycentre_hemi
-                        else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
-                    
-                    tsv_barycentre_fn = "{}/{}_{}_intertask_barycentre.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                    df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
-                               
-            # Group Analysis    
-            else :
-                print('group')
-                # loop over categories
-                for categorie_to_plot in categories_to_plot :             
-                    for i, subject_to_group in enumerate(subjects_to_group):                        
-                        tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
-                            main_dir, project_dir, subject_to_group, format_, categorie_to_plot)
-
+                    # loop over categories
+                    for categorie_to_plot in categories_to_plot : 
                         fn_spec_cate = "task-{}_{}_{}_{}_{}_{}_{}".format(
-                            intertask_group, preproc_prep, filtering, normalization, avg_method, rois_method_format, categorie_to_plot)
-                        
+                            intertask_group, preproc_prep, filtering,
+                            normalization, avg_method, rois_method_format, categorie_to_plot)
+                        tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
+                            main_dir, project_dir, subject, format_, categorie_to_plot)
+                        os.makedirs(tsv_category_dir, exist_ok=True)
+                        # [CORRECTION #2] ajout de .copy() : data_categorie est modifié plus bas (prf_polar_angle),
+                        # on évite ainsi le SettingWithCopyWarning / l'écriture sur une vue de data
+                        # AVANT : data_categorie = data.loc[data['all'] == categorie_to_plot]
+                        data_categorie = data.loc[data['all'] == categorie_to_plot].copy()
+                    
                         # Violins
                         # -------
+                        df_violins = data_categorie
                         tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_violins_indiv = pd.read_table(tsv_violins_fn, sep="\t")
-                        if i == 0: df_violins = df_violins_indiv.copy()
-                        else: df_violins = pd.concat([df_violins, df_violins_indiv])
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_violins_fn))
+                        df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
+                    
+                        # Parameters median
+                        # ------------------
+                        for num_roi, roi in enumerate(rois):
+                            # [CORRECTION #2] médianes calculées sur les vertex de la catégorie (data_categorie)
+                            # et non sur tous les vertex passant les filtres pRF (data)
+                            # AVANT : df_roi = data.loc[(data.roi == roi)]
+                            df_roi = data_categorie.loc[(data_categorie.roi == roi)]
+
+                            df_params_median_roi = pd.DataFrame()
+                            df_params_median_roi['roi'] = [roi]
+                    
+                            df_params_median_roi[f'{rsq2use}_weighted_median'] = weighted_nan_median(df_roi[rsq2use], weights=df_roi[rsq2use])
+                            df_params_median_roi[f'{rsq2use}_ci_down'] = weighted_nan_percentile(df_roi[rsq2use], df_roi[rsq2use], 25)
+                            df_params_median_roi[f'{rsq2use}_ci_up'] = weighted_nan_percentile(df_roi[rsq2use], df_roi[rsq2use], 75)
+                        
+                            df_params_median_roi['prf_size_weighted_median'] = weighted_nan_median(df_roi.prf_size, weights=df_roi[rsq2use])
+                            df_params_median_roi['prf_size_ci_down'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 25)
+                            df_params_median_roi['prf_size_ci_up'] = weighted_nan_percentile(df_roi.prf_size, df_roi[rsq2use], 75)
+    
+                            df_params_median_roi['prf_ecc_weighted_median'] = weighted_nan_median(df_roi.prf_ecc, weights=df_roi[rsq2use])
+                            df_params_median_roi['prf_ecc_ci_down'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 25)
+                            df_params_median_roi['prf_ecc_ci_up'] = weighted_nan_percentile(df_roi.prf_ecc, df_roi[rsq2use], 75)
+                        
+                            df_params_median_roi['prf_n_weighted_median'] = weighted_nan_median(df_roi.prf_n, weights=df_roi[rsq2use])
+                            df_params_median_roi['prf_n_ci_down'] = weighted_nan_percentile(df_roi.prf_n, df_roi[rsq2use], 25)
+                            df_params_median_roi['prf_n_ci_up'] = weighted_nan_percentile(df_roi.prf_n, df_roi[rsq2use], 75)
+                        
+                            pcm_median_col = df_roi.loc[df_roi.pcm_median != 'non_computed', 'pcm_median'].values.astype(float)
+                            prf_loo_r2_col = df_roi.loc[df_roi.pcm_median != 'non_computed', '{}'.format(rsq2use)].values.astype(float)
+    
+                        
+                            df_params_median_roi['pcm_median_weighted_median'] = weighted_nan_median(data=pcm_median_col, weights=prf_loo_r2_col)
+                            df_params_median_roi['pcm_median_ci_down'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=25)
+                            df_params_median_roi['pcm_median_ci_up'] = weighted_nan_percentile(data=pcm_median_col, weights=prf_loo_r2_col, percentile=75)
+                
+                            if num_roi == 0: df_params_median = df_params_median_roi
+                            else: df_params_median = pd.concat([df_params_median, df_params_median_roi])
+            
+                        tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_params_median_fn))
+                        df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+    
+                        # Ecc.size
+                        # --------
+                        # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_size_num_bins+1) 
+                        ecc_size_bins = ecc_size_max[0] * (np.linspace(0, 1, ecc_size_num_bins + 1) ** ecc_bin_power)
+                        for num_roi, roi in enumerate(rois):
+                            # [CORRECTION #2] relation ecc-taille calculée sur les vertex de la catégorie (data_categorie)
+                            # AVANT : df_roi = data.loc[(data.roi == roi)]
+                            df_roi = data_categorie.loc[(data_categorie.roi == roi)]
+                            # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                            # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
+                            df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins), observed=False)
+                            df_ecc_size_bin = pd.DataFrame()
+                            df_ecc_size_bin['roi'] = [roi]*ecc_size_num_bins
+                            df_ecc_size_bin['num_bins'] = np.arange(ecc_size_num_bins)  
+                            df_ecc_size_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
+                            df_ecc_size_bin['prf_size_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
+                            df_ecc_size_bin[f'{rsq2use}_bins_median'] = np.array(df_bins[rsq2use].median())
+                            df_ecc_size_bin['prf_size_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
+                            df_ecc_size_bin['prf_size_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
+                            if num_roi == 0: df_ecc_size_bins = df_ecc_size_bin
+                            else: df_ecc_size_bins = pd.concat([df_ecc_size_bins, df_ecc_size_bin]) 
+                    
+
+                        df_ecc_size = df_ecc_size_bins
+                    
+                        tsv_ecc_size_fn = "{}/{}_{}_intertask_ecc-size.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_ecc_size_fn))
+                        df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
+                    
+                        # Ecc.pCM
+                        # --------
+                        data_pcm = data_categorie.loc[data_categorie.pcm_median != 'non_computed']
+                        # ecc_bins = np.linspace(0, ecc_size_max[1], ecc_pcm_num_bins+1) 
+                        ecc_pcm_bins = ecc_pcm_max[0] * (np.linspace(0, 1, ecc_pcm_num_bins + 1) ** ecc_bin_power)
+                        for num_roi, roi in enumerate(rois):
+                            # [CORRECTION #2] masque booléen construit sur data_pcm lui-même (et non sur data)
+                            # AVANT : df_roi = data_pcm.loc[(data.roi == roi)]
+                            df_roi = data_pcm.loc[data_pcm.roi == roi]
+                            # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                            # AVANT : df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
+                            df_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins), observed=False)
+                            df_ecc_pcm_bin = pd.DataFrame()
+                            df_ecc_pcm_bin['roi'] = [roi]*ecc_pcm_num_bins
+                            df_ecc_pcm_bin['num_bins'] = np.arange(ecc_pcm_num_bins)
+                            df_ecc_pcm_bin['prf_ecc_bins'] = df_bins.apply(lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
+                            df_ecc_pcm_bin['prf_pcm_bins_median'] = df_bins.apply(lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
+                            df_ecc_pcm_bin['{}_bins_median'.format(rsq2use)] = np.array(df_bins[rsq2use].median())
+                            df_ecc_pcm_bin['prf_pcm_bins_ci_upper_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x[rsq2use].values.astype(float), 75)).values
+                            df_ecc_pcm_bin['prf_pcm_bins_ci_lower_bound'] = df_bins.apply(lambda x: weighted_nan_percentile(x['pcm_median'].values.astype(float), x[rsq2use].values.astype(float), 25)).values
+                            if num_roi == 0: df_ecc_pcm_bins = df_ecc_pcm_bin
+                            else: df_ecc_pcm_bins = pd.concat([df_ecc_pcm_bins, df_ecc_pcm_bin])  
+                
+                        df_ecc_pcm = df_ecc_pcm_bins
+                    
+                        df_ecc_pcm = df_ecc_pcm_bins
+            
+                        tsv_ecc_pcm_fn = "{}/{}_{}_intertask_ecc-pcm.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
+                        df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
+                    
+                        # Polar angle
+                        # -----------
+                        theta_slices = np.linspace(0, 360, polar_angle_num_bins, endpoint=False)
+                        # [CORRECTION #2] angle polaire calculé sur data_categorie (vertex de la catégorie)
+                        # AVANT : data['prf_polar_angle'] = np.mod(np.degrees(np.angle(data.polar_real + 1j * data.polar_imag)), 360)
+                        data_categorie['prf_polar_angle'] = np.mod(np.degrees(np.angle(data_categorie.polar_real + 1j * data_categorie.polar_imag)), 360)
+                        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                        for i, hemi in enumerate(hemis):
+                            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                            for j, roi in enumerate(rois): #
+                                # [CORRECTION #2] histogramme d'angle polaire sur les vertex de la catégorie (data_categorie)
+                                # AVANT : df = data.loc[(data.roi==roi) & (data.hemi.isin(hemi_values))]
+                                df = data_categorie.loc[(data_categorie.roi==roi) & (data_categorie.hemi.isin(hemi_values))]
+                                if len(df): 
+                                    # [CORRECTION #75] observed=False : garde les bins vides (pandas >= 3 les supprime par defaut -> nombre de bins faux / ValueError)
+                                    # AVANT : df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins))
+                                    df_bins = df.groupby(pd.cut(df['prf_polar_angle'], bins=polar_angle_num_bins), observed=False)
+                                    rsq_sum = df_bins[rsq2use].sum()
+                                else: 
+                                    rsq_sum = [np.nan]*polar_angle_num_bins
+                
+                                df_polar_angle_bin = pd.DataFrame()
+                                df_polar_angle_bin['roi'] = [roi]*(polar_angle_num_bins)
+                                df_polar_angle_bin['hemi'] = [hemi]*(polar_angle_num_bins)
+                                df_polar_angle_bin['num_bins'] = np.arange((polar_angle_num_bins))
+                                df_polar_angle_bin['theta_slices'] = np.array(theta_slices)
+                                df_polar_angle_bin['rsq_sum'] = np.array(rsq_sum)                        
+                                if j == 0 and i == 0: df_polar_angle_bins = df_polar_angle_bin
+                                else: df_polar_angle_bins = pd.concat([df_polar_angle_bins, df_polar_angle_bin])  
+                                
+                        df_polar_angle = df_polar_angle_bins
+            
+                        tsv_polar_angle_fn = "{}/{}_{}_intertask_polar-angle.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_polar_angle_fn))
+                        df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
+                    
+                        # Contralaterality
+                        # ----------------         
+                        for j, roi in enumerate(rois):
+                            # [CORRECTION #2] controlatéralité calculée sur les vertex de la catégorie (data_categorie)
+                            # AVANT : df_rh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-R')]
+                            # AVANT : df_lh = data.loc[(data.roi == roi) & (data.hemi == 'hemi-L')]
+                            df_rh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-R')]
+                            df_lh = data_categorie.loc[(data_categorie.roi == roi) & (data_categorie.hemi == 'hemi-L')]
+                            try: 
+                                contralaterality_prct = (sum(df_rh.loc[df_rh.prf_x < 0][rsq2use]) + \
+                                                         sum(df_lh.loc[df_lh.prf_x > 0][rsq2use])) / \
+                                                        (sum(df_rh[rsq2use]) + sum(df_lh[rsq2use]))
+                            except: 
+                                contralaterality_prct = np.nan
+                        
+                            df_contralaterality_roi = pd.DataFrame()
+                            df_contralaterality_roi['roi'] = [roi]
+                            df_contralaterality_roi['contralaterality_prct'] = np.array(contralaterality_prct)
+                
+                            if j == 0: df_contralaterality = df_contralaterality_roi
+                            else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_roi]) 
+            
+                        tsv_contralaterality_fn = "{}/{}_{}_intertask_contralaterality.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_contralaterality_fn))
+                        df_contralaterality.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
+                        
+                        # Spatial distribution 
+                        # --------------------  
+                        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                        for i, hemi in enumerate(hemis):
+                            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                            # [CORRECTION #2] distribution spatiale calculée sur les vertex de la catégorie (data_categorie)
+                            # AVANT : data_hemi = data.loc[data.hemi.isin(hemi_values)]
+                            data_hemi = data_categorie.loc[data_categorie.hemi.isin(hemi_values)]
+                            df_distribution_hemi = make_prf_distribution_df(
+                                data_hemi, rois, distribution_max_ecc, distribution_mesh_grain, rsq2use, analysis_info)
+                
+                            df_distribution_hemi['hemi'] = [hemi] * len(df_distribution_hemi)
+                            if i == 0: df_distribution = df_distribution_hemi
+                            else: df_distribution = pd.concat([df_distribution, df_distribution_hemi])
+            
+                        tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_distribution_fn))
+                        df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
+                    
+                        # Spatial distribution hot zone barycentre
+                        # ----------------------------------------
+                        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                    
+                        for i, hemi in enumerate(hemis):
+                            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                            df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+                            df_barycentre_hemi = make_prf_barycentre_df(
+                                df_distribution_hemi, rois, distribution_max_ecc, 
+                                distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
+                        
+                            df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+                            if i == 0: df_barycentre = df_barycentre_hemi
+                            else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+                    
+                        tsv_barycentre_fn = "{}/{}_{}_intertask_barycentre.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_barycentre_fn))
+                        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+                               
+                # Group Analysis    
+                else :
+                    print('group')
+                    # loop over categories
+                    for categorie_to_plot in categories_to_plot :             
+                        for i, subject_to_group in enumerate(subjects_to_group):                        
+                            tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
+                                main_dir, project_dir, subject_to_group, format_, categorie_to_plot)
+
+                            fn_spec_cate = "task-{}_{}_{}_{}_{}_{}_{}".format(
+                                intertask_group, preproc_prep, filtering, normalization, avg_method, rois_method_format, categorie_to_plot)
+                        
+                            # Violins
+                            # -------
+                            tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_violins_indiv = pd.read_table(tsv_violins_fn, sep="\t")
+                            if i == 0: df_violins = df_violins_indiv.copy()
+                            else: df_violins = pd.concat([df_violins, df_violins_indiv])
+                
+                            # Parameters median
+                            # ------------------
+                            # use df_violins
+                
+                            # Ecc.size
+                            # --------
+                            tsv_ecc_size_fn = "{}/{}_{}_intertask_ecc-size.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_ecc_size_indiv = pd.read_table(tsv_ecc_size_fn, sep="\t")
+                            if i == 0: df_ecc_size = df_ecc_size_indiv.copy()
+                            else: df_ecc_size = pd.concat([df_ecc_size, df_ecc_size_indiv])
+                
+                            # Ecc.pCM
+                            # -------
+                            tsv_ecc_pcm_fn = "{}/{}_{}_intertask_ecc-pcm.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_ecc_pcm_indiv = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
+                            if i == 0: df_ecc_pcm = df_ecc_pcm_indiv.copy()
+                            else: df_ecc_pcm = pd.concat([df_ecc_pcm, df_ecc_pcm_indiv])
+                
+                            # Polar angle
+                            # -----------
+                            tsv_polar_angle_fn = "{}/{}_{}_intertask_polar-angle.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_polar_angle_indiv = pd.read_table(tsv_polar_angle_fn, sep="\t")
+                            if i == 0: df_polar_angle = df_polar_angle_indiv.copy()
+                            else: df_polar_angle = pd.concat([df_polar_angle, df_polar_angle_indiv])
+                
+                            # Contralaterality
+                            # ----------------
+                            tsv_contralaterality_fn = "{}/{}_{}_intertask_contralaterality.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_contralaterality_indiv = pd.read_table(tsv_contralaterality_fn, sep="\t")
+                            if i == 0: df_contralaterality = df_contralaterality_indiv.copy()
+                            else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_indiv])
+                        
+                            # Spatial distribution 
+                            # -------------------
+                            tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
+                                tsv_category_dir, subject_to_group, fn_spec_cate)
+                            df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
+                            # [CORRECTION #79] distribution vide chez un sujet (categorie sans vertex pRF, ex. pursuit_and_saccade) :
+                            # [CORRECTION #79] fichier sans colonnes roi/x/y -> ignore ; les mesh sont empiles dans une liste
+                            # [CORRECTION #79] (l'empilement par i == 0 supposait que le 1er sujet ait des donnees)
+                            # AVANT : mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
+                            # AVANT : others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
+                            # AVANT : if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
+                            # AVANT : else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
+                            if i == 0: mesh_list = []
+                            if {'roi', 'x', 'y'}.issubset(df_distribution_indiv.columns):
+                                mesh_list.append(df_distribution_indiv)
+                      
+                        # Median and saving tsv
+                        tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
+                            main_dir, project_dir, subject, format_, categorie_to_plot)
+                        os.makedirs(tsv_category_dir, exist_ok=True)
+                                    
+                        # Violins
+                        # -------
+                        df_violins = df_violins # no averaging
+                        tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_violins_fn))
+                        df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
                 
                         # Parameters median
                         # ------------------
-                        # use df_violins
+                        df_params_median = df_violins
+                        colnames = ['{}'.format(rsq2use), 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
+                        if df_violins.empty:
+                            # [CORRECTION #79] categorie vide : une ligne NaN par ROI avec les colonnes ecrites dans le cas normal (comme le fichier sujet),
+                            # [CORRECTION #79] au lieu d'un tableau sans ligne aux colonnes differentes (roi, subject, ...)
+                            # AVANT : df_params_median = pd.DataFrame(columns=['roi', 'subject', '{}_weighted_median'.format(rsq2use)] +
+                            # AVANT : ['{}_weighted_median'.format(col) for col in colnames] +
+                            # AVANT : ['{}_ci_down'.format(col) for col in colnames] +
+                            # AVANT : ['{}_ci_up'.format(col) for col in colnames])
+                            df_params_median = pd.DataFrame({'roi': rois})
+                            for col in colnames:
+                                for suffix in ['_weighted_median', '_ci_down', '_ci_up']:
+                                    df_params_median[col + suffix] = np.nan
+                    
+                        else:
+                            df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['{}'.format(rsq2use)]].apply(
+                                lambda x: weighted_nan_median(x['{}'.format(rsq2use)], df_params_median.loc[x.index, '{}'.format(rsq2use)])).reset_index(name='{}_weighted_median'.format(rsq2use))
+                        
+                            for colname in colnames[1:]:
+                                df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, '{}'.format(rsq2use)]].apply(
+                                    lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, '{}'.format(rsq2use)])).reset_index()[0]
+                            df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
                 
+                            # compute Ci
+                            df_params_median_ci = pd.DataFrame()
+                            for colname in colnames:
+                                # [CORRECTION #3] intervalle de groupe (entre participants) = 25e-75e percentiles au lieu de 2.5e-97.5e ;
+                                # noms de colonnes _ci_down/_ci_up inchangés
+                                # AVANT : df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                                # AVANT :     lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 2.5))
+                                # AVANT : df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                                # AVANT :     lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 97.5))
+                                df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                                    lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 25))
+                                df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
+                                    lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 75))
+                
+                            # [CORRECTION #79] concat deplace dans le else : si df_violins est vide, df_params_med_median n'existe pas (NameError)
+                            # AVANT : df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()  (hors du else)
+                            df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
+                        tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_params_median_fn))
+                        df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
+                   
                         # Ecc.size
                         # --------
+                        df_ecc_size = df_ecc_size.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
                         tsv_ecc_size_fn = "{}/{}_{}_intertask_ecc-size.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_ecc_size_indiv = pd.read_table(tsv_ecc_size_fn, sep="\t")
-                        if i == 0: df_ecc_size = df_ecc_size_indiv.copy()
-                        else: df_ecc_size = pd.concat([df_ecc_size, df_ecc_size_indiv])
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_ecc_size_fn))
+                        df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
                 
                         # Ecc.pCM
                         # -------
+                        df_ecc_pcm = df_ecc_pcm.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
                         tsv_ecc_pcm_fn = "{}/{}_{}_intertask_ecc-pcm.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_ecc_pcm_indiv = pd.read_table(tsv_ecc_pcm_fn, sep="\t")
-                        if i == 0: df_ecc_pcm = df_ecc_pcm_indiv.copy()
-                        else: df_ecc_pcm = pd.concat([df_ecc_pcm, df_ecc_pcm_indiv])
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
+                        df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
                 
                         # Polar angle
                         # -----------
+                        df_polar_angle = df_polar_angle.groupby(['roi', 'hemi', 'num_bins'], sort=False).median().reset_index()
                         tsv_polar_angle_fn = "{}/{}_{}_intertask_polar-angle.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_polar_angle_indiv = pd.read_table(tsv_polar_angle_fn, sep="\t")
-                        if i == 0: df_polar_angle = df_polar_angle_indiv.copy()
-                        else: df_polar_angle = pd.concat([df_polar_angle, df_polar_angle_indiv])
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_polar_angle_fn))
+                        df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
                 
                         # Contralaterality
                         # ----------------
+                        df_median_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()                
+                        # [CORRECTION #3] intervalle de groupe = 25e-75e percentiles entre participants (comme dans le manuscrit)
+                        # et non 2.5e-97.5e ; noms de colonnes ci_down/ci_up inchangés pour les scripts de figures
+                        # AVANT : df_ci_down_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.025).reset_index().rename(columns={'contralaterality_prct': 'ci_down'})
+                        # AVANT : df_ci_up_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.975).reset_index().rename(columns={'contralaterality_prct': 'ci_up'})
+                        df_ci_down_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.25).reset_index().rename(columns={'contralaterality_prct': 'ci_down'})
+                        df_ci_up_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.75).reset_index().rename(columns={'contralaterality_prct': 'ci_up'})
+                        df_contralaterality_group = pd.concat([df_median_contralaterality, df_ci_down_contralaterality['ci_down'], df_ci_up_contralaterality['ci_up']], axis=1)
                         tsv_contralaterality_fn = "{}/{}_{}_intertask_contralaterality.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_contralaterality_indiv = pd.read_table(tsv_contralaterality_fn, sep="\t")
-                        if i == 0: df_contralaterality = df_contralaterality_indiv.copy()
-                        else: df_contralaterality = pd.concat([df_contralaterality, df_contralaterality_indiv])
-                        
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_contralaterality_fn))
+                        df_contralaterality_group.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
+                    
                         # Spatial distribution 
                         # -------------------
                         tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
-                            tsv_category_dir, subject_to_group, fn_spec_cate)
-                        df_distribution_indiv = pd.read_table(tsv_distribution_fn, sep="\t")
-                        mesh_indiv = df_distribution_indiv.drop(columns=['roi', 'x', 'y', 'hemi']).values
-                        others_columns = df_distribution_indiv[['roi', 'x', 'y', 'hemi']]
-                        if i == 0: mesh_group = np.expand_dims(mesh_indiv, axis=0)
-                        else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
-                      
-                    # Median and saving tsv
-                    tsv_category_dir = '{}/{}/derivatives/pp_data/{}/{}/intertask/tsv/tsv_{}'.format(
-                        main_dir, project_dir, subject, format_, categorie_to_plot)
-                    os.makedirs(tsv_category_dir, exist_ok=True)
-                                    
-                    # Violins
-                    # -------
-                    df_violins = df_violins # no averaging
-                    tsv_violins_fn = "{}/{}_{}_intertask_violins.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_violins_fn))
-                    df_violins.to_csv(tsv_violins_fn, sep="\t", na_rep='NaN', index=False)
+                                tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_distribution_fn))
+                        # [CORRECTION #79] mediane sur les sujets ayant une distribution ; aucun -> tableau vide (comme au niveau sujet)
+                        # AVANT : median_mesh = np.median(mesh_group, axis=0)
+                        # AVANT : df_distribution = pd.DataFrame(median_mesh)
+                        # AVANT : df_distribution = pd.concat([others_columns, df_distribution], axis=1)
+                        # [CORRECTION #79] un sujet peut ne pas avoir une ROI x hemi dans la categorie (ex. sub-21 : mPCS hemi-R absent) :
+                        # [CORRECTION #79] les mesh sont alignes par (roi, hemi, y) sur le sujet le plus complet ; ROI absente = NaN, ignoree par nanmedian
+                        if len(mesh_list) > 0:
+                            ref = max(mesh_list, key=len)[['roi', 'x', 'y', 'hemi']].reset_index(drop=True)
+                            mesh_key = lambda d: d['roi'].astype(str) + '|' + d['hemi'].astype(str) + '|' + d['y'].round(6).astype(str)
+                            ref_key = mesh_key(ref)
+                            mesh_aligned = []
+                            for df_mesh in mesh_list:
+                                values = df_mesh.drop(columns=['roi', 'x', 'y', 'hemi'])
+                                values.index = mesh_key(df_mesh)
+                                mesh_aligned.append(values.reindex(ref_key).values)
+                            median_mesh = np.nanmedian(np.stack(mesh_aligned, axis=0), axis=0)
+                            df_distribution = pd.DataFrame(median_mesh)
                 
-                    # Parameters median
-                    # ------------------
-                    df_params_median = df_violins
-                    colnames = ['{}'.format(rsq2use), 'prf_size', 'prf_ecc', 'prf_n', 'pcm_median']
-                    if df_violins.empty:
-                        df_params_median = pd.DataFrame(columns=['roi', 'subject', '{}_weighted_median'.format(rsq2use)] + 
-                                                        ['{}_weighted_median'.format(col) for col in colnames] + 
-                                                        ['{}_ci_down'.format(col) for col in colnames] + 
-                                                        ['{}_ci_up'.format(col) for col in colnames])
-                    
-                    else:
-                        df_params_median_indiv = df_params_median.groupby(['roi', 'subject'])[['{}'.format(rsq2use)]].apply(
-                            lambda x: weighted_nan_median(x['{}'.format(rsq2use)], df_params_median.loc[x.index, '{}'.format(rsq2use)])).reset_index(name='{}_weighted_median'.format(rsq2use))
-                        
-                        for colname in colnames[1:]:
-                            df_params_median_indiv['{}_weighted_median'.format(colname)] = df_params_median.groupby(['roi', 'subject'])[[colname, '{}'.format(rsq2use)]].apply(
-                                lambda x: weighted_nan_median(x[colname], df_params_median.loc[x.index, '{}'.format(rsq2use)])).reset_index()[0]
-                        df_params_med_median = df_params_median_indiv.groupby(['roi'])[[colname + '_weighted_median' for colname in colnames]].median()
-                
-                        # compute Ci
-                        df_params_median_ci = pd.DataFrame()
-                        for colname in colnames:
-                            # [CORRECTION #3] intervalle de groupe (entre participants) = 25e-75e percentiles au lieu de 2.5e-97.5e ;
-                            # noms de colonnes _ci_down/_ci_up inchangés
-                            # AVANT : df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                            # AVANT :     lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 2.5))
-                            # AVANT : df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                            # AVANT :     lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 97.5))
-                            df_params_median_ci['{}_ci_down'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                                lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 25))
-                            df_params_median_ci['{}_ci_up'.format(colname)] = df_params_median_indiv.groupby(['roi']).apply(
-                                lambda x: weighted_nan_percentile(x['{}_weighted_median'.format(colname)], x['{}_weighted_median'.format(rsq2use)], 75))
-                
-                    df_params_median = pd.concat([df_params_med_median, df_params_median_ci], axis=1).reset_index()
-                    tsv_params_median_fn = "{}/{}_{}_intertask_params-median.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_params_median_fn))
-                    df_params_median.to_csv(tsv_params_median_fn, sep="\t", na_rep='NaN', index=False)
-                   
-                    # Ecc.size
-                    # --------
-                    df_ecc_size = df_ecc_size.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
-                    tsv_ecc_size_fn = "{}/{}_{}_intertask_ecc-size.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_ecc_size_fn))
-                    df_ecc_size.to_csv(tsv_ecc_size_fn, sep="\t", na_rep='NaN', index=False)
-                
-                    # Ecc.pCM
-                    # -------
-                    df_ecc_pcm = df_ecc_pcm.groupby(['roi', 'num_bins'], sort=False).median().reset_index()
-                    tsv_ecc_pcm_fn = "{}/{}_{}_intertask_ecc-pcm.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_ecc_pcm_fn))
-                    df_ecc_pcm.to_csv(tsv_ecc_pcm_fn, sep="\t", na_rep='NaN', index=False)
-                
-                    # Polar angle
-                    # -----------
-                    df_polar_angle = df_polar_angle.groupby(['roi', 'hemi', 'num_bins'], sort=False).median().reset_index()
-                    tsv_polar_angle_fn = "{}/{}_{}_intertask_polar-angle.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_polar_angle_fn))
-                    df_polar_angle.to_csv(tsv_polar_angle_fn, sep="\t", na_rep='NaN', index=False)
-                
-                    # Contralaterality
-                    # ----------------
-                    df_median_contralaterality = df_contralaterality.groupby(['roi'], sort=False).median().reset_index()                
-                    # [CORRECTION #3] intervalle de groupe = 25e-75e percentiles entre participants (comme dans le manuscrit)
-                    # et non 2.5e-97.5e ; noms de colonnes ci_down/ci_up inchangés pour les scripts de figures
-                    # AVANT : df_ci_down_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.025).reset_index().rename(columns={'contralaterality_prct': 'ci_down'})
-                    # AVANT : df_ci_up_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.975).reset_index().rename(columns={'contralaterality_prct': 'ci_up'})
-                    df_ci_down_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.25).reset_index().rename(columns={'contralaterality_prct': 'ci_down'})
-                    df_ci_up_contralaterality = df_contralaterality.groupby(['roi'], sort=False).quantile(0.75).reset_index().rename(columns={'contralaterality_prct': 'ci_up'})
-                    df_contralaterality_group = pd.concat([df_median_contralaterality, df_ci_down_contralaterality['ci_down'], df_ci_up_contralaterality['ci_up']], axis=1)
-                    tsv_contralaterality_fn = "{}/{}_{}_intertask_contralaterality.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_contralaterality_fn))
-                    df_contralaterality_group.to_csv(tsv_contralaterality_fn, sep="\t", na_rep='NaN', index=False)
-                    
-                    # Spatial distribution 
-                    # -------------------
-                    tsv_distribution_fn = "{}/{}_{}_intertask_distribution.tsv".format(
-                            tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_distribution_fn))
-                    median_mesh = np.median(mesh_group, axis=0)
-                    df_distribution = pd.DataFrame(median_mesh)
-            
-                    # Concatenating non-numeric columns back to the dataframe
-                    df_distribution = pd.concat([others_columns, df_distribution], axis=1)
-                    df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
+                            # Concatenating non-numeric columns back to the dataframe
+                            df_distribution = pd.concat([ref, df_distribution], axis=1)
+                        else:
+                            df_distribution = pd.DataFrame(columns=['hemi'])
+                        df_distribution.to_csv(tsv_distribution_fn, sep="\t", na_rep='NaN', index=False)
 
-                    # Spatial distribution hot zone barycentre 
-                    # ----------------------------------------
-                    hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
-                    for j, hemi in enumerate(hemis):
-                        hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
-                        df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
-                        df_barycentre_hemi = make_prf_barycentre_df(
-                            df_distribution_hemi, rois, distribution_max_ecc, 
-                            distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
+                        # Spatial distribution hot zone barycentre 
+                        # ----------------------------------------
+                        hemis = ['hemi-L', 'hemi-R', 'hemi-LR']
+                        for j, hemi in enumerate(hemis):
+                            hemi_values = ['hemi-L', 'hemi-R'] if hemi == 'hemi-LR' else [hemi]
+                            df_distribution_hemi = df_distribution.loc[df_distribution.hemi.isin(hemi_values)]
+                            df_barycentre_hemi = make_prf_barycentre_df(
+                                df_distribution_hemi, rois, distribution_max_ecc, 
+                                distribution_mesh_grain, hot_zone_percent=hot_zone_percent, figure_info=analysis_info)
                        
-                        df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
-                        if j == 0: df_barycentre = df_barycentre_hemi
-                        else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
+                            df_barycentre_hemi['hemi'] = [hemi] * len(df_barycentre_hemi)
+                            if j == 0: df_barycentre = df_barycentre_hemi
+                            else: df_barycentre = pd.concat([df_barycentre, df_barycentre_hemi])
                        
-                    tsv_barycentre_fn = "{}/{}_{}_intertask_barycentre.tsv".format(
-                        tsv_category_dir, subject, fn_spec_cate)
-                    print('Saving tsv: {}'.format(tsv_barycentre_fn))
-                    df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
+                        tsv_barycentre_fn = "{}/{}_{}_intertask_barycentre.tsv".format(
+                            tsv_category_dir, subject, fn_spec_cate)
+                        print('Saving tsv: {}'.format(tsv_barycentre_fn))
+                        df_barycentre.to_csv(tsv_barycentre_fn, sep="\t", na_rep='NaN', index=False)
                     
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
