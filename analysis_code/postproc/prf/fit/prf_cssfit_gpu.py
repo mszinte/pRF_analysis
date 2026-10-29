@@ -50,6 +50,19 @@ deb = ipdb.set_trace
 import os
 os.environ["KERAS_BACKEND"] = "torch"                                               # must be set before keras/prfmodel are imported
 from importlib.util import find_spec
+import sys
+
+# [PRFMODEL] clear error if prfmodel or its dependencies are missing in the job environment
+# AVANT : (bloc ajoute)
+PRFMODEL_URL = "https://github.com/popylar-org/prfmodel"
+missing_packages = [package for package in ['prfmodel', 'keras', 'torch'] if find_spec(package) is None]
+if missing_packages:
+    raise ImportError(
+        "Missing python package(s) for the GPU pRF fit: {}\n"
+        "Please install prfmodel and its dependencies in the python environment used to run this script,\n"
+        "see {}\n"
+        "(current python: {})".format(', '.join(missing_packages), PRFMODEL_URL, sys.executable))
+
 import pandas as pd
 import numpy as np
 import datetime

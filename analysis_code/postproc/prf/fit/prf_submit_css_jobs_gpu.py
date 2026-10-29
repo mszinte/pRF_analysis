@@ -17,8 +17,8 @@ Output(s):
 .sh file to execute in server
 -----------------------------------------------------------------------------------------
 To run:
-0. activate the prfmodel environment (it is passed on to the jobs)
->> conda activate prfmodel
+0. use a python environment where prfmodel is installed (https://github.com/popylar-org/prfmodel);
+   the jobs run with the same python interpreter as this script
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
@@ -27,7 +27,8 @@ python prf_submit_css_jobs_gpu.py [main directory] [project name] [subject]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
-python prf_submit_css_jobs_gpu.py /scratch/mszinte/data amsterdam24 sub-03 prf meso_0327 b327
+python prf_submit_css_jobs_gpu.py /scratch/mszinte/data amsterdam24 sub-03 prf 327 b327
+python prf_submit_css_jobs_gpu.py /scratch/mszinte/data amblyo7T_prf sub-03 prf 327 b327
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
 adapted from Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -45,6 +46,18 @@ deb = ipdb.set_trace
 import os
 import sys
 import glob
+from importlib.util import find_spec
+
+# [PRFMODEL] stop here if prfmodel or its dependencies are missing (checked without importing them)
+# AVANT : (bloc ajoute)
+PRFMODEL_URL = "https://github.com/popylar-org/prfmodel"
+missing_packages = [package for package in ['prfmodel', 'keras', 'torch'] if find_spec(package) is None]
+if missing_packages:
+    raise ImportError(
+        "Missing python package(s) for the GPU pRF fit: {}\n"
+        "Please install prfmodel and its dependencies in the python environment used to run this script,\n"
+        "see {}\n"
+        "(current python: {})".format(', '.join(missing_packages), PRFMODEL_URL, sys.executable))
  
 # Personal imports
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -98,21 +111,10 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 chmod_cmd = "chmod -Rf 771 {}/{}".format(main_dir, project_dir)
 chgrp_cmd = "chgrp -Rf {} {}/{}".format(group, main_dir, project_dir)
 
-# Conda base of the submitting shell (e.g. ~/softwares/miniconda3), from $CONDA_EXE = <base>/bin/conda
-conda_exe = os.environ.get('CONDA_EXE')
-if conda_exe is None:
-    raise EnvironmentError("CONDA_EXE not set: run this script from a shell where conda is initialised")
-conda_dir = os.path.dirname(os.path.dirname(conda_exe))  
-conda_env = 'prfmodel'
- 
-# Define environment cmd: activate the prfmodel env inside the job only
 env_cmd = """\
-source {conda_dir}/etc/profile.d/conda.sh
-conda activate {conda_env}
-export KERAS_BACKEND=torch
 cd {script_dir}
-echo "python: $(which python)"
-nvidia-smi""".format(conda_dir=conda_dir, conda_env=conda_env, script_dir=script_dir)
+echo "python: {python}"
+nvidia-smi""".format(script_dir=script_dir, python=sys.executable)
  
 # Define fns (filenames)
 pp_fns = []
@@ -177,8 +179,11 @@ for fit_num, pp_fn in enumerate(pp_fns):
            dm_name=dm_name)
  
     # Define fit cmd (last argument = number of jobs, unused on GPU but kept for the fit script's inputs)
-    fit_cmd = "python {} {} {} {} {} {} {}".format(
-        fit_script, main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
+    # [PRFMODEL] same python interpreter as the submitting shell (where prfmodel was found)
+    # AVANT : fit_cmd = "python {} {} {} {} {} {} {}".format(
+    # AVANT :     fit_script, main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
+    fit_cmd = "{} {} {} {} {} {} {} {}".format(
+        sys.executable, fit_script, main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
  
     # Create shs
     sh_fn = "{}/jobs/{}_{}-{}-css{}_gpu_fit-{}.sh".format(prf_dir, subject, avg_method, analysis_name, dm_name, fit_num)
