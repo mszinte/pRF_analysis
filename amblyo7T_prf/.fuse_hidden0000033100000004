@@ -1,0 +1,411 @@
+# Flatmaps
+flatmap_corr_scale: 
+  description: "Inter-run correlation r-square flatmap colorscale"
+  value: [-1, 1]
+
+flatmap_rsq_scale:
+  description: "pRF r-square flatmap colorscale"
+  value: [0, 1]
+
+flatmap_ecc_scale: 
+  description: "pRF eccentricity flatmap colorscale"
+  value: [0, 8]
+  
+flatmap_size_scale:
+  description: "pRF size flatmap colorscale"
+  value: [0, 4]
+
+flatmap_alpha_range:
+  description: "Flatmap colorscale transparency range (min=transparent, max:fully opaque)"
+  value: [0, 0.4]
+
+flatmap_n_scale: 
+  description: "pRF n flatmap colorscale"
+  value: [0, 1]
+
+flatmap_pcm_scale: 
+  description: "pRF cortical magnification flatmap colorscale"
+  value: [0, 30]
+
+flatmap_tsnr_scale:
+  description: "Color scale range for tSNR flatmaps [min, max]"
+  value: [0, 150]
+
+# rois_colors:
+#   description: "Color in RGB used in different plots for each ROI"
+#   value:
+#     n/a: [255, 255, 255]
+#     V1: [243, 231, 155]
+#     V2: [250, 196, 132]
+#     V3: [248, 160, 126]
+#     V3AB: [235, 127, 134]
+#     LO: [150, 0, 90] 
+#     VO: [0, 0, 200]
+#     hMT+: [0, 25, 255]
+
+rois_colors:
+  description: "Color in RGB used in different plots for each ROI"
+  value:
+    n/a: [255, 255, 255]
+    V1:  [250, 196, 132]
+    V2: [248, 160, 126]
+    V3: [235, 127, 134]
+    V4: [240, 120, 100]
+    V3A: [220, 90, 120]
+    V3B: [200, 70, 140]
+    LO1: [140, 20, 180]
+    LO2: [120, 10, 200]
+  
+  
+
+# Main figures
+# roi_colors:
+#   description: "Colors to use for each ROI"
+#   value:
+#     V1: "rgb(243, 231, 155)"
+#     V2: "rgb(250, 196, 132)"
+#     V3: "rgb(248, 160, 126)"
+#     V3AB: "rgb(235, 127, 134)"
+#     LO: "rgb(150, 0, 90)"
+#     VO: "rgb(0, 0, 200)"
+#     hMT+: "rgb(0, 25, 255)"
+
+roi_colors:
+  description: "Colors to use for each ROI"
+  value:
+    n/a: "rgb(255, 255, 255)"
+    V1: "rgb(250, 196, 132)"
+    V2: "rgb(248, 160, 126)"
+    V3: "rgb(235, 127, 134)"
+    V4: "rgb(240, 120, 100)"
+    V3A: "rgb(220, 90, 120)"
+    V3B: "rgb(200, 70, 140)"
+    LO1: "rgb(140, 20, 180)"
+    LO2: "rgb(120, 10, 200)"
+
+# rois_groups_plot:
+#   description: "Grouping of ROIs in figures with grouped values"
+#   value:
+#     - ["V1", "V2"]
+#     - ["V3", "V3AB"]
+#     - ["LO", "VO", "hMT+"]
+
+rois_groups_plot:
+  description: "Grouping of ROIs in figures with grouped values"
+  value:
+    - ["V1", "V2", "V3", "V4"]
+    - ["V3A", "V3B", "LO1", "LO2"]
+
+
+rois_fig_margin: 
+  description: "Margin for figure with multiple ROIs"
+  value: [100, 50, 50, 75]
+  
+rois_hor_spacing: 
+  description: "Horizontal spacing between figure with multiple ROIs"
+  value: 100
+  
+rois_ver_spacing: 
+  description: "Vertical spacing between figure with multiple ROIs"
+  value: 50
+
+rois_bar_width: 
+  description: "Bar width of plots with multiple ROIs"
+  value: 50
+  
+rois_plot_height: 
+  description: "Figure height of figure with multiple ROIs"
+  value: 200
+  
+rois_plot_width:
+  description: "Figure width of figure with multiple ROIs"
+  value: 200
+
+roi_fig_margin: 
+  description: "Margin for figure with individual ROI"
+  value: [50, 50, 50, 50]
+  
+roi_hor_spacing: 
+  description: "Horizontal spacing between figure with individual ROI"
+  value: 10
+  
+roi_ver_spacing: 
+  description: "Vertical spacing between figure with individual ROI"
+  value: 50
+
+roi_plot_height: 
+  description: "Figure height of figure with individual ROI"
+  value: 100
+  
+roi_plot_width: 
+  description: "Figure width of figure with individual ROI"
+  value: 100
+
+ecc_size_num_bins: 
+  description: "Number of bins for eccentricity vs size plot"
+  value: 8
+
+ecc_size_max: 
+  description: "Max value of eccentricity [0] and size [1] for ecc/size plot"
+  value: [6, 6]
+
+ecc_pcm_axis: 
+  description: "Eccentricity and pCM bounds in the violin plot axis"
+  value: [0, 30]
+
+ecc_size_axis: 
+  description: "Eccentricity and size bounds in the violin plot axis"
+  value: [0, 6]
+  
+ecc_pcm_num_bins: 
+  description: "Number of bins for eccentricity vs pcm plot"
+  value: 8
+
+ecc_pcm_max: 
+  description: "Max value of eccentricity [0] and pcm [1] for ecc/pcm plot"
+  value: [6, 30]
+
+polar_angle_num_bins: 
+  description: "Number of bins in the polar angle plot"
+  value: 9
+
+active_vert_fsnative_range:
+  description: "Range of number of active vertex plot with fsnative format"
+  value: [0, 16000]
+  
+active_vert_170k_range:
+  description: "Range of number of active vertex plot with 170k format"
+  value: [0, 6000]
+  
+violin_rsq_range:
+  description: "R-square range in the violin plot"
+  value: [0, 1]
+  
+violin_size_range: 
+  description: "Size range in the violin plot"
+  value: [0, 6]
+  
+violin_ecc_range: 
+  description: "Eccentricity range in the violin plot"
+  value: [0, 6]
+  
+violin_pcm_range: 
+  description: "pRF CM range in the violin plot"
+  value: [0, 30]
+  
+params_median_rsq_range:
+  description: "R-square range in the median parameters plot"
+  value: [0, 1]
+  
+params_median_size_range: 
+  description: "Size range in the median parameters plot"
+  value: [0, 6]
+
+params_median_ecc_range: 
+  description: "Eccentricity range in the median parameters plot"
+  value: [0, 6]
+  
+params_median_pcm_range: 
+  description: "PRF CM range in the median parameters plot"
+  value: [0, 30]
+  
+distribution_max_ecc: 
+  description: "Maximum eccentricity in the pRF spatial distribution plot"
+  value: 30
+  
+distribution_mesh_grain: 
+  description: "Mesh grain of the pRF spatial distribution plot"
+  value: 100
+  
+distribution_screen_side: 
+  description: "Side of the screen in dva of the pRF spatial distribution plot"
+  value: 16
+
+hot_zone_percent: 
+  description: "Hot zone percent in the barycentre plot"
+  value: 0.01
+
+# Correlation figures
+prf_tasks_eyes_names:
+  description: "Comparison groups of the concatenation of runs across the eye condition used to compute the correlation"
+  value: [['BarsBarsRingsWedgesRightEye', 'BarsBarsRingsWedgesLeftEye'],['BarsBarsRightEye', 'BarsBarsLeftEye'],['RingsWedgesRightEye', 'RingsWedgesLeftEye']]
+
+corr_params:
+  description: "Parameters to correlate between amblyopic/right and fellow/left eye runs"
+  value: ['prf_rsq', 'prf_x', 'prf_y', 'prf_size', 'prf_ecc', 'pcm_median']
+
+corr_grid_size:
+  description: "Number of bins along each axis of the 2D KDE evaluation grid"
+  value: 100
+
+prf_rsq_param_range:
+  description: "Axis range for pRF R² in the 2D correlation KDE plot"
+  value: [0, 0.8]
+
+prf_x_param_range:
+  description: "Axis range for pRF x coord in the 2D correlation KDE plot"
+  value: [-5, 5]
+
+prf_y_param_range:
+  description: "Axis range for pRF y coord in the 2D correlation KDE plot"
+  value: [-5, 5]
+
+prf_size_param_range:
+  description: "Axis range for pRF size in the 2D correlation KDE plot"
+  value: [0, 2]
+
+prf_ecc_param_range:
+  description: "Axis range for pRF eccentricity in the 2D correlation KDE plot"
+  value: [0, 10]
+
+pcm_median_param_range:
+  description: "Axis range for pRF CM in the 2D correlation KDE plot"
+  value: [0, 30]
+
+corr_ecc_th:
+  description: "Eccentricity range threshold for eye correlation analysis"
+  units: "dva"
+  value: [0.05, 10]
+
+corr_size_th:
+  description: "Size range threshold for eye correlation analysis"
+  units: "dva"
+  value: [0.05, 6]
+
+corr_rsqr_th:
+  description: "R-square minimum threshold for eye correlation analysis"
+  value: 0
+
+corr_n_th:
+  description: "CSS n range threshold for eye correlation analysis"
+  value: [0.01, 1]
+
+corr_prf_amp_th: 
+  description: "pRF amplitude range threshold for eye correlation analysis"
+  value: [-6, 6]
+
+corr_stats_th: 
+  description: "p value minimum threshold for eye correlation analysis"
+  value: 0.01
+
+ecc_bin_power:
+  description: "Power function exponent for eccentricity binning (1=linear, >1=finer near fovea)"
+  value: 1.25
+
+ecc_rsq_range:
+  description: "R2 axis range in the ecc-size-pcm eye condition plot"
+  value: [0, 1]
+
+ecc_n_vert_range:
+  description: "Vertex count axis range in the ecc-size-pcm eye condition plot"
+  value: [0, 2000]
+
+ecc_range:
+  description: "PRF eccentricity axis range in the ecc-size-pcm eye condition plot"
+  value: [0, 6]
+
+size_range:
+  description: "PRF size axis range in the ecc-size-pcm eye condition plot"
+  value: [0, 6]
+
+pmc_range:
+  description: "PRF CM axis range in the ecc-size-pcm eye condition plot"
+  value: [0, 30]
+
+
+
+foveal_ecc_bound:
+  description: "Eccentricity boundary (dva) separating foveal (<= bound) from peripheral (> bound) pRFs"
+  value: 2.5
+
+# Comp ECC figure
+# --- Add these entries to figure-settings.yml (ecc_comp figure settings) ---
+
+ecc_comp_fig_width:
+  description: "Width of each ecc-comp figure in pixels"
+  value: 1600
+
+ecc_comp_fig_height:
+  description: "Height of each ecc-comp figure in pixels"
+  value: 1680
+
+ecc_comp_marker_size:
+  description: "Marker size in ecc-comp figures"
+  value: 8
+
+ecc_comp_roi_x_spacing:
+  description: "Spacing between ROIs on the fake continuous x axis"
+  value: 1.0
+
+ecc_comp_marker_offset:
+  description: "Offset between eye condition markers within an ROI. First value for 2 conditions (e.g. AE/FE or RE/LE), second value for 3 conditions (e.g. AE/FE/CTRL)"
+  value: [0.11, 0.22]
+
+# pRF R² ranges
+ecc_comp_rsq_all_range:
+  description: "pRF R² axis range for all pRF in ecc-comp figure"
+  value: [0, 1]
+
+ecc_comp_rsq_foveal_range:
+  description: "pRF R² axis range for foveal pRF in ecc-comp figure"
+  value: [0, 1]
+
+ecc_comp_rsq_peripheral_range:
+  description: "pRF R² axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 1]
+
+# pRF size ranges
+ecc_comp_size_all_range:
+  description: "pRF size axis range for all pRF in ecc-comp figure"
+  value: [0, 3]
+
+ecc_comp_size_foveal_range:
+  description: "pRF size axis range for foveal pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_size_peripheral_range:
+  description: "pRF size axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 4]
+
+# pRF eccentricity ranges
+ecc_comp_ecc_all_range:
+  description: "pRF eccentricity axis range for all pRF in ecc-comp figure"
+  value: [0, 5]
+
+ecc_comp_ecc_foveal_range:
+  description: "pRF eccentricity axis range for foveal pRF in ecc-comp figure"
+  value: [0, 3]
+
+ecc_comp_ecc_peripheral_range:
+  description: "pRF eccentricity axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 8]
+
+# pRF CM ranges
+ecc_comp_pcm_all_range:
+  description: "pRF CM axis range for all pRF in ecc-comp figure"
+  value: [0, 30]
+
+ecc_comp_pcm_foveal_range:
+  description: "pRF CM axis range for foveal pRF in ecc-comp figure"
+  value: [0, 30]
+
+ecc_comp_pcm_peripheral_range:
+  description: "pRF CM axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 10]
+
+ecc_comp_n_all_range:
+  description: "pRF n axis range for all pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_n_foveal_range:
+  description: "pRF n axis range for foveal pRF in ecc-comp figure"
+  value: [0, 2]
+
+ecc_comp_n_peripheral_range:
+  description: "pRF n axis range for peripheral pRF in ecc-comp figure"
+  value: [0, 2]
+
+# ecc_comp_params: parameters with CI (excludes n_vert)
+ecc_comp_params:
+  description: "Parameters computed in the ecc comparison analysis (excludes n_vert which has no CI)"
+  value: ['prf_rsq', 'prf_size', 'prf_ecc', 'pcm_median', 'prf_n']

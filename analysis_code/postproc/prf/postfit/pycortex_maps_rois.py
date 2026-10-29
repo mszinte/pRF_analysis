@@ -72,7 +72,9 @@ if subject == 'sub-170k': formats = ['170k']
 else: formats = analysis_info['formats']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 
@@ -108,79 +110,81 @@ for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_templat
 
     rois_methods_format = rois_methods[format_]
     
-    for rois_method_format in rois_methods_format:
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        for rois_method_format in rois_methods_format:
         
-        if rois_method_format == 'rois-drawn':
-            rois = analysis_info[rois_method_format]
-        elif rois_method_format == 'rois-group-mmp':
-            rois = list(analysis_info[rois_method_format].keys())
-        elif rois_method_format == 'rois-mmp':
-            mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
-            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
-            rois = mmp_rois_numbers_df['roi_name'].tolist()
+            if rois_method_format == 'rois-drawn':
+                rois = analysis_info[rois_method_format]
+            elif rois_method_format == 'rois-group-mmp':
+                rois = list(analysis_info[rois_method_format].keys())
+            elif rois_method_format == 'rois-mmp':
+                mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+                mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+                rois = mmp_rois_numbers_df['roi_name'].tolist()
 
-        if format_ == 'fsnative':
-            roi_fn_L = '{}/{}_hemi-L_{}_{}_{}_{}.func.gii'.format(rois_dir, subject, 
-                                                                  preproc_prep, filtering, 
-                                                                  normalization, rois_method_format)
-            roi_fn_R = '{}/{}_hemi-R_{}_{}_{}_{}.func.gii'.format(rois_dir, subject,
-                                                                  preproc_prep, filtering, 
-                                                                  normalization, rois_method_format)
-            results = load_surface_pycortex(L_fn=roi_fn_L, R_fn=roi_fn_R)
-            roi_mat = results['data_concat']
+            if format_ == 'fsnative':
+                roi_fn_L = '{}/{}_hemi-L_{}_{}_{}_{}.func.gii'.format(rois_dir, subject, 
+                                                                      preproc_prep, filtering, 
+                                                                      normalization, rois_method_format)
+                roi_fn_R = '{}/{}_hemi-R_{}_{}_{}_{}.func.gii'.format(rois_dir, subject,
+                                                                      preproc_prep, filtering, 
+                                                                      normalization, rois_method_format)
+                results = load_surface_pycortex(L_fn=roi_fn_L, R_fn=roi_fn_R)
+                roi_mat = results['data_concat']
             
-        elif format_ == '170k':
-            roi_fn = '{}/{}_{}_{}_{}_{}.dtseries.nii'.format(rois_dir, subject,
-                                                      preproc_prep, filtering, 
-                                                      normalization, rois_method_format)
-            results = load_surface_pycortex(brain_fn=roi_fn)
-            roi_mat = results['data_concat']
+            elif format_ == '170k':
+                roi_fn = '{}/{}_{}_{}_{}_{}.dtseries.nii'.format(rois_dir, subject,
+                                                          preproc_prep, filtering, 
+                                                          normalization, rois_method_format)
+                results = load_surface_pycortex(brain_fn=roi_fn)
+                roi_mat = results['data_concat']
         
-        # Define overlay
-        overlay_fn = f"overlays_{rois_method_format}.svg"
+            # Define overlay
+            overlay_fn = f"overlays_{rois_method_format}.svg"
         
-        rois_opacity = 0.5
-        alpha_mat = roi_mat*0+rois_opacity
-        alpha_mat[roi_mat==0]=0
-        print('Creating flatmaps...')
+            rois_opacity = 0.5
+            alpha_mat = roi_mat*0+rois_opacity
+            alpha_mat[roi_mat==0]=0
+            print('Creating flatmaps...')
     
-        # Rois
-        roi_name = 'rois'
-        param_rois = {'subject': pycortex_subject,
-                      'data': roi_mat, 
-                      'cmap': colormap_name,
-                      'alpha': alpha_mat,
-                      'cbar': 'discrete_personalized', 
-                      'vmin': 0,
-                      'vmax': len(colormap_dict),
-                      'cmap_steps': len(colormap_dict),
-                      'cmap_dict': colormap_dict,
-                      'cortex_type': 'VertexRGB',
-                      'description': 'ROIs',
-                      'curv_brightness': 0.6, 
-                      'curv_contrast': 0.2,
-                      'add_roi': save_svg,
-                      'with_labels': True,
-                      'overlay_fn': overlay_fn,
-                      'roi_list':rois,
-                      'roi_name': roi_name}
+            # Rois
+            roi_name = 'rois'
+            param_rois = {'subject': pycortex_subject,
+                          'data': roi_mat, 
+                          'cmap': colormap_name,
+                          'alpha': alpha_mat,
+                          'cbar': 'discrete_personalized', 
+                          'vmin': 0,
+                          'vmax': len(colormap_dict),
+                          'cmap_steps': len(colormap_dict),
+                          'cmap_dict': colormap_dict,
+                          'cortex_type': 'VertexRGB',
+                          'description': 'ROIs',
+                          'curv_brightness': 0.6, 
+                          'curv_contrast': 0.2,
+                          'add_roi': save_svg,
+                          'with_labels': True,
+                          'overlay_fn': overlay_fn,
+                          'roi_list':rois,
+                          'roi_name': roi_name}
                       
-        # Draw flatmaps
-        volume_roi = draw_cortex(**param_rois)
-        plt.savefig('{}/{}_{}_{}_{}_{}_rois.pdf'.format(flatmaps_dir, subject,
-                                                        preproc_prep, filtering, 
-                                                        normalization, rois_method_format))
-        plt.close()
+            # Draw flatmaps
+            volume_roi = draw_cortex(**param_rois)
+            plt.savefig('{}/{}_{}_{}_{}_{}_rois.pdf'.format(flatmaps_dir, subject,
+                                                            preproc_prep, filtering, 
+                                                            normalization, rois_method_format))
+            plt.close()
     
-        # Save flatmap as dataset
-        volumes = {}
-        vol_description = param_rois["description"]
-        volumes.update({vol_description:volume_roi})
+            # Save flatmap as dataset
+            volumes = {}
+            vol_description = param_rois["description"]
+            volumes.update({vol_description:volume_roi})
     
-        # Save dataset
-        dataset_file = "{}/{}_{}_{}_{}_{}.hdf".format(datasets_dir, subject,
-                                                      preproc_prep, filtering, 
-                                                      normalization, rois_method_format)
-        if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
-        dataset = cortex.Dataset(data=volumes)
-        dataset.save(dataset_file)
+            # Save dataset
+            dataset_file = "{}/{}_{}_{}_{}_{}.hdf".format(datasets_dir, subject,
+                                                          preproc_prep, filtering, 
+                                                          normalization, rois_method_format)
+            if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
+            dataset = cortex.Dataset(data=volumes)
+            dataset.save(dataset_file)

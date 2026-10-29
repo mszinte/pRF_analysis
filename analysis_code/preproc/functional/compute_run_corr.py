@@ -77,7 +77,9 @@ maps_names = analysis_info['maps_names_corr']
 subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 averaging_templates = analysis_info['averaging_templates']
 
 # Index
@@ -87,176 +89,180 @@ slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
 # template_avg exception
 if subject != 'template_avg':
     
-    print('{}, computing inter-run correlation...'.format(subject))
-    # make extension folders
-    corr_temp_dir = "{}/{}/derivatives/temp_data/{}_corr".format(main_dir, project_dir, subject)
-    os.makedirs(corr_temp_dir, exist_ok=True)
+    # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
+    for normalization in normalizations:
+        print('{}, computing inter-run correlation...'.format(subject))
+        # make extension folders
+        corr_temp_dir = "{}/{}/derivatives/temp_data/{}_corr".format(main_dir, project_dir, subject)
+        os.makedirs(corr_temp_dir, exist_ok=True)
     
-    # Find all the filtered files 
-    preproc_fns = []
-    for format_, extension in zip(formats, extensions):
-        list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
-            main_dir, project_dir, subject, format_, 
-            preproc_prep, filtering, normalization, 
-            extension))
-        preproc_fns.extend(list_)
+        # Find all the filtered files 
+        preproc_fns = []
+        for format_, extension in zip(formats, extensions):
+            list_ = glob.glob("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/*_*.{}".format(
+                main_dir, project_dir, subject, format_, 
+                preproc_prep, filtering, normalization, 
+                extension))
+            preproc_fns.extend(list_)
     
-    # Split filtered files  depending of their nature
-    preproc_fsnative_hemi_L, preproc_fsnative_hemi_R, preproc_170k = [], [], []
-    for subtype in preproc_fns:
-        if "hemi-L" in subtype:
-            preproc_fsnative_hemi_L.append(subtype)
-        elif "hemi-R" in subtype:
-            preproc_fsnative_hemi_R.append(subtype)
-        elif "170k" in subtype:
-            preproc_170k.append(subtype)
+        # Split filtered files  depending of their nature
+        preproc_fsnative_hemi_L, preproc_fsnative_hemi_R, preproc_170k = [], [], []
+        for subtype in preproc_fns:
+            if "hemi-L" in subtype:
+                preproc_fsnative_hemi_L.append(subtype)
+            elif "hemi-R" in subtype:
+                preproc_fsnative_hemi_R.append(subtype)
+            elif "170k" in subtype:
+                preproc_170k.append(subtype)
             
-    preproc_files_list = [preproc_fsnative_hemi_L,
-                          preproc_fsnative_hemi_R,
-                          preproc_170k]
+        preproc_files_list = [preproc_fsnative_hemi_L,
+                              preproc_fsnative_hemi_R,
+                              preproc_170k]
     
-    # Inter-run correlations    
-    for preproc_files in preproc_files_list:
-        for task in tasks:
-            # Defind output files names 
-            preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
+        # Inter-run correlations    
+        for preproc_files in preproc_files_list:
+            for task in tasks:
+                # Defind output files names 
+                preproc_files_task = [file for file in preproc_files if 'task-{}'.format(task) in file]
 
-            print(task, len(preproc_files_task), preproc_files_task)
+                print(task, len(preproc_files_task), preproc_files_task)
 
-            if not preproc_files_task or len(preproc_files_task) < 2:
-                print('No, or only onefiles for {}'.format(task))
-                continue
+                if not preproc_files_task or len(preproc_files_task) < 2:
+                    print('No, or only onefiles for {}'.format(task))
+                    continue
             
-            if preproc_files_task[0].find('hemi-L') != -1: hemi = 'hemi-L'
-            elif preproc_files_task[0].find('hemi-R') != -1: hemi = 'hemi-R'
-            else: hemi = None
+                if preproc_files_task[0].find('hemi-L') != -1: hemi = 'hemi-L'
+                elif preproc_files_task[0].find('hemi-R') != -1: hemi = 'hemi-R'
+                else: hemi = None
     
-            # Load preproc files to have meta and header
-            preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
+                # Load preproc files to have meta and header
+                preproc_img, preproc_data = load_surface(fn=preproc_files_task[0])
             
-            # Compute the combination 
-            combis = list(it.combinations(preproc_files_task, 2))
+                # Compute the combination 
+                combis = list(it.combinations(preproc_files_task, 2))
     
-            # Load data and compute the correlations
-            corr_stats_fns = []
-            for combi_num, combi in enumerate(combis):
-                a_img, a_data = load_surface(fn=combi[0])
-                b_img, b_data = load_surface(fn=combi[1])
-                combi_task_corr = linear_regression_surf(bold_signal=a_data, 
-                                                          model_prediction=b_data,
-                                                          correction='fdr_tsbh',
-                                                          alpha=fdr_alpha)
+                # Load data and compute the correlations
+                corr_stats_fns = []
+                for combi_num, combi in enumerate(combis):
+                    a_img, a_data = load_surface(fn=combi[0])
+                    b_img, b_data = load_surface(fn=combi[1])
+                    combi_task_corr = linear_regression_surf(bold_signal=a_data, 
+                                                              model_prediction=b_data,
+                                                              correction='fdr_tsbh',
+                                                              alpha=fdr_alpha)
                 
-                # Save combi files in temp_data
-                if hemi: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr-combi-{}_bold.func.gii".format(
-                    corr_temp_dir, subject, task, hemi, 
-                    preproc_prep, filtering, normalization, 
-                    combi_num)
-                else: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_corr-combi-{}_bold.dtseries.nii".format(
-                    corr_temp_dir, subject, task, 
-                    preproc_prep, filtering, normalization, 
-                    combi_num)
+                    # Save combi files in temp_data
+                    if hemi: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr-combi-{}_bold.func.gii".format(
+                        corr_temp_dir, subject, task, hemi, 
+                        preproc_prep, filtering, normalization, 
+                        combi_num)
+                    else: combi_corr_fn = "{}/{}_task-{}_{}_{}_{}_corr-combi-{}_bold.dtseries.nii".format(
+                        corr_temp_dir, subject, task, 
+                        preproc_prep, filtering, normalization, 
+                        combi_num)
     
-                print("Combi corr save: {}".format(combi_corr_fn))
-                corr_stats_fns.append(combi_corr_fn)
-                combi_corr_img = make_surface_image(data=combi_task_corr,
+                    print("Combi corr save: {}".format(combi_corr_fn))
+                    corr_stats_fns.append(combi_corr_fn)
+                    combi_corr_img = make_surface_image(data=combi_task_corr,
+                                                  source_img=preproc_img, 
+                                                  maps_names=maps_names)
+                    nb.save(combi_corr_img, combi_corr_fn)
+                
+                # Median
+                corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fns[0])
+                corr_stats_data_median = np.zeros(corr_stats_data.shape)
+            
+                for n_run, corr_stats_fn in enumerate(corr_stats_fns):
+                    # Load data 
+                    corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fn)
+        
+                    # median
+                    if n_run == 0: corr_stats_data_median = np.copy(corr_stats_data)
+                    else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]),
+                                                                axis=0)
+            
+                # Compute two sided corrected p-values
+                t_statistic = corr_stats_data_median[slope_idx, :] / corr_stats_data_median[stderr_idx, :]
+                degrees_of_freedom = corr_stats_data_median[trs_idx, 0] - 2 
+                p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                            correction='fdr_tsbh', 
+                                                            alpha=fdr_alpha)
+                corr_stats_data_median[pvalue_idx, :] = p_values
+                corr_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+                corr_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+
+                # Export result
+                if hemi:
+                    corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/{}_{}_{}_corr/".format(
+                        main_dir, project_dir, subject, 
+                        preproc_prep, filtering, normalization)
+                    os.makedirs(corr_dir, exist_ok=True)
+                    cor_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr_bold.func.gii".format(
+                        corr_dir, subject, task, hemi,
+                        preproc_prep, filtering, normalization)
+                else:
+                    corr_dir = "{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr/".format(
+                        main_dir, project_dir, subject, 
+                        preproc_prep, filtering, normalization)   
+                    os.makedirs(corr_dir, exist_ok=True)
+                    cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                        corr_dir, subject, task, 
+                        preproc_prep, filtering, normalization)
+    
+                print("Corr save: {}".format(cor_fn))
+                corr_img = make_surface_image(data=corr_stats_data_median,
                                               source_img=preproc_img, 
                                               maps_names=maps_names)
-                nb.save(combi_corr_img, combi_corr_fn)
-                
-            # Median
-            corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fns[0])
-            corr_stats_data_median = np.zeros(corr_stats_data.shape)
-            
-            for n_run, corr_stats_fn in enumerate(corr_stats_fns):
-                # Load data 
-                corr_stats_img, corr_stats_data = load_surface(fn=corr_stats_fn)
-        
-                # median
-                if n_run == 0: corr_stats_data_median = np.copy(corr_stats_data)
-                else: corr_stats_data_median = np.nanmedian(np.array([corr_stats_data_median, corr_stats_data]),
-                                                            axis=0)
-            
-            # Compute two sided corrected p-values
-            t_statistic = corr_stats_data_median[slope_idx, :] / corr_stats_data_median[stderr_idx, :]
-            degrees_of_freedom = corr_stats_data_median[trs_idx, 0] - 2 
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-            corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                        correction='fdr_tsbh', 
-                                                        alpha=fdr_alpha)
-            corr_stats_data_median[pvalue_idx, :] = p_values
-            corr_stats_data_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            corr_stats_data_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
-
-            # Export result
-            if hemi:
-                corr_dir = "{}/{}/derivatives/pp_data/{}/fsnative/corr/{}_{}_{}_corr/".format(
-                    main_dir, project_dir, subject, 
-                    preproc_prep, filtering, normalization)
-                os.makedirs(corr_dir, exist_ok=True)
-                cor_fn = "{}/{}_task-{}_{}_{}_{}_{}_corr_bold.func.gii".format(
-                    corr_dir, subject, task, hemi,
-                    preproc_prep, filtering, normalization)
-            else:
-                corr_dir = "{}/{}/derivatives/pp_data/{}/170k/corr/{}_{}_{}_corr/".format(
-                    main_dir, project_dir, subject, 
-                    preproc_prep, filtering, normalization)   
-                os.makedirs(corr_dir, exist_ok=True)
-                cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                    corr_dir, subject, task, 
-                    preproc_prep, filtering, normalization)
+                nb.save(corr_img, cor_fn)
     
-            print("Corr save: {}".format(cor_fn))
-            corr_img = make_surface_image(data=corr_stats_data_median,
-                                          source_img=preproc_img, 
-                                          maps_names=maps_names)
-            nb.save(corr_img, cor_fn)
-    
-    print('Deleting temp directory: {}'.format(corr_temp_dir))
-    os.system("rm -Rfd {}".format(corr_temp_dir))
+        print('Deleting temp directory: {}'.format(corr_temp_dir))
+        os.system("rm -Rfd {}".format(corr_temp_dir))
 
 elif subject == 'template_avg':
-    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
-        print('{}, Median corr across subject...'. format(averaging_template_name))
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+            print('{}, Median corr across subject...'. format(averaging_template_name))
         
-        # find all the subject correlations
-        for task in tasks:
-            subjects_task_corr = []
+            # find all the subject correlations
+            for task in tasks:
+                subjects_task_corr = []
 
-            for subject in subjects: 
-                corr_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
-                    main_dir, project_dir, subject, averaging_template_format,
-                    preproc_prep, filtering, normalization)
-                subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                    corr_dir, subject, task, preproc_prep, filtering, normalization)]
+                for subject in subjects: 
+                    corr_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr'.format(
+                        main_dir, project_dir, subject, averaging_template_format,
+                        preproc_prep, filtering, normalization)
+                    subjects_task_corr += ["{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                        corr_dir, subject, task, preproc_prep, filtering, normalization)]
     
             
-            # median across subject
-            img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
+                # median across subject
+                img, data_task_corr_median = median_subject_template(fns=subjects_task_corr)
             
-            # Compute two sided corrected p-values
-            t_statistic = data_task_corr_median[slope_idx, :] / data_task_corr_median[stderr_idx, :]
-            degrees_of_freedom = data_task_corr_median[trs_idx, 0] - 2 
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-            corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                       correction='fdr_tsbh', 
-                                                       alpha=fdr_alpha)
-            data_task_corr_median[pvalue_idx, :] = p_values
-            data_task_corr_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                # Compute two sided corrected p-values
+                t_statistic = data_task_corr_median[slope_idx, :] / data_task_corr_median[stderr_idx, :]
+                degrees_of_freedom = data_task_corr_median[trs_idx, 0] - 2 
+                p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                           correction='fdr_tsbh', 
+                                                           alpha=fdr_alpha)
+                data_task_corr_median[pvalue_idx, :] = p_values
+                data_task_corr_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+                data_task_corr_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                 
-            # Export results
-            template_cor_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(main_dir, project_dir, averaging_template_name, averaging_template_format, preproc_prep, filtering, normalization)
+                # Export results
+                template_cor_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(main_dir, project_dir, averaging_template_name, averaging_template_format, preproc_prep, filtering, normalization)
 
-            os.makedirs(template_cor_dir, exist_ok=True)
+                os.makedirs(template_cor_dir, exist_ok=True)
             
-            template_cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
-                template_cor_dir, averaging_template_name, task, preproc_prep, filtering, normalization)
+                template_cor_fn = "{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii".format(
+                    template_cor_dir, averaging_template_name, task, preproc_prep, filtering, normalization)
             
-            print("save: {}".format(template_cor_fn))
-            template_corr_img = make_surface_image(
-                data=data_task_corr_median, source_img=img, maps_names=maps_names)
-            nb.save(template_corr_img, template_cor_fn)
+                print("save: {}".format(template_cor_fn))
+                template_corr_img = make_surface_image(
+                    data=data_task_corr_median, source_img=img, maps_names=maps_names)
+                nb.save(template_corr_img, template_cor_fn)
 
 # Time
 end_time = datetime.datetime.now()

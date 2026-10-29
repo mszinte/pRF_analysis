@@ -96,13 +96,16 @@ rois_methods = analysis_info['rois_methods']
 ecc_threshold = analysis_info['corr_ecc_th']
 size_threshold = analysis_info['corr_size_th']
 rsqr_threshold = analysis_info['corr_rsqr_th']
-amplitude_threshold = analysis_info['corr_prf_amp_th']
+# [NORMALIZATION] corr_prf_amp_th is now a dict {normalization: [min, max]}, picked inside the normalization loop
+# AVANT : amplitude_threshold = analysis_info['corr_prf_amp_th']
 stats_threshold = analysis_info['corr_stats_th']
 n_threshold = analysis_info['corr_n_th']
 
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_to_plot = analysis_info['rois_to_plot']
 
@@ -136,253 +139,257 @@ else:
         subjects_to_group = analysis_info['group-control']
 
 # Main loop
-for avg_method in avg_methods:
-    if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
-    else: rsq2use = 'prf_rsq'
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] amplitude threshold of the current normalization
+    amplitude_threshold = analysis_info['corr_prf_amp_th'][normalization]
+    for avg_method in avg_methods:
+        if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
+        else: rsq2use = 'prf_rsq'
 
-    for format_, extension in zip(formats, extensions):
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+        for format_, extension in zip(formats, extensions):
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_eyes_names in prf_tasks_eyes_names:
+                for prf_task_eyes_names in prf_tasks_eyes_names:
 
-                fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
-                    prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
+                        prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                # Individual subject analysis
-                # ---------------------------
-                if 'group' not in subject:
+                    # Individual subject analysis
+                    # ---------------------------
+                    if 'group' not in subject:
 
-                    data_task_eye = {}
-                    for prf_task_eye_name in prf_task_eyes_names:
+                        data_task_eye = {}
+                        for prf_task_eye_name in prf_task_eyes_names:
 
-                        print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
+                            print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
 
-                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject, format_)
+                            tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subject, format_)
 
-                        if not os.path.isdir(tsv_dir):
-                            print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
-                            continue
+                            if not os.path.isdir(tsv_dir):
+                                print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                                continue
 
-                        fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
-                            prf_task_eye_name, preproc_prep, filtering,
-                            normalization, avg_method, rois_method_format)
-                        tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
-                        data = pd.read_table(tsv_fn, sep="\t")
+                            fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
+                                prf_task_eye_name, preproc_prep, filtering,
+                                normalization, avg_method, rois_method_format)
+                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
+                            data = pd.read_table(tsv_fn, sep="\t")
 
-                        # Threshold data (replace by nan)
-                        if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                        elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                        data.loc[(data.amplitude < amplitude_threshold[0]) |
-                                 (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
-                                 (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
-                                 (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
-                                 (data[rsq2use] < rsqr_threshold) |
-                                 (data[stats_col] > stats_threshold) | 
-                                 (~data[rois_to_plot].isin(rois))] = np.nan
-                        data = data.dropna()
-                        data = data.reset_index(drop=True)
+                            # Threshold data (replace by nan)
+                            if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                            elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                            data.loc[(data.amplitude < amplitude_threshold[0]) |
+                                     (data.prf_ecc < ecc_threshold[0]) | (data.prf_ecc > ecc_threshold[1]) |
+                                     (data.prf_size < size_threshold[0]) | (data.prf_size > size_threshold[1]) |
+                                     (data.prf_n < n_threshold[0]) | (data.prf_n > n_threshold[1]) |
+                                     (data[rsq2use] < rsqr_threshold) |
+                                     (data[stats_col] > stats_threshold) | 
+                                     (~data[rois_to_plot].isin(rois))] = np.nan
+                            data = data.dropna()
+                            data = data.reset_index(drop=True)
 
-                        # Store original task name for traceability
-                        data['task_eye_name'] = prf_task_eye_name
+                            # Store original task name for traceability
+                            data['task_eye_name'] = prf_task_eye_name
 
-                        # Get eye_val
-                        if 'RightEye' in prf_task_eye_name:
-                            eye_val = 'right eye'
-                        elif 'LeftEye' in prf_task_eye_name:
-                            eye_val = 'left eye'
-                        data['eye_val'] = eye_val
+                            # Get eye_val
+                            if 'RightEye' in prf_task_eye_name:
+                                eye_val = 'right eye'
+                            elif 'LeftEye' in prf_task_eye_name:
+                                eye_val = 'left eye'
+                            data['eye_val'] = eye_val
 
-                        # Get eye_type
-                        if subject_group == 'patient':
-                            amblyopic_side = amblyopic_eye[0]
-                            if eye_val == 'right eye' and amblyopic_side == 'R':
-                                eye_type = 'amblyopic eye'
-                            elif eye_val == 'right eye' and amblyopic_side == 'L':
-                                eye_type = 'fellow eye'
-                            elif eye_val == 'left eye' and amblyopic_side == 'L':
-                                eye_type = 'amblyopic eye'
-                            elif eye_val == 'left eye' and amblyopic_side == 'R':
-                                eye_type = 'fellow eye'
-                        elif subject_group == 'control':
-                            eye_type = eye_val
-                        data['eye_type'] = eye_type
+                            # Get eye_type
+                            if subject_group == 'patient':
+                                amblyopic_side = amblyopic_eye[0]
+                                if eye_val == 'right eye' and amblyopic_side == 'R':
+                                    eye_type = 'amblyopic eye'
+                                elif eye_val == 'right eye' and amblyopic_side == 'L':
+                                    eye_type = 'fellow eye'
+                                elif eye_val == 'left eye' and amblyopic_side == 'L':
+                                    eye_type = 'amblyopic eye'
+                                elif eye_val == 'left eye' and amblyopic_side == 'R':
+                                    eye_type = 'fellow eye'
+                            elif subject_group == 'control':
+                                eye_type = eye_val
+                            data['eye_type'] = eye_type
 
-                        # Merge two eyes
-                        if len(data_task_eye) == 0:
-                            data_task_eye['first'] = data.copy()
-                            first_eye_type = eye_type
-                        else:
-                            second_eye_type = eye_type
-
-                            if first_eye_type in ['amblyopic eye', 'right eye']:
-                                suffix1, suffix2 = '_AE-RE', '_FE-LE'
+                            # Merge two eyes
+                            if len(data_task_eye) == 0:
+                                data_task_eye['first'] = data.copy()
+                                first_eye_type = eye_type
                             else:
-                                data_task_eye['first'], data = data, data_task_eye['first']
-                                suffix1, suffix2 = '_AE-RE', '_FE-LE'
+                                second_eye_type = eye_type
 
-                            # Reassign eye_val and eye_type after potential swap
-                            data_task_eye['first'].loc[:, 'eye_val'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
-                            data_task_eye['first'].loc[:, 'eye_type'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
-                            data.loc[:, 'eye_val'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
-                            data.loc[:, 'eye_type'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
+                                if first_eye_type in ['amblyopic eye', 'right eye']:
+                                    suffix1, suffix2 = '_AE-RE', '_FE-LE'
+                                else:
+                                    data_task_eye['first'], data = data, data_task_eye['first']
+                                    suffix1, suffix2 = '_AE-RE', '_FE-LE'
 
-                            data = pd.merge(data_task_eye['first'], data,
-                                            on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
-                                            suffixes=(suffix1, suffix2))
+                                # Reassign eye_val and eye_type after potential swap
+                                data_task_eye['first'].loc[:, 'eye_val'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
+                                data_task_eye['first'].loc[:, 'eye_type'] = 'amblyopic eye' if subject_group == 'patient' else 'right eye'
+                                data.loc[:, 'eye_val'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
+                                data.loc[:, 'eye_type'] = 'fellow eye' if subject_group == 'patient' else 'left eye'
 
-                    # Save the merged two-eye TSV
-                    output_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec_combined)
-                    data.to_csv(output_fn, sep='\t', index=False)
-                    print(f"Saving: {output_fn}")
+                                data = pd.merge(data_task_eye['first'], data,
+                                                on=['num_vert', 'roi', 'roi_mmp', 'subject', 'hemi', 'trs'],
+                                                suffixes=(suffix1, suffix2))
 
-                    # PARAMETER CORRELATIONS — WEIGHTED 2D KDE + REGRESSION STATS
-                    # -------------------------------------------------------------
-                    from scipy.stats import pearsonr
-                    for corr_param in corr_params:
+                        # Save the merged two-eye TSV
+                        output_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec_combined)
+                        data.to_csv(output_fn, sep='\t', index=False)
+                        print(f"Saving: {output_fn}")
 
-                        param_range = corr_param_ranges[corr_param]
-                        x_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
-                        y_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
-                        xx, yy = np.meshgrid(x_grid, y_grid)
-                        grid_points = np.vstack([xx.ravel(), yy.ravel()])
+                        # PARAMETER CORRELATIONS — WEIGHTED 2D KDE + REGRESSION STATS
+                        # -------------------------------------------------------------
+                        from scipy.stats import pearsonr
+                        for corr_param in corr_params:
 
-                        df_reg_rows = []
-                        for num_roi, roi in enumerate(rois):
-                            df_roi = data.loc[(data[rois_to_plot] == roi)].copy()
-                            x_vals = df_roi[f'{corr_param}_FE-LE'].values
-                            y_vals = df_roi[f'{corr_param}_AE-RE'].values
-                            r2_ae = df_roi[f'{rsq2use}_AE-RE'].values
-                            r2_fe = df_roi[f'{rsq2use}_FE-LE'].values
-                            r2_combined = (r2_ae + r2_fe) / 2
-                            # Remove NaNs
-                            mask = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
-                            x_vals = x_vals[mask]
-                            y_vals = y_vals[mask]
-                            r2_combined = r2_combined[mask]
-                            n_vertex = len(x_vals)
-                            mean_r2_weight = np.nanmean(r2_combined) if n_vertex > 0 else np.nan
+                            param_range = corr_param_ranges[corr_param]
+                            x_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
+                            y_grid = np.linspace(param_range[0], param_range[1], corr_grid_size)
+                            xx, yy = np.meshgrid(x_grid, y_grid)
+                            grid_points = np.vstack([xx.ravel(), yy.ravel()])
+
+                            df_reg_rows = []
+                            for num_roi, roi in enumerate(rois):
+                                df_roi = data.loc[(data[rois_to_plot] == roi)].copy()
+                                x_vals = df_roi[f'{corr_param}_FE-LE'].values
+                                y_vals = df_roi[f'{corr_param}_AE-RE'].values
+                                r2_ae = df_roi[f'{rsq2use}_AE-RE'].values
+                                r2_fe = df_roi[f'{rsq2use}_FE-LE'].values
+                                r2_combined = (r2_ae + r2_fe) / 2
+                                # Remove NaNs
+                                mask = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
+                                x_vals = x_vals[mask]
+                                y_vals = y_vals[mask]
+                                r2_combined = r2_combined[mask]
+                                n_vertex = len(x_vals)
+                                mean_r2_weight = np.nanmean(r2_combined) if n_vertex > 0 else np.nan
                         
-                            if n_vertex > 1:
-                                # Normalize weights
-                                r2_norm = r2_combined / r2_combined.sum()
-                                # Compute weighted 2D KDE
-                                # kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
-                                try:
-                                    kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
-                                    density = kde(grid_points).reshape(corr_grid_size, corr_grid_size)
-                                except np.linalg.LinAlgError:
-                                    density = np.full(corr_grid_size * corr_grid_size, np.nan).reshape(corr_grid_size, corr_grid_size)
-                            else:
-                                r2_norm = np.array([])
-                                density = np.full(corr_grid_size * corr_grid_size, np.nan)
+                                if n_vertex > 1:
+                                    # Normalize weights
+                                    r2_norm = r2_combined / r2_combined.sum()
+                                    # Compute weighted 2D KDE
+                                    # kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                                    try:
+                                        kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                                        density = kde(grid_points).reshape(corr_grid_size, corr_grid_size)
+                                    except np.linalg.LinAlgError:
+                                        density = np.full(corr_grid_size * corr_grid_size, np.nan).reshape(corr_grid_size, corr_grid_size)
+                                else:
+                                    r2_norm = np.array([])
+                                    density = np.full(corr_grid_size * corr_grid_size, np.nan)
                         
-                            # Save KDE as long-format dataframe
-                            df_kde_roi = pd.DataFrame({
-                                'roi': roi,
-                                'x_grid': xx.ravel(),
-                                'y_grid': yy.ravel(),
-                                'density': density.ravel()
-                            })
-                            if num_roi == 0: df_kde = df_kde_roi
-                            else: df_kde = pd.concat([df_kde, df_kde_roi])
+                                # Save KDE as long-format dataframe
+                                df_kde_roi = pd.DataFrame({
+                                    'roi': roi,
+                                    'x_grid': xx.ravel(),
+                                    'y_grid': yy.ravel(),
+                                    'density': density.ravel()
+                                })
+                                if num_roi == 0: df_kde = df_kde_roi
+                                else: df_kde = pd.concat([df_kde, df_kde_roi])
                         
-                            # Deming regression + stats
-                            if n_vertex > 2:
-                                weights = r2_norm
-                                x_mean = np.sum(weights * x_vals)
-                                y_mean = np.sum(weights * y_vals)
-                                sxx = np.sum(weights * (x_vals - x_mean) ** 2)
-                                syy = np.sum(weights * (y_vals - y_mean) ** 2)
-                                sxy = np.sum(weights * (x_vals - x_mean) * (y_vals - y_mean))
-                                slope = (syy - sxx + np.sqrt((syy - sxx) ** 2 + 4 * sxy ** 2)) / (2 * sxy)
-                                intercept = y_mean - slope * x_mean
-                                r_val, p_val = pearsonr(x_vals, y_vals)
-                                r2_pearson = r_val ** 2
-                            else:
-                                slope = np.nan
-                                intercept = np.nan
-                                r2_pearson = np.nan
-                                p_val = np.nan
-                            df_reg_rows.append({
-                                'roi': roi,
-                                'slope': slope,
-                                'intercept': intercept,
-                                'r2_pearson': r2_pearson,
-                                'p_value': p_val,
-                                'n_vertex': n_vertex,
-                                'mean_r2_weight': mean_r2_weight
-                            })
+                                # Deming regression + stats
+                                if n_vertex > 2:
+                                    weights = r2_norm
+                                    x_mean = np.sum(weights * x_vals)
+                                    y_mean = np.sum(weights * y_vals)
+                                    sxx = np.sum(weights * (x_vals - x_mean) ** 2)
+                                    syy = np.sum(weights * (y_vals - y_mean) ** 2)
+                                    sxy = np.sum(weights * (x_vals - x_mean) * (y_vals - y_mean))
+                                    slope = (syy - sxx + np.sqrt((syy - sxx) ** 2 + 4 * sxy ** 2)) / (2 * sxy)
+                                    intercept = y_mean - slope * x_mean
+                                    r_val, p_val = pearsonr(x_vals, y_vals)
+                                    r2_pearson = r_val ** 2
+                                else:
+                                    slope = np.nan
+                                    intercept = np.nan
+                                    r2_pearson = np.nan
+                                    p_val = np.nan
+                                df_reg_rows.append({
+                                    'roi': roi,
+                                    'slope': slope,
+                                    'intercept': intercept,
+                                    'r2_pearson': r2_pearson,
+                                    'p_value': p_val,
+                                    'n_vertex': n_vertex,
+                                    'mean_r2_weight': mean_r2_weight
+                                })
 
-                        # Save KDE TSV
-                        tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
-                        print('Saving tsv: {}'.format(tsv_fn))
-                        df_kde.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+                            # Save KDE TSV
+                            tsv_fn = "{}/{}_{}_{}-corr.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+                            print('Saving tsv: {}'.format(tsv_fn))
+                            df_kde.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-                        # Save regression TSV
-                        df_reg = pd.DataFrame(df_reg_rows)
-                        reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
-                        print('Saving tsv: {}'.format(reg_tsv_fn))
-                        df_reg.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
+                            # Save regression TSV
+                            df_reg = pd.DataFrame(df_reg_rows)
+                            reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(tsv_dir, subject, fn_spec_combined, corr_param)
+                            print('Saving tsv: {}'.format(reg_tsv_fn))
+                            df_reg.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-                # Group analysis
-                # --------------
-                else:
-                    print(f'Group: {subject} - {avg_method} - {format_}')
+                    # Group analysis
+                    # --------------
+                    else:
+                        print(f'Group: {subject} - {avg_method} - {format_}')
 
-                    for corr_param in corr_params:
+                        for corr_param in corr_params:
 
-                        # Load and concatenate individual subject TSVs
-                        for i, subject_to_group in enumerate(subjects_to_group):
-                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subject_to_group, format_)
+                            # Load and concatenate individual subject TSVs
+                            for i, subject_to_group in enumerate(subjects_to_group):
+                                tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                    main_dir, project_dir, subject_to_group, format_)
+                                tsv_fn = "{}/{}_{}_{}-corr.tsv".format(
+                                    tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
+                                df_indiv = pd.read_table(tsv_fn, sep="\t")
+                                if i == 0: df_all = df_indiv.copy()
+                                else: df_all = pd.concat([df_all, df_indiv])
+
+                            # Average density across subjects per roi/grid cell
+                            df_group = df_all.groupby(['roi', 'x_grid', 'y_grid'], sort=False)[['density']].mean().reset_index()
+
+                            # Save group KDE TSV
+                            tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                main_dir, project_dir, subject, format_)
+                            os.makedirs(tsv_dir_group, exist_ok=True)
                             tsv_fn = "{}/{}_{}_{}-corr.tsv".format(
-                                tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
-                            df_indiv = pd.read_table(tsv_fn, sep="\t")
-                            if i == 0: df_all = df_indiv.copy()
-                            else: df_all = pd.concat([df_all, df_indiv])
+                                tsv_dir_group, subject, fn_spec_combined, corr_param)
+                            print('Saving tsv: {}'.format(tsv_fn))
+                            df_group.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
 
-                        # Average density across subjects per roi/grid cell
-                        df_group = df_all.groupby(['roi', 'x_grid', 'y_grid'], sort=False)[['density']].mean().reset_index()
+                            # Group regression — load and average per-subject regression TSVs
+                            for i, subject_to_group in enumerate(subjects_to_group):
+                                tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                                    main_dir, project_dir, subject_to_group, format_)
+                                reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(
+                                    tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
+                                df_reg_indiv = pd.read_table(reg_tsv_fn, sep="\t")
+                                if i == 0: df_reg_all = df_reg_indiv.copy()
+                                else: df_reg_all = pd.concat([df_reg_all, df_reg_indiv])
 
-                        # Save group KDE TSV
-                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject, format_)
-                        os.makedirs(tsv_dir_group, exist_ok=True)
-                        tsv_fn = "{}/{}_{}_{}-corr.tsv".format(
-                            tsv_dir_group, subject, fn_spec_combined, corr_param)
-                        print('Saving tsv: {}'.format(tsv_fn))
-                        df_group.to_csv(tsv_fn, sep="\t", na_rep='NaN', index=False)
+                            # Mean slope and intercept across subjects
+                            df_reg_group = df_reg_all.groupby(['roi'], sort=False)[['slope', 'intercept', 'r2_pearson', 'n_vertex', 'mean_r2_weight']].mean().reset_index()
 
-                        # Group regression — load and average per-subject regression TSVs
-                        for i, subject_to_group in enumerate(subjects_to_group):
-                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subject_to_group, format_)
+                            # CI across subjects (2.5/97.5 percentiles)
+                            for col in ['slope', 'intercept', 'r2_pearson']:
+                                df_reg_group[f'{col}_ci_lower'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.025).reset_index()[col]
+                                df_reg_group[f'{col}_ci_upper'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.975).reset_index()[col]
+
                             reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(
-                                tsv_dir_indiv, subject_to_group, fn_spec_combined, corr_param)
-                            df_reg_indiv = pd.read_table(reg_tsv_fn, sep="\t")
-                            if i == 0: df_reg_all = df_reg_indiv.copy()
-                            else: df_reg_all = pd.concat([df_reg_all, df_reg_indiv])
-
-                        # Mean slope and intercept across subjects
-                        df_reg_group = df_reg_all.groupby(['roi'], sort=False)[['slope', 'intercept', 'r2_pearson', 'n_vertex', 'mean_r2_weight']].mean().reset_index()
-
-                        # CI across subjects (2.5/97.5 percentiles)
-                        for col in ['slope', 'intercept', 'r2_pearson']:
-                            df_reg_group[f'{col}_ci_lower'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.025).reset_index()[col]
-                            df_reg_group[f'{col}_ci_upper'] = df_reg_all.groupby(['roi'], sort=False)[col].quantile(0.975).reset_index()[col]
-
-                        reg_tsv_fn = "{}/{}_{}_{}-regression.tsv".format(
-                            tsv_dir_group, subject, fn_spec_combined, corr_param)
-                        print('Saving tsv: {}'.format(reg_tsv_fn))
-                        df_reg_group.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
+                                tsv_dir_group, subject, fn_spec_combined, corr_param)
+                            print('Saving tsv: {}'.format(reg_tsv_fn))
+                            df_reg_group.to_csv(reg_tsv_fn, sep="\t", na_rep='NaN', index=False)
 
 # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

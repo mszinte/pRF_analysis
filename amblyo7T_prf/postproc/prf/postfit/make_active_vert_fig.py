@@ -70,7 +70,9 @@ extensions = analysis_info['extensions']
 rois_methods = analysis_info['rois_methods']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 
@@ -86,62 +88,64 @@ else:
     subject_group = 'patient' if 'patient' in subject else 'control'
 
 # Main loop
-for avg_method in avg_methods:
-    if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
-    else: rsq2use = 'prf_rsq'
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for avg_method in avg_methods:
+        if 'loo' in avg_method: rsq2use = 'prf_loo_rsq'
+        else: rsq2use = 'prf_rsq'
 
-    for format_, extension in zip(formats, extensions):
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+        for format_, extension in zip(formats, extensions):
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_eyes_names in prf_tasks_eyes_names:
+                for prf_task_eyes_names in prf_tasks_eyes_names:
 
-                fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
-                    prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
+                        prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                print(f'{fn_spec_combined} - {subject}')
+                    print(f'{fn_spec_combined} - {subject}')
 
-                # Define dirs
-                tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                    main_dir, project_dir, subject, format_)
-                fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
-                    main_dir, project_dir, subject, format_)
+                    # Define dirs
+                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                        main_dir, project_dir, subject, format_)
+                    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
+                        main_dir, project_dir, subject, format_)
 
-                if not os.path.isdir(tsv_dir):
-                    print(f"[SKIP] tsv_dir not found: {tsv_dir}")
-                    continue
+                    if not os.path.isdir(tsv_dir):
+                        print(f"[SKIP] tsv_dir not found: {tsv_dir}")
+                        continue
 
-                tsv_active_vert_fn = '{}/{}_{}_active-vert.tsv'.format(
-                    tsv_dir, subject, fn_spec_combined)
+                    tsv_active_vert_fn = '{}/{}_{}_active-vert.tsv'.format(
+                        tsv_dir, subject, fn_spec_combined)
 
-                if not os.path.isfile(tsv_active_vert_fn):
-                    print(f"[SKIP] TSV not found: {tsv_active_vert_fn}")
-                    continue
+                    if not os.path.isfile(tsv_active_vert_fn):
+                        print(f"[SKIP] TSV not found: {tsv_active_vert_fn}")
+                        continue
 
-                os.makedirs(fig_dir, exist_ok=True)
+                    os.makedirs(fig_dir, exist_ok=True)
 
-                df_active_vert = pd.read_table(tsv_active_vert_fn, sep='\t')
-                print(f'Loaded: {tsv_active_vert_fn}')
+                    df_active_vert = pd.read_table(tsv_active_vert_fn, sep='\t')
+                    print(f'Loaded: {tsv_active_vert_fn}')
 
-                # Build figure_info
-                figure_info = analysis_info.copy()
-                figure_info['rois'] = rois
-                figure_info['subject_group'] = subject_group
+                    # Build figure_info
+                    figure_info = analysis_info.copy()
+                    figure_info['rois'] = rois
+                    figure_info['subject_group'] = subject_group
 
-                # Make and save figure
-                fig = eyes_active_vert_plot(df=df_active_vert,
-                                            figure_info=figure_info,
-                                            format_=format_)
+                    # Make and save figure
+                    fig = eyes_active_vert_plot(df=df_active_vert,
+                                                figure_info=figure_info,
+                                                format_=format_)
 
-                fig_fn = "{}/{}_{}_active-vert.pdf".format(fig_dir, subject, fn_spec_combined)
-                print('Saving pdf: {}'.format(fig_fn))
-                fig.write_image(fig_fn)
+                    fig_fn = "{}/{}_{}_active-vert.pdf".format(fig_dir, subject, fn_spec_combined)
+                    print('Saving pdf: {}'.format(fig_fn))
+                    fig.write_image(fig_fn)
 
 # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

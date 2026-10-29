@@ -80,7 +80,9 @@ extensions = analysis_info['extensions']
 task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods'] # selects input type
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
@@ -114,19 +116,21 @@ nvidia-smi""".format(conda_dir=conda_dir, conda_env=conda_env, script_dir=script
  
 # Define fns (filenames)
 pp_fns = []
-for avg_method in avg_methods:
-    for task_name in task_names:
-        print(f"=========================")
-        print(f"Running CSS GPU Fit with: data: {avg_method}, task: {task_name}, dm: {dm_name}, analysis: {analysis_name}")
-        print(f"=========================\n")
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
+# [NORMALIZATION] loop over normalizations: input files of every normalization are collected and submitted
+for normalization in normalizations:
+    for avg_method in avg_methods:
+        for task_name in task_names:
+            print(f"=========================")
+            print(f"Running CSS GPU Fit with: normalization: {normalization}, data: {avg_method}, task: {task_name}, dm: {dm_name}, analysis: {analysis_name}")
+            print(f"=========================\n")
+            dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
+            dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
  
-        # Accumulate the results
-        pp_fns.extend(glob.glob(dct_avg_gii_fns))
-        pp_fns.extend(glob.glob(dct_avg_nii_fns))
+            # Accumulate the results
+            pp_fns.extend(glob.glob(dct_avg_gii_fns))
+            pp_fns.extend(glob.glob(dct_avg_nii_fns))
  
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):

@@ -89,7 +89,9 @@ label_b = cond_b.split("-")[-1].upper() if analysis_type_b == "pmf" else "pRF"
 pmf_tasks = sys.argv[6:8]
 task_a = "pRF" if analysis_type_a == "prf" else (pmf_tasks[0] if pmf_tasks else "SacLoc")
 task_b = "pRF" if analysis_type_b == "prf" else (pmf_tasks[-1] if pmf_tasks else "SacLoc")
-comp_name = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"
+# [NORMALIZATION] comp_name now built inside the normalization loop (comp_name_base + normalization), as in make_corr_tsv.py
+# AVANT : comp_name = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"
+comp_name_base = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"
 axis_name_a = label_a if analysis_type_a == "prf" else f"{task_a} {label_a}"     # e.g. "PurLoc ODM", "pRF"
 axis_name_b = label_b if analysis_type_b == "prf" else f"{task_b} {label_b}"
 
@@ -101,6 +103,9 @@ analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_type_a}
 settings = load_settings([general_settings_path, analysis_settings_path, figure_settings_path])
 analysis_info = settings[0]
 formats = analysis_info["formats"]
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : (ligne ajoutee)
+normalizations = analysis_info["normalization"]
 corr_params = analysis_info["corr_params"]
 corr_param_ranges = {
     'prf_rsq':    analysis_info['prf_rsq_param_range'],
@@ -129,78 +134,82 @@ cell_size = 320
 margin = dict(l=90, r=20, t=20, b=90)
 
 
-for format_ in formats:
-    print(f"\n=== format: {format_} ===")
-    tsv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
-    fig_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/figures"
-    if not os.path.isdir(tsv_dir):
-        print(f"[SKIP] tsv_dir not found: {tsv_dir}")
-        continue
-    os.makedirs(fig_dir, exist_ok=True)
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] normalization added to the comparison name used in every output file name
+    comp_name = f"{comp_name_base}_{normalization}"
+    for format_ in formats:
+        print(f"\n=== format: {format_} ===")
+        tsv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
+        fig_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/figures"
+        if not os.path.isdir(tsv_dir):
+            print(f"[SKIP] tsv_dir not found: {tsv_dir}")
+            continue
+        os.makedirs(fig_dir, exist_ok=True)
 
-    # ── 1. load the KDE + regression tables for every parameter ─────────────────────
-    df_kde_by_param = {}
-    df_reg_parts = []
-    for corr_param in corr_params:
-        kde_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-corr.tsv"
-        reg_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-regression.tsv"
-        df_kde_by_param[corr_param] = pd.read_table(kde_fn)
-        df_reg_p = pd.read_table(reg_fn)
-        df_reg_p.insert(0, "corr_param", corr_param)
-        df_reg_parts.append(df_reg_p)
-    df_reg = pd.concat(df_reg_parts, ignore_index=True)
+        # ── 1. load the KDE + regression tables for every parameter ─────────────────────
+        df_kde_by_param = {}
+        df_reg_parts = []
+        for corr_param in corr_params:
+            kde_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-corr.tsv"
+            reg_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-regression.tsv"
+            df_kde_by_param[corr_param] = pd.read_table(kde_fn)
+            df_reg_p = pd.read_table(reg_fn)
+            df_reg_p.insert(0, "corr_param", corr_param)
+            df_reg_parts.append(df_reg_p)
+        df_reg = pd.concat(df_reg_parts, ignore_index=True)
 
-    print("\n── regression stats (not plotted, for reference) ──")
-    print_cols = [c for c in ["corr_param", "roi", "slope", "r2_pearson", "n_vertex",
-                               "slope_ci_lower", "slope_ci_upper"] if c in df_reg.columns]
-    print(df_reg[print_cols].sort_values(["corr_param", "roi"]).to_string(index=False))
+        print("\n── regression stats (not plotted, for reference) ──")
+        print_cols = [c for c in ["corr_param", "roi", "slope", "r2_pearson", "n_vertex",
+                                   "slope_ci_lower", "slope_ci_upper"] if c in df_reg.columns]
+        print(df_reg[print_cols].sort_values(["corr_param", "roi"]).to_string(index=False))
 
-    # ── 2. build the ROI x parameter grid of KDE-density panels ─────────────────────
-    fig = make_subplots(rows=rows, cols=cols, print_grid=False, horizontal_spacing=hor_spacing, vertical_spacing=ver_spacing)
+        # ── 2. build the ROI x parameter grid of KDE-density panels ─────────────────────
+        fig = make_subplots(rows=rows, cols=cols, print_grid=False, horizontal_spacing=hor_spacing, vertical_spacing=ver_spacing)
 
-    for l, corr_param in enumerate(corr_params):
-        df_kde_p = df_kde_by_param[corr_param]
-        x_grid = np.sort(df_kde_p["x_grid"].unique())
-        y_grid = np.sort(df_kde_p["y_grid"].unique())
-        param_range = corr_param_ranges[corr_param]
+        for l, corr_param in enumerate(corr_params):
+            df_kde_p = df_kde_by_param[corr_param]
+            x_grid = np.sort(df_kde_p["x_grid"].unique())
+            y_grid = np.sort(df_kde_p["y_grid"].unique())
+            param_range = corr_param_ranges[corr_param]
 
-        for j, roi in enumerate(rois):
-            roi_color = roi_colors[roi]
-            r, g, b = [int(v) for v in roi_color.replace("rgb(", "").replace(")", "").split(",")]
-            df_roi = df_kde_p[df_kde_p["roi"] == roi].sort_values(["y_grid", "x_grid"])
-            density = df_roi["density"].values.reshape(len(y_grid), len(x_grid))
-            d_max = np.nanmax(density)
-            density_norm = density / d_max if d_max > 0 else density
+            for j, roi in enumerate(rois):
+                roi_color = roi_colors[roi]
+                r, g, b = [int(v) for v in roi_color.replace("rgb(", "").replace(")", "").split(",")]
+                df_roi = df_kde_p[df_kde_p["roi"] == roi].sort_values(["y_grid", "x_grid"])
+                density = df_roi["density"].values.reshape(len(y_grid), len(x_grid))
+                d_max = np.nanmax(density)
+                density_norm = density / d_max if d_max > 0 else density
 
-            line_xy = np.linspace(param_range[0], param_range[1], 50)
-            fig.add_trace(go.Scatter(x=line_xy, y=line_xy, mode="lines",
-                          line=dict(color="black", width=2, dash="dash"),
-                          opacity=0.5, showlegend=False), row=j + 1, col=l + 1)
-            fig.add_trace(go.Contour(
-                x=x_grid, y=y_grid, z=density_norm,
-                colorscale=[[0, f"rgba({r},{g},{b},0)"], [1, f"rgba({r},{g},{b},1)"]],
-                showscale=False,
-                contours=dict(coloring="fill", showlines=False, start=0.05, end=1.0, size=0.05),
-                zmin=0, zmax=1), row=j + 1, col=l + 1)
+                line_xy = np.linspace(param_range[0], param_range[1], 50)
+                fig.add_trace(go.Scatter(x=line_xy, y=line_xy, mode="lines",
+                              line=dict(color="black", width=2, dash="dash"),
+                              opacity=0.5, showlegend=False), row=j + 1, col=l + 1)
+                fig.add_trace(go.Contour(
+                    x=x_grid, y=y_grid, z=density_norm,
+                    colorscale=[[0, f"rgba({r},{g},{b},0)"], [1, f"rgba({r},{g},{b},1)"]],
+                    showscale=False,
+                    contours=dict(coloring="fill", showlines=False, start=0.05, end=1.0, size=0.05),
+                    zmin=0, zmax=1), row=j + 1, col=l + 1)
 
-            reg_row = df_reg[(df_reg["corr_param"] == corr_param) & (df_reg["roi"] == roi)]
-            n_vertex = int(reg_row["n_vertex"].values[0]) if len(reg_row) and not np.isnan(reg_row["n_vertex"].values[0]) else 0
-            fig.add_annotation(x=param_range[1] - 0.05 * (param_range[1] - param_range[0]),y=param_range[0] + 0.05 * (param_range[1] - param_range[0]),text=f"{roi}",
-                               xanchor="right", yanchor="bottom",showarrow=False, font=dict(color=roi_color, size=14), row=j + 1, col=l + 1)
-            x_title = f"{axis_name_a} – {axis_labels[corr_param]}" if j == rows - 1 else ""
-            fig.update_xaxes(title_text=x_title, range=param_range, showline=True, title_font=dict(color="black", family="Rockwell", size=20), row=j + 1, col=l + 1)
-            fig.update_yaxes(title_text=f"{axis_name_b} – {axis_labels[corr_param]}", range=param_range,showline=True, title_font=dict(color="black", family="Rockwell", size=20), title_standoff=0, row=j + 1, col=l + 1)
-            idx = j * cols + l + 1
-            x_ref = "x" if idx == 1 else f"x{idx}"
-            fig.update_yaxes(scaleanchor=x_ref, scaleratio=1, row=j + 1, col=l + 1)
+                reg_row = df_reg[(df_reg["corr_param"] == corr_param) & (df_reg["roi"] == roi)]
+                n_vertex = int(reg_row["n_vertex"].values[0]) if len(reg_row) and not np.isnan(reg_row["n_vertex"].values[0]) else 0
+                fig.add_annotation(x=param_range[1] - 0.05 * (param_range[1] - param_range[0]),y=param_range[0] + 0.05 * (param_range[1] - param_range[0]),text=f"{roi}",
+                                   xanchor="right", yanchor="bottom",showarrow=False, font=dict(color=roi_color, size=14), row=j + 1, col=l + 1)
+                x_title = f"{axis_name_a} – {axis_labels[corr_param]}" if j == rows - 1 else ""
+                fig.update_xaxes(title_text=x_title, range=param_range, showline=True, title_font=dict(color="black", family="Rockwell", size=20), row=j + 1, col=l + 1)
+                fig.update_yaxes(title_text=f"{axis_name_b} – {axis_labels[corr_param]}", range=param_range,showline=True, title_font=dict(color="black", family="Rockwell", size=20), title_standoff=0, row=j + 1, col=l + 1)
+                idx = j * cols + l + 1
+                x_ref = "x" if idx == 1 else f"x{idx}"
+                fig.update_yaxes(scaleanchor=x_ref, scaleratio=1, row=j + 1, col=l + 1)
 
-    fig.update_layout(
-        template = "simple_white",
-        width=fig_width + margin["l"] + margin["r"],
-        height=fig_height + margin["t"] + margin["b"],
-        margin=margin, showlegend=False, plot_bgcolor="white",font=dict(family="Rockwell", size=22),
-    )
+        fig.update_layout(
+            template = "simple_white",
+            width=fig_width + margin["l"] + margin["r"],
+            height=fig_height + margin["t"] + margin["b"],
+            margin=margin, showlegend=False, plot_bgcolor="white",font=dict(family="Rockwell", size=22),
+        )
 
-    out_path = os.path.join(fig_dir, f"{subject}_{comp_name}_corr.pdf")
-    fig.write_image(out_path)
-    print(f"Saved correlation plot -> {out_path}")
+        out_path = os.path.join(fig_dir, f"{subject}_{comp_name}_corr.pdf")
+        fig.write_image(out_path)
+        print(f"Saved correlation plot -> {out_path}")

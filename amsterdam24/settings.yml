@@ -60,8 +60,12 @@ ending_TR:
   value: 3
 
 normalization: 
-  description : "Name of the preprocessing normalization step (e.g. z-score, %-change)"
-  value: "z-score"
+  # [NORMALIZATION] value is now a LIST: every script loops over it.
+  # Allowed labels: "z-score", "psc" (percent signal change), "raw" (high-pass filtered only).
+  # Labels must not contain "_" (filenames are split on "_").
+  # AVANT : value: "z-score"
+  description : "List of preprocessing normalizations to compute/analyse (z-score, psc, raw)"
+  value: ["z-score"]
 
 filtering:
   description: "Name of the preprocessing high-pass filtering step (e.g. dct for discrete cosine transform)"

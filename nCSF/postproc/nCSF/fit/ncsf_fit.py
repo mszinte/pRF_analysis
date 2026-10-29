@@ -24,7 +24,7 @@ python ncsf_fit.py [main directory] [project name] [subject name]
 -----------------------------------------------------------------------------------------
 Exemple:
 cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/fit
-python ncsf_fit.py /scratch/mszinte/data nCSF sub-01 /scratch/mszinte/data/nCSF/derivatives/pp_data/sub-01/fsnative/func/fmriprep_dct_z-score_avg/sub-01_task-nCSF_hemi-R_fmriprep_dct_z-score_avg_bold.func.gii 16  
+python ncsf_fit.py /scratch/mszinte/data nCSF sub-01 /scratch/mszinte/data/nCSF/derivatives/pp_data/sub-01/fsnative/func/fmriprep_dct_{normalization}_avg/sub-01_task-nCSF_hemi-R_fmriprep_dct_{normalization}_avg_bold.func.gii 16  
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 and Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -190,6 +190,8 @@ csenf_fitter = CSenFFitter(data=data.T,
                            model=csenf_model, 
                            n_jobs=n_jobs)
 
+# [NORMALIZATION] TODO: amp_1 and bold_baseline bounds below are hard-coded for z-scored data;
+# to fit psc/raw data they should be moved to prf-analysis.yml as {normalization: bounds} dicts (as in prf_cssfit.py)
 ncsf_bounds = {
     'width_r'       : [0, 1.5],          
     'SFp'           : [sf_filtCenters[1], int(sf_maxFreq/2)],

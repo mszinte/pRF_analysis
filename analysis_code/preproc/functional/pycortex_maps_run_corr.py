@@ -69,7 +69,9 @@ tasks = analysis_info['task_names']
 maps_names_corr = analysis_info['maps_names_corr']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 corr_scale = analysis_info['flatmap_corr_scale']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
 
@@ -85,108 +87,110 @@ for idx, col_name in enumerate(maps_names_corr):
     exec("{}_idx = idx".format(col_name))
 
 # Plot scales
-for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
-    corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
-        main_dir, project_dir, subject, format_,
-        preproc_prep, filtering, normalization)
-    if not os.path.isdir(corr_dir):
-        print(f"[SKIP] corr_dir not found for format={format_}: {corr_dir}")
-        continue
-    flatmaps_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/flatmaps_corr'.format(
-        main_dir, project_dir, subject, format_)
-    datasets_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/datasets_corr'.format(
-        main_dir, project_dir, subject, format_)
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
+        corr_dir = "{}/{}/derivatives/pp_data/{}/{}/corr/{}_{}_{}_corr".format(
+            main_dir, project_dir, subject, format_,
+            preproc_prep, filtering, normalization)
+        if not os.path.isdir(corr_dir):
+            print(f"[SKIP] corr_dir not found for format={format_}: {corr_dir}")
+            continue
+        flatmaps_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/flatmaps_corr'.format(
+            main_dir, project_dir, subject, format_)
+        datasets_dir = '{}/{}/derivatives/pp_data/{}/{}/corr/pycortex/datasets_corr'.format(
+            main_dir, project_dir, subject, format_)
 
-    os.makedirs(flatmaps_dir, exist_ok=True)
-    os.makedirs(datasets_dir, exist_ok=True)
+        os.makedirs(flatmaps_dir, exist_ok=True)
+        os.makedirs(datasets_dir, exist_ok=True)
 
-    for task in tasks : 
+        for task in tasks : 
         
-        if format_ == 'fsnative':
-            corr_fn_L = "{}/{}_task-{}_hemi-L_{}_{}_{}_corr_bold.func.gii".format(
-                corr_dir, subject, task, preproc_prep, filtering, normalization)
-            corr_fn_R = "{}/{}_task-{}_hemi-R_{}_{}_{}_corr_bold.func.gii".format(
-                corr_dir, subject, task, preproc_prep, filtering, normalization)
-            results = load_surface_pycortex(L_fn=corr_fn_L, R_fn=corr_fn_R)
-        elif format_ == '170k':
-            cor_fn = '{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii'.format(
-                corr_dir, subject, task, preproc_prep, filtering, normalization)
-            results = load_surface_pycortex(brain_fn=cor_fn)
+            if format_ == 'fsnative':
+                corr_fn_L = "{}/{}_task-{}_hemi-L_{}_{}_{}_corr_bold.func.gii".format(
+                    corr_dir, subject, task, preproc_prep, filtering, normalization)
+                corr_fn_R = "{}/{}_task-{}_hemi-R_{}_{}_{}_corr_bold.func.gii".format(
+                    corr_dir, subject, task, preproc_prep, filtering, normalization)
+                results = load_surface_pycortex(L_fn=corr_fn_L, R_fn=corr_fn_R)
+            elif format_ == '170k':
+                cor_fn = '{}/{}_task-{}_{}_{}_{}_corr_bold.dtseries.nii'.format(
+                    corr_dir, subject, task, preproc_prep, filtering, normalization)
+                results = load_surface_pycortex(brain_fn=cor_fn)
 
-        corr_mat = results['data_concat']
-        maps_names = []
+            corr_mat = results['data_concat']
+            maps_names = []
         
-        # Correlation uncorrected
-        corr_mat_uncorrected = corr_mat[rvalue_idx, :]
+            # Correlation uncorrected
+            corr_mat_uncorrected = corr_mat[rvalue_idx, :]
         
-        # correlation uncorrected
-        param_corr = {'data': corr_mat_uncorrected, 
-                      'alpha': corr_mat_uncorrected*0+1, # no alpha correction
-                      'cmap': cmap_corr,
-                      'vmin': corr_scale[0], 
-                      'vmax': corr_scale[1], 
-                      'cbar': 'discrete', 
-                      'cortex_type': 'VertexRGB', 
-                      'description': 'Inter-run correlation (uncorrected): task-{}'.format(task), 
-                      'curv_brightness': 0.1, 
-                      'curv_contrast': 0.25, 
-                      'add_roi': save_svg, 
-                      'cbar_label': 'Pearson coefficient',
-                      'with_labels': True,
-                      'overlay_fn': 'overlays.svg'
-                     }
-        maps_names.append('corr')
+            # correlation uncorrected
+            param_corr = {'data': corr_mat_uncorrected, 
+                          'alpha': corr_mat_uncorrected*0+1, # no alpha correction
+                          'cmap': cmap_corr,
+                          'vmin': corr_scale[0], 
+                          'vmax': corr_scale[1], 
+                          'cbar': 'discrete', 
+                          'cortex_type': 'VertexRGB', 
+                          'description': 'Inter-run correlation (uncorrected): task-{}'.format(task), 
+                          'curv_brightness': 0.1, 
+                          'curv_contrast': 0.25, 
+                          'add_roi': save_svg, 
+                          'cbar_label': 'Pearson coefficient',
+                          'with_labels': True,
+                          'overlay_fn': 'overlays.svg'
+                         }
+            maps_names.append('corr')
 
-        # Correlation corrected mat
-        corr_mat_corrected = copy.copy(corr_mat)
-        corr_mat_corrected_th = corr_mat_corrected
-        if analysis_info['corr_stats_th'] == 0.05: stats_th_down = corr_mat_corrected_th[corr_pvalue_5pt_idx,...] <= 0.05
-        elif analysis_info['corr_stats_th'] == 0.01: stats_th_down = corr_mat_corrected_th[corr_pvalue_1pt_idx,...] <= 0.01
-        corr_mat_corrected[rvalue_idx, stats_th_down==False]=0 # put this to zero to not plot it
-        corr_mat_corrected = corr_mat_corrected[rvalue_idx, :]
+            # Correlation corrected mat
+            corr_mat_corrected = copy.copy(corr_mat)
+            corr_mat_corrected_th = corr_mat_corrected
+            if analysis_info['corr_stats_th'] == 0.05: stats_th_down = corr_mat_corrected_th[corr_pvalue_5pt_idx,...] <= 0.05
+            elif analysis_info['corr_stats_th'] == 0.01: stats_th_down = corr_mat_corrected_th[corr_pvalue_1pt_idx,...] <= 0.01
+            corr_mat_corrected[rvalue_idx, stats_th_down==False]=0 # put this to zero to not plot it
+            corr_mat_corrected = corr_mat_corrected[rvalue_idx, :]
         
-        # correlation corrected
-        param_corr_stats = {'data': corr_mat_corrected, 
-                            'alpha': corr_mat_corrected*0+1,
-                            'cmap': cmap_corr ,
-                            'vmin': corr_scale[0],
-                            'vmax': corr_scale[1], 
-                            'cbar': 'discrete', 
-                            'cortex_type': 'VertexRGB', 
-                            'description': 'Inter-run correlation (corrected): task-{}'.format(task),
-                            'curv_brightness': 0.1, 
-                            'curv_contrast': 0.25, 
-                            'add_roi': save_svg, 
-                            'cbar_label': 'Pearson coefficient',
-                            'with_labels': True,
-                            'overlay_fn': 'overlays.svg'
-                           }
-        maps_names.append('corr_stats')
+            # correlation corrected
+            param_corr_stats = {'data': corr_mat_corrected, 
+                                'alpha': corr_mat_corrected*0+1,
+                                'cmap': cmap_corr ,
+                                'vmin': corr_scale[0],
+                                'vmax': corr_scale[1], 
+                                'cbar': 'discrete', 
+                                'cortex_type': 'VertexRGB', 
+                                'description': 'Inter-run correlation (corrected): task-{}'.format(task),
+                                'curv_brightness': 0.1, 
+                                'curv_contrast': 0.25, 
+                                'add_roi': save_svg, 
+                                'cbar_label': 'Pearson coefficient',
+                                'with_labels': True,
+                                'overlay_fn': 'overlays.svg'
+                               }
+            maps_names.append('corr_stats')
 
-        # draw flatmaps
-        volumes = {}
-        for maps_name in maps_names:
+            # draw flatmaps
+            volumes = {}
+            for maps_name in maps_names:
             
-            # create flatmap
-            roi_name = '{}_{}'.format(task, maps_name)
-            roi_param = {'subject': pycortex_subject, 
-                         'roi_name': roi_name}
-            print(roi_name)
-            exec('param_{}.update(roi_param)'.format(maps_name))
-            exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
-            exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}.pdf')".format(
-                flatmaps_dir, subject, task, 
-                preproc_prep, filtering, normalization, maps_name))
-            plt.close()
+                # create flatmap
+                roi_name = '{}_{}'.format(task, maps_name)
+                roi_param = {'subject': pycortex_subject, 
+                             'roi_name': roi_name}
+                print(roi_name)
+                exec('param_{}.update(roi_param)'.format(maps_name))
+                exec('volume_{maps_name} = draw_cortex(**param_{maps_name})'.format(maps_name=maps_name))
+                exec("plt.savefig('{}/{}_task-{}_{}_{}_{}_{}.pdf')".format(
+                    flatmaps_dir, subject, task, 
+                    preproc_prep, filtering, normalization, maps_name))
+                plt.close()
         
-            # save flatmap as dataset
-            exec('vol_description = param_{}["description"]'.format(maps_name))
-            exec('volume = volume_{}'.format(maps_name))
-            volumes.update({vol_description:volume})
+                # save flatmap as dataset
+                exec('vol_description = param_{}["description"]'.format(maps_name))
+                exec('volume = volume_{}'.format(maps_name))
+                volumes.update({vol_description:volume})
 
-        # save dataset
-        dataset_file = "{}/{}_task-{}_{}_{}_{}_corr.hdf".format(datasets_dir, subject, task, 
-                                                                preproc_prep, filtering, normalization)
-        if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
-        dataset = cortex.Dataset(data=volumes)
-        dataset.save(dataset_file)
+            # save dataset
+            dataset_file = "{}/{}_task-{}_{}_{}_{}_corr.hdf".format(datasets_dir, subject, task, 
+                                                                    preproc_prep, filtering, normalization)
+            if os.path.exists(dataset_file): os.system("rm -fv {}".format(dataset_file))
+            dataset = cortex.Dataset(data=volumes)
+            dataset.save(dataset_file)

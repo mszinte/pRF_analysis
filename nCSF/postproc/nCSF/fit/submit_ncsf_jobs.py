@@ -72,7 +72,9 @@ extensions = analysis_info['extensions']
 nCSF_task_names = analysis_info['nCSF_task_name']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 
 # Set pycortex db and colormaps
@@ -84,15 +86,17 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # Define fns (filenames)
 pp_fns = []
-for avg_method in avg_methods:
-    dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
-    dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-        pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for avg_method in avg_methods:
+        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
+        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
+            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, nCSF_task_names, avg_method)
 
-    # Accumulate the results
-    pp_fns.extend(glob.glob(dct_avg_gii_fns))
-    # pp_fns.extend(glob.glob(dct_avg_nii_fns)) ############ BE CARFUL !!! #######
+        # Accumulate the results
+        pp_fns.extend(glob.glob(dct_avg_gii_fns))
+        # pp_fns.extend(glob.glob(dct_avg_nii_fns)) ############ BE CARFUL !!! #######
 
 for fit_num, pp_fn in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
