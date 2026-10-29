@@ -77,7 +77,9 @@ ncsf_task_name = analysis_info['nCSF_task_name']
 subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 averaging_templates = analysis_info['averaging_templates']
 
@@ -95,155 +97,164 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # template_avg exeption
 if subject != 'template_avg':
-    for avg_method in avg_methods:
-        for format_, extension in zip(formats, extensions): 
-            
-            # define/create folders
-            ncsf_fit_dir = '{}/{}/{}/ncsf/fit'.format(
-                    pp_dir, subject, format_)
-            ncsf_func_dir = '{}/{}/{}/func/{}_{}_{}_{}'.format(
-                    pp_dir, subject, format_, 
-                    preproc_prep, filtering, normalization, avg_method)
-            ncsf_deriv_dir = "{}/{}/{}/ncsf/ncsf_derivatives".format(
-                pp_dir, subject, format_)
-            os.makedirs(ncsf_deriv_dir, exist_ok=True)
-            
-            # Find ncsf func/pred files
-            ncsf_pred_fns = glob.glob('{}/*task-{}_*_{}*_ncsf_pred.{}'.format(
-                ncsf_fit_dir, ncsf_task_name, avg_method, extension))
-            for ncsf_pred_fn in ncsf_pred_fns :
-                if 'loo' in ncsf_pred_fn:
-                    loo_number = re.search(r'loo-avg-(\d+)', ncsf_pred_fn).group(1)
-                    if format_ == 'fsnative': 
-                        hemi = re.search(r'hemi-(\w)', ncsf_pred_fn).group(1)
-                        ncsf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold*.{}'.format(
-                            ncsf_func_dir, ncsf_task_name, hemi, loo_number, extension))[0]
-                    elif format_ == '170k':
-                        ncsf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
-                            ncsf_func_dir, ncsf_task_name, loo_number, extension))[0]
-                else:
-                    if format_ == 'fsnative': 
-                        hemi = re.search(r'hemi-(\w)', ncsf_pred_fn).group(1)
-                        ncsf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
-                            ncsf_func_dir, ncsf_task_name, hemi, avg_method, extension))[0]
-                    elif format_ == '170k':
-                        ncsf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
-                            ncsf_func_dir, ncsf_task_name, avg_method, extension))[0]
-
-                # load data  
-                print(f'Loading pred: {ncsf_pred_fn}') 
-                bold_img, bold_data = load_surface(ncsf_bold_fn)
-                print(f'Loading bold: {ncsf_bold_fn}')
-                pred_img, pred_data = load_surface(ncsf_pred_fn)
-                
-                # Compute linear regression 
-                results = linear_regression_surf(bold_signal=bold_data, 
-                                                 model_prediction=pred_data, 
-                                                 alternative='two-sided',
-                                                 correction='fdr_tsbh', 
-                                                 alpha=fdr_alpha)
-                
-                # Save results
-                ncsf_stats_fn = ncsf_pred_fn.split('/')[-1].replace('ncsf_pred', 'ncsf_stats')
-                ncsf_stats_img = make_surface_image(data=results, 
-                                                   source_img=pred_img, 
-                                                   maps_names=maps_names)
-
-                print('Saving: {}/{}'.format(ncsf_deriv_dir, ncsf_stats_fn))
-                nb.save(ncsf_stats_img, '{}/{}'.format(ncsf_deriv_dir, ncsf_stats_fn))
-            
-                # Compute median across leave-one-out fit
-                if 'loo-avg' in avg_method:
-                    print('Computing median across LOO')
-
-                    # Get LOO files (excluding any with "median" in the name)
-                    loo_ncsf_stats_fns = glob.glob(f"{ncsf_deriv_dir}/*task-{ncsf_task_name}_*loo-avg-*_ncsf_stats.{extension}")
-
-                    # Group files by hemisphere/format
-                    loo_ncsf_stats_fsnative_hemi_L_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-L" in fn]
-                    loo_ncsf_stats_fsnative_hemi_R_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-R" in fn]
-                    loo_ncsf_stats_170k_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
-                    
-                    # Process each group
-                    for group_files, hemi in [(loo_ncsf_stats_fsnative_hemi_L_fns, "_hemi-L"),
-                                              (loo_ncsf_stats_fsnative_hemi_R_fns, "_hemi-R"),
-                                              (loo_ncsf_stats_170k_fns, "")]:
-                        
-                        if len(group_files)>0:
-    
-                            # Load first file to initialize median array and define fn
-                            stats_img, stats_data = load_surface(group_files[0])
-                            loo_ncsf_stats = np.zeros_like(stats_data)
-                            loo_ncsf_stats_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_ncsf_stats.{}'.format(
-                                ncsf_deriv_dir, subject, ncsf_task_name, hemi, 
-                                preproc_prep, filtering, normalization, extension)
-                        
-                            # Compute median across LOO runs
-                            for n_run, loo_stats_fn in enumerate(group_files):
-                                print(f'Loadding loo stats: {loo_stats_fn}')
-                                _, loo_ncsf_stats_run_data = load_surface(loo_stats_fn)
-                                if n_run == 0: loo_ncsf_stats = np.copy(loo_ncsf_stats_run_data)
-                                else: loo_ncsf_stats = np.nanmedian(np.array([loo_ncsf_stats, loo_ncsf_stats_run_data]), axis=0)
-                        
-                            # Recalculate p-values for median data
-                            t_statistic = loo_ncsf_stats[slope_idx, :] / loo_ncsf_stats[stderr_idx, :]
-                            degrees_of_freedom = np.nanmax(loo_ncsf_stats[trs_idx, :]) - 2
-                            p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
-                            corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
-                            
-                            # Update median data with recalculated p-values
-                            loo_ncsf_stats[pvalue_idx, :] = p_values
-                            loo_ncsf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
-                            loo_ncsf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
-    
-                            # Save median results
-                            loo_ncsf_stats_img = make_surface_image(loo_ncsf_stats, stats_img, maps_names)
-                            nb.save(loo_ncsf_stats_img, loo_ncsf_stats_fn)
-                            print(f"Saving median: {loo_ncsf_stats_fn}")
-
-# template_avg median
-elif subject == 'template_avg':
-    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
-        print('{}, Median corr across subject...'. format(averaging_template_name))
-                
+    # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
+    for normalization in normalizations:
         for avg_method in avg_methods:
+            for format_, extension in zip(formats, extensions): 
             
-            # find all the subject ncsf stats
-            ncsf_stats_fns = []
-            for subject in subjects: 
-                ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                    main_dir, project_dir, subject, averaging_template_format)
-                ncsf_stats_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
-                    ncsf_deriv_dir, subject, ncsf_task_name,
-                    preproc_prep, filtering, normalization, avg_method)]
-    
-            # Computing  across subject
-            img, data_stat_median = median_subject_template(fns=ncsf_stats_fns)
+                # define/create folders
+                ncsf_fit_dir = '{}/{}/{}/ncsf/fit'.format(
+                        pp_dir, subject, format_)
+                ncsf_func_dir = '{}/{}/{}/func/{}_{}_{}_{}'.format(
+                        pp_dir, subject, format_, 
+                        preproc_prep, filtering, normalization, avg_method)
+                ncsf_deriv_dir = "{}/{}/{}/ncsf/ncsf_derivatives".format(
+                    pp_dir, subject, format_)
+                os.makedirs(ncsf_deriv_dir, exist_ok=True)
             
-            # Compute two sided corrected p-values
-            t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
-            degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
-            p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
-            corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                       correction='fdr_tsbh', 
-                                                       alpha=fdr_alpha)
-            data_stat_median[pvalue_idx, :] = p_values
-            data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
-            data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                # Find ncsf func/pred files
+                # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
+                # AVANT : ncsf_pred_fns = glob.glob('{}/*task-{}_*_{}*_ncsf_pred.{}'.format(
+                # AVANT : ncsf_fit_dir, ncsf_task_name, avg_method, extension))
+                ncsf_pred_fns = glob.glob('{}/*task-{}_*_{}_{}_{}_{}*_ncsf_pred.{}'.format(
+                    ncsf_fit_dir, ncsf_task_name, preproc_prep, filtering, normalization, avg_method, extension))
+                for ncsf_pred_fn in ncsf_pred_fns :
+                    if 'loo' in ncsf_pred_fn:
+                        loo_number = re.search(r'loo-avg-(\d+)', ncsf_pred_fn).group(1)
+                        if format_ == 'fsnative': 
+                            hemi = re.search(r'hemi-(\w)', ncsf_pred_fn).group(1)
+                            ncsf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold*.{}'.format(
+                                ncsf_func_dir, ncsf_task_name, hemi, loo_number, extension))[0]
+                        elif format_ == '170k':
+                            ncsf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
+                                ncsf_func_dir, ncsf_task_name, loo_number, extension))[0]
+                    else:
+                        if format_ == 'fsnative': 
+                            hemi = re.search(r'hemi-(\w)', ncsf_pred_fn).group(1)
+                            ncsf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
+                                ncsf_func_dir, ncsf_task_name, hemi, avg_method, extension))[0]
+                        elif format_ == '170k':
+                            ncsf_bold_fn = glob.glob('{}/*task-{}_*_{}_bold*.{}'.format(
+                                ncsf_func_dir, ncsf_task_name, avg_method, extension))[0]
+
+                    # load data  
+                    print(f'Loading pred: {ncsf_pred_fn}') 
+                    bold_img, bold_data = load_surface(ncsf_bold_fn)
+                    print(f'Loading bold: {ncsf_bold_fn}')
+                    pred_img, pred_data = load_surface(ncsf_pred_fn)
                 
-            # Export results
-            template_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                    main_dir, project_dir, averaging_template_name, averaging_template_format)
-            os.makedirs(template_stats_dir, exist_ok=True)
+                    # Compute linear regression 
+                    results = linear_regression_surf(bold_signal=bold_data, 
+                                                     model_prediction=pred_data, 
+                                                     alternative='two-sided',
+                                                     correction='fdr_tsbh', 
+                                                     alpha=fdr_alpha)
+                
+                    # Save results
+                    ncsf_stats_fn = ncsf_pred_fn.split('/')[-1].replace('ncsf_pred', 'ncsf_stats')
+                    ncsf_stats_img = make_surface_image(data=results, 
+                                                       source_img=pred_img, 
+                                                       maps_names=maps_names)
+
+                    print('Saving: {}/{}'.format(ncsf_deriv_dir, ncsf_stats_fn))
+                    nb.save(ncsf_stats_img, '{}/{}'.format(ncsf_deriv_dir, ncsf_stats_fn))
             
-            template_stat_fn = "{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
-                template_stats_dir, averaging_template_name, ncsf_task_name, 
-                preproc_prep, filtering, normalization, avg_method)
-            print("saving: {}".format(template_stat_fn))
-            template_stat_img = make_surface_image(data=data_stat_median, 
-                                                   source_img=img, 
-                                                   maps_names=maps_names)
-            nb.save(template_stat_img, template_stat_fn)
+                    # Compute median across leave-one-out fit
+                    if 'loo-avg' in avg_method:
+                        print('Computing median across LOO')
+
+                        # Get LOO files (excluding any with "median" in the name)
+                        # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
+                        # AVANT : loo_ncsf_stats_fns = glob.glob(f"{ncsf_deriv_dir}/*task-{ncsf_task_name}_*loo-avg-*_ncsf_stats.{extension}")
+                        loo_ncsf_stats_fns = glob.glob(f"{ncsf_deriv_dir}/*task-{ncsf_task_name}_*_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_ncsf_stats.{extension}")
+
+                        # Group files by hemisphere/format
+                        loo_ncsf_stats_fsnative_hemi_L_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-L" in fn]
+                        loo_ncsf_stats_fsnative_hemi_R_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-R" in fn]
+                        loo_ncsf_stats_170k_fns = [fn for fn in loo_ncsf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
+                    
+                        # Process each group
+                        for group_files, hemi in [(loo_ncsf_stats_fsnative_hemi_L_fns, "_hemi-L"),
+                                                  (loo_ncsf_stats_fsnative_hemi_R_fns, "_hemi-R"),
+                                                  (loo_ncsf_stats_170k_fns, "")]:
+                        
+                            if len(group_files)>0:
+    
+                                # Load first file to initialize median array and define fn
+                                stats_img, stats_data = load_surface(group_files[0])
+                                loo_ncsf_stats = np.zeros_like(stats_data)
+                                loo_ncsf_stats_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_ncsf_stats.{}'.format(
+                                    ncsf_deriv_dir, subject, ncsf_task_name, hemi, 
+                                    preproc_prep, filtering, normalization, extension)
+                        
+                                # Compute median across LOO runs
+                                for n_run, loo_stats_fn in enumerate(group_files):
+                                    print(f'Loadding loo stats: {loo_stats_fn}')
+                                    _, loo_ncsf_stats_run_data = load_surface(loo_stats_fn)
+                                    if n_run == 0: loo_ncsf_stats = np.copy(loo_ncsf_stats_run_data)
+                                    else: loo_ncsf_stats = np.nanmedian(np.array([loo_ncsf_stats, loo_ncsf_stats_run_data]), axis=0)
+                        
+                                # Recalculate p-values for median data
+                                t_statistic = loo_ncsf_stats[slope_idx, :] / loo_ncsf_stats[stderr_idx, :]
+                                degrees_of_freedom = np.nanmax(loo_ncsf_stats[trs_idx, :]) - 2
+                                p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
+                                corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
+                            
+                                # Update median data with recalculated p-values
+                                loo_ncsf_stats[pvalue_idx, :] = p_values
+                                loo_ncsf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
+                                loo_ncsf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
+    
+                                # Save median results
+                                loo_ncsf_stats_img = make_surface_image(loo_ncsf_stats, stats_img, maps_names)
+                                nb.save(loo_ncsf_stats_img, loo_ncsf_stats_fn)
+                                print(f"Saving median: {loo_ncsf_stats_fn}")
+
+    # template_avg median
+elif subject == 'template_avg':
+    # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
+    for normalization in normalizations:
+        for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+            print('{}, Median corr across subject...'. format(averaging_template_name))
+                
+            for avg_method in avg_methods:
+            
+                # find all the subject ncsf stats
+                ncsf_stats_fns = []
+                for subject in subjects: 
+                    ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format)
+                    ncsf_stats_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
+                        ncsf_deriv_dir, subject, ncsf_task_name,
+                        preproc_prep, filtering, normalization, avg_method)]
+    
+                # Computing  across subject
+                img, data_stat_median = median_subject_template(fns=ncsf_stats_fns)
+            
+                # Compute two sided corrected p-values
+                t_statistic = data_stat_median[slope_idx, :] / data_stat_median[stderr_idx, :]
+                degrees_of_freedom = np.nanmax(data_stat_median[trs_idx, :]) - 2
+                p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom)) 
+                corrected_p_values = multipletests_surface(pvals=p_values, 
+                                                           correction='fdr_tsbh', 
+                                                           alpha=fdr_alpha)
+                data_stat_median[pvalue_idx, :] = p_values
+                data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
+                data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
+                
+                # Export results
+                template_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
+                        main_dir, project_dir, averaging_template_name, averaging_template_format)
+                os.makedirs(template_stats_dir, exist_ok=True)
+            
+                template_stat_fn = "{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
+                    template_stats_dir, averaging_template_name, ncsf_task_name, 
+                    preproc_prep, filtering, normalization, avg_method)
+                print("saving: {}".format(template_stat_fn))
+                template_stat_img = make_surface_image(data=data_stat_median, 
+                                                       source_img=img, 
+                                                       maps_names=maps_names)
+                nb.save(template_stat_img, template_stat_fn)
 
 # Define permission cmd
 print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

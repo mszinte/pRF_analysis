@@ -3,7 +3,8 @@
 preproc_end.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-High-pass filter, z-score, pick anat files
+High-pass filter, normalize (z-score, psc and/or raw), pick anat files
+[NORMALIZATION] one output folder per normalization listed in settings.yml
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -69,7 +70,10 @@ set_pycortex_config_file(cortex_dir)
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-settings = load_settings([settings_path])
+# [TR] TR is defined in prf-analysis.yml since the settings restructuring (general vs specific)
+# AVANT : settings = load_settings([settings_path])
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 TR = analysis_info['TR']
@@ -79,7 +83,13 @@ sessions = analysis_info['sessions']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 preproc_prep = analysis_info['preproc_prep']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations (e.g. ["z-score", "psc", "raw"])
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
+valid_normalizations = ['z-score', 'psc', 'raw']
+for normalization in normalizations:
+    if normalization not in valid_normalizations:
+        raise ValueError('Unknown normalization "{}" (allowed: {})'.format(normalization, valid_normalizations))
 filtering = analysis_info['filtering']
 partial_scan = analysis_info['partial_scan']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
@@ -87,16 +97,18 @@ starting_TR = analysis_info['starting_TR']
 ending_TR = analysis_info['ending_TR']
 
 # Make extension folders
+# [NORMALIZATION] one folder per normalization
 for format_, extension in zip(formats, extensions):
-    os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
-        main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization), exist_ok=True)
+    for normalization in normalizations:
+        os.makedirs("{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization), exist_ok=True)
 
 # High pass filtering
 # Dictionary to collect masks per format and hemisphere
 masks_dict = {'fsnative_hemi-L': [], 'fsnative_hemi-R': [], '170k': []}
 
 for format_, extension in zip(formats, extensions):
-    print('High pass filtering + z-score : {}'.format(format_))
+    print('High pass filtering + {} : {}'.format(' / '.join(normalizations), format_))  # [NORMALIZATION]
     for session in sessions:
         # Find outputs from fMRIprep
         fmriprep_func_fns = glob.glob("{}/{}/derivatives/fmriprep/fmriprep/{}/{}/func/*{}*.{}".format(
@@ -110,8 +122,9 @@ for format_, extension in zip(formats, extensions):
 
             # Make output filtered filenames
             fn_basename = func_fn.split('/')[-1]
-            filtered_data_fn_end = fn_basename.replace('bold', '{}_{}_{}_bold'.format(
-                preproc_prep, filtering, normalization))
+            # [NORMALIZATION] output filename now built inside the normalization loop (see below)
+            # AVANT : filtered_data_fn_end = fn_basename.replace('bold', '{}_{}_{}_bold'.format(
+            #             preproc_prep, filtering, normalization))
 
             print('Processing: {}'.format(fn_basename))
 
@@ -144,6 +157,10 @@ for format_, extension in zip(formats, extensions):
                 masks_dict['170k'].append(valid_mask)
 
 
+            # [NORMALIZATION] mean signal BEFORE high-pass filtering = baseline used for psc
+            # (independent of whether signal.clean keeps the mean or not in the installed nilearn version)
+            data_mean = np.mean(surf_data, axis=0)
+
             # High pass filtering 
             # Create design matrix with cosine drift
             nb_tr = surf_data.shape[0]
@@ -157,20 +174,40 @@ for format_, extension in zip(formats, extensions):
                                      standardize=False, 
                                      confounds=cosine_drift)
            
-            # Compute the Z-score only on valid vertices
-            surf_data[:, valid_mask] = (surf_data[:, valid_mask] - np.mean(surf_data[:, valid_mask], axis=0)) / np.std(surf_data[:, valid_mask], axis=0)
-            
-            # Set invalid vertices to NaN
-            surf_data[:, ~valid_mask] = np.nan
-            
-            # Make an image with the preproceced data
-            filtered_img = make_surface_image(data=surf_data, source_img=surf_img)
+            # [NORMALIZATION] loop over normalizations (high-pass filtering above is done only once)
+            # AVANT : z-score only
+            # surf_data[:, valid_mask] = (surf_data[:, valid_mask] - np.mean(surf_data[:, valid_mask], axis=0)) / np.std(surf_data[:, valid_mask], axis=0)
+            # surf_data[:, ~valid_mask] = np.nan
+            for normalization in normalizations:
+                norm_data = surf_data.copy()
+                valid_data = norm_data[:, valid_mask]
 
-            # Save surface
-            filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/{}".format(
-                main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, filtered_data_fn_end)
+                if normalization == 'z-score':
+                    # Z-score only on valid vertices
+                    norm_data[:, valid_mask] = (valid_data - np.mean(valid_data, axis=0)) / np.std(valid_data, axis=0)
 
-            nb.save(filtered_img, filtered_fn)
+                elif normalization == 'psc':
+                    # Percent signal change relative to the pre-filtering mean, only on valid vertices
+                    norm_data[:, valid_mask] = (valid_data - np.mean(valid_data, axis=0)) / data_mean[valid_mask] * 100
+
+                elif normalization == 'raw':
+                    # High-pass filtered data only, no normalization
+                    pass
+
+                # Set invalid vertices to NaN
+                norm_data[:, ~valid_mask] = np.nan
+
+                # Make an image with the preproceced data
+                filtered_img = make_surface_image(data=norm_data, source_img=surf_img)
+
+                # Save surface
+                filtered_data_fn_end = fn_basename.replace('bold', '{}_{}_{}_bold'.format(
+                    preproc_prep, filtering, normalization))
+                filtered_fn = "{}/{}/derivatives/pp_data/{}/{}/func/{}_{}_{}/{}".format(
+                    main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, filtered_data_fn_end)
+
+                print('Saving {}: {}'.format(normalization, filtered_data_fn_end))
+                nb.save(filtered_img, filtered_fn)
 
 # Anatomy
 for format_, pycortex_subject in zip(formats, [subject, pycortex_subject_template]):
@@ -225,7 +262,7 @@ print("\nStart time:\t{start_time}\nEnd time:\t{end_time}\nDuration:\t{dur}".for
         end_time=end_time,
         dur=end_time - start_time))
 
-# Define permission cmd
-print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
-os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
-os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))
+# # Define permission cmd
+# print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
+# os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
+# os.system("chgrp -Rf {} {}/{}".format(group, main_dir, project_dir))

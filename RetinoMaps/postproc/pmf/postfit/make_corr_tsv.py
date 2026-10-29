@@ -107,8 +107,10 @@ if label_a == label_b:      # same model in two tasks (e.g. SacLoc ODM vs PurLoc
     if task_a == task_b:
         sys.exit(f"cond A and cond B are identical ({cond_a}, task-{task_a})")
     label_a, label_b = f"{label_a}-{task_a}", f"{label_b}-{task_b}"
-comp_name = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"     # used in every output file name
-print(f"Comparison: {comp_name}  (columns *_{label_a} vs *_{label_b})")
+# [NORMALIZATION] comp_name now built inside the normalization loop (comp_name_base + normalization)
+# AVANT : comp_name = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"     # used in every output file name
+comp_name_base = f"task-{task_a}_{cond_a}_vs_task-{task_b}_{cond_b}"
+print(f"Comparison: {comp_name_base}  (columns *_{label_a} vs *_{label_b})")
 
 # Load settings -- pmf-vs-prf comparisons need both analysis-specific yml files
 base_dir = os.path.abspath(os.path.join(script_dir, "../../../../"))
@@ -122,6 +124,9 @@ for atype in sorted({analysis_type_a, analysis_type_b}):
 
 analysis_info = analysis_info_by_type[analysis_type_a]
 formats = analysis_info["formats"]
+# [NORMALIZATION] list of normalizations, looped over below (same settings.yml for both conditions)
+# AVANT : (ligne ajoutee)
+normalizations = analysis_info["normalization"]
 maps_names_css = analysis_info["maps_names_css"]
 
 # ── weighted Deming (orthogonal) regression, symmetric when x and y are swapped ─────────
@@ -143,145 +148,151 @@ def weighted_deming_regression(x, y, weights=None):
 # ═════════════════════════════════════════════════════════════════════════════════════
 if "group" not in subject:
 
-    for format_ in formats:
-        print(f"\n=== format: {format_} ===")
-        tsv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
-        os.makedirs(tsv_dir, exist_ok=True)
-        pycortex_cortex_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/cortex"
-        set_pycortex_config_file(pycortex_cortex_dir)
-        # 170k (CIFTI) surfaces are registered to a template pycortex subject, not the
-        # individual subject's own fsnative surface
-        pycortex_subject = analysis_info["pycortex_subject_template"] if format_ == "170k" else subject
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        # [NORMALIZATION] normalization added to the comparison name used in every output file name
+        comp_name = f"{comp_name_base}_{normalization}"
+        for format_ in formats:
+            print(f"\n=== format: {format_} ===")
+            tsv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
+            os.makedirs(tsv_dir, exist_ok=True)
+            pycortex_cortex_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/cortex"
+            set_pycortex_config_file(pycortex_cortex_dir)
+            # 170k (CIFTI) surfaces are registered to a template pycortex subject, not the
+            # individual subject's own fsnative surface
+            pycortex_subject = analysis_info["pycortex_subject_template"] if format_ == "170k" else subject
 
-        # ── 1. load per-vertex data for the two conditions, split by ROI ────────────
-        dfs = []    # [cond A, cond B] -- a list, so the same condition name can appear in two tasks
-        for cond, atype, task_name in ((cond_a, analysis_type_a, task_a), (cond_b, analysis_type_b, task_b)):
-            info = analysis_info_by_type[atype]
-            preproc_prep, filtering, normalization = info["preproc_prep"], info["filtering"], info["normalization"]
-            avg_method = info["avg_methods"][0]
-            maps_names_css = info["maps_names_css_loo"] if "loo" in avg_method else info["maps_names_css"]
-            if format_ == "170k":
-                # 170k (CIFTI) derivatives are one combined file, no hemi split
-                deriv_input = (
-                    f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{atype}/"
-                    f"prf_derivatives/{subject}_task-{task_name}_{preproc_prep}_{filtering}_"
-                    f"{normalization}_{avg_method}_{cond}_deriv.dtseries.nii"
-                )
-            else:
-                deriv_input = {
-                    hemi: (
+            # ── 1. load per-vertex data for the two conditions, split by ROI ────────────
+            dfs = []    # [cond A, cond B] -- a list, so the same condition name can appear in two tasks
+            for cond, atype, task_name in ((cond_a, analysis_type_a, task_a), (cond_b, analysis_type_b, task_b)):
+                info = analysis_info_by_type[atype]
+                # [NORMALIZATION] normalization comes from the loop
+                # AVANT : preproc_prep, filtering, normalization = info["preproc_prep"], info["filtering"], info["normalization"]
+                preproc_prep, filtering = info["preproc_prep"], info["filtering"]
+                avg_method = info["avg_methods"][0]
+                maps_names_css = info["maps_names_css_loo"] if "loo" in avg_method else info["maps_names_css"]
+                if format_ == "170k":
+                    # 170k (CIFTI) derivatives are one combined file, no hemi split
+                    deriv_input = (
                         f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{atype}/"
-                        f"prf_derivatives/{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_"
-                        f"{normalization}_{avg_method}_{cond}_deriv.func.gii"
+                        f"prf_derivatives/{subject}_task-{task_name}_{preproc_prep}_{filtering}_"
+                        f"{normalization}_{avg_method}_{cond}_deriv.dtseries.nii"
                     )
-                    for hemi in ("hemi-L", "hemi-R")
-                }
-            print(f"loading task-{task_name} {cond} for {subject} (avg_method={avg_method})")
-
-            # turn the derivative surface map(s) into a per-ROI, per-vertex dataframe
-            df_cond = pd.DataFrame()
-            items = deriv_input.items() if isinstance(deriv_input, dict) else [(None, deriv_input)]
-            for hemi, deriv_fn in items:
-                _, deriv_mat = load_surface(deriv_fn)  # (n_params, n_vertices)
-                assert deriv_mat.shape[0] == len(maps_names_css), \
-                    f"{deriv_fn} has {deriv_mat.shape[0]} frames, expected {len(maps_names_css)} — check loo_r2"
-                get_rois_kwargs = dict(subject=pycortex_subject, surf_format=format_,
-                                        rois_type=rois_method_format, mask=True, rois=rois)
-                if hemi is not None:
-                    get_rois_kwargs["hemis"] = hemi
-                roi_verts = get_rois(**get_rois_kwargs)
-                for roi in roi_verts.keys():
-                    data_dict = {col: deriv_mat[i, roi_verts[roi]] for i, col in enumerate(maps_names_css)}
-                    data_dict["roi"] = roi
-                    data_dict["hemi"] = hemi if hemi is not None else "both"
-                    data_dict["num_vert"] = np.where(roi_verts[roi])[0]
-                    df_cond = pd.concat([df_cond, pd.DataFrame(data_dict)], ignore_index=True)
-            dfs.append(df_cond)
-
-        # ── 2. merge the two conditions on shared vertices ───────────────────────────
-        df_a, df_b = dfs
-        data = pd.merge(df_a, df_b, on=["roi", "hemi", "num_vert"], suffixes=(f"_{label_a}", f"_{label_b}"))
-        print(f"Merged {len(data)} vertices across {data['roi'].nunique()} rois ({label_a} vs {label_b})")
-
-        # diagnostic only -- does NOT change the (fixed) grid used below
-        for p in ("prf_x", "prf_y", "prf_ecc"):
-            bound = corr_param_ranges[p][1]
-            for lbl in (label_a, label_b):
-                v = data[f"{p}_{lbl}"]
-                n_railed = (v.abs() >= bound - 1e-6).sum()
-                if n_railed > 1:
-                    print(f"  NOTE: {p}_{lbl} has {n_railed} vertices at |value|~={bound:.3f} "
-                          f"— check whether this is a grid-search bound (railed fits)")
-
-        deriv_fn = f"{tsv_dir}/{subject}_{comp_name}_deriv.tsv"
-        data.to_csv(deriv_fn, sep="\t", na_rep="NaN", index=False)
-        print(f"Saving: {deriv_fn}")
-
-        # ── 3. per-parameter, per-ROI weighted KDE + weighted Deming regression ──────
-        for corr_param in corr_params:
-            param_range = corr_param_ranges[corr_param]
-            x_grid = np.linspace(param_range[0], param_range[1], GRID_SIZE)
-            y_grid = np.linspace(param_range[0], param_range[1], GRID_SIZE)
-            xx, yy = np.meshgrid(x_grid, y_grid)
-            grid_points = np.vstack([xx.ravel(), yy.ravel()])
-
-            kde_rows, reg_rows = [], []
-            for roi in rois:
-                df_roi = data.loc[data["roi"] == roi]
-                x_vals = df_roi[f"{corr_param}_{label_a}"].values
-                y_vals = df_roi[f"{corr_param}_{label_b}"].values
-                r2_a = df_roi[f"prf_rsq_{label_a}"].values
-                r2_b = df_roi[f"prf_rsq_{label_b}"].values
-                r2_combined = (r2_a + r2_b) / 2
-                # exclude NaNs AND sub-threshold/negative-rsq vertices — gaussian_kde's
-                # weights must be >= 0, and low-rsq vertices are noise anyway
-                ecc_a, ecc_b = df_roi[f"prf_ecc_{label_a}"].values, df_roi[f"prf_ecc_{label_b}"].values
-                size_a, size_b = df_roi[f"prf_size_{label_a}"].values, df_roi[f"prf_size_{label_b}"].values
-                mask = (
-                    ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
-                    & (r2_a > RSQ_THRESHOLD) & (r2_b > RSQ_THRESHOLD)
-                    & (ecc_a <= ECC_MAX) & (ecc_b <= ECC_MAX)
-                    & (size_a > 0) & (size_a <= SIZE_MAX) & (size_b > 0) & (size_b <= SIZE_MAX)
-                )
-                x_vals, y_vals, r2_combined = x_vals[mask], y_vals[mask], r2_combined[mask]
-                n_vertex = len(x_vals)
-                mean_r2_weight = np.nanmean(r2_combined) if n_vertex > 0 else np.nan
-
-                if n_vertex > 1:
-                    r2_norm = r2_combined / r2_combined.sum()
-                    try:
-                        kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
-                        density = kde(grid_points).reshape(GRID_SIZE, GRID_SIZE)
-                    except np.linalg.LinAlgError:
-                        density = np.full((GRID_SIZE, GRID_SIZE), np.nan)
                 else:
-                    r2_norm, density = np.array([]), np.full((GRID_SIZE, GRID_SIZE), np.nan)
+                    deriv_input = {
+                        hemi: (
+                            f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{atype}/"
+                            f"prf_derivatives/{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_"
+                            f"{normalization}_{avg_method}_{cond}_deriv.func.gii"
+                        )
+                        for hemi in ("hemi-L", "hemi-R")
+                    }
+                print(f"loading task-{task_name} {cond} for {subject} (avg_method={avg_method})")
 
-                kde_rows.append(pd.DataFrame({
-                    "roi": roi, "x_grid": xx.ravel(), "y_grid": yy.ravel(), "density": density.ravel(),
-                }))
+                # turn the derivative surface map(s) into a per-ROI, per-vertex dataframe
+                df_cond = pd.DataFrame()
+                items = deriv_input.items() if isinstance(deriv_input, dict) else [(None, deriv_input)]
+                for hemi, deriv_fn in items:
+                    _, deriv_mat = load_surface(deriv_fn)  # (n_params, n_vertices)
+                    assert deriv_mat.shape[0] == len(maps_names_css), \
+                        f"{deriv_fn} has {deriv_mat.shape[0]} frames, expected {len(maps_names_css)} — check loo_r2"
+                    get_rois_kwargs = dict(subject=pycortex_subject, surf_format=format_,
+                                            rois_type=rois_method_format, mask=True, rois=rois)
+                    if hemi is not None:
+                        get_rois_kwargs["hemis"] = hemi
+                    roi_verts = get_rois(**get_rois_kwargs)
+                    for roi in roi_verts.keys():
+                        data_dict = {col: deriv_mat[i, roi_verts[roi]] for i, col in enumerate(maps_names_css)}
+                        data_dict["roi"] = roi
+                        data_dict["hemi"] = hemi if hemi is not None else "both"
+                        data_dict["num_vert"] = np.where(roi_verts[roi])[0]
+                        df_cond = pd.concat([df_cond, pd.DataFrame(data_dict)], ignore_index=True)
+                dfs.append(df_cond)
 
-                if n_vertex > 2:
-                    slope, intercept = weighted_deming_regression(x_vals, y_vals, r2_norm)
-                    r_val, p_val = pearsonr(x_vals, y_vals)
-                    r2_pearson = r_val ** 2
-                else:
-                    slope = intercept = r2_pearson = p_val = np.nan
-                reg_rows.append({
-                    "roi": roi, "slope": slope, "intercept": intercept, "r2_pearson": r2_pearson,
-                    "p_value": p_val, "n_vertex": n_vertex, "mean_r2_weight": mean_r2_weight,
-                })
+            # ── 2. merge the two conditions on shared vertices ───────────────────────────
+            df_a, df_b = dfs
+            data = pd.merge(df_a, df_b, on=["roi", "hemi", "num_vert"], suffixes=(f"_{label_a}", f"_{label_b}"))
+            print(f"Merged {len(data)} vertices across {data['roi'].nunique()} rois ({label_a} vs {label_b})")
 
-            df_kde = pd.concat(kde_rows, ignore_index=True)
-            df_reg = pd.DataFrame(reg_rows)
+            # diagnostic only -- does NOT change the (fixed) grid used below
+            for p in ("prf_x", "prf_y", "prf_ecc"):
+                bound = corr_param_ranges[p][1]
+                for lbl in (label_a, label_b):
+                    v = data[f"{p}_{lbl}"]
+                    n_railed = (v.abs() >= bound - 1e-6).sum()
+                    if n_railed > 1:
+                        print(f"  NOTE: {p}_{lbl} has {n_railed} vertices at |value|~={bound:.3f} "
+                              f"— check whether this is a grid-search bound (railed fits)")
 
-            kde_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-corr.tsv"
-            df_kde.to_csv(kde_fn, sep="\t", na_rep="NaN", index=False)
-            print(f"Saving tsv: {kde_fn}")
+            deriv_fn = f"{tsv_dir}/{subject}_{comp_name}_deriv.tsv"
+            data.to_csv(deriv_fn, sep="\t", na_rep="NaN", index=False)
+            print(f"Saving: {deriv_fn}")
 
-            reg_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-regression.tsv"
-            df_reg.to_csv(reg_fn, sep="\t", na_rep="NaN", index=False)
-            print(f"Saving tsv: {reg_fn}")
+            # ── 3. per-parameter, per-ROI weighted KDE + weighted Deming regression ──────
+            for corr_param in corr_params:
+                param_range = corr_param_ranges[corr_param]
+                x_grid = np.linspace(param_range[0], param_range[1], GRID_SIZE)
+                y_grid = np.linspace(param_range[0], param_range[1], GRID_SIZE)
+                xx, yy = np.meshgrid(x_grid, y_grid)
+                grid_points = np.vstack([xx.ravel(), yy.ravel()])
+
+                kde_rows, reg_rows = [], []
+                for roi in rois:
+                    df_roi = data.loc[data["roi"] == roi]
+                    x_vals = df_roi[f"{corr_param}_{label_a}"].values
+                    y_vals = df_roi[f"{corr_param}_{label_b}"].values
+                    r2_a = df_roi[f"prf_rsq_{label_a}"].values
+                    r2_b = df_roi[f"prf_rsq_{label_b}"].values
+                    r2_combined = (r2_a + r2_b) / 2
+                    # exclude NaNs AND sub-threshold/negative-rsq vertices — gaussian_kde's
+                    # weights must be >= 0, and low-rsq vertices are noise anyway
+                    ecc_a, ecc_b = df_roi[f"prf_ecc_{label_a}"].values, df_roi[f"prf_ecc_{label_b}"].values
+                    size_a, size_b = df_roi[f"prf_size_{label_a}"].values, df_roi[f"prf_size_{label_b}"].values
+                    mask = (
+                        ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isnan(r2_combined))
+                        & (r2_a > RSQ_THRESHOLD) & (r2_b > RSQ_THRESHOLD)
+                        & (ecc_a <= ECC_MAX) & (ecc_b <= ECC_MAX)
+                        & (size_a > 0) & (size_a <= SIZE_MAX) & (size_b > 0) & (size_b <= SIZE_MAX)
+                    )
+                    x_vals, y_vals, r2_combined = x_vals[mask], y_vals[mask], r2_combined[mask]
+                    n_vertex = len(x_vals)
+                    mean_r2_weight = np.nanmean(r2_combined) if n_vertex > 0 else np.nan
+
+                    if n_vertex > 1:
+                        r2_norm = r2_combined / r2_combined.sum()
+                        try:
+                            kde = gaussian_kde(np.vstack([x_vals, y_vals]), weights=r2_norm)
+                            density = kde(grid_points).reshape(GRID_SIZE, GRID_SIZE)
+                        except np.linalg.LinAlgError:
+                            density = np.full((GRID_SIZE, GRID_SIZE), np.nan)
+                    else:
+                        r2_norm, density = np.array([]), np.full((GRID_SIZE, GRID_SIZE), np.nan)
+
+                    kde_rows.append(pd.DataFrame({
+                        "roi": roi, "x_grid": xx.ravel(), "y_grid": yy.ravel(), "density": density.ravel(),
+                    }))
+
+                    if n_vertex > 2:
+                        slope, intercept = weighted_deming_regression(x_vals, y_vals, r2_norm)
+                        r_val, p_val = pearsonr(x_vals, y_vals)
+                        r2_pearson = r_val ** 2
+                    else:
+                        slope = intercept = r2_pearson = p_val = np.nan
+                    reg_rows.append({
+                        "roi": roi, "slope": slope, "intercept": intercept, "r2_pearson": r2_pearson,
+                        "p_value": p_val, "n_vertex": n_vertex, "mean_r2_weight": mean_r2_weight,
+                    })
+
+                df_kde = pd.concat(kde_rows, ignore_index=True)
+                df_reg = pd.DataFrame(reg_rows)
+
+                kde_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-corr.tsv"
+                df_kde.to_csv(kde_fn, sep="\t", na_rep="NaN", index=False)
+                print(f"Saving tsv: {kde_fn}")
+
+                reg_fn = f"{tsv_dir}/{subject}_{comp_name}_{corr_param}-regression.tsv"
+                df_reg.to_csv(reg_fn, sep="\t", na_rep="NaN", index=False)
+                print(f"Saving tsv: {reg_fn}")
 
 # ═════════════════════════════════════════════════════════════════════════════════════
 # GROUP -- averages per-subject TSVs already produced by the block above
@@ -289,47 +300,51 @@ if "group" not in subject:
 else:
     subjects_to_group = analysis_info["subjects"]
 
-    for format_ in formats:
-        print(f"\n=== format: {format_} — group: {subject} ({len(subjects_to_group)} subjects) ===")
-        tsv_dir_group = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
-        os.makedirs(tsv_dir_group, exist_ok=True)
+    # [NORMALIZATION] loop over normalizations
+    for normalization in normalizations:
+        # [NORMALIZATION] normalization added to the comparison name used in every output file name
+        comp_name = f"{comp_name_base}_{normalization}"
+        for format_ in formats:
+            print(f"\n=== format: {format_} — group: {subject} ({len(subjects_to_group)} subjects) ===")
+            tsv_dir_group = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/pmf/tsv"
+            os.makedirs(tsv_dir_group, exist_ok=True)
 
-        for corr_param in corr_params:
-            # ── average KDE density grids cell-by-cell across subjects ───────────────
-            df_all_list = []
-            for sub in subjects_to_group:
-                tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
-                kde_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-corr.tsv"
-                if not os.path.isfile(kde_fn):
-                    print(f"[SKIP] missing {kde_fn} — run make_corr_tsv.py for {sub} first")
-                    continue
-                df_all_list.append(pd.read_table(kde_fn))
-            df_all = pd.concat(df_all_list, ignore_index=True)
-            df_group = df_all.groupby(["roi", "x_grid", "y_grid"], sort=False)[["density"]].mean().reset_index()
+            for corr_param in corr_params:
+                # ── average KDE density grids cell-by-cell across subjects ───────────────
+                df_all_list = []
+                for sub in subjects_to_group:
+                    tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
+                    kde_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-corr.tsv"
+                    if not os.path.isfile(kde_fn):
+                        print(f"[SKIP] missing {kde_fn} — run make_corr_tsv.py for {sub} first")
+                        continue
+                    df_all_list.append(pd.read_table(kde_fn))
+                df_all = pd.concat(df_all_list, ignore_index=True)
+                df_group = df_all.groupby(["roi", "x_grid", "y_grid"], sort=False)[["density"]].mean().reset_index()
 
-            kde_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-corr.tsv"
-            df_group.to_csv(kde_fn_group, sep="\t", na_rep="NaN", index=False)
-            print(f"Saving tsv: {kde_fn_group}")
+                kde_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-corr.tsv"
+                df_group.to_csv(kde_fn_group, sep="\t", na_rep="NaN", index=False)
+                print(f"Saving tsv: {kde_fn_group}")
 
-            # ── average regression stats across subjects, with between-subject CI ────
-            df_reg_all_list = []
-            for sub in subjects_to_group:
-                tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
-                reg_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-regression.tsv"
-                if not os.path.isfile(reg_fn):
-                    print(f"[SKIP] missing {reg_fn} — run make_corr_tsv.py for {sub} first")
-                    continue
-                df_reg_all_list.append(pd.read_table(reg_fn))
-            df_reg_all = pd.concat(df_reg_all_list, ignore_index=True)
+                # ── average regression stats across subjects, with between-subject CI ────
+                df_reg_all_list = []
+                for sub in subjects_to_group:
+                    tsv_dir_indiv = f"{main_dir}/{project_dir}/derivatives/pp_data/{sub}/{format_}/pmf/tsv"
+                    reg_fn = f"{tsv_dir_indiv}/{sub}_{comp_name}_{corr_param}-regression.tsv"
+                    if not os.path.isfile(reg_fn):
+                        print(f"[SKIP] missing {reg_fn} — run make_corr_tsv.py for {sub} first")
+                        continue
+                    df_reg_all_list.append(pd.read_table(reg_fn))
+                df_reg_all = pd.concat(df_reg_all_list, ignore_index=True)
 
-            df_reg_group = df_reg_all.groupby(["roi"], sort=False)[
-                ["slope", "intercept", "r2_pearson", "n_vertex", "mean_r2_weight"]
-            ].mean().reset_index()
-            for col in ["slope", "intercept", "r2_pearson"]:
-                df_reg_group[f"{col}_ci_lower"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.025).values
-                df_reg_group[f"{col}_ci_upper"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.975).values
+                df_reg_group = df_reg_all.groupby(["roi"], sort=False)[
+                    ["slope", "intercept", "r2_pearson", "n_vertex", "mean_r2_weight"]
+                ].mean().reset_index()
+                for col in ["slope", "intercept", "r2_pearson"]:
+                    df_reg_group[f"{col}_ci_lower"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.025).values
+                    df_reg_group[f"{col}_ci_upper"] = df_reg_all.groupby(["roi"], sort=False)[col].quantile(0.975).values
 
-            reg_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-regression.tsv"
-            df_reg_group.to_csv(reg_fn_group, sep="\t", na_rep="NaN", index=False)
-            print(f"Saving tsv: {reg_fn_group}")
+                reg_fn_group = f"{tsv_dir_group}/{subject}_{comp_name}_{corr_param}-regression.tsv"
+                df_reg_group.to_csv(reg_fn_group, sep="\t", na_rep="NaN", index=False)
+                print(f"Saving tsv: {reg_fn_group}")
 

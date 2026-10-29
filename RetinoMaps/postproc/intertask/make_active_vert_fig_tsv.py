@@ -71,204 +71,210 @@ group_tasks = analysis_info['task_intertask']
 subjects_to_group = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
-
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 # Threshold settings
 ecc_threshold = analysis_info['ecc_th']
 size_threshold = analysis_info['size_th']
 rsqr_threshold = analysis_info['rsqr_th']
-amplitude_threshold = analysis_info['prf_amp_th']
+# [NORMALIZATION] prf_amp_th is now a dict {normalization: [min, max]}, picked inside the normalization loop
+# AVANT : amplitude_threshold = analysis_info['prf_amp_th']
 stats_threshold = analysis_info['stats_th']
 n_threshold = analysis_info['n_th']
 
 rsq2use = 'prf_loo_rsq'
 avg_method = 'loo-avg'
 
-for tasks in group_tasks : 
-    if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
-    else : intertask_group = 'Sac-Pur-pRF'
-    # Format loop
-    for format_, extension in zip(formats, extensions):
-        print(format_)
-        # define list of rois for each format
-        rois_methods_format = rois_methods[format_]
-        for rois_method_format in rois_methods_format:
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # [NORMALIZATION] amplitude threshold of the current normalization
+    amplitude_threshold = analysis_info['prf_amp_th'][normalization]
+    for tasks in group_tasks : 
+        if 'SacVELoc' in tasks: intertask_group = 'SacVE-PurVE-pRF'
+        else : intertask_group = 'Sac-Pur-pRF'
+        # Format loop
+        for format_, extension in zip(formats, extensions):
+            print(format_)
+            # define list of rois for each format
+            rois_methods_format = rois_methods[format_]
+            for rois_method_format in rois_methods_format:
 
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
         
-            # Individual subject analysis
-            if 'group' not in subject:
-                # Directories
-                fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                    intertask_group, preproc_prep, filtering,
-                    normalization, avg_method, rois_method_format)
-                
-                tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
-                tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
-                    tsv_dir, subject, fn_spec)
-                
-                # Exception if no data for one format (e.g template subject)
-                if not os.path.isdir(tsv_dir):
-                    print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
-                    continue
-                
-                data = pd.read_table(tsv_fn, sep="\t")
-                # raw_data = data.copy()
-                data_vision_filtered = data.copy() 
-                
-                # replace nan in pcm by non_computed 
-                # [CORRECTION #76] colonnes pCM passees en object avant d'y ecrire 'non_computed' : pandas >= 3 refuse d'ecrire du texte
-                # dans une colonne float64 (TypeError) ; pandas 2 faisait cette conversion en object implicitement (meme resultat)
-                # AVANT : (ligne ajoutee)
-                pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
-                data_vision_filtered[pcm_cols] = data_vision_filtered[pcm_cols].astype(object)
-                data_vision_filtered.loc[data_vision_filtered['all'] != 'vision', 
-    ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
-    ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
-    
-                # Threshold data (replace by nan)
-                if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
-                elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
-                data_vision_filtered.loc[(data_vision_filtered.amplitude < amplitude_threshold[0]) |
-                         (data.prf_ecc < ecc_threshold[0]) | (data_vision_filtered.prf_ecc > ecc_threshold[1]) |
-                         (data_vision_filtered.prf_size < size_threshold[0]) | (data_vision_filtered.prf_size > size_threshold[1]) | 
-                         (data_vision_filtered.prf_n < n_threshold[0]) | (data_vision_filtered.prf_n > n_threshold[1]) | 
-                         (data_vision_filtered[rsq2use] < rsqr_threshold) |
-                         (data_vision_filtered[stats_col] > stats_threshold)] = np.nan
-                # [CORRECTION #42] dropna restreint aux colonnes hors pCM : les vertex 'vision' purs sans pCM (n_neighbor <= 1, pCM = NaN,
-                # [CORRECTION #42] non remplace par 'non_computed') etaient retires du % 'vision' ; les lignes seuillees (toutes NaN) restent retirees
-                # AVANT : data_vision_filtered = data_vision_filtered.dropna()
-                pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
-                data_vision_filtered = data_vision_filtered.dropna(subset=[col for col in data_vision_filtered.columns if col not in pcm_cols])
-    
-                for rois_type in ['roi', 'roi_mmp']:
-                    if rois_type == 'roi':
-                        rois = analysis_info[rois_method_format]
-                    elif rois_type == 'roi_mmp':
-                        rois = [item for sublist in analysis_info['rois-group-mmp'].values() for item in sublist]
-
-                    # Active vertex ROI 
-                    subject_rois_area_categorie_df = pd.DataFrame()
-                    for roi in rois : 
-                        # Compute categorie proportions 
-                        n_vert_roi = data.loc[data[rois_type] == roi].shape[0]
-                        n_vert_roi_saccade = data.loc[(data[rois_type] == roi) & (data['saccade'] == 'saccade')].shape[0]
-                        n_vert_roi_pursuit = data.loc[(data[rois_type] == roi) & (data['pursuit'] == 'pursuit')].shape[0]
-                        n_vert_roi_vision = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['vision'] == 'vision')].shape[0]
-                        # n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & 
-                        #                                                      (data['saccade'] == 'saccade') & 
-                        #                                                      (data['pursuit'] == 'pursuit') & 
-                        #                                                      (data['vision'] == 'vision')].shape[0]
-                        # [CORRECTION #4] conjonction comptée sur data_vision_filtered (mêmes filtres pRF que 'vision'),
-                        # afin qu'un vertex visuomoteur soit toujours un vertex visuel ; dénominateur n_vert_roi inchangé
-                        # AVANT : n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & (data['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
-                        n_vert_roi_vision_and_pursuit_and_saccade = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
-
-                        # Compute percentage active vertex in rois
-                        if n_vert_roi == 0 :
-                            percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0
-                        else : 
-                            percent_saccade = ((n_vert_roi_saccade * 100)/n_vert_roi)
-                            percent_pursuit = ((n_vert_roi_pursuit * 100)/n_vert_roi)
-                            percent_vision = ((n_vert_roi_vision * 100)/n_vert_roi)
-                            percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100)/n_vert_roi)
-        
-                        active_vertex_roi_categorie_df = pd.DataFrame({'subject':[subject], 
-                                                                       rois_type: [roi], 
-                                                                       'saccade': [percent_saccade], 
-                                                                       'pursuit': [percent_pursuit], 
-                                                                       'vision': [percent_vision], 
-                                                                       'all': [percent_vision_and_pursuit_and_saccade]})
-                
-
-                        subject_rois_area_categorie_df = pd.concat([subject_rois_area_categorie_df, active_vertex_roi_categorie_df], ignore_index=True)
-                        
-                    
-                    subject_rois_area_categorie_melt_df = subject_rois_area_categorie_df.melt(id_vars=['subject',rois_type], 
-                                                                                              value_vars=['saccade', 'pursuit', 'vision', 'all'], 
-                                                                                              var_name='categorie', 
-                                                                                              value_name='percentage_active')
-                    
-                    # Add roi column for roi_mmp table
-                    roi_to_group = {
-                        roi: key
-                        for key, values in analysis_info['rois-group-mmp'].items()
-                        for roi in values
-                    }
-                    
-                    if 'roi' not in subject_rois_area_categorie_melt_df.columns and 'roi_mmp' in subject_rois_area_categorie_melt_df.columns:
-                        subject_rois_area_categorie_melt_df['roi'] = (
-                            subject_rois_area_categorie_melt_df['roi_mmp']
-                            .map(roi_to_group))
-                    
-                    # Export subject DF 
-                    tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
-                        tsv_dir, subject, fn_spec, rois_type)
-                    print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
-                    subject_rois_area_categorie_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
-            
-            # Group analysis
-            else : 
-                for rois_type in ['roi', 'roi_mmp']:
-                    for i, subject_to_group in enumerate(subjects_to_group):
-                        # Load and concat subjects
-                        fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
-                            intertask_group, preproc_prep, filtering,
-                            normalization, avg_method, rois_method_format)
-                        
-                        tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject_to_group, format_)
-                        
-                        # Active Vertex roi
-                        # -----------------
-                        tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
-                            tsv_dir, subject_to_group, fn_spec, rois_type)
-                        df_active_vertex_roi_indiv = pd.read_table(tsv_active_vertex_roi_fn, sep="\t")
-                        if i == 0: df_active_vertex_roi = df_active_vertex_roi_indiv.copy()
-                        else: df_active_vertex_roi = pd.concat([df_active_vertex_roi, df_active_vertex_roi_indiv])
-                        
-    
-                    # Median across subjects
-                    # Active Vertex roi
-                    # -----------------                  
-                    df_active_vertex_roi_median_df = df_active_vertex_roi.groupby([rois_type,'categorie'], sort=False).median(numeric_only=True).reset_index().rename(columns={'percentage_active': 'median'})
-                    # [CORRECTION #3] intervalle de groupe = 25e-75e percentiles entre participants (comme dans le manuscrit)
-                    # et non 2.5e-97.5e ; noms de colonnes ci_low/ci_high inchangés pour les scripts de figures
-                    # AVANT : df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.025, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
-                    # AVANT : df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
-                    df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.25, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
-                    df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.75, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
-                    
-                    group_active_vertex_roi_melt_df = pd.concat([df_active_vertex_roi_median_df, 
-                                                                 df_active_vertex_roi_ci_low_df.drop(columns=[rois_type, 'categorie']), 
-                                                                 df_active_vertex_roi_ci_high_df.drop(columns=[rois_type, 'categorie'])], 
-                                                                axis=1).reset_index(drop=True)
-                    
-                    # Add roi column for roi_mmp table
-                    roi_to_group = {
-                        roi: key
-                        for key, values in analysis_info['rois-group-mmp'].items()
-                        for roi in values
-                    }
-                    
-                    if 'roi' not in group_active_vertex_roi_melt_df.columns and 'roi_mmp' in group_active_vertex_roi_melt_df.columns:
-                        group_active_vertex_roi_melt_df['roi'] = (
-                            group_active_vertex_roi_melt_df['roi_mmp']
-                            .map(roi_to_group))
-                    
-                    # Export DF 
+                # Individual subject analysis
+                if 'group' not in subject:
+                    # Directories
                     fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                         intertask_group, preproc_prep, filtering,
                         normalization, avg_method, rois_method_format)
-                    
+                
                     tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
-                    tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
-                        tsv_dir, subject, fn_spec, rois_type)
-                    print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
-                    group_active_vertex_roi_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
+                    tsv_fn = '{}/{}_{}_intertask-deriv.tsv'.format(
+                        tsv_dir, subject, fn_spec)
+                
+                    # Exception if no data for one format (e.g template subject)
+                    if not os.path.isdir(tsv_dir):
+                        print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
+                        continue
+                
+                    data = pd.read_table(tsv_fn, sep="\t")
+                    # raw_data = data.copy()
+                    data_vision_filtered = data.copy() 
+                
+                    # replace nan in pcm by non_computed 
+                    # [CORRECTION #76] colonnes pCM passees en object avant d'y ecrire 'non_computed' : pandas >= 3 refuse d'ecrire du texte
+                    # dans une colonne float64 (TypeError) ; pandas 2 faisait cette conversion en object implicitement (meme resultat)
+                    # AVANT : (ligne ajoutee)
+                    pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                    data_vision_filtered[pcm_cols] = data_vision_filtered[pcm_cols].astype(object)
+                    data_vision_filtered.loc[data_vision_filtered['all'] != 'vision', 
+        ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']] = data.loc[data['all'] != 'vision', 
+        ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']].fillna('non_computed')
+    
+                    # Threshold data (replace by nan)
+                    if stats_threshold == 0.05: stats_col = 'corr_pvalue_5pt'
+                    elif stats_threshold == 0.01: stats_col = 'corr_pvalue_1pt'
+                    data_vision_filtered.loc[(data_vision_filtered.amplitude < amplitude_threshold[0]) |
+                             (data.prf_ecc < ecc_threshold[0]) | (data_vision_filtered.prf_ecc > ecc_threshold[1]) |
+                             (data_vision_filtered.prf_size < size_threshold[0]) | (data_vision_filtered.prf_size > size_threshold[1]) | 
+                             (data_vision_filtered.prf_n < n_threshold[0]) | (data_vision_filtered.prf_n > n_threshold[1]) | 
+                             (data_vision_filtered[rsq2use] < rsqr_threshold) |
+                             (data_vision_filtered[stats_col] > stats_threshold)] = np.nan
+                    # [CORRECTION #42] dropna restreint aux colonnes hors pCM : les vertex 'vision' purs sans pCM (n_neighbor <= 1, pCM = NaN,
+                    # [CORRECTION #42] non remplace par 'non_computed') etaient retires du % 'vision' ; les lignes seuillees (toutes NaN) restent retirees
+                    # AVANT : data_vision_filtered = data_vision_filtered.dropna()
+                    pcm_cols = ['n_neighbor', 'pcm_median', 'vert_geo_dist_median', 'vert_prf_dist_median']
+                    data_vision_filtered = data_vision_filtered.dropna(subset=[col for col in data_vision_filtered.columns if col not in pcm_cols])
+    
+                    for rois_type in ['roi', 'roi_mmp']:
+                        if rois_type == 'roi':
+                            rois = analysis_info[rois_method_format]
+                        elif rois_type == 'roi_mmp':
+                            rois = [item for sublist in analysis_info['rois-group-mmp'].values() for item in sublist]
+
+                        # Active vertex ROI 
+                        subject_rois_area_categorie_df = pd.DataFrame()
+                        for roi in rois : 
+                            # Compute categorie proportions 
+                            n_vert_roi = data.loc[data[rois_type] == roi].shape[0]
+                            n_vert_roi_saccade = data.loc[(data[rois_type] == roi) & (data['saccade'] == 'saccade')].shape[0]
+                            n_vert_roi_pursuit = data.loc[(data[rois_type] == roi) & (data['pursuit'] == 'pursuit')].shape[0]
+                            n_vert_roi_vision = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['vision'] == 'vision')].shape[0]
+                            # n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & 
+                            #                                                      (data['saccade'] == 'saccade') & 
+                            #                                                      (data['pursuit'] == 'pursuit') & 
+                            #                                                      (data['vision'] == 'vision')].shape[0]
+                            # [CORRECTION #4] conjonction comptée sur data_vision_filtered (mêmes filtres pRF que 'vision'),
+                            # afin qu'un vertex visuomoteur soit toujours un vertex visuel ; dénominateur n_vert_roi inchangé
+                            # AVANT : n_vert_roi_vision_and_pursuit_and_saccade = data.loc[(data[rois_type] == roi) & (data['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
+                            n_vert_roi_vision_and_pursuit_and_saccade = data_vision_filtered.loc[(data_vision_filtered[rois_type] == roi) & (data_vision_filtered['all'] == 'vision_and_pursuit_and_saccade')].shape[0]
+
+                            # Compute percentage active vertex in rois
+                            if n_vert_roi == 0 :
+                                percent_saccade = percent_pursuit = percent_vision = percent_vision_and_pursuit_and_saccade = 0
+                            else : 
+                                percent_saccade = ((n_vert_roi_saccade * 100)/n_vert_roi)
+                                percent_pursuit = ((n_vert_roi_pursuit * 100)/n_vert_roi)
+                                percent_vision = ((n_vert_roi_vision * 100)/n_vert_roi)
+                                percent_vision_and_pursuit_and_saccade = ((n_vert_roi_vision_and_pursuit_and_saccade * 100)/n_vert_roi)
+        
+                            active_vertex_roi_categorie_df = pd.DataFrame({'subject':[subject], 
+                                                                           rois_type: [roi], 
+                                                                           'saccade': [percent_saccade], 
+                                                                           'pursuit': [percent_pursuit], 
+                                                                           'vision': [percent_vision], 
+                                                                           'all': [percent_vision_and_pursuit_and_saccade]})
+                
+
+                            subject_rois_area_categorie_df = pd.concat([subject_rois_area_categorie_df, active_vertex_roi_categorie_df], ignore_index=True)
+                        
+                    
+                        subject_rois_area_categorie_melt_df = subject_rois_area_categorie_df.melt(id_vars=['subject',rois_type], 
+                                                                                                  value_vars=['saccade', 'pursuit', 'vision', 'all'], 
+                                                                                                  var_name='categorie', 
+                                                                                                  value_name='percentage_active')
+                    
+                        # Add roi column for roi_mmp table
+                        roi_to_group = {
+                            roi: key
+                            for key, values in analysis_info['rois-group-mmp'].items()
+                            for roi in values
+                        }
+                    
+                        if 'roi' not in subject_rois_area_categorie_melt_df.columns and 'roi_mmp' in subject_rois_area_categorie_melt_df.columns:
+                            subject_rois_area_categorie_melt_df['roi'] = (
+                                subject_rois_area_categorie_melt_df['roi_mmp']
+                                .map(roi_to_group))
+                    
+                        # Export subject DF 
+                        tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
+                            tsv_dir, subject, fn_spec, rois_type)
+                        print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
+                        subject_rois_area_categorie_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
+            
+                # Group analysis
+                else : 
+                    for rois_type in ['roi', 'roi_mmp']:
+                        for i, subject_to_group in enumerate(subjects_to_group):
+                            # Load and concat subjects
+                            fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                                intertask_group, preproc_prep, filtering,
+                                normalization, avg_method, rois_method_format)
+                        
+                            tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject_to_group, format_)
+                        
+                            # Active Vertex roi
+                            # -----------------
+                            tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
+                                tsv_dir, subject_to_group, fn_spec, rois_type)
+                            df_active_vertex_roi_indiv = pd.read_table(tsv_active_vertex_roi_fn, sep="\t")
+                            if i == 0: df_active_vertex_roi = df_active_vertex_roi_indiv.copy()
+                            else: df_active_vertex_roi = pd.concat([df_active_vertex_roi, df_active_vertex_roi_indiv])
+                        
+    
+                        # Median across subjects
+                        # Active Vertex roi
+                        # -----------------                  
+                        df_active_vertex_roi_median_df = df_active_vertex_roi.groupby([rois_type,'categorie'], sort=False).median(numeric_only=True).reset_index().rename(columns={'percentage_active': 'median'})
+                        # [CORRECTION #3] intervalle de groupe = 25e-75e percentiles entre participants (comme dans le manuscrit)
+                        # et non 2.5e-97.5e ; noms de colonnes ci_low/ci_high inchangés pour les scripts de figures
+                        # AVANT : df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.025, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
+                        # AVANT : df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.975, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
+                        df_active_vertex_roi_ci_low_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.25, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_low'})
+                        df_active_vertex_roi_ci_high_df = df_active_vertex_roi.groupby([rois_type, 'categorie'], sort=False).quantile(0.75, numeric_only=True).reset_index().rename(columns={'percentage_active': 'ci_high'})
+                    
+                        group_active_vertex_roi_melt_df = pd.concat([df_active_vertex_roi_median_df, 
+                                                                     df_active_vertex_roi_ci_low_df.drop(columns=[rois_type, 'categorie']), 
+                                                                     df_active_vertex_roi_ci_high_df.drop(columns=[rois_type, 'categorie'])], 
+                                                                    axis=1).reset_index(drop=True)
+                    
+                        # Add roi column for roi_mmp table
+                        roi_to_group = {
+                            roi: key
+                            for key, values in analysis_info['rois-group-mmp'].items()
+                            for roi in values
+                        }
+                    
+                        if 'roi' not in group_active_vertex_roi_melt_df.columns and 'roi_mmp' in group_active_vertex_roi_melt_df.columns:
+                            group_active_vertex_roi_melt_df['roi'] = (
+                                group_active_vertex_roi_melt_df['roi_mmp']
+                                .map(roi_to_group))
+                    
+                        # Export DF 
+                        fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
+                            intertask_group, preproc_prep, filtering,
+                            normalization, avg_method, rois_method_format)
+                    
+                        tsv_dir = "{}/{}/derivatives/pp_data/{}/{}/intertask/tsv".format(main_dir, project_dir, subject, format_)
+                        tsv_active_vertex_roi_fn = "{}/{}_{}_active-vertex-{}.tsv".format(
+                            tsv_dir, subject, fn_spec, rois_type)
+                        print('Saving tsv: {}'.format(tsv_active_vertex_roi_fn))
+                        group_active_vertex_roi_melt_df.to_csv(tsv_active_vertex_roi_fn, sep="\t", na_rep='NaN', index=False)
                 
                    
 # # Define permission cmd

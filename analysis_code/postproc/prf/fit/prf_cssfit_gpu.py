@@ -30,8 +30,9 @@ python prf_cssfit_gpu.py [main directory] [project name] [subject name]
 Exemple:
 for direct gpu test on mesocentre: 
 srun -p hopper --gres=gpu:1 --cpus-per-task=4 --time=02:00:00 --pty bash -i
-python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_z-score_avg_bold.func.gii prf 32  
-python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/170k/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_fmriprep_dct_z-score_avg_bold.dtseries.nii prf 32
+# [NORMALIZATION] {normalization} = z-score, psc or raw
+python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_{normalization}_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_{normalization}_avg_bold.func.gii prf 32  
+python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/170k/func/fmriprep_dct_{normalization}_avg/sub-03_task-pRF_fmriprep_dct_{normalization}_avg_bold.dtseries.nii prf 32
 
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)

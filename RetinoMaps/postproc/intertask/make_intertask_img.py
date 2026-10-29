@@ -69,6 +69,11 @@ fdr_alpha = analysis_info['stats_th']
 intertask_code_names = analysis_info['intertask_code_names']
 maps_names_inter_task = analysis_info['maps_names_intertask']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
+# [NORMALIZATION] preprocessing labels loaded (were hard-coded in the file names)
+# AVANT : (lignes ajoutees)
+preproc_prep = analysis_info['preproc_prep']
+filtering = analysis_info['filtering']
+normalizations = analysis_info['normalization']
  
 # Index
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
@@ -81,101 +86,112 @@ elif fdr_alpha == 0.01: fdr_p_map_idx = corr_pvalue_1pt_idx
 # AVANT : (lignes ajoutees)
 else: raise ValueError('stats_th must be 0.05 or 0.01, got {}'.format(fdr_alpha))
 
-# find all the stats files 
-glm_stats_fns = []
-prf_stats_fns = []
-for format_, extension in zip(formats, extensions):
-    list_glm = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-avg_glm-stats.{}".format(
-        main_dir, project_dir, subject, format_, extension))
-    list_prf = glob.glob("{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives/*loo-avg_prf-css_stats.{}".format(
-        main_dir, project_dir, subject, format_, extension))
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    # find all the stats files 
+    glm_stats_fns = []
+    prf_stats_fns = []
+    for format_, extension in zip(formats, extensions):
+        # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
+        # AVANT : list_glm = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*loo-avg_glm-stats.{}".format(
+        # AVANT :     main_dir, project_dir, subject, format_, extension))
+        # AVANT : list_prf = glob.glob("{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives/*loo-avg_prf-css_stats.{}".format(
+        # AVANT :     main_dir, project_dir, subject, format_, extension))
+        list_glm = glob.glob("{}/{}/derivatives/pp_data/{}/{}/glm/glm_derivatives/*_{}_{}_{}_loo-avg_glm-stats.{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, extension))
+        list_prf = glob.glob("{}/{}/derivatives/pp_data/{}/{}/prf/prf_derivatives/*_{}_{}_{}_loo-avg_prf-css_stats.{}".format(
+            main_dir, project_dir, subject, format_, preproc_prep, filtering, normalization, extension))
     
-    glm_stats_fns.extend(list_glm)
-    prf_stats_fns.extend(list_prf)   
+        glm_stats_fns.extend(list_glm)
+        prf_stats_fns.extend(list_prf)   
 
-stats_fns = glm_stats_fns + prf_stats_fns
+    stats_fns = glm_stats_fns + prf_stats_fns
 
-# split filtered files  depending of their nature
-if subject != pycortex_subject_template:
-    stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
-    for subtype in stats_fns:
-        if "hemi-L" in subtype:
-            stats_fsnative_hemi_L.append(subtype)
-        elif "hemi-R" in subtype:
-            stats_fsnative_hemi_R.append(subtype)
-        elif "170k" in subtype:
-            stats_170k.append(subtype)
+    # split filtered files  depending of their nature
+    if subject != pycortex_subject_template:
+        stats_fsnative_hemi_L, stats_fsnative_hemi_R, stats_170k = [], [], []
+        for subtype in stats_fns:
+            if "hemi-L" in subtype:
+                stats_fsnative_hemi_L.append(subtype)
+            elif "hemi-R" in subtype:
+                stats_fsnative_hemi_R.append(subtype)
+            elif "170k" in subtype:
+                stats_170k.append(subtype)
             
-    stats_files_list = [stats_fsnative_hemi_L, 
-                        stats_fsnative_hemi_R, 
-                        stats_170k]
-else: stats_files_list = [stats_fns]
+        stats_files_list = [stats_fsnative_hemi_L, 
+                            stats_fsnative_hemi_R, 
+                            stats_170k]
+    else: stats_files_list = [stats_fns]
 
-# loop for different group of tasks (sac/pur, sacVE/purVE)
-for tasks in group_tasks: 
-    for stats_files in stats_files_list:
-        # [CORRECTION #43] test de liste vide deplace avant le chargement : stats_files[0] levait IndexError si aucun fichier
-        # AVANT :         #  Load file to get size
-        # AVANT :         img, data = load_surface(fn=stats_files[0])
-        # AVANT :         final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
-        # AVANT :         
-        # AVANT :         if not stats_files:
-        # AVANT :             continue
-        if not stats_files:
-            continue
+    # loop for different group of tasks (sac/pur, sacVE/purVE)
+    for tasks in group_tasks: 
+        for stats_files in stats_files_list:
+            # [CORRECTION #43] test de liste vide deplace avant le chargement : stats_files[0] levait IndexError si aucun fichier
+            # AVANT :         #  Load file to get size
+            # AVANT :         img, data = load_surface(fn=stats_files[0])
+            # AVANT :         final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
+            # AVANT :         
+            # AVANT :         if not stats_files:
+            # AVANT :             continue
+            if not stats_files:
+                continue
         
-        #  Load file to get size
-        img, data = load_surface(fn=stats_files[0])
-        final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
+            #  Load file to get size
+            img, data = load_surface(fn=stats_files[0])
+            final_map = np.zeros((8,data[fdr_p_map_idx].shape[0]))
         
-        if stats_files[0].find('hemi-L') != -1: hemi = 'hemi-L'
-        elif stats_files[0].find('hemi-R') != -1: hemi = 'hemi-R'
-        else: hemi = None
+            if stats_files[0].find('hemi-L') != -1: hemi = 'hemi-L'
+            elif stats_files[0].find('hemi-R') != -1: hemi = 'hemi-R'
+            else: hemi = None
         
-        for task in tasks:
-            print(task)
-            # defind output files names 
-            stats_files_tasks = [file for file in stats_files if task in file]
+            for task in tasks:
+                print(task)
+                # defind output files names 
+                stats_files_tasks = [file for file in stats_files if task in file]
             
-            # make a final map with all  tasks 
-            if 'Pur' in task: task_idx = intertask_code_names['pursuit']
-            elif 'Sac' in task: task_idx = intertask_code_names['saccade']
-            elif 'pRF' in task: task_idx = intertask_code_names['vision']
+                # make a final map with all  tasks 
+                if 'Pur' in task: task_idx = intertask_code_names['pursuit']
+                elif 'Sac' in task: task_idx = intertask_code_names['saccade']
+                elif 'pRF' in task: task_idx = intertask_code_names['vision']
             
-            if not stats_files_tasks:
-                raise ValueError(f"No files found for task {task}")
-            # load data 
-            stats_img_task, stats_data_task = load_surface(fn=stats_files_tasks[0])
-            fdr_p_map = stats_data_task[fdr_p_map_idx, :]
-            for vert, fdr_value in enumerate(fdr_p_map):
-                if fdr_value < fdr_alpha:
-                    final_map[task_idx, vert] += task_idx
+                if not stats_files_tasks:
+                    raise ValueError(f"No files found for task {task}")
+                # load data 
+                stats_img_task, stats_data_task = load_surface(fn=stats_files_tasks[0])
+                fdr_p_map = stats_data_task[fdr_p_map_idx, :]
+                for vert, fdr_value in enumerate(fdr_p_map):
+                    if fdr_value < fdr_alpha:
+                        final_map[task_idx, vert] += task_idx
                         
-        final_map[0,:] = np.sum(final_map, axis=0)                
-        #  Make specifique maps 
-        for vert, final_value in enumerate(final_map[0,:]):
-            if final_value == intertask_code_names['pursuit_and_saccade'] : final_map[3, vert] = intertask_code_names['pursuit_and_saccade']
-            elif final_value == intertask_code_names['vision_and_pursuit'] : final_map[5, vert] = intertask_code_names['vision_and_pursuit']
-            elif final_value == intertask_code_names['vision_and_saccade'] : final_map[6, vert] = intertask_code_names['vision_and_saccade']
-            elif final_value == intertask_code_names['vision_and_pursuit_and_saccade'] : final_map[7, vert] = intertask_code_names['vision_and_pursuit_and_saccade']
+            final_map[0,:] = np.sum(final_map, axis=0)                
+            #  Make specifique maps 
+            for vert, final_value in enumerate(final_map[0,:]):
+                if final_value == intertask_code_names['pursuit_and_saccade'] : final_map[3, vert] = intertask_code_names['pursuit_and_saccade']
+                elif final_value == intertask_code_names['vision_and_pursuit'] : final_map[5, vert] = intertask_code_names['vision_and_pursuit']
+                elif final_value == intertask_code_names['vision_and_saccade'] : final_map[6, vert] = intertask_code_names['vision_and_saccade']
+                elif final_value == intertask_code_names['vision_and_pursuit_and_saccade'] : final_map[7, vert] = intertask_code_names['vision_and_pursuit_and_saccade']
                     
-        # Export finals map
-        if 'SacVELoc' in tasks: suffix = 'SacVE-PurVE-pRF'
-        else : suffix = 'Sac-Pur-pRF'
-        if hemi:
-            inter_task_dir = '{}/{}/derivatives/pp_data/{}/fsnative/intertask/intertask_derivatives'.format(main_dir, project_dir, subject)
-            os.makedirs(inter_task_dir, exist_ok=True)
-            inter_task_fn = '{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(subject, suffix, hemi)
+            # Export finals map
+            if 'SacVELoc' in tasks: suffix = 'SacVE-PurVE-pRF'
+            else : suffix = 'Sac-Pur-pRF'
+            if hemi:
+                inter_task_dir = '{}/{}/derivatives/pp_data/{}/fsnative/intertask/intertask_derivatives'.format(main_dir, project_dir, subject)
+                os.makedirs(inter_task_dir, exist_ok=True)
+                # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                # AVANT : inter_task_fn = '{}_task-{}_{}_fmriprep_dct_z-score_loo-avg_intertask.func.gii' .format(subject, suffix, hemi)
+                inter_task_fn = '{}_task-{}_{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.func.gii' .format(subject, suffix, hemi, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
         
-        else:
-            inter_task_dir = '{}/{}/derivatives/pp_data/{}/170k/intertask/intertask_derivatives'.format(main_dir, project_dir, subject)
-            os.makedirs(inter_task_dir, exist_ok=True)
-            inter_task_fn = '{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(subject, suffix)
+            else:
+                inter_task_dir = '{}/{}/derivatives/pp_data/{}/170k/intertask/intertask_derivatives'.format(main_dir, project_dir, subject)
+                os.makedirs(inter_task_dir, exist_ok=True)
+                # [NORMALIZATION] hard-coded 'fmriprep_dct_z-score' replaced by the settings labels
+                # AVANT : inter_task_fn = '{}_task-{}_fmriprep_dct_z-score_loo-avg_intertask.dtseries.nii' .format(subject, suffix)
+                inter_task_fn = '{}_task-{}_{preproc_prep}_{filtering}_{normalization}_loo-avg_intertask.dtseries.nii' .format(subject, suffix, preproc_prep=preproc_prep, filtering=filtering, normalization=normalization)
             
-        # Save img 
-        print('Save {}/{}'.format(inter_task_dir, inter_task_fn))
-        final_img = make_surface_image(data=final_map, source_img=img, maps_names=maps_names_inter_task)
-        nb.save(final_img, '{}/{}'.format(inter_task_dir, inter_task_fn))
+            # Save img 
+            print('Save {}/{}'.format(inter_task_dir, inter_task_fn))
+            final_img = make_surface_image(data=final_map, source_img=img, maps_names=maps_names_inter_task)
+            nb.save(final_img, '{}/{}'.format(inter_task_dir, inter_task_fn))
             
 ## Define permission cmd
 #print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

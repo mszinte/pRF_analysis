@@ -77,7 +77,9 @@ extensions = analysis_info['extensions']
 task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods'] # selects input type
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
@@ -92,21 +94,24 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
  
 # Define fns (filenames), keeping avg_method and task_name with each file
 pp_fns = []
-for avg_method in avg_methods:
-    for task_name in task_names:
-        print(f"=========================")
-        print(f"Running CSS Fit with: data: {avg_method}, task: {task_name}, dm: {dm_name}, analysis: {analysis_name}")
-        print(f"=========================\n")
-        dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
-        dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
-            pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
+# [NORMALIZATION] loop over normalizations: input files of every normalization are collected and submitted
+for normalization in normalizations:
+    for avg_method in avg_methods:
+        for task_name in task_names:
+            print(f"=========================")
+            print(f"Running CSS Fit with: normalization: {normalization}, data: {avg_method}, task: {task_name}, dm: {dm_name}, analysis: {analysis_name}")
+            print(f"=========================\n")
+            dct_avg_gii_fns = "{}/{}/fsnative/func/{}_{}_{}_{}/*_task-{}_*{}*.func.gii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
+            dct_avg_nii_fns = "{}/{}/170k/func/{}_{}_{}_{}/*_task-{}_*{}*.dtseries.nii".format(
+                pp_dir, subject, preproc_prep, filtering, normalization, avg_method, task_name, avg_method)
  
-        # Accumulate the results
-        pp_fns.extend([(fn, avg_method, task_name) for fn in glob.glob(dct_avg_gii_fns)])
-        pp_fns.extend([(fn, avg_method, task_name) for fn in glob.glob(dct_avg_nii_fns)])
+            # Accumulate the results
+            pp_fns.extend([(fn, normalization, avg_method, task_name) for fn in glob.glob(dct_avg_gii_fns)])  # [NORMALIZATION] normalization kept with each file
+            pp_fns.extend([(fn, normalization, avg_method, task_name) for fn in glob.glob(dct_avg_nii_fns)])  # [NORMALIZATION]
  
-for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
+# [NORMALIZATION] AVANT : for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
+for fit_num, (pp_fn, normalization, avg_method, task_name) in enumerate(pp_fns):
     if pp_fn.endswith('.nii'):
         prf_dir = "{}/{}/170k/{}".format(pp_dir, subject, output_folder)
         os.makedirs(prf_dir, exist_ok=True)
@@ -135,9 +140,9 @@ for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.out
-#SBATCH -J {subject}_task-{task_name}_{avg_method}-{analysis_name}-css{dm_name}_fit
+#SBATCH -e {log_dir}/{subject}_task-{task_name}_{normalization}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_task-{task_name}_{normalization}_{avg_method}-{analysis_name}-css{dm_name}_fit_%N_%j_%a.out
+#SBATCH -J {subject}_task-{task_name}_{normalization}_{avg_method}-{analysis_name}-css{dm_name}_fit
 """.format(server_project=server_project,
            cluster_name=cluster_name,
            nb_procs=nb_procs,
@@ -146,6 +151,7 @@ for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
            memory_val=memory_val,
            log_dir=prf_logs_dir,
            task_name=task_name,
+           normalization=normalization,  # [NORMALIZATION] normalization added to job/log names
            avg_method=avg_method,
            analysis_name=analysis_name,
            dm_name=dm_name)
@@ -155,8 +161,9 @@ for fit_num, (pp_fn, avg_method, task_name) in enumerate(pp_fns):
         main_dir, project_dir, subject, pp_fn, analysis_name, nb_procs)
  
     # Create shs
-    sh_fn = "{}/jobs/{}_task-{}_{}-{}-css{}_fit-{}.sh".format(
-        prf_dir, subject, task_name, avg_method, analysis_name, dm_name, fit_num)
+    # [NORMALIZATION] normalization added to the sh file name
+    sh_fn = "{}/jobs/{}_task-{}_{}_{}-{}-css{}_fit-{}.sh".format(
+        prf_dir, subject, task_name, normalization, avg_method, analysis_name, dm_name, fit_num)
  
     of = open(sh_fn, 'w')
     of.write("{} \n{} \n{} \n{}".format(slurm_cmd, fit_cmd,

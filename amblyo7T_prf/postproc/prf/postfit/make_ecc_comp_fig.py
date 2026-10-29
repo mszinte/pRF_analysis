@@ -71,7 +71,9 @@ extensions           = analysis_info['extensions']
 rois_methods         = analysis_info['rois_methods']
 preproc_prep         = analysis_info['preproc_prep']
 filtering            = analysis_info['filtering']
-normalization        = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods          = analysis_info['avg_methods']
 prf_tasks_eyes_names = analysis_info['prf_tasks_eyes_names']
 params               = analysis_info['ecc_comp_params']
@@ -84,124 +86,126 @@ subject_groups_map = dict(zip(participants_df['participant_id'], participants_df
 # -----------------------------------------------------------------------------------------
 # Main loop
 # -----------------------------------------------------------------------------------------
-for avg_method in avg_methods:
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for avg_method in avg_methods:
 
-    for format_, extension in zip(formats, extensions):
-        rois_methods_format = rois_methods[format_]
+        for format_, extension in zip(formats, extensions):
+            rois_methods_format = rois_methods[format_]
 
-        for rois_method_format in rois_methods_format:
-            if rois_method_format == 'rois-drawn':
-                rois = analysis_info[rois_method_format]
-            elif rois_method_format == 'rois-group-mmp':
-                rois = list(analysis_info[rois_method_format].keys())
+            for rois_method_format in rois_methods_format:
+                if rois_method_format == 'rois-drawn':
+                    rois = analysis_info[rois_method_format]
+                elif rois_method_format == 'rois-group-mmp':
+                    rois = list(analysis_info[rois_method_format].keys())
 
-            for prf_task_eyes_names in prf_tasks_eyes_names:
+                for prf_task_eyes_names in prf_tasks_eyes_names:
 
-                fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
-                    prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
-                    preproc_prep, filtering, normalization, avg_method, rois_method_format)
+                    fn_spec_combined = "task-{}_{}_{}_{}_{}_{}" .format(
+                        prf_task_eyes_names[0].replace('RightEye', '').replace('LeftEye', ''),
+                        preproc_prep, filtering, normalization, avg_method, rois_method_format)
 
-                figure_info = analysis_info.copy()
-                figure_info['rois'] = rois
+                    figure_info = analysis_info.copy()
+                    figure_info['rois'] = rois
 
-                # ------------------------------------------------------------------
-                # Determine run mode
-                # ------------------------------------------------------------------
-                if 'group' not in subject:
-                    indiv_subjects = [subject]
-                    run_group      = None
-                elif subject == 'group-patient':
-                    indiv_subjects = None
-                    run_group      = 'patient'
-                elif subject == 'group-control':
-                    indiv_subjects = None
-                    run_group      = 'control'
+                    # ------------------------------------------------------------------
+                    # Determine run mode
+                    # ------------------------------------------------------------------
+                    if 'group' not in subject:
+                        indiv_subjects = [subject]
+                        run_group      = None
+                    elif subject == 'group-patient':
+                        indiv_subjects = None
+                        run_group      = 'patient'
+                    elif subject == 'group-control':
+                        indiv_subjects = None
+                        run_group      = 'control'
 
-                # ------------------------------------------------------------------
-                # INDIVIDUAL figures
-                # ------------------------------------------------------------------
-                for subj in (indiv_subjects if indiv_subjects is not None else []):
-                    subj_group = subject_groups_map[subj]
+                    # ------------------------------------------------------------------
+                    # INDIVIDUAL figures
+                    # ------------------------------------------------------------------
+                    for subj in (indiv_subjects if indiv_subjects is not None else []):
+                        subj_group = subject_groups_map[subj]
 
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subj, format_)
-                    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
-                        main_dir, project_dir, subj, format_)
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
+                            main_dir, project_dir, subj, format_)
+                        fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
+                            main_dir, project_dir, subj, format_)
 
-                    if not os.path.isdir(tsv_dir):
-                        print(f"[SKIP] {subj}: tsv_dir not found: {tsv_dir}")
+                        if not os.path.isdir(tsv_dir):
+                            print(f"[SKIP] {subj}: tsv_dir not found: {tsv_dir}")
+                            continue
+                        os.makedirs(fig_dir, exist_ok=True)
+
+                        tsv_fn = '{}/{}_{}_ecc-comp.tsv'.format(tsv_dir, subj, fn_spec_combined)
+                        if not os.path.isfile(tsv_fn):
+                            print(f"[SKIP] {subj}: TSV not found: {tsv_fn}")
+                            continue
+
+                        df_subj = pd.read_table(tsv_fn, sep='\t')
+                        # n_vert has no vertex-level CI — add NaN columns for uniform handling
+                        df_subj['n_vert_median'] = df_subj['n_vert']
+                        df_subj['n_vert_ci_lo']  = np.nan
+                        df_subj['n_vert_ci_hi']  = np.nan
+
+                        if subj_group == 'patient':
+                            eye_conds        = ['AE-RE', 'FE-LE']
+                            subj_group_label = 'patient'
+                        else:
+                            eye_conds        = ['AE-RE', 'FE-LE', 'CTRL']
+                            subj_group_label = 'control'
+
+                        figure_info['subject_group'] = subj_group_label
+                        print(f'Plotting individual {subj} ({subj_group_label}) - {fn_spec_combined}')
+
+                        fig = ecc_comp_plot(df=df_subj,
+                                            df_stats=None,
+                                            figure_info=figure_info,
+                                            eye_conditions=eye_conds,
+                                            show_stats=False)
+
+                        fig_fn = '{}/{}_{}_ecc-comp.pdf'.format(fig_dir, subj, fn_spec_combined)
+                        print(f'Saving: {fig_fn}')
+                        fig.write_image(fig_fn)
+
+                    # ------------------------------------------------------------------
+                    # GROUP figure
+                    # ------------------------------------------------------------------
+                    if run_group is None:
                         continue
-                    os.makedirs(fig_dir, exist_ok=True)
 
-                    tsv_fn = '{}/{}_{}_ecc-comp.tsv'.format(tsv_dir, subj, fn_spec_combined)
-                    if not os.path.isfile(tsv_fn):
-                        print(f"[SKIP] {subj}: TSV not found: {tsv_fn}")
+                    tsv_dir_grp = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
+                        main_dir, project_dir, run_group, format_)
+                    fig_dir_grp = '{}/{}/derivatives/pp_data/group-{}/{}/prf/figures'.format(
+                        main_dir, project_dir, run_group, format_)
+                    os.makedirs(fig_dir_grp, exist_ok=True)
+
+                    tsv_grp  = '{}/group-{}_{}_ecc-comp.tsv'.format(
+                        tsv_dir_grp, run_group, fn_spec_combined)
+                    tsv_stat = '{}/group-{}_{}_ecc-comp_stats.tsv'.format(
+                        tsv_dir_grp, run_group, fn_spec_combined)
+
+                    if not os.path.isfile(tsv_grp):
+                        print(f"[SKIP] group TSV not found: {tsv_grp}")
                         continue
 
-                    df_subj = pd.read_table(tsv_fn, sep='\t')
-                    # n_vert has no vertex-level CI — add NaN columns for uniform handling
-                    df_subj['n_vert_median'] = df_subj['n_vert']
-                    df_subj['n_vert_ci_lo']  = np.nan
-                    df_subj['n_vert_ci_hi']  = np.nan
+                    df_grp  = pd.read_table(tsv_grp,  sep='\t')
+                    df_stat = pd.read_table(tsv_stat, sep='\t')
 
-                    if subj_group == 'patient':
-                        eye_conds        = ['AE-RE', 'FE-LE']
-                        subj_group_label = 'patient'
-                    else:
-                        eye_conds        = ['AE-RE', 'FE-LE', 'CTRL']
-                        subj_group_label = 'control'
+                    # Both patient and control group figures include CTRL
+                    eye_conds = ['AE-RE', 'FE-LE', 'CTRL']
+                    figure_info['subject_group'] = run_group
+                    print(f'Plotting group-{run_group} - {fn_spec_combined}')
 
-                    figure_info['subject_group'] = subj_group_label
-                    print(f'Plotting individual {subj} ({subj_group_label}) - {fn_spec_combined}')
-
-                    fig = ecc_comp_plot(df=df_subj,
-                                        df_stats=None,
+                    fig = ecc_comp_plot(df=df_grp,
+                                        df_stats=df_stat,
                                         figure_info=figure_info,
                                         eye_conditions=eye_conds,
-                                        show_stats=False)
+                                        show_stats=True)
 
-                    fig_fn = '{}/{}_{}_ecc-comp.pdf'.format(fig_dir, subj, fn_spec_combined)
+                    fig_fn = '{}/group-{}_{}_ecc-comp.pdf'.format(
+                        fig_dir_grp, run_group, fn_spec_combined)
                     print(f'Saving: {fig_fn}')
                     fig.write_image(fig_fn)
-
-                # ------------------------------------------------------------------
-                # GROUP figure
-                # ------------------------------------------------------------------
-                if run_group is None:
-                    continue
-
-                tsv_dir_grp = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
-                    main_dir, project_dir, run_group, format_)
-                fig_dir_grp = '{}/{}/derivatives/pp_data/group-{}/{}/prf/figures'.format(
-                    main_dir, project_dir, run_group, format_)
-                os.makedirs(fig_dir_grp, exist_ok=True)
-
-                tsv_grp  = '{}/group-{}_{}_ecc-comp.tsv'.format(
-                    tsv_dir_grp, run_group, fn_spec_combined)
-                tsv_stat = '{}/group-{}_{}_ecc-comp_stats.tsv'.format(
-                    tsv_dir_grp, run_group, fn_spec_combined)
-
-                if not os.path.isfile(tsv_grp):
-                    print(f"[SKIP] group TSV not found: {tsv_grp}")
-                    continue
-
-                df_grp  = pd.read_table(tsv_grp,  sep='\t')
-                df_stat = pd.read_table(tsv_stat, sep='\t')
-
-                # Both patient and control group figures include CTRL
-                eye_conds = ['AE-RE', 'FE-LE', 'CTRL']
-                figure_info['subject_group'] = run_group
-                print(f'Plotting group-{run_group} - {fn_spec_combined}')
-
-                fig = ecc_comp_plot(df=df_grp,
-                                    df_stats=df_stat,
-                                    figure_info=figure_info,
-                                    eye_conditions=eye_conds,
-                                    show_stats=True)
-
-                fig_fn = '{}/group-{}_{}_ecc-comp.pdf'.format(
-                    fig_dir_grp, run_group, fn_spec_combined)
-                print(f'Saving: {fig_fn}')
-                fig.write_image(fig_fn)
 
 print('Done.')

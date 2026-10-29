@@ -88,8 +88,19 @@ vdm_height = analysis_info['vdm_size_pix'][1]
 gauss_grid_nr = analysis_info['gauss_grid_nr']
 max_ecc_size = analysis_info['max_ecc_size']
 size_bounds = analysis_info['size_th']
-prf_amplitude_bounds = analysis_info['prf_amplitude_bounds']
-prf_baseline_bounds = analysis_info['prf_baseline_bounds']
+# [NORMALIZATION] normalization read from the input file name
+# (e.g. ..._fmriprep_dct_psc_concat_bold.func.gii -> 'psc'), bounds picked accordingly
+# AVANT : prf_amplitude_bounds = analysis_info['prf_amplitude_bounds']
+#         prf_baseline_bounds = analysis_info['prf_baseline_bounds']
+normalizations = analysis_info['normalization']
+input_fn_parts = os.path.basename(input_fn).split('_')
+normalization_found = [n for n in normalizations if n in input_fn_parts]
+if len(normalization_found) != 1:
+    raise ValueError('Cannot identify normalization {} in {}'.format(normalizations, input_fn))
+normalization = normalization_found[0]
+print('Normalization: {}'.format(normalization))
+prf_amplitude_bounds = analysis_info['prf_amplitude_bounds'][normalization]
+prf_baseline_bounds = analysis_info['prf_baseline_bounds'][normalization]
 hrf_1_bounds = analysis_info['hrf_1_bounds']
 hrf_2_bounds = analysis_info['hrf_2_bounds']
 rsq_iterative_th = analysis_info['rsq_iterative_th']

@@ -14,7 +14,7 @@ sys.argv[4]: analysis name (e.g. pmf)
 sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
-Residual files saved to: .../func/fmriprep_dct_z-score_concat-residuals/
+Residual files saved to: .../func/{preproc_prep}_{filtering}_{normalization}_concat-residuals/  [NORMALIZATION] one folder per normalization
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
@@ -69,7 +69,9 @@ extensions = analysis_info['extensions']
 task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 output_folder = analysis_info['output_folder']
 dm_name = analysis_info['dm_name']
@@ -81,98 +83,102 @@ set_pycortex_config_file(cortex_dir)
 pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # Only process concat avg_method
-for avg_method in avg_methods:
-    if avg_method != 'concat':
-        continue
+# [NORMALIZATION] loop over normalizations
+for normalization in normalizations:
+    for avg_method in avg_methods:
+        if avg_method != 'concat':
+            continue
 
-    for format_, extension in zip(formats, extensions):
+        for format_, extension in zip(formats, extensions):
 
-        func_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_{avg_method}'
-        fit_dir  = f'{pp_dir}/{subject}/{format_}/{output_folder}/fit'
+            func_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_{avg_method}'
+            fit_dir  = f'{pp_dir}/{subject}/{format_}/{output_folder}/fit'
 
-        for task_name in task_names:
-            print(f'\n{"="*72}')
-            print(f'Processing: {avg_method} - {format_} - {task_name}')
+            for task_name in task_names:
+                print(f'\n{"="*72}')
+                print(f'Processing: {avg_method} - {format_} - {task_name}')
 
-            # Find BOLD files 
-            if format_ == 'fsnative':
-                bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_hemi-L*_{avg_method}_bold.{extension}')
-                bold_fns += glob.glob(f'{func_dir}/*task-{task_name}_hemi-R*_{avg_method}_bold.{extension}')
-            elif format_ == '170k':
-                bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_*_{avg_method}_bold*.{extension}')
-
-            if not bold_fns:
-                print(f'No BOLD files found in: {func_dir}')
-                continue
-
-            # Find pred files 
-            pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
-
-            if not pred_fns:
-                print(f'No pred files found in: {fit_dir}')
-                continue
-
-            for bold_fn in bold_fns:
-                print(f'\nBOLD: {bold_fn}')
-
-                # Match pred to bold by hemisphere (fsnative) or directly (170k)
+                # Find BOLD files 
                 if format_ == 'fsnative':
-                    hemi = 'hemi-L' if 'hemi-L' in os.path.basename(bold_fn) else 'hemi-R'
-                    matched_preds = [fn for fn in pred_fns if hemi in os.path.basename(fn)]
+                    bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_hemi-L*_{avg_method}_bold.{extension}')
+                    bold_fns += glob.glob(f'{func_dir}/*task-{task_name}_hemi-R*_{avg_method}_bold.{extension}')
                 elif format_ == '170k':
-                    hemi = None
-                    matched_preds = pred_fns
+                    bold_fns = glob.glob(f'{func_dir}/*task-{task_name}_*_{avg_method}_bold*.{extension}')
 
-                if not matched_preds:
-                    print(f'No matching pred file found for: {bold_fn}')
+                if not bold_fns:
+                    print(f'No BOLD files found in: {func_dir}')
                     continue
 
-                pred_fn = matched_preds[0]
-                print(f'Pred: {pred_fn}')
+                # Find pred files 
+                # [NORMALIZATION] glob restricted to the current normalization (otherwise pred files of all normalizations are mixed)
+                # AVANT : pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
+                pred_fns = glob.glob(f'{fit_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
 
-                # Build output path and filename
-                residuals_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_concat-residuals'
-                os.makedirs(residuals_dir, exist_ok=True)
+                if not pred_fns:
+                    print(f'No pred files found in: {fit_dir}')
+                    continue
 
-                if format_ == 'fsnative':
-                    residual_fn = f'{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
-                elif format_ == '170k':
-                    residual_fn = f'{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
+                for bold_fn in bold_fns:
+                    print(f'\nBOLD: {bold_fn}')
 
-                residual_fullfn = os.path.join(residuals_dir, residual_fn)
-                print(f'Output: {residual_fullfn}')
+                    # Match pred to bold by hemisphere (fsnative) or directly (170k)
+                    if format_ == 'fsnative':
+                        hemi = 'hemi-L' if 'hemi-L' in os.path.basename(bold_fn) else 'hemi-R'
+                        matched_preds = [fn for fn in pred_fns if hemi in os.path.basename(fn)]
+                    elif format_ == '170k':
+                        hemi = None
+                        matched_preds = pred_fns
 
-                # Load data
-                print('Loading pred data...')
-                pred_img, pred_data = load_surface(fn=pred_fn)
-                print('Loading BOLD data...')
-                bold_img, bold_data = load_surface(fn=bold_fn)
+                    if not matched_preds:
+                        print(f'No matching pred file found for: {bold_fn}')
+                        continue
 
-                print(f'  BOLD shape: {bold_data.shape}')
-                print(f'  Pred shape: {pred_data.shape}')
+                    pred_fn = matched_preds[0]
+                    print(f'Pred: {pred_fn}')
 
-                # Sanity check
-                if bold_data.shape != pred_data.shape:
-                    raise ValueError(
-                        f'Shape mismatch — BOLD {bold_data.shape} vs pred {pred_data.shape}.'
+                    # Build output path and filename
+                    residuals_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_concat-residuals'
+                    os.makedirs(residuals_dir, exist_ok=True)
+
+                    if format_ == 'fsnative':
+                        residual_fn = f'{subject}_task-{task_name}_{hemi}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
+                    elif format_ == '170k':
+                        residual_fn = f'{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_concat-residuals_bold.{extension}'
+
+                    residual_fullfn = os.path.join(residuals_dir, residual_fn)
+                    print(f'Output: {residual_fullfn}')
+
+                    # Load data
+                    print('Loading pred data...')
+                    pred_img, pred_data = load_surface(fn=pred_fn)
+                    print('Loading BOLD data...')
+                    bold_img, bold_data = load_surface(fn=bold_fn)
+
+                    print(f'  BOLD shape: {bold_data.shape}')
+                    print(f'  Pred shape: {pred_data.shape}')
+
+                    # Sanity check
+                    if bold_data.shape != pred_data.shape:
+                        raise ValueError(
+                            f'Shape mismatch — BOLD {bold_data.shape} vs pred {pred_data.shape}.'
+                        )
+
+                    # NaN mask
+                    nan_mask = (
+                        np.isnan(bold_data).any(axis=0) |
+                        np.isnan(pred_data).any(axis=0)
                     )
+                    clean_vox = np.where(~nan_mask)[0]
+                    print(f'  Clean voxels: {len(clean_vox)} / {bold_data.shape[1]}')
 
-                # NaN mask
-                nan_mask = (
-                    np.isnan(bold_data).any(axis=0) |
-                    np.isnan(pred_data).any(axis=0)
-                )
-                clean_vox = np.where(~nan_mask)[0]
-                print(f'  Clean voxels: {len(clean_vox)} / {bold_data.shape[1]}')
+                    # Compute residuals
+                    residual_data = np.full_like(bold_data, np.nan)
+                    residual_data[:, clean_vox] = bold_data[:, clean_vox] - pred_data[:, clean_vox]
 
-                # Compute residuals
-                residual_data = np.full_like(bold_data, np.nan)
-                residual_data[:, clean_vox] = bold_data[:, clean_vox] - pred_data[:, clean_vox]
-
-                # Save
-                residual_img = make_surface_image(data=residual_data, source_img=bold_img)
-                nb.save(residual_img, residual_fullfn)
-                print(f'Saved: {residual_fullfn}')
+                    # Save
+                    residual_img = make_surface_image(data=residual_data, source_img=bold_img)
+                    nb.save(residual_img, residual_fullfn)
+                    print(f'Saved: {residual_fullfn}')
 
 print('\nDone — all residuals computed.')
 

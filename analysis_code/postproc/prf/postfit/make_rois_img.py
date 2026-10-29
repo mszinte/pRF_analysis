@@ -73,7 +73,9 @@ if subject == 'sub-170k': extensions = ['dtseries.nii']
 else: extensions = analysis_info['extensions']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 rois_methods = analysis_info['rois_methods']
 avg_methods = analysis_info['avg_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
@@ -89,36 +91,90 @@ for format_, extension in zip(formats, extensions):
 
     # define list of rois for each format
     rois_methods_format = rois_methods[format_]
-    for rois_method_format in rois_methods_format:
-        print(format_)
-        if subject == pycortex_subject_template:
-            if format_ == 'fsnative':
-                continue
+    # [NORMALIZATION] loop over normalizations placed after the 'rois-mmp' append (otherwise appended once per normalization).
+    # ROI images are identical across normalizations: one copy is written per normalization to keep the file names used downstream
+    for normalization in normalizations:
+        for rois_method_format in rois_methods_format:
+            print(format_)
+            if subject == pycortex_subject_template:
+                if format_ == 'fsnative':
+                    continue
+                if rois_method_format == 'rois-drawn':
+                    continue
+                
+            rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
+            os.makedirs(rois_dir, exist_ok=True)
             if rois_method_format == 'rois-drawn':
-                continue
-                
-        rois_dir = '{}/{}/derivatives/pp_data/{}/{}/rois'.format(main_dir, project_dir, subject, format_)
-        os.makedirs(rois_dir, exist_ok=True)
-        if rois_method_format == 'rois-drawn':
-            rois = analysis_info[rois_method_format]
-        elif rois_method_format == 'rois-group-mmp':
-            rois = list(analysis_info[rois_method_format].keys())
-        elif rois_method_format == 'rois-mmp':
-            mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
-            mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
-            rois = mmp_rois_numbers_df['roi_name'].tolist()
+                rois = analysis_info[rois_method_format]
+            elif rois_method_format == 'rois-group-mmp':
+                rois = list(analysis_info[rois_method_format].keys())
+            elif rois_method_format == 'rois-mmp':
+                mmp_rois_numbers_tsv_fn = os.path.join(base_dir, "analysis_code", "atlas", "mmp_rois_numbers.tsv")
+                mmp_rois_numbers_df = pd.read_table(mmp_rois_numbers_tsv_fn, sep="\t")
+                rois = mmp_rois_numbers_df['roi_name'].tolist()
 
-        if format_ == 'fsnative':
-            for hemi in ['hemi-L','hemi-R']:
+            if format_ == 'fsnative':
+                for hemi in ['hemi-L','hemi-R']:
                 
-                roi_verts_dict = get_rois(subject=subject, 
+                    roi_verts_dict = get_rois(subject=subject, 
+                                              surf_format=format_, 
+                                              rois_type=rois_method_format, 
+                                              mask=True, 
+                                              rois=rois, 
+                                              hemis=hemi)
+
+                    array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)
+                    # [CORRECTION #25] rois-mmp : le code ecrit est le roi_num du tsv (celui utilise pour decoder roi_mmp dans les TSV)
+                    # [CORRECTION #25] et non la position dans le npz, qui se decalait des qu'une parcelle manquait (7PL)
+                    # AVANT : for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
+                    # AVANT : array_rois[mask] = i
+                    for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
+                        if rois_method_format == 'rois-mmp':
+                            array_rois[mask] = mmp_rois_numbers_df.set_index('roi_name')['roi_num'][key]
+                        else:
+                            array_rois[mask] = i
+                    
+                    # Load data to have source img
+                    data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
+
+                    # Find first file with prf-deriv in the name
+                    data_files = glob.glob('{}/{}*{}*.{}'.format(data_dir, subject, hemi, extension))
+                
+                    if not data_files:
+                        raise FileNotFoundError(f"No func file found for {subject} {hemi}")
+                    data_fn = data_files[0]
+                    img, data = load_surface(fn=data_fn)
+                
+                    # Define filename
+                    rois_fn = f'{subject}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
+
+                    # Saving file
+                    array_rois = array_rois.reshape(1, -1)
+                    rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
+                    nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
+                    print('Saving {}/{}'.format(rois_dir, rois_fn))
+                          
+            elif format_ == '170k':
+                # Load data to have source img
+                data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
+            
+                # Find first file with prf-deriv in the name
+                data_files = glob.glob('{}/{}*.{}'.format(data_dir, subject, extension))
+                if not data_files:
+                    raise FileNotFoundError(f"No func file found for {subject}")
+                data_fn = data_files[0]
+                img, data = load_surface(fn=data_fn)
+            
+                # MMP group rois
+                roi_verts_dict = get_rois(subject=pycortex_subject_template, 
                                           surf_format=format_, 
-                                          rois_type=rois_method_format, 
+                                          rois_type=rois_method_format,
                                           mask=True, 
                                           rois=rois, 
-                                          hemis=hemi)
+                                          hemis=None
+                                         )
 
-                array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)
+                array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
                 # [CORRECTION #25] rois-mmp : le code ecrit est le roi_num du tsv (celui utilise pour decoder roi_mmp dans les TSV)
                 # [CORRECTION #25] et non la position dans le npz, qui se decalait des qu'une parcelle manquait (7PL)
                 # AVANT : for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
@@ -128,66 +184,15 @@ for format_, extension in zip(formats, extensions):
                         array_rois[mask] = mmp_rois_numbers_df.set_index('roi_name')['roi_num'][key]
                     else:
                         array_rois[mask] = i
-                    
-                # Load data to have source img
-                data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
-
-                # Find first file with prf-deriv in the name
-                data_files = glob.glob('{}/{}*{}*.{}'.format(data_dir, subject, hemi, extension))
-                
-                if not data_files:
-                    raise FileNotFoundError(f"No func file found for {subject} {hemi}")
-                data_fn = data_files[0]
-                img, data = load_surface(fn=data_fn)
                 
                 # Define filename
-                rois_fn = f'{subject}_{hemi}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
-
+                rois_fn = f'{subject}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
+    
                 # Saving file
                 array_rois = array_rois.reshape(1, -1)
                 rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
                 nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
                 print('Saving {}/{}'.format(rois_dir, rois_fn))
-                          
-        elif format_ == '170k':
-            # Load data to have source img
-            data_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}'
-            
-            # Find first file with prf-deriv in the name
-            data_files = glob.glob('{}/{}*.{}'.format(data_dir, subject, extension))
-            if not data_files:
-                raise FileNotFoundError(f"No func file found for {subject}")
-            data_fn = data_files[0]
-            img, data = load_surface(fn=data_fn)
-            
-            # MMP group rois
-            roi_verts_dict = get_rois(subject=pycortex_subject_template, 
-                                      surf_format=format_, 
-                                      rois_type=rois_method_format,
-                                      mask=True, 
-                                      rois=rois, 
-                                      hemis=None
-                                     )
-
-            array_rois = np.zeros(len(next(iter(roi_verts_dict.values()))), dtype=int)  
-            # [CORRECTION #25] rois-mmp : le code ecrit est le roi_num du tsv (celui utilise pour decoder roi_mmp dans les TSV)
-            # [CORRECTION #25] et non la position dans le npz, qui se decalait des qu'une parcelle manquait (7PL)
-            # AVANT : for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
-            # AVANT : array_rois[mask] = i
-            for i, (key, mask) in enumerate(roi_verts_dict.items(), 1):
-                if rois_method_format == 'rois-mmp':
-                    array_rois[mask] = mmp_rois_numbers_df.set_index('roi_name')['roi_num'][key]
-                else:
-                    array_rois[mask] = i
-                
-            # Define filename
-            rois_fn = f'{subject}_{preproc_prep}_{filtering}_{normalization}_{rois_method_format}.{extension}'
-    
-            # Saving file
-            array_rois = array_rois.reshape(1, -1)
-            rois_img = make_surface_image(data=array_rois, source_img=img, maps_names=['rois'])
-            nb.save(rois_img, '{}/{}'.format(rois_dir, rois_fn))
-            print('Saving {}/{}'.format(rois_dir, rois_fn))
             
 # # Change permission
 # print('Changing permission in {}/{}'.format(main_dir, project_dir))

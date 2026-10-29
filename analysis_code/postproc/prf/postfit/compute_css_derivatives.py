@@ -76,7 +76,9 @@ subjects = analysis_info['subjects']
 task_names = analysis_info['analysis_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] list of normalizations, looped over below
+# AVANT : normalization = analysis_info['normalization']
+normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 averaging_templates = analysis_info['averaging_templates']
 output_folder = analysis_info["output_folder"]
@@ -92,131 +94,140 @@ pp_dir = "{}/{}/derivatives/pp_data".format(main_dir, project_dir)
 
 # template_avg exception
 if subject != 'template_avg':
-    for avg_method in avg_methods:
-        if 'loo' in avg_method:
-            is_loo_r2 = True
-            maps_names = analysis_info['maps_names_css_loo']
-        else: 
-            is_loo_r2 = False
-            maps_names = analysis_info['maps_names_css']
+    # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
+    for normalization in normalizations:
+        for avg_method in avg_methods:
+            if 'loo' in avg_method:
+                is_loo_r2 = True
+                maps_names = analysis_info['maps_names_css_loo']
+            else: 
+                is_loo_r2 = False
+                maps_names = analysis_info['maps_names_css']
             
-        for format_, extension in zip(formats, extensions):
+            for format_, extension in zip(formats, extensions):
 
-            # define/create folders
-            prf_fit_dir = '{}/{}/{}/{}/fit'.format(
+                # define/create folders
+                prf_fit_dir = '{}/{}/{}/{}/fit'.format(
+                        pp_dir, subject, format_, analysis_name)
+                prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(
                     pp_dir, subject, format_, analysis_name)
-            prf_deriv_dir = "{}/{}/{}/{}/prf_derivatives".format(
-                pp_dir, subject, format_, analysis_name)
-            os.makedirs(prf_deriv_dir, exist_ok=True)
+                os.makedirs(prf_deriv_dir, exist_ok=True)
 
-            for task_name in task_names:
-                print(f'{avg_method} - {format_} - {task_name}')
-                # Find pRF func/pred files
-                fit_fns = glob.glob('{}/*task-{}_*_{}*_{}-css{}_fit.{}'.format(
-                        prf_fit_dir, task_name, avg_method, analysis_name, dm_name, extension))
+                for task_name in task_names:
+                    print(f'{avg_method} - {format_} - {task_name}')
+                    # Find pRF func/pred files
+                    # [NORMALIZATION] glob restricted to the current normalization (otherwise every normalization is recomputed at each pass)
+                    # AVANT : fit_fns = glob.glob('{}/*task-{}_*_{}*_{}-css{}_fit.{}'.format(
+                    # AVANT : prf_fit_dir, task_name, avg_method, analysis_name, dm_name, extension))
+                    fit_fns = glob.glob('{}/*task-{}_*_{}_{}_{}_{}*_{}-css{}_fit.{}'.format(
+                            prf_fit_dir, task_name, preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name, extension))
     
-                # Compute derivatives
-                for fit_fn in fit_fns:
-                    deriv_fn = fit_fn.split('/')[-1].replace(f'{analysis_name}-css{dm_name}_fit', f'{analysis_name}-css{dm_name}_deriv')
+                    # Compute derivatives
+                    for fit_fn in fit_fns:
+                        deriv_fn = fit_fn.split('/')[-1].replace(f'{analysis_name}-css{dm_name}_fit', f'{analysis_name}-css{dm_name}_deriv')
 
-                    # get arrays
-                    fit_img, fit_data = load_surface(fit_fn)
+                        # get arrays
+                        fit_img, fit_data = load_surface(fit_fn)
                     
-                    deriv_array = fit2deriv(fit_array=fit_data, 
-                                            model='css', 
-                                            is_loo_r2=is_loo_r2)
+                        deriv_array = fit2deriv(fit_array=fit_data, 
+                                                model='css', 
+                                                is_loo_r2=is_loo_r2)
                     
-                    deriv_img = make_surface_image(data=deriv_array, 
-                                                   source_img=fit_img, 
-                                                   maps_names=maps_names)
+                        deriv_img = make_surface_image(data=deriv_array, 
+                                                       source_img=fit_img, 
+                                                       maps_names=maps_names)
 
-                    nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
-                    print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
+                        nb.save(deriv_img,'{}/{}'.format(prf_deriv_dir, deriv_fn))
+                        print('Saving derivatives: {}'.format('{}/{}'.format(prf_deriv_dir, deriv_fn)))
             
-                # Compute median across leave-one-out fit
-                if 'loo-avg' in avg_method:
-                    print('Compute median across LOO')                
+                    # Compute median across leave-one-out fit
+                    if 'loo-avg' in avg_method:
+                        print('Compute median across LOO')                
                     
-                    # Get LOO files (excluding any with "median" in the name)
-                    loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_deriv.{extension}")
+                        # Get LOO files (excluding any with "median" in the name)
+                        # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
+                        # AVANT : loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_deriv.{extension}")
+                        loo_prf_deriv_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_{analysis_name}-css{dm_name}_deriv.{extension}")
 
-                    # Group files by hemisphere/format
-                    loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
-                    loo_prf_deriv_fsnative_hemi_R_fns = [fn for fn in loo_prf_deriv_fns if "hemi-R" in fn]
-                    loo_prf_deriv_170k_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" not in fn and "hemi-R" not in fn]
+                        # Group files by hemisphere/format
+                        loo_prf_deriv_fsnative_hemi_L_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" in fn]
+                        loo_prf_deriv_fsnative_hemi_R_fns = [fn for fn in loo_prf_deriv_fns if "hemi-R" in fn]
+                        loo_prf_deriv_170k_fns = [fn for fn in loo_prf_deriv_fns if "hemi-L" not in fn and "hemi-R" not in fn]
 
-                    # Process each group
-                    for group_files, hemi in [(loo_prf_deriv_fsnative_hemi_L_fns, "_hemi-L"),
-                                              (loo_prf_deriv_fsnative_hemi_R_fns, "_hemi-R"),
-                                              (loo_prf_deriv_170k_fns, "")]:
-                        if len(group_files)>0:
+                        # Process each group
+                        for group_files, hemi in [(loo_prf_deriv_fsnative_hemi_L_fns, "_hemi-L"),
+                                                  (loo_prf_deriv_fsnative_hemi_R_fns, "_hemi-R"),
+                                                  (loo_prf_deriv_170k_fns, "")]:
+                            if len(group_files)>0:
                             
-                            # Load first file to initialize median array and define fn
-                            prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
-                            loo_prf_deriv = np.zeros_like(prf_deriv_data)
-                            loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css{}_deriv.{}'.format(
-                                prf_deriv_dir, subject, task_name, hemi, 
-                                preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
+                                # Load first file to initialize median array and define fn
+                                prf_deriv_img, prf_deriv_data = load_surface(group_files[0])
+                                loo_prf_deriv = np.zeros_like(prf_deriv_data)
+                                loo_prf_deriv_fn =  '{}/{}_task-{}{}_{}_{}_{}_loo-avg_{}-css{}_deriv.{}'.format(
+                                    prf_deriv_dir, subject, task_name, hemi, 
+                                    preproc_prep, filtering, normalization, analysis_name, dm_name, extension)
                             
-                            # Compute median across LOO runs
-                            # [CORRECTION #1] vraie mediane sur les 5 plis LOO empiles (la mediane de proche en proche donnait des poids 1/16,1/16,1/8,1/4,1/2)
-                            # AVANT : for n_run, loo_deriv_fn in enumerate(group_files):
-                            # AVANT : print(f'Loadding loo deriv: {loo_deriv_fn}')
-                            # AVANT : _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
-                            # AVANT : if n_run == 0: loo_prf_deriv = np.copy(loo_prf_deriv_run_data)
-                            # AVANT : else: loo_prf_deriv = np.nanmedian(np.array([loo_prf_deriv, loo_prf_deriv_run_data]), axis=0)
-                            loo_prf_deriv_runs = []
-                            for n_run, loo_deriv_fn in enumerate(group_files):
-                                print(f'Loadding loo deriv: {loo_deriv_fn}')
-                                _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
-                                loo_prf_deriv_runs.append(loo_prf_deriv_run_data)
-                            loo_prf_deriv = np.nanmedian(np.stack(loo_prf_deriv_runs, axis=0), axis=0)
+                                # Compute median across LOO runs
+                                # [CORRECTION #1] vraie mediane sur les 5 plis LOO empiles (la mediane de proche en proche donnait des poids 1/16,1/16,1/8,1/4,1/2)
+                                # AVANT : for n_run, loo_deriv_fn in enumerate(group_files):
+                                # AVANT : print(f'Loadding loo deriv: {loo_deriv_fn}')
+                                # AVANT : _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
+                                # AVANT : if n_run == 0: loo_prf_deriv = np.copy(loo_prf_deriv_run_data)
+                                # AVANT : else: loo_prf_deriv = np.nanmedian(np.array([loo_prf_deriv, loo_prf_deriv_run_data]), axis=0)
+                                loo_prf_deriv_runs = []
+                                for n_run, loo_deriv_fn in enumerate(group_files):
+                                    print(f'Loadding loo deriv: {loo_deriv_fn}')
+                                    _, loo_prf_deriv_run_data = load_surface(loo_deriv_fn)
+                                    loo_prf_deriv_runs.append(loo_prf_deriv_run_data)
+                                loo_prf_deriv = np.nanmedian(np.stack(loo_prf_deriv_runs, axis=0), axis=0)
                             
-                            # Save median results
-                            loo_prf_deriv_img = make_surface_image(loo_prf_deriv, prf_deriv_img, maps_names)
-                            nb.save(loo_prf_deriv_img, loo_prf_deriv_fn)
-                            print(f"Saving median: {loo_prf_deriv_fn}")
+                                # Save median results
+                                loo_prf_deriv_img = make_surface_image(loo_prf_deriv, prf_deriv_img, maps_names)
+                                nb.save(loo_prf_deriv_img, loo_prf_deriv_fn)
+                                print(f"Saving median: {loo_prf_deriv_fn}")
 
 
-# template_avg median          
+    # template_avg median          
 elif subject == 'template_avg':
-    for averaging_template_name, averaging_template_format in averaging_templates.items(): 
-        print('{}, Median corr across subject...'. format(averaging_template_name))
+    # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
+    for normalization in normalizations:
+        for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+            print('{}, Median corr across subject...'. format(averaging_template_name))
     
-        for task_name in task_names:
+            for task_name in task_names:
             
-            for avg_method in avg_methods:
-                if 'loo' in avg_method:
-                    maps_names = analysis_info['maps_names_css_loo']
-                else: 
-                    maps_names = analysis_info['maps_names_css']
+                for avg_method in avg_methods:
+                    if 'loo' in avg_method:
+                        maps_names = analysis_info['maps_names_css_loo']
+                    else: 
+                        maps_names = analysis_info['maps_names_css']
                 
-                # find all the subject prf deriv
-                prf_deriv_fns = []
-                for subject in subjects:
-                    prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
-                        main_dir, project_dir, subject, averaging_template_format, analysis_name)
-                    prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
-                        prf_deriv_dir, subject, task_name,
-                        preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)]
+                    # find all the subject prf deriv
+                    prf_deriv_fns = []
+                    for subject in subjects:
+                        prf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
+                            main_dir, project_dir, subject, averaging_template_format, analysis_name)
+                        prf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
+                            prf_deriv_dir, subject, task_name,
+                            preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)]
     
-                # Computing median across subject
-                img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
+                    # Computing median across subject
+                    img, data_deriv_median = median_subject_template(fns=prf_deriv_fns)
                 
-                # Export results
-                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
-                    main_dir, project_dir, averaging_template_name, averaging_template_format, analysis_name)
-                os.makedirs(template_deriv_dir, exist_ok=True)
+                    # Export results
+                    template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/prf_derivatives".format(
+                        main_dir, project_dir, averaging_template_name, averaging_template_format, analysis_name)
+                    os.makedirs(template_deriv_dir, exist_ok=True)
     
-                template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
-                    template_deriv_dir, averaging_template_name, task_name, 
-                    preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
+                    template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_{}-css{}_deriv.dtseries.nii".format(
+                        template_deriv_dir, averaging_template_name, task_name, 
+                        preproc_prep, filtering, normalization, avg_method, analysis_name, dm_name)
                 
-                print("save: {}".format(template_deriv_fn))
-                template_deriv_img = make_surface_image(data=data_deriv_median, 
-                                                        source_img=img, 
-                                                        maps_names=maps_names)
-                nb.save(template_deriv_img, template_deriv_fn)
+                    print("save: {}".format(template_deriv_fn))
+                    template_deriv_img = make_surface_image(data=data_deriv_median, 
+                                                            source_img=img, 
+                                                            maps_names=maps_names)
+                    nb.save(template_deriv_img, template_deriv_fn)
 
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))

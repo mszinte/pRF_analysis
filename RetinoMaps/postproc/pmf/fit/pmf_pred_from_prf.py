@@ -81,7 +81,15 @@ analysis_info = settings[0]
 
 TR = analysis_info['TR']
 max_ecc_size = analysis_info['max_ecc_size']
-prf_amp_th = analysis_info['prf_amp_th']
+# [NORMALIZATION] prf_amp_th is now a dict {normalization: [min, max]}: the normalization is read
+# from the input file name (e.g. ..._fmriprep_dct_psc_concat_bold.func.gii -> 'psc')
+# AVANT : prf_amp_th = analysis_info['prf_amp_th']
+input_fn_parts = os.path.basename(input_fn).split('_')
+normalization_found = [n for n in analysis_info['prf_amp_th'] if n in input_fn_parts]
+if len(normalization_found) != 1:
+    raise ValueError('Cannot identify normalization {} in {}'.format(list(analysis_info['prf_amp_th']), input_fn))
+normalization = normalization_found[0]
+prf_amp_th = analysis_info['prf_amp_th'][normalization]
 
 # Load screen settings from subject dependend task-events.json
 prf_task_name = input_fn.split("task-")[1].split("_")[0] # from the file path

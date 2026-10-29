@@ -282,7 +282,13 @@ corr_n_th:
 
 corr_prf_amp_th: 
   description: "pRF amplitude range threshold for eye correlation analysis"
-  value: [-6, 6]
+  # [NORMALIZATION] value is now a dict {normalization: bounds}, the code picks the
+  # entry matching the normalization being processed (KeyError if missing).
+  # AVANT : value: [-6, 6]
+  # [NORMALIZATION] psc values = first guess, to adjust after a test fit (check vertices hitting the bounds)
+  value:
+    z-score: [-6, 6]
+    psc: [-20, 20]
 
 corr_stats_th: 
   description: "p value minimum threshold for eye correlation analysis"

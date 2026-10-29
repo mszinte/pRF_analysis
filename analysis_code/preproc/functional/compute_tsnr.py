@@ -67,7 +67,10 @@ set_pycortex_config_file(cortex_dir)
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 settings_path = os.path.join(base_dir, project_dir, "settings.yml")
-settings = load_settings([settings_path])
+# [TR] TR is defined in prf-analysis.yml since the settings restructuring (general vs specific)
+# AVANT : settings = load_settings([settings_path])
+prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
+settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 formats = analysis_info['formats']
@@ -75,7 +78,8 @@ extensions = analysis_info['extensions']
 sessions = analysis_info['sessions']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
-normalization = analysis_info['normalization']
+# [NORMALIZATION] removed: tSNR is computed before normalization, the variable was not used
+# AVANT : normalization = analysis_info['normalization']
 partial_scan = analysis_info['partial_scan']
 starting_TR = analysis_info['starting_TR']
 ending_TR = analysis_info['ending_TR']
