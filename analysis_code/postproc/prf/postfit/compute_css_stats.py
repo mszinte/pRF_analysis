@@ -13,7 +13,7 @@ sys.argv[4]: analysis name (e.g prf)
 sys.argv[5]: group (e.g. 327)
 -----------------------------------------------------------------------------------------
 Output(s):
-results of linear regression 
+results of linear regression
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
@@ -29,18 +29,18 @@ python compute_css_stats.py /scratch/mszinte/data RetinoMaps template_avg prf 32
 python compute_css_stats.py /scratch/mszinte/data amblyo7T_prf sub-04 prf 327
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
-Edited by Martin Szinte (martin.szinte@gmail.com) 
+Edited by Martin Szinte (martin.szinte@gmail.com)
 -----------------------------------------------------------------------------------------
 """
-
+ 
 # Stop warnings
 import warnings
 warnings.filterwarnings("ignore")
-
+ 
 # Debug
 import ipdb
 deb = ipdb.set_trace
-
+ 
 # General imports
 import os
 import re
@@ -49,28 +49,28 @@ import glob
 import numpy as np
 import nibabel as nb
 from scipy import stats
-
+ 
 # Personal imports
 sys.path.append("{}/../../../utils".format(os.getcwd()))
 from pycortex_utils import set_pycortex_config_file
 from surface_utils import make_surface_image , load_surface
 from maths_utils import linear_regression_surf, multipletests_surface, median_subject_template
 from settings_utils import load_settings
-
+ 
 # Inputs
 main_dir = sys.argv[1]
 project_dir = sys.argv[2]
 subject = sys.argv[3]
 analysis_name = sys.argv[4]
 group = sys.argv[5]
-
+ 
 # Load settings
 base_dir = os.path.abspath(os.path.join(os.getcwd(), "../../../../"))
 general_settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 analysis_settings_path = os.path.join(base_dir, project_dir, f"{analysis_name}-analysis.yml")
 settings = load_settings([general_settings_path, analysis_settings_path])
 analysis_info = settings[0]
-
+ 
 fdr_alpha = analysis_info['fdr_alpha']
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -87,43 +87,50 @@ avg_methods = analysis_info['avg_methods']
 averaging_templates = analysis_info['averaging_templates']
 output_folder = analysis_info["output_folder"]
 dm_name = analysis_info["dm_name"]
-
+ 
 # Set pycortex db and colormaps
 cortex_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/cortex"
 set_pycortex_config_file(cortex_dir)
-
+ 
 # Index
 slope_idx, intercept_idx, rvalue_idx, pvalue_idx, stderr_idx, \
     trs_idx, corr_pvalue_5pt_idx, corr_pvalue_1pt_idx = 0, 1, 2, 3, 4, 5, 6, 7
-
+ 
 # Define preprocessing folder
 pp_dir = f"{main_dir}/{project_dir}/derivatives/pp_data"
-
+ 
 # template_avg exeption
 if subject != 'template_avg':
     # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
     for normalization in normalizations:
         for avg_method in avg_methods:
             print(avg_method)
-            for format_, extension in zip(formats, extensions): 
-            
+            for format_, extension in zip(formats, extensions):
+ 
                 # define/create folders
                 prf_fit_dir = f'{pp_dir}/{subject}/{format_}/{output_folder}/fit'
                 prf_func_dir = f'{pp_dir}/{subject}/{format_}/func/{preproc_prep}_{filtering}_{normalization}_{avg_method}'
                 prf_deriv_dir = f'{pp_dir}/{subject}/{format_}/{output_folder}/prf_derivatives'
                 os.makedirs(prf_deriv_dir, exist_ok=True)
-
+ 
                 for task_name in task_names:
                     print(f'{avg_method} - {format_} - {task_name}')
                     # Find pRF func/pred files
                     # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
                     # AVANT : prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
-                    prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
-
+                    # [GLOB FIX] "_*_" after the task needed an extra segment (hemi) -> 170k files (no hemi) were never found.
+                    #            Two explicit patterns (no hemi / hemi-L,R) and an exact avg method:
+                    #            "concat" must not match "concat-residuals"; "loo-avg" -> its folds "loo-avg-1, -2, ..."
+                    # AVANT : prf_pred_fns = glob.glob(f'{prf_fit_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_{avg_method}*{analysis_name}-css{dm_name}_pred.{extension}')
+                    avg_glob = f"{avg_method}-*" if "loo" in avg_method else avg_method
+                    prf_pred_fns = sorted(
+                        glob.glob(f'{prf_fit_dir}/*task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_glob}_{analysis_name}-css{dm_name}_pred.{extension}')
+                        + glob.glob(f'{prf_fit_dir}/*task-{task_name}_hemi-?_{preproc_prep}_{filtering}_{normalization}_{avg_glob}_{analysis_name}-css{dm_name}_pred.{extension}'))
+ 
                     for prf_pred_fn in prf_pred_fns :
                         if 'loo' in prf_pred_fn:
                             loo_number = re.search(r'loo-avg-(\d+)', prf_pred_fn).group(1)
-                            if format_ == 'fsnative': 
+                            if format_ == 'fsnative':
                                 hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
                                 prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_loo-{}_bold*.{}'.format(
                                     prf_func_dir, task_name, hemi, loo_number, extension))[0]
@@ -131,7 +138,7 @@ if subject != 'template_avg':
                                 prf_bold_fn = glob.glob('{}/*task-{}_*_loo-{}_bold.{}'.format(
                                     prf_func_dir, task_name, loo_number, extension))[0]
                         else:
-                            if format_ == 'fsnative': 
+                            if format_ == 'fsnative':
                                 hemi = re.search(r'hemi-(\w)', prf_pred_fn).group(1)
                                 prf_bold_fn = glob.glob('{}/*task-{}_hemi-{}*_{}_bold.{}'.format(
                                     prf_func_dir, task_name, hemi, avg_method, extension))[0]
@@ -143,51 +150,55 @@ if subject != 'template_avg':
                         bold_img, bold_data = load_surface(prf_bold_fn)
                         print(f'Loading pred: {prf_pred_fn}')
                         pred_img, pred_data = load_surface(prf_pred_fn)
-                    
-                        # Compute linear regression 
-                        results = linear_regression_surf(bold_signal=bold_data, 
-                                                         model_prediction=pred_data, 
+ 
+                        # Compute linear regression
+                        results = linear_regression_surf(bold_signal=bold_data,
+                                                         model_prediction=pred_data,
                                                          # [CORRECTION #16] test unilateral : seule une correlation positive prediction/donnees laissees de cote compte comme significative
                                                          # AVANT : alternative='two-sided',
                                                          alternative='greater',
-                                                         correction='fdr_tsbh', 
+                                                         correction='fdr_tsbh',
                                                          alpha=fdr_alpha)
-                    
+ 
                         # Save results
                         prf_stats_fn = prf_pred_fn.split('/')[-1].replace(f'{analysis_name}-css{dm_name}_pred', f'{analysis_name}-css{dm_name}_stats')
-                        prf_stats_img = make_surface_image(data=results, 
-                                                           source_img=pred_img, 
+                        prf_stats_img = make_surface_image(data=results,
+                                                           source_img=pred_img,
                                                            maps_names=maps_names)
-
+ 
                         print(f'Saving: {prf_deriv_dir}/{prf_stats_fn}')
                         nb.save(prf_stats_img, f'{prf_deriv_dir}/{prf_stats_fn}')
-                
+ 
                     # Compute median across leave-one-out fit
                     if 'loo-avg' in avg_method:
                         print('Computing median across LOO')
-
+ 
                         # Get LOO files (excluding any with "median" in the name)
                         # [NORMALIZATION] glob restricted to the current normalization (otherwise files of all normalizations are mixed)
                         # AVANT : loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
-                        loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
-                    
+                        # [GLOB FIX] same as above: "_*_" after the task excluded the 170k files (no hemi segment)
+                        # AVANT : loo_prf_stats_fns = glob.glob(f"{prf_deriv_dir}/*task-{task_name}_*_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
+                        loo_prf_stats_fns = sorted(
+                            glob.glob(f"{prf_deriv_dir}/*task-{task_name}_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}")
+                            + glob.glob(f"{prf_deriv_dir}/*task-{task_name}_hemi-?_{preproc_prep}_{filtering}_{normalization}_loo-avg-*_{analysis_name}-css{dm_name}_stats.{extension}"))
+ 
                         # Group files by hemisphere/format
                         loo_prf_stats_fsnative_hemi_L_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" in fn]
                         loo_prf_stats_fsnative_hemi_R_fns = [fn for fn in loo_prf_stats_fns if "hemi-R" in fn]
                         loo_prf_stats_170k_fns = [fn for fn in loo_prf_stats_fns if "hemi-L" not in fn and "hemi-R" not in fn]
-                    
+ 
                         # Process each group
                         for group_files, hemi in [(loo_prf_stats_fsnative_hemi_L_fns, "_hemi-L"),
                                                   (loo_prf_stats_fsnative_hemi_R_fns, "_hemi-R"),
                                                   (loo_prf_stats_170k_fns, "")]:
-                        
+ 
                             if len(group_files)>0:
-    
+ 
                                 # Load first file to initialize median array and define fn
                                 stats_img, stats_data = load_surface(group_files[0])
                                 loo_prf_stats = np.zeros_like(stats_data)
                                 loo_prf_stats_fn =  f'{prf_deriv_dir}/{subject}_task-{task_name}{hemi}_{preproc_prep}_{filtering}_{normalization}_loo-avg_{analysis_name}-css{dm_name}_stats.{extension}'
-                            
+ 
                                 # Compute median across LOO runs
                                 # [CORRECTION #1] vraie mediane sur les 5 plis LOO empiles (la mediane de proche en proche donnait des poids 1/16,1/16,1/8,1/4,1/2)
                                 # AVANT : for n_run, loo_stats_fn in enumerate(group_files):
@@ -201,7 +212,7 @@ if subject != 'template_avg':
                                     _, loo_prf_stats_run_data = load_surface(loo_stats_fn)
                                     loo_prf_stats_runs.append(loo_prf_stats_run_data)
                                 loo_prf_stats = np.nanmedian(np.stack(loo_prf_stats_runs, axis=0), axis=0)
-                        
+ 
                                 # [CORRECTION #16] commentaire mis a jour : le test est desormais unilateral (pente > 0)
                                 # AVANT : # Recalculate p-values for median data
                                 # Recalculate one-sided (slope > 0) p-values for median data
@@ -211,37 +222,37 @@ if subject != 'template_avg':
                                 # AVANT : p_values = 2 * (1 - stats.t.cdf(np.abs(t_statistic), df=degrees_of_freedom))
                                 p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
                                 corrected_p_values = multipletests_surface(p_values, correction="fdr_tsbh", alpha=fdr_alpha)
-                            
+ 
                                 # Update median data with recalculated p-values
                                 loo_prf_stats[pvalue_idx, :] = p_values
                                 loo_prf_stats[corr_pvalue_5pt_idx, :] = corrected_p_values[0, :]
                                 loo_prf_stats[corr_pvalue_1pt_idx, :] = corrected_p_values[1, :]
-    
+ 
                                 # Save median results
                                 loo_prf_stats_img = make_surface_image(loo_prf_stats, stats_img, maps_names)
                                 nb.save(loo_prf_stats_img, loo_prf_stats_fn)
                                 print(f"Saving median: {loo_prf_stats_fn}")
-
+ 
     # template_avg median
 elif subject == 'template_avg':
     # [NORMALIZATION] loop over normalizations (inside the if/elif: the template branch reassigns `subject`)
     for normalization in normalizations:
-        for averaging_template_name, averaging_template_format in averaging_templates.items(): 
+        for averaging_template_name, averaging_template_format in averaging_templates.items():
             print('{}, Median corr across subject...'. format(averaging_template_name))
-    
+ 
             for task_name in task_names:
-            
+ 
                 for avg_method in avg_methods:
-                
+ 
                     # find all the subject prf stats
                     prf_stats_fns = []
-                    for subject in subjects: 
+                    for subject in subjects:
                         prf_deriv_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{averaging_template_format}/{output_folder}/prf_derivatives"
                         prf_stats_fns += [f"{prf_deriv_dir}/{subject}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii"]
-        
+ 
                     # Computing  across subject
                     img, data_stat_median = median_subject_template(fns=prf_stats_fns)
-                
+ 
                     # [CORRECTION #16] commentaire mis a jour : le test est desormais unilateral (pente > 0)
                     # AVANT : # Compute two sided corrected p-values
                     # Compute one-sided (slope > 0) corrected p-values
@@ -250,24 +261,24 @@ elif subject == 'template_avg':
                     # [CORRECTION #16] p unilateral (pente > 0), coherent avec alternative='greater'
                     # AVANT : p_values = 2 * (1 - stats.t.cdf(abs(t_statistic), df=degrees_of_freedom))
                     p_values = stats.t.sf(t_statistic, df=degrees_of_freedom)
-                    corrected_p_values = multipletests_surface(pvals=p_values, 
-                                                               correction='fdr_tsbh', 
+                    corrected_p_values = multipletests_surface(pvals=p_values,
+                                                               correction='fdr_tsbh',
                                                                alpha=fdr_alpha)
                     data_stat_median[pvalue_idx, :] = p_values
                     data_stat_median[corr_pvalue_5pt_idx, :] = corrected_p_values[0,:]
                     data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
-                    
+ 
                     # Export results
                     template_stats_dir = f"{main_dir}/{project_dir}/derivatives/pp_data/{averaging_template_name}/{averaging_template_format}/{output_folder}/prf_derivatives"
                     os.makedirs(template_stats_dir, exist_ok=True)
-                
+ 
                     template_stat_fn = f"{template_stats_dir}/{averaging_template_name}_task-{task_name}_{preproc_prep}_{filtering}_{normalization}_{avg_method}_{analysis_name}-css{dm_name}_stats.dtseries.nii"
                     print("saving: {}".format(template_stat_fn))
-                    template_stat_img = make_surface_image(data=data_stat_median, 
-                                                           source_img=img, 
+                    template_stat_img = make_surface_image(data=data_stat_median,
+                                                           source_img=img,
                                                            maps_names=maps_names)
                     nb.save(template_stat_img, template_stat_fn)
-
+ 
 # # Define permission cmd
 # print('Changing files permissions in {}/{}'.format(main_dir, project_dir))
 # os.system("chmod -Rf 771 {}/{}".format(main_dir, project_dir))
