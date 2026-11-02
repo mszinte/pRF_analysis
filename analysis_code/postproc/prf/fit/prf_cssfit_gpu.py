@@ -20,7 +20,7 @@ fit
 prediction 
 -----------------------------------------------------------------------------------------
 To run:
-conda activate prfmodel
+0. use a python environment where prfmodel is installed (https://github.com/popylar-org/prfmodel)
 1. cd to function
 >> cd ~/projects/pRF_analysis/analysis_code/postproc/prf/fit
 2. run python command
@@ -30,9 +30,8 @@ python prf_cssfit_gpu.py [main directory] [project name] [subject name]
 Exemple:
 for direct gpu test on mesocentre: 
 srun -p hopper --gres=gpu:1 --cpus-per-task=4 --time=02:00:00 --pty bash -i
-# [NORMALIZATION] {normalization} = z-score, psc or raw
-python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_{normalization}_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_{normalization}_avg_bold.func.gii prf 32  
-python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/170k/func/fmriprep_dct_{normalization}_avg/sub-03_task-pRF_fmriprep_dct_{normalization}_avg_bold.dtseries.nii prf 32
+python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/fsnative/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_hemi-L_fmriprep_dct_z-score_avg_bold.func.gii prf 32  
+python prf_cssfit_gpu.py /scratch/mszinte/data amsterdam24 sub-03 /scratch/mszinte/data/amsterdam24/derivatives/pp_data/sub-03/170k/func/fmriprep_dct_z-score_avg/sub-03_task-pRF_fmriprep_dct_z-score_avg_bold.dtseries.nii prf 32
 
 -----------------------------------------------------------------------------------------
 Written by Sina Kling (sina.kling@outlook.de)
@@ -71,6 +70,11 @@ from keras import ops
 import nibabel as nb
 import keras
 import torch
+# [PRFMODEL] no automatic switch to dynamic shapes when torch.compile recompiles the SGD step:
+# with torch 2.15 the dynamic-shape recompilation crashes on the HRF convolution
+# (InductorError: '>' not supported between instances of 'Node' and 'int'); static recompilation works
+# AVANT : (ligne ajoutee)
+torch._dynamo.config.automatic_dynamic_shapes = False
 from prfmodel.stimuli import PRFStimulus
 from prfmodel.impulse import DerivativeTwoGammaImpulse
 from prfmodel.models.prf import Gaussian2DPRFModel
@@ -212,7 +216,10 @@ xv, yv = np.meshgrid(x, y)
 # y comes first because design axis 1 is the row (height) axis
 grid_coordinates = np.stack((yv, xv), axis=-1)                                         # shape (rows, columns, 2)
 
-stimulus = PRFStimulus(design = design, grid = grid_coordinates)
+# [PRFMODEL] prfmodel >= 0.1.0 (commit 7613361, 2026-10-26): frame_duration (duration of one design frame in s = TR)
+# is now a required argument of PRFStimulus (see CHANGELOG.md of prfmodel); it equals the HRF resolution below
+# AVANT : stimulus = PRFStimulus(design = design, grid = grid_coordinates)
+stimulus = PRFStimulus(design = design, grid = grid_coordinates, frame_duration = tr)
 
 # create 2D Gaussian prf model 
 impulse_model = DerivativeTwoGammaImpulse(resolution=tr)
@@ -274,13 +281,17 @@ corr_loss = CorrelationLoss(reduction="none")                                   
 n_grid = np.linspace(css_exponent_bounds[0], css_exponent_bounds[1], css_grid_nr)
 best_r, best_n = np.full(len(data_clean.T), -np.inf), np.full(len(data_clean.T), n_grid[-1])
 for n_val in n_grid:
-    params_n = gaussian_params.assign(gain=1.0, n=n_val, sigma=gaussian_params["sigma"] * np.sqrt(n_val))
+    # [PRFMODEL] prfmodel 0.1.0 removed the 'gain' parameter of CompressiveEncoder (it traded off exactly against amplitude, see CHANGELOG.md)
+    # AVANT : params_n = gaussian_params.assign(gain=1.0, n=n_val, sigma=gaussian_params["sigma"] * np.sqrt(n_val))
+    params_n = gaussian_params.assign(n=n_val, sigma=gaussian_params["sigma"] * np.sqrt(n_val))
     pred_n = batched(css_model)(stimulus, params_n, batch_size=len(params_n))
     r = -ops.convert_to_numpy(corr_loss(data_clean.T, pred_n))  # Pearson r per vertex
     is_better = r > best_r
     best_r[is_better], best_n[is_better] = r[is_better], n_val
 
-init_params = gaussian_params.assign(gain=1.0, n=best_n, sigma=gaussian_params["sigma"] * np.sqrt(best_n))
+# [PRFMODEL] prfmodel 0.1.0 removed the 'gain' parameter of CompressiveEncoder (it traded off exactly against amplitude, see CHANGELOG.md)
+# AVANT : init_params = gaussian_params.assign(gain=1.0, n=best_n, sigma=gaussian_params["sigma"] * np.sqrt(best_n))
+init_params = gaussian_params.assign(n=best_n, sigma=gaussian_params["sigma"] * np.sqrt(best_n))
 _, init_params = LeastSquaresFitter(model=css_model, stimulus=stimulus).fit(
     data=data_clean.T, parameters=init_params, slope_name="amplitude", intercept_name="baseline", batch_size=None)
 
@@ -292,8 +303,10 @@ init_params = clip_to_bounds(init_params, {"n": (n_lo, n_hi)})                  
 
 css_sgd = SGDFitter(model=css_model, stimulus=stimulus, adapter=css_adapter, compile_step=True,
                     optimizer=keras.optimizers.Adam(learning_rate=0.01))
+# [PRFMODEL] prfmodel 0.1.0 removed the 'gain' parameter of CompressiveEncoder (it traded off exactly against amplitude, see CHANGELOG.md)
+# AVANT : fixed_parameters=["weight_deriv", "gain"]
 css_history, css_params = css_sgd.fit(data=data_clean.T, init_parameters=init_params,
-                                      fixed_parameters=["weight_deriv", "gain"], num_steps=1000)
+                                      fixed_parameters=["weight_deriv"], num_steps=1000)
 
 print("All fitted!!")
 
@@ -310,7 +323,9 @@ css_pred = batched(css_model)(stimulus, css_params, batch_size=len(css_params)) 
 p = css_params
 css_fit = np.column_stack([
     p["mu_x"], p["mu_y"], p["sigma"],
-    p["amplitude"] * p["gain"],                                                    # effective scale; equals amplitude if gain is fixed at 1
+    # [PRFMODEL] prfmodel 0.1.0 removed the 'gain' parameter of CompressiveEncoder (it traded off exactly against amplitude, see CHANGELOG.md)
+    # AVANT : p["amplitude"] * p["gain"],
+    p["amplitude"],
     p["baseline"], p["n"],
     p["weight_deriv"],                                                             # hrf_1 slot: NOT on prfpy's scale (see below)
     np.zeros(len(p)),                                                              # hrf_2 slot: fixed at 0, as in your prfpy bounds

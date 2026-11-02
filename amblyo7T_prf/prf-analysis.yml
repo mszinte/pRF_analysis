@@ -21,7 +21,7 @@ TRs:
 
 output_folder: 
   description: "Name of the folder created to save all outputs of this analysis"
-  value: "prf"
+  value: "prfmodel"
 
 # ------------- Preprocessing settings -------------------
 avg_methods: 
