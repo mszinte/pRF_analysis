@@ -93,13 +93,23 @@ warnings.filterwarnings("ignore")
 # ============================================================
 # Parse and validate arguments
 # ============================================================
+# [CORRECTION #50] optional 5th argument <mode> (default|legacy|no_outliers, default legacy): the Workbench script
+# [CORRECTION #50] writes all 3 modes and the full-correlation WTA reads ..._{mode}.npy -> run this script with the same mode as the WTA
+# BEFORE: USAGE = (
+# BEFORE:     "Usage: python group_full_corr_task_constrained_by_hemi.py "
+# BEFORE:     "<main_dir> <project_dir> <group> <server>"
+# BEFORE: )
+# BEFORE:
+# BEFORE: if len(sys.argv) != 5:
+# BEFORE:     print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+# BEFORE:     sys.exit(1)
 USAGE = (
-    "Usage: python group_full_corr_task_constrained_by_hemi.py "
-    "<main_dir> <project_dir> <group> <server>"
+    "Usage: python group_stats_full_corr_by_hemi_task-free.py "
+    "<main_dir> <project_dir> <group> <server> [mode: default|legacy|no_outliers]"
 )
 
-if len(sys.argv) != 5:
-    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) not in (5, 6):
+    print(f"ERROR: expected 4 or 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
@@ -107,13 +117,22 @@ project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
 
-# Hardcoded: these files are always produced in legacy mode.
-TSV_SUFFIX = "_legacy-mode"
-MODE_LABEL = "legacy"
+# [CORRECTION #50] suffix taken from rest_utils.MODE_SUFFIX (no extra '_'): "_parcellated_{TSV_SUFFIX}" gave
+# [CORRECTION #50] "_parcellated__legacy-mode.tsv" (double underscore) -> no file found; MODE_LABEL = name of the WTA mode
+# BEFORE: # Hardcoded: these files are always produced in legacy mode.
+# BEFORE: TSV_SUFFIX = "_legacy-mode"
+# BEFORE: MODE_LABEL = "legacy"
+MODE_LABEL = sys.argv[5] if len(sys.argv) == 6 else "legacy"
+if MODE_LABEL not in ("default", "legacy", "no_outliers"):
+    print(f"ERROR: unrecognised mode '{MODE_LABEL}'.\n{USAGE}")
+    sys.exit(1)
 
 print("=" * 80)
-print("GROUP FULL CORRELATION (TASK-CONSTRAINED) — Fisher-z statistics")
-print("Parcellated by macro-region (12 seeds × 12 targets), legacy mode")
+# [CORRECTION #50] labels: task-free script (12 seeds x 53 MMP parcels per hemisphere)
+# BEFORE: print("GROUP FULL CORRELATION (TASK-CONSTRAINED) — Fisher-z statistics")
+# BEFORE: print("Parcellated by macro-region (12 seeds × 12 targets), legacy mode")
+print("GROUP FULL CORRELATION (TASK-FREE) — Fisher-z statistics")
+print(f"Parcellated by MMP parcel (12 seeds × 53 parcels), {MODE_LABEL} mode")
 print("=" * 80)
 print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
@@ -127,7 +146,10 @@ base_dir            = os.path.abspath(os.path.join(os.getcwd(), "../../../"))
 sys.path.append(os.path.abspath(os.path.join(base_dir, "analysis_code/utils")))
 from settings_utils import load_settings
 sys.path.append(os.path.abspath(os.path.join(base_dir, "RetinoMaps/rest/utils")))
-from rest_utils import VARIANTS
+# [CORRECTION #50] same utilities as wta_full_corr_by_subject_by_hemi_task-free.py (suffix, atlas order, remap, loading)
+# BEFORE: from rest_utils import VARIANTS
+from rest_utils import VARIANTS, MODE_SUFFIX, ATLAS_ORDER, build_remap, load_full_corr_matrix
+TSV_SUFFIX = MODE_SUFFIX[MODE_LABEL]
 
 settings_path       = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path   = os.path.join(base_dir, project_dir, "prf-analysis.yml")
@@ -136,8 +158,12 @@ rest_settings_path  = os.path.join(base_dir, project_dir, "rest-settings.yml")
 rest_settings       = load_settings([rest_settings_path])[0]
 analysis_info       = settings[0]
 subjects            = analysis_info["subjects"]
-RUNS                = rest_settings["runs"][0]
-RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
+# [CORRECTION #26] load_settings(...)[0] already returns the values: the extra [0] took the first element of the list
+# [CORRECTION #26] ('sub-03') and frozenset turned it into a set of letters -> no subject was excluded from run-02 (concat_clean)
+# BEFORE: RUNS                = rest_settings["runs"][0]
+# BEFORE: RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
+RUNS                = rest_settings["runs"]
+RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"])
 
 # ============================================================
 # Macro-regions — canonical order from YAML rois-drawn (reversed)
@@ -151,15 +177,31 @@ macro_regions.reverse()   # mPCS first
 
 N_MACRO = len(macro_regions)   # expected: 12
 
-# TSV layout: 24 rows total, LH first then RH.
-N_ROWS_TOTAL = N_MACRO * 2
-HEMI_ROW_SLICE: Dict[str, slice] = {
-    "lh": slice(0,       N_MACRO),
-    "rh": slice(N_MACRO, N_ROWS_TOTAL),
+# [CORRECTION #50] task-free TSVs have 106 rows (53 RH parcels then 53 LH, atlas key order), not 24:
+# [CORRECTION #50] columns = 53 MMP parcels in YAML order (rois-group-mmp), atlas -> YAML remap as in the full-correlation WTA
+# BEFORE: # TSV layout: 24 rows total, LH first then RH.
+# BEFORE: N_ROWS_TOTAL = N_MACRO * 2
+# BEFORE: HEMI_ROW_SLICE: Dict[str, slice] = {
+# BEFORE:     "lh": slice(0,       N_MACRO),
+# BEFORE:     "rh": slice(N_MACRO, N_ROWS_TOTAL),
+# BEFORE: }
+# BEFORE:
+# BEFORE: print(f"\n  Macro-regions (n={N_MACRO}): {macro_regions}")
+# BEFORE: print(f"  TSV layout   : {N_ROWS_TOTAL} rows — LH rows 0–{N_MACRO-1}, RH rows {N_MACRO}–{N_ROWS_TOTAL-1}")
+seed_to_parcels: Dict[str, List[str]] = analysis_info["rois-group-mmp"]
+parcels: List[str] = []
+for cl in macro_regions:
+    parcels.extend(seed_to_parcels[cl])
+N_PARCELS = len(parcels)       # expected: 53
+
+REMAP: Dict[str, tuple] = {
+    h: build_remap(ATLAS_ORDER[h], parcels, h) for h in ("rh", "lh")
 }
 
 print(f"\n  Macro-regions (n={N_MACRO}): {macro_regions}")
-print(f"  TSV layout   : {N_ROWS_TOTAL} rows — LH rows 0–{N_MACRO-1}, RH rows {N_MACRO}–{N_ROWS_TOTAL-1}")
+# [CORRECTION #50] printout adapted to the targets (53 MMP parcels) instead of the macro-regions
+# BEFORE: print(f"  TSV layout   : {N_ROWS_TOTAL} rows — LH rows 0–{N_MACRO-1}, RH rows {N_MACRO}–{N_ROWS_TOTAL-1}")
+print(f"  MMP parcels  (n={N_PARCELS}), YAML order; TSV suffix: '_parcellated{TSV_SUFFIX}.tsv'")
 
 # ============================================================
 # Paths
@@ -189,7 +231,9 @@ for hemi in ("lh", "rh"):
     print(f"Processing hemisphere: {hemi.upper()}")
     print("=" * 80)
 
-    row_slice = HEMI_ROW_SLICE[hemi]
+    # [CORRECTION #50] atlas -> YAML order remap (instead of simply slicing 12 rows)
+    # BEFORE:     row_slice = HEMI_ROW_SLICE[hemi]
+    remap_idx, present = REMAP[hemi]
 
     for variant, (normal_tag, excluded_tag, _skip) in VARIANTS.items():
         # run-02: intentionally keeps all subjects (group QC strategy).
@@ -202,50 +246,77 @@ for hemi in ("lh", "rh"):
         for subject in subjects:
             is_excluded = subject in RUN02_EXCLUDED
             run_tag     = excluded_tag if is_excluded else normal_tag
-            run_entity  = f"_{run_tag}" if run_tag is not None else ""
-
-            subj_dir = (
-                main_data / subject / "91k/rest/corr/full_corr/by_hemi/task-free"
+            # [CORRECTION #50] loading through rest_utils.load_full_corr_matrix (exact names written by the Workbench script,
+            # [CORRECTION #50] 106 rows RH then LH, atlas -> YAML remap) -> matrix (12 seeds x 53 parcels) in Fisher z
+            # BEFORE:             run_entity  = f"_{run_tag}" if run_tag is not None else ""
+            # BEFORE: 
+            # BEFORE:             subj_dir = (
+            # BEFORE:                 main_data / subject / "91k/rest/corr/full_corr/by_hemi/task-free"
+            # BEFORE:             )
+            # BEFORE: 
+            # BEFORE:             seed_rows: Dict[str, np.ndarray] = {}
+            # BEFORE:             missing_files: List[str]         = []
+            # BEFORE: 
+            # BEFORE:             for seed in macro_regions:
+            # BEFORE:                 fname = (
+            # BEFORE:                     f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
+            # BEFORE:                     f"_desc-fisher-z_{hemi}_{seed}"
+            # BEFORE:                     f"_task-free_parcellated_{TSV_SUFFIX}.tsv"
+            # BEFORE:                 )
+            # BEFORE:                 fpath = subj_dir / fname
+            # BEFORE: 
+            # BEFORE:                 if not fpath.exists():
+            # BEFORE:                     missing_files.append(fname)
+            # BEFORE:                     continue
+            # BEFORE: 
+            # BEFORE:                 raw = pd.read_csv(fpath, header=None, sep="\t")
+            # BEFORE: 
+            # BEFORE:                 if raw.shape != (N_ROWS_TOTAL, 1):
+            # BEFORE:                     raise ValueError(
+            # BEFORE:                         f"[{subject} {hemi}] Unexpected shape {raw.shape} "
+            # BEFORE:                         f"in {fname} (expected ({N_ROWS_TOTAL}, 1))."
+            # BEFORE:                     )
+            # BEFORE: 
+            # BEFORE:                 seed_rows[seed] = raw.iloc[row_slice, 0].values.astype(float)
+            # BEFORE: 
+            # BEFORE:             if missing_files:
+            # BEFORE:                 for f in missing_files:
+            # BEFORE:                     print(f"    WARNING [{subject} {hemi}]: missing {f}")
+            # BEFORE:                 print(f"    {subject}: SKIPPED")
+            # BEFORE:                 missing_subjects.append(subject)
+            # BEFORE:                 continue
+            # BEFORE: 
+            # BEFORE:             # Assemble (n_seeds × n_macro) Fisher-z matrix, seeds in canonical order
+            # BEFORE:             mat = np.stack([seed_rows[s] for s in macro_regions], axis=0)
+            # BEFORE: 
+            # BEFORE:             assert mat.shape == (N_MACRO, N_MACRO), (
+            # BEFORE:                 f"[{subject} {hemi} {variant}] Unexpected matrix shape "
+            # BEFORE:                 f"{mat.shape}, expected ({N_MACRO}, {N_MACRO})."
+            # BEFORE:             )
+            df_corr = load_full_corr_matrix(
+                subject    = subject,
+                hemi       = hemi,
+                run_tag    = run_tag,
+                clusters   = macro_regions,
+                parcels    = parcels,
+                remap_idx  = remap_idx,
+                present    = present,
+                main_data  = main_data,
+                tsv_suffix = TSV_SUFFIX,
+                task       = "task-free",
             )
 
-            seed_rows: Dict[str, np.ndarray] = {}
-            missing_files: List[str]         = []
-
-            for seed in macro_regions:
-                fname = (
-                    f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
-                    f"_desc-fisher-z_{hemi}_{seed}"
-                    f"_task-free_parcellated_{TSV_SUFFIX}.tsv"
-                )
-                fpath = subj_dir / fname
-
-                if not fpath.exists():
-                    missing_files.append(fname)
-                    continue
-
-                raw = pd.read_csv(fpath, header=None, sep="\t")
-
-                if raw.shape != (N_ROWS_TOTAL, 1):
-                    raise ValueError(
-                        f"[{subject} {hemi}] Unexpected shape {raw.shape} "
-                        f"in {fname} (expected ({N_ROWS_TOTAL}, 1))."
-                    )
-
-                seed_rows[seed] = raw.iloc[row_slice, 0].values.astype(float)
-
-            if missing_files:
-                for f in missing_files:
-                    print(f"    WARNING [{subject} {hemi}]: missing {f}")
+            if df_corr is None:
                 print(f"    {subject}: SKIPPED")
                 missing_subjects.append(subject)
                 continue
 
-            # Assemble (n_seeds × n_macro) Fisher-z matrix, seeds in canonical order
-            mat = np.stack([seed_rows[s] for s in macro_regions], axis=0)
+            # Assemble (n_seeds × n_parcels) Fisher-z matrix, seeds in canonical order
+            mat = df_corr.loc[macro_regions, parcels].values.astype(float)
 
-            assert mat.shape == (N_MACRO, N_MACRO), (
+            assert mat.shape == (N_MACRO, N_PARCELS), (
                 f"[{subject} {hemi} {variant}] Unexpected matrix shape "
-                f"{mat.shape}, expected ({N_MACRO}, {N_MACRO})."
+                f"{mat.shape}, expected ({N_MACRO}, {N_PARCELS})."
             )
 
             if variant == "concat_clean" and is_excluded:
@@ -267,7 +338,9 @@ for hemi in ("lh", "rh"):
 
         # Stack → (n_subjects × n_seeds × n_macro); inputs are already Fisher-z
         stacked_fz = np.stack(subject_matrices, axis=0)
-        assert stacked_fz.shape == (n_valid, N_MACRO, N_MACRO), (
+        # [CORRECTION #50] expected shape (n_subjects x 12 seeds x 53 parcels)
+        # BEFORE:         assert stacked_fz.shape == (n_valid, N_MACRO, N_MACRO), (
+        assert stacked_fz.shape == (n_valid, N_MACRO, N_PARCELS), (
             f"Unexpected stack shape {stacked_fz.shape}."
         )
 
@@ -289,7 +362,9 @@ for hemi in ("lh", "rh"):
         for stat, arr in (("mean", mean_fz), ("median", median_fz)):
             stem = _stem(stat, "fisherz", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=macro_regions, columns=macro_regions).to_csv(
+            # [CORRECTION #50] columns = MMP parcels (YAML order), rows = seeds
+            # BEFORE:             pd.DataFrame(arr, index=macro_regions, columns=macro_regions).to_csv(
+            pd.DataFrame(arr, index=macro_regions, columns=parcels).to_csv(
                 output_folder / f"{stem}.csv"
             )
             print(f"    Saved: {stem}.npy / .csv")
@@ -298,7 +373,9 @@ for hemi in ("lh", "rh"):
         for stat, arr in (("mean", mean_r), ("median", median_r)):
             stem = _stem(stat, "r", run_label, hemi)
             np.save(output_folder / f"{stem}.npy", arr)
-            pd.DataFrame(arr, index=macro_regions, columns=macro_regions).to_csv(
+            # [CORRECTION #50] columns = MMP parcels (YAML order), rows = seeds
+            # BEFORE:             pd.DataFrame(arr, index=macro_regions, columns=macro_regions).to_csv(
+            pd.DataFrame(arr, index=macro_regions, columns=parcels).to_csv(
                 output_folder / f"{stem}.csv"
             )
             print(f"    Saved: {stem}.npy / .csv")
@@ -315,6 +392,9 @@ for hemi in ("lh", "rh"):
             subjects_loaded   = np.array(subject_ids),
             subjects_missing  = np.array(missing_subjects),
             macro_regions     = np.array(macro_regions),
+            # [CORRECTION #50] column names (MMP parcels, YAML order) added to the metadata
+            # BEFORE: (line(s) added)
+            parcels           = np.array(parcels),
             hemi              = np.array(hemi),
             variant           = np.array(variant),
             mode              = np.array(MODE_LABEL),

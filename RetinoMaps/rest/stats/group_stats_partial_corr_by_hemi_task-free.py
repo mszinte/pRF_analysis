@@ -137,8 +137,12 @@ rest_settings_path  = os.path.join(base_dir, project_dir, "rest-settings.yml")
 rest_settings       = load_settings([rest_settings_path])[0]
 analysis_info       = settings[0]
 subjects            = analysis_info["subjects"]
-RUNS                = rest_settings["runs"][0]
-RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
+# [CORRECTION #26] load_settings(...)[0] already returns the values: the extra [0] took the first element of the list
+# [CORRECTION #26] ('sub-03') and frozenset turned it into a set of letters -> no subject was excluded from run-02 (concat_clean)
+# BEFORE: RUNS                = rest_settings["runs"][0]
+# BEFORE: RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"][0])
+RUNS                = rest_settings["runs"]
+RUN02_EXCLUDED      = frozenset(rest_settings["run02_excluded"])
 
 # ============================================================
 # ROIs — canonical order from YAML config

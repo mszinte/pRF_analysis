@@ -29,15 +29,23 @@ Run variants (from rest_utils.VARIANTS):
     run-01       — run-01 CSV, all subjects
     run-02       — run-02 CSV, RUN02_EXCLUDED subjects skipped with WARNING
 
-Filename convention (input CSVs):
-    concat / concat_clean : cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
-    run-01 / run-02       : cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
+Filename convention (input TSVs, written by
+nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py, Step 7):
+    # [CORRECTION #11] file names aligned with those actually written by the partial correlation script
+    # BEFORE:     concat / concat_clean : cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
+    # BEFORE:     run-01 / run-02       : cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
+    concat / concat_clean : {subject}_task-rest_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.tsv
+    run-01 / run-02       : {subject}_task-rest_{run_tag}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.tsv
 -----------------------------------------------------------------------------------------
 Inputs (sys.argv):
     1: main project directory   (e.g. /scratch/mszinte/data)
     2: project name/directory   (e.g. RetinoMaps)
     3: server group             (e.g. 327)
     4: server project           (e.g. b327)
+    # [CORRECTION #11] covariance estimator added (optional, as in group_stats_partial_corr_by_hemi_task-free.py)
+    5: covariance estimator     (optional; "raw", "ledoit-wolf", "graphical-lasso";
+                                 default: ledoit-wolf) — must match the tag used
+                                 by the subject-level partial correlation script
 
 Output:
     Per hemisphere × variant, one CSV:
@@ -83,19 +91,36 @@ from rest_utils import (
 # ============================================================
 # Parse and validate arguments
 # ============================================================
+# [CORRECTION #11] optional estimator as 5th argument (default ledoit-wolf), consistent with the partial correlation script and the group stats
+# BEFORE: USAGE = (
+# BEFORE:     "Usage: python wta_partial_corr_by_subject_by_hemi_task-free.py "
+# BEFORE:     "<main_dir> <project_dir> <group> <server>"
+# BEFORE: )
+# BEFORE:
+# BEFORE: if len(sys.argv) != 5:
+# BEFORE:     print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+# BEFORE:     sys.exit(1)
+VALID_ESTIMATORS = ("raw", "ledoit-wolf", "graphical-lasso")
+
 USAGE = (
     "Usage: python wta_partial_corr_by_subject_by_hemi_task-free.py "
-    "<main_dir> <project_dir> <group> <server>"
+    "<main_dir> <project_dir> <group> <server> [estimator]"
 )
 
-if len(sys.argv) != 5:
-    print(f"ERROR: expected 4 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
+if len(sys.argv) not in (5, 6):
+    print(f"ERROR: expected 4 or 5 arguments, got {len(sys.argv) - 1}.\n{USAGE}")
     sys.exit(1)
 
 main_dir    = sys.argv[1]
 project_dir = sys.argv[2]
 group       = sys.argv[3]
 server      = sys.argv[4]
+
+# [CORRECTION #11] estimator tag used in the input file names (subjects and group median)
+ESTIMATOR_TAG = sys.argv[5] if len(sys.argv) == 6 else "ledoit-wolf"
+if ESTIMATOR_TAG not in VALID_ESTIMATORS:
+    print(f"ERROR: unrecognised estimator '{ESTIMATOR_TAG}'.\n{USAGE}")
+    sys.exit(1)
 
 print("=" * 80)
 print("WTA — partial correlation (Nilearn parcellated fisher-z CSVs)")
@@ -104,6 +129,8 @@ print(f"  main_dir    : {main_dir}")
 print(f"  project_dir : {project_dir}")
 print(f"  group       : {group}")
 print(f"  server      : {server}")
+# [CORRECTION #11] print the estimator used
+print(f"  estimator   : {ESTIMATOR_TAG}")
 
 # ============================================================
 # Load settings
@@ -148,9 +175,14 @@ def load_group_median(hemi: str, n_parcels: int) -> Optional[np.ndarray]:
     Load the concat_clean group-median partial-corr Fisher-z .npy for one hemi.
     Returns None with a WARNING if the file is not found.
     """
+    # [CORRECTION #11] group_stats_partial_corr_by_hemi_task-free.py suffixes the median file with _{estimator}
+    # BEFORE:     fname = (
+    # BEFORE:         f"seed-task_by_mmp-parcel_partial-corr_fisherz"
+    # BEFORE:         f"_median_concat_clean_{hemi}.npy"
+    # BEFORE:     )
     fname = (
         f"seed-task_by_mmp-parcel_partial-corr_fisherz"
-        f"_median_concat_clean_{hemi}.npy"
+        f"_median_concat_clean_{hemi}_{ESTIMATOR_TAG}.npy"
     )
     fpath = group_corr_folder / fname
     if not fpath.exists():
@@ -174,16 +206,24 @@ def load_group_median(hemi: str, n_parcels: int) -> Optional[np.ndarray]:
 
 def csv_path(subject: str, hemi: str, run_tag: Optional[str]) -> Path:
     """
-    Return expected path for one subject / hemi partial corr CSV.
+    Return expected path for one subject / hemi partial corr TSV.
 
+    [CORRECTION #11] names aligned with the actual output of the partial correlation script
+    BEFORE: run_tag = None  → cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
+    BEFORE: run_tag = str   → cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
     run_tag = None  → concatenated file:
-        cluster_by_mmp-parcel_partial_fisherz_{hemi}.csv
+        {subject}_task-rest_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.tsv
     run_tag = str   → per-run file:
-        cluster_by_mmp-parcel_partial_fisherz_{run_tag}_{hemi}.csv
+        {subject}_task-rest_{run_tag}_space-fsLR_den-91k_desc-fisher-z_{hemi}_task-free_{estimator}.tsv
     """
     subj_dir   = main_data / subject / "91k/rest/corr/partial_corr/by_hemi/task-free"
     run_entity = f"_{run_tag}" if run_tag is not None else ""
-    fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.csv"
+    # [CORRECTION #11] exact name of the TSV written by nilearn_partial_corr_seed-task_by_mmp-parcel_by_hemi.py (Step 7, ipsilateral output)
+    # BEFORE:     fname      = f"seed-task_by_mmp-parcel_partial_fisherz{run_entity}_{hemi}.csv"
+    fname      = (
+        f"{subject}_task-rest{run_entity}_space-fsLR_den-91k"
+        f"_desc-fisher-z_{hemi}_task-free_{ESTIMATOR_TAG}.tsv"
+    )
     return subj_dir / fname
 
 
@@ -204,7 +244,9 @@ def load_partial_corr_matrix(
         print(f"  WARNING [{subject} {hemi}]: missing {fpath.name}")
         return None
 
-    df = pd.read_csv(fpath, index_col=0)
+    # [CORRECTION #11] TSV file (tab separator); index = seeds (clusters), columns = parcels
+    # BEFORE:     df = pd.read_csv(fpath, index_col=0)
+    df = pd.read_csv(fpath, sep="\t", index_col=0)
 
     missing_seeds = set(clusters) - set(df.index)
     if missing_seeds:
