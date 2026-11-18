@@ -5,8 +5,10 @@ xcp-d_aroma_sbatch.py
 
 Goal of the script:
 Run xcp-d on mesocentre using job mode
-This script uses the latest stable version
-Which notably added z-scoring of the timeseries before concatenating them
+Pinned to xcp_d 26.0.2 (see singularity_img below), which z-scores the denoised
+and parcellated time series per run BEFORE concatenating (PennLINC/xcp_d#1608).
+This behaviour was reverted on main in #1642; newer releases may concatenate
+the run-wise files without z-scoring but this is nice to have for our analysis
 Here we removed framewise displacement filtering
 Which may have weird interactions with AROMA denoising depending on when and how this confound is removed
 See this note:
@@ -90,7 +92,7 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --input-type 'fmriprep' --file-format 'cifti' --smoothing 0 \
         --dummy-scans 'auto' --despike 'y' \
         --datasets aroma=/work_dir/{project_dir}/derivatives/fmripost_aroma \
-   	    --nuisance-regressors /work_dir/{project_dir}/derivatives/fmripost_aroma/aroma.yml \
+   	--nuisance-regressors /work_dir/{project_dir}/derivatives/fmripost_aroma/aroma.yml \
         -w /work_dir/temp/ \
         --resource-monitor --write-graph \
         --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt \
@@ -98,11 +100,11 @@ singularity_cmd = "singularity run --cleanenv -B {main_dir}:/work_dir {simg} /wo
         --abcc-qc 'y' --combine-runs 'y' \
         --lower-bpf 0.01 --upper-bpf 0.08 \
         --fd-thresh 0.3 \
-	    --linc-qc 'y' \
-	    --output-type 'censored' \
+	--linc-qc 'y' \
+	--output-type 'censored' \
         --output-layout 'bids' \
-	    --warp-surfaces-native2std 'n' \
-	    --atlases 'Glasser' 'HCP' --min-coverage 0.75".format(main_dir=main_dir, 
+	--warp-surfaces-native2std 'n' \
+	--atlases 'Glasser' 'HCP' --min-coverage 0.75".format(main_dir=main_dir, 
         project_dir=project_dir, simg=singularity_img, sub_num=sub_num, subject=subject, nb_procs=nb_procs, memory_val=memory_val)
 
 # define permission cmd
