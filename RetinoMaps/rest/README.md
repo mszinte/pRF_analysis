@@ -13,12 +13,13 @@ The primary steps of the pipeline are:
 
 - 1. Selecting the macro-regions from the MMP1 atlas (Glasser et al. 2016) on the fsLR 32k mesh
 - 2. Downsampling the task-based results from the 170k to the 91k fsLR resolution
-- 3. Masking the conjunction maps from the vision, saccade and pursuit tasks using the MMP1 clusters
-- 4. Computing full and partial correlations using each masked task result intra-hemispherically
-- 5. Averaging the 12 seed x 53 targets connectivity matrices across subjects
-- 6. Preparing the files to make nice visualizations in wb_view and PyCortex:
+- 3. Masking the conjunction maps from the retinotopy, saccade and pursuit tasks using the 12 MMP1 macro-regions
+- 4. Computing full and partial correlations using each masked task result intra-hemispherically (task-constrained analysis)
+- 5. Computing full and partial correlations using each task result intra-hemispherically as seed and MMP1 parcels (task-free analysis)
+- 6. Averaging the connectivity matrices across subjects
+- 7. Preparing the files to make visualizations in PyCortex:
 	- Winner-take-all flat maps by subject and at the group-level
-	- Violin plots of macro-regions's averaged r values by hemisphere (stacked)
+	- Violin plots of macro-regions's averaged r values by hemisphere
 
 Each step is described in more detail below.
 
@@ -51,11 +52,11 @@ $ ./get_mmp1_parcels_metric_files.sh
 ```bash
 $ ./leave_one_out_mmp1_macro-regions.sh
 ```
-### 2. Downsampling the tasks results from the 170k to the 91k resolution of the fsLR template
+### 2. Downsampling the intertasks results from the 170k to the 91k resolution of the fsLR template
 
-Run this script to perform all the steps required (see the comments in the script itself):
+Run this script to perform all the steps required "resample_to_fsLR91k_adap-bary.sh" (see the comments in the script itself):
 ```bash
-$ ./resample_to_fsLR91k_adap-bary.sh
+$ python submit_resample_job.py
 ```
 ### 3. Masking the conjunction maps using the MMP1 macro-regions
 

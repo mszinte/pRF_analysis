@@ -54,7 +54,7 @@ else:
 
 memory_val = 20 # GB
 nb_procs = 16 # number of CPUs
-cluster_name = 'skylake'
+cluster_name = 'genoa'
 job_suffix = "workbench"
 
 # Define permission commands
