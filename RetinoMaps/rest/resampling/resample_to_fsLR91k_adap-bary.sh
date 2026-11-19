@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Uncomment to switch on debugging
-# set -e 
-# set -x
+set -e 
+set -x
 
 #####################################################
 # Written by Marco Bedini (marco.bedini@univ-amu.fr)
