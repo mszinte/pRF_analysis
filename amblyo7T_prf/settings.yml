@@ -22,7 +22,7 @@ subjects:
 
 group-patient:
   description: "Group of patients"
-  value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-07", "sub-08", "sub-09", "sub-10", "sub-11", "sub-12"]
+  value: ["sub-01", "sub-02", "sub-03", "sub-04", "sub-05", "sub-06", "sub-08", "sub-09", "sub-10", "sub-11", "sub-12"]
 
 group-control:
   description: "Group of healthy controls"
@@ -39,12 +39,6 @@ task_names:
 func_session:
   description: "Session containing the pRF tasks"
   value: ["ses-01"]
-
-prf_task_names:
-  description: "Names of the tasks analysed with pRF methods"
-  value: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
-  to_check_label: ["BarsRightEye", "RingsRightEye", "WedgesRightEye", "BarsLeftEye", "RingsLeftEye", "WedgesLeftEye"]
-  full_analysis: ["BarsBarsRingsWedgesRightEye", "BarsBarsRingsWedgesLeftEye", "BarsBarsRightEye", "BarsBarsLeftEye", "RingsWedgesRightEye", "RingsWedgesLeftEye"]
 
 partial_scan: 
   description: "Dataset including non whole-head recording"

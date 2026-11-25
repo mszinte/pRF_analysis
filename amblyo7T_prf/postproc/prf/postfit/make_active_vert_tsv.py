@@ -64,6 +64,7 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
+output_folder = analysis_info['output_folder']
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -125,8 +126,8 @@ for normalization in normalizations:
 
                             print(f'Loading: {prf_task_eye_name} - {avg_method} - {format_}')
 
-                            tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subject, format_)
+                            tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                                main_dir, project_dir, subject, format_, of=output_folder)
 
                             if not os.path.isdir(tsv_dir):
                                 print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
@@ -135,7 +136,7 @@ for normalization in normalizations:
                             fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
                                 prf_task_eye_name, preproc_prep, filtering,
                                 normalization, avg_method, rois_method_format)
-                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
+                            tsv_fn = '{}/{}_{}_prf-css_deriv.tsv'.format(tsv_dir, subject, fn_spec)
 
                             # Keep raw data — no thresholding
                             data_raw = pd.read_table(tsv_fn, sep="\t")
@@ -201,8 +202,8 @@ for normalization in normalizations:
 
                         # Load and concatenate individual subject TSVs
                         for i, subject_to_group in enumerate(subjects_to_group):
-                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subject_to_group, format_)
+                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                                main_dir, project_dir, subject_to_group, format_, of=output_folder)
                             tsv_fn = '{}/{}_{}_active-vert.tsv'.format(
                                 tsv_dir_indiv, subject_to_group, fn_spec_combined)
                             df_indiv = pd.read_table(tsv_fn, sep="\t")
@@ -224,8 +225,8 @@ for normalization in normalizations:
                                 .quantile(0.025).reset_index()[col])
 
                         # Save group TSV
-                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject, format_)
+                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                            main_dir, project_dir, subject, format_, of=output_folder)
                         os.makedirs(tsv_dir_group, exist_ok=True)
                         tsv_active_vert_fn = '{}/{}_{}_active-vert.tsv'.format(
                             tsv_dir_group, subject, fn_spec_combined)

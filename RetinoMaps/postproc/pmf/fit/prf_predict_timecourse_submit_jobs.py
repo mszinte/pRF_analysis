@@ -76,7 +76,9 @@ settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
 cluster_name  = analysis_info['cluster_name']
-prf_task_names = analysis_info['prf_task_names']
+# [PRF_TASK_NAMES] 'prf_task_names' removed from settings.yml (leftover): same values as 'analysis_task_names' of prf-analysis.yml
+# AVANT : prf_task_names = analysis_info['prf_task_names']
+prf_task_names = analysis_info['analysis_task_names']
 pmf_task_names = analysis_info['pmf_task_names']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']

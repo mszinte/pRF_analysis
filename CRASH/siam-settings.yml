@@ -1,0 +1,39 @@
+# SBATCH settings
+email_sbatch:
+  description: "Email adress to send queue start and end message"
+  value: "uriel.lascombes@univ-amu.fr"
+
+siam_memory_sbatch:
+  description: "RAM allocated to the SIAM sbatch command in GB (same as css gpu fit; ~20 GB needed if run on cpu)"
+  value: 40
+
+siam_procs_hours:
+  description: "Time allocated to SIAM (a few minutes per image on gpu, ~25 min per image on cpu with 8 threads)"
+  value : '01:00:00'
+
+siam_nb_procs:
+  description: "Number of cpus allocated and number of threads used by SIAM (-nbthread) for pre/post-processing (4 as css gpu fit; use 8 if run on cpu)"
+  value: 4
+
+siam_simg:
+  description: "Name of the simg file of SIAM (docker://romainvalabregue/siam)"
+  value: "siam-latest.simg"
+
+# SIAM settings
+siam_model:
+  description: "SIAM model (-m): 0 default (v3, with anomalies label), 1 (39 regions, old), 2 (12 brain tissues + head/skull/dura/vessel)"
+  value: 0
+  levels: [0, 1, 2, 3]
+
+siam_device:
+  description: "Device used for the prediction (-device); cuda needs > 12 GB of GPU memory, otherwise SIAM falls back to cpu"
+  value: "cuda"
+  levels: ["cpu", "cuda"]
+
+siam_gpu_cluster_name:
+  description: "Mesocentre GPU partition used if siam_device is cuda (same as css gpu fit: prf_submit_css_jobs_gpu.py)"
+  value: "hopper"
+
+siam_voxelsize:
+  description: "SIAM -voxelsize option: 0 to reslice to 0.75 mm and back (default), 0.75 to avoid interpolation for isotropic data in [0.6 1] mm"
+  value: 0

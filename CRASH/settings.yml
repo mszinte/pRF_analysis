@@ -1,0 +1,17 @@
+# ----------- Main configuration -----------
+project_name:
+  description: "Name of the project and of the dataset directory"
+  value: "CRASH"
+
+cluster_name: 
+  description: "Name of the cluster to use in AMU mesocenter"
+  value: "genoa"
+
+# ----------- Dataset description -----------
+subjects:
+  description: "Subjects of the dataset"
+  value: ["sub-2100563718"]
+
+sessions:
+  description: "Sessions of the dataset"
+  value: ["ses-preseason"]

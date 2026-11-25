@@ -9,9 +9,9 @@ Input(s):
 sys.argv[1]: main project directory
 sys.argv[2]: project name (correspond to directory)
 sys.argv[3]: subject name (e.g. sub-01)
-sys.argv[4]: subject name (e.g. sub-01)
-sys.argv[5]: group (e.g. 327)
-sys.argv[6]: Bidsoym singularity version (e.g. latest)
+sys.argv[4]: group (e.g. 327)
+sys.argv[5]: server project (e.g. b327)
+sys.argv[6]: Bidsoym singularity version (e.g. v0.0.4 or latest)
 sys.argv[7]: defacing algorithm (e.g. pydeface, mri_deface, quickshear, mridefacer)
 -----------------------------------------------------------------------------------------
 Output(s):
@@ -28,6 +28,10 @@ Exemple:
 cd ~/projects/pRF_analysis/analysis_code/preproc/bids/
 python bidsonym_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 v0.0.4 pydeface
 python bidsonym_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-16 327 b327 v0.0.4 pydeface
+python bidsonym_sbatch.py /scratch/ulascombes/data CRASH sub-01 327 b327 latest pydeface
+-----------------------------------------------------------------------------------------
+Note: 'nobrainer' brain extraction (used for QC only) was removed after v0.0.4,
+'bet' is used for other versions (e.g. latest from ghcr.io/peerherholz/bidsonym)
 -----------------------------------------------------------------------------------------
 Written by Uriel Lascombes (uriel.lascombes@laposte.net)
 edited by Martin Szinte (martin.szinte@gmail.com)
@@ -94,7 +98,13 @@ slurm_cmd = """\
 nb_procs=nb_procs, hour_proc=hour_proc, memory_val=memory_val, log_dir=log_dir)
 
 # bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant-label {} --deid {} --brainextraction --bet_frac 0.5".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm)
-bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant_label {} --deid {} --brainextraction nobrainer --skip_bids_validation".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm)
+# brain extraction is only used for QC: nobrainer exists only up to v0.0.4, bet otherwise
+if bydsonym_version == 'v0.0.4':
+    brainextraction_opt = "--brainextraction nobrainer"
+else:
+    brainextraction_opt = "--brainextraction bet --bet_frac 0.5"
+
+bidsonym_cmd = "singularity run --cleanenv -B {}:/bids_dataset {} /bids_dataset participant --participant_label {} --deid {} {} --skip_bids_validation".format(bids_dir, bidsonym_img, subject_num, defacing_algorithm, brainextraction_opt)
 
 # create sh fn
 sh_fn = "{}/{}_bidsonym.sh".format(job_dir, subject)

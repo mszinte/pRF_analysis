@@ -13,8 +13,8 @@ TRs:
   value: 156
 
 output_folder: 
-  description: "Name of the folder created to save all outputs of this analysis"
-  value: "ncsf"
+  description: "Name of the folder created to save the outputs of the prfmodel nCSF fit (ncsf_fit_gpu.py); the prfpy_csenf fit (ncsf_fit.py) and the postfit scripts use 'ncsf' (hard-coded)"
+  value: "ncsf_prfmodel"
 
 nCSF_session: 
   description: "session of nCSF task"
@@ -71,6 +71,64 @@ maps_names_ncsf_stats:
 run_ncsf_fit_on_rois:
   description: "Run nCSF fit only on roi (True) or on full brain (False)"
   value: True
+
+avg_methods: 
+  description: "Name of the averaging of the data fitted with nCSF (also defined in prf-analysis.yml, this value is used)"
+  value: ["avg", "loo-avg"]
+  levels: ["avg", "loo-avg", "concat", "runs"]
+
+# -------------  prfmodel GPU fit (ncsf_fit_gpu.py) -------------
+ncsf_formats_to_fit:
+  description: "Data formats submitted by submit_ncsf_jobs_gpu.py"
+  value: ["fsnative"]
+  levels: ["fsnative", "170k"]
+
+ncsf_fit_width_l:
+  description: "Fit the left-branch width of the CSF (True, as prfpy_csenf) or fix it to ncsf_width_l (False, prfmodel default)"
+  value: False
+
+ncsf_width_l:
+  description: "Fixed left-branch width of the CSF when ncsf_fit_width_l is False (prfmodel default 0.68)"
+  value: 0.68
+
+ncsf_weight_deriv:
+  description: "Fixed weight of the HRF temporal derivative (prfmodel DerivativeTwoGammaImpulse)"
+  value: -0.5
+
+ncsf_grid:
+  description: "Grid search values [min, max, number of steps], log-spaced (np.geomspace). width_l is used only if ncsf_fit_width_l is True"
+  value:
+    cs_peak: [1.25, 400, 12]
+    sf_peak: [0.1, 10, 12]
+    width_l: [0.3, 1.5, 3]
+    width_r: [0.3, 2, 6]
+    slope_crf: [0.5, 8, 8]
+
+ncsf_bounds:
+  description: "Open bounds [lower, upper] of the CSF parameters during SGD (bounded_transform of prfmodel_utils.py). The grid must lie strictly inside, away from the bounds"
+  value:
+    cs_peak: [1, 500]
+    sf_peak: [0.05, 16]
+    width_l: [0.1, 3]
+    width_r: [0.1, 3]
+    slope_crf: [0.2, 10]
+
+ncsf_grid_batch_size:
+  description: "Number of vertices per batch of the grid search (lower it if the GPU runs out of memory)"
+  value: 100
+
+ncsf_max_sfmax:
+  description: "Upper limit of the SFmax derivative"
+  unit: "cycles/deg"
+  value: 50
+
+sgd_num_steps:
+  description: "Number of SGD steps"
+  value: 1000
+
+sgd_learning_rate:
+  description: "Adam learning rate of the SGD fit"
+  value: 0.01
 
 #  -----------  ROIS -----------
 rois_methods:

@@ -78,7 +78,9 @@ filtering = analysis_info['filtering']
 # AVANT : normalization = analysis_info['normalization']
 normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
-prf_task_names = analysis_info['prf_task_names']
+# [PRF_TASK_NAMES] 'prf_task_names' removed from settings.yml (leftover): same values as 'analysis_task_names' of prf-analysis.yml
+# AVANT : prf_task_names = analysis_info['prf_task_names']
+prf_task_names = analysis_info['analysis_task_names']
 
 # [NORMALIZATION] loop over normalizations
 for normalization in normalizations:

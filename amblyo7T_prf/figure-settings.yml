@@ -31,6 +31,14 @@ flatmap_tsnr_scale:
   description: "Color scale range for tSNR flatmaps [min, max]"
   value: [0, 150]
 
+flatmap_od_scale:
+  description: "Ocular dominance index (right - left) flatmap colorscale"
+  value: [-0.3, 0.3]
+
+flatmap_od_z_scale:
+  description: "Ocular dominance z (right - left) flatmap colorscale"
+  value: [-3, 3]
+
 # rois_colors:
 #   description: "Color in RGB used in different plots for each ROI"
 #   value:
