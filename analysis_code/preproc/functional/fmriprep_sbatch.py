@@ -27,6 +27,7 @@ cd ~/projects/pRF_analysis/analysis_code/preproc/functional
 python fmriprep_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327 1
 python fmriprep_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327 1
 python fmriprep_sbatch.py /scratch/mszinte/data amblyo7T_prf sub-01 327 b327 0
+python fmriprep_sbatch.py /scratch/ulascombes/data CRASH sub-2100563718 327 b327 1
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -35,6 +36,7 @@ Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
 # General imports
 import os
 import sys
+import json
 import ipdb
 deb = ipdb.set_trace
 
@@ -81,6 +83,26 @@ skip_bids_valid = analysis_info['skip_bids_valid']
 if skip_bids_valid: skip_bids_valid_in = "--skip_bids_validation"
 else: skip_bids_valid_in = ''
 
+# Optional settings (not defined = previous behaviour)
+# pre-computed derivatives (e.g. SIAM brain mask: {siam: derivatives/siam})
+fmriprep_derivatives = analysis_info.get('fmriprep_derivatives', None)
+if fmriprep_derivatives:
+    derivatives_list = ["{}=/work_dir/{}/{}".format(name, project_dir, path) for name, path in fmriprep_derivatives.items()]
+    derivatives_in = "--derivatives {}".format(' '.join(derivatives_list))
+else: derivatives_in = ''
+# BIDS filter (e.g. only one T1w as anatomical reference), written in code folder
+bids_filter = analysis_info.get('bids_filter', None)
+if bids_filter:
+    bids_filter_fn = "{}/{}/code/fmriprep_bids_filter.json".format(main_dir, project_dir)
+    os.makedirs(os.path.dirname(bids_filter_fn), exist_ok=True)
+    with open(bids_filter_fn, 'w') as f: json.dump(bids_filter, f, indent=4)
+    bids_filter_in = "--bids-filter-file /work_dir/{}/code/fmriprep_bids_filter.json".format(project_dir)
+else: bids_filter_in = ''
+# anatomical reference (fmriprep >= 25.2, e.g. sessionwise: one anat and freesurfer sub-XX_ses-YY per session)
+subject_anatomical_reference = analysis_info.get('subject_anatomical_reference', None)
+if subject_anatomical_reference: anat_ref_in = "--subject-anatomical-reference {}".format(subject_anatomical_reference)
+else: anat_ref_in = ''
+
 if anat_only:
     nb_procs = 8
     nthreads = 8
@@ -122,7 +144,7 @@ slurm_cmd = f"\
 #SBATCH --mail-type=BEGIN,END\n\n"
 
 #define singularity cmd
-singularity_cmd = f"singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nthreads:.0f} --omp-nthreads {omp_nthreads:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} \n"
+singularity_cmd = f"singularity run --cleanenv {tf_bind} -B {main_dir}:/work_dir {singularity_dir}/{fmriprep_simg} --fs-license-file /work_dir/{project_dir}/code/freesurfer/license.txt --fs-subjects-dir /work_dir/{project_dir}/derivatives/fmriprep/freesurfer/ /work_dir/{project_dir}/ /work_dir/{project_dir}/derivatives/fmriprep/fmriprep/ participant --participant-label {sub_id} -w /work_dir/temp/{project_dir}/{subject} --bold2anat-dof {bold2anat_dof} --bold2anat-init auto --output-spaces T1w fsnative {cifti_output_in} --low-mem --mem-mb {mem_limit} --nthreads {nthreads:.0f} --omp-nthreads {omp_nthreads:.0f} {anat_only_in} {fs_no_resume_in} {skip_bids_valid_in} {derivatives_in} {bids_filter_in} {anat_ref_in} \n"
 
 # define permission cmd
 chmod_cmd = f"chmod -Rf 771 {main_dir}/{project_dir} \n"

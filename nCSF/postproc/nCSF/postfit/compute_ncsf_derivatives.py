@@ -73,7 +73,13 @@ preproc_prep = analysis_info['preproc_prep']
 # [NORMALIZATION] list of normalizations, looped over below
 # AVANT : normalization = analysis_info['normalization']
 normalizations = analysis_info['normalization']
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([nCSF_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 maps_names_ncsf = analysis_info['maps_names_ncsf']
 averaging_templates = analysis_info['averaging_templates']
 
@@ -102,10 +108,10 @@ if subject != 'template_avg':
             for format_, extension in zip(formats, extensions):
 
                 # define/create folders
-                ncsf_fit_dir = '{}/{}/{}/ncsf/fit'.format(
-                        pp_dir, subject, format_)
-                ncsf_deriv_dir = "{}/{}/{}/ncsf/ncsf_derivatives".format(
-                    pp_dir, subject, format_)
+                ncsf_fit_dir = '{}/{}/{}/{}/fit'.format(
+                        pp_dir, subject, format_, output_folder)
+                ncsf_deriv_dir = "{}/{}/{}/{}/ncsf_derivatives".format(
+                    pp_dir, subject, format_, output_folder)
                 os.makedirs(ncsf_deriv_dir, exist_ok=True)
             
                 if 'loo' not in avg_method:
@@ -117,7 +123,7 @@ if subject != 'template_avg':
                         avg_ncsf_deriv_img, avg_ncsf_deriv_data = load_surface(avg_ncsf_deriv_fn)
                         avg_ncsf_deriv_fn = avg_ncsf_deriv_fn.replace('ncsf_fit', 'ncsf_deriv')
 
-                        avg_ncsf_deriv_fn = avg_ncsf_deriv_fn.replace('ncsf/fit', 'ncsf/ncsf_derivatives')
+                        avg_ncsf_deriv_fn = avg_ncsf_deriv_fn.replace('{}/fit'.format(output_folder), '{}/ncsf_derivatives'.format(output_folder))
 
                         try :                    
                             avg_ncsf_deriv_img = make_surface_image(avg_ncsf_deriv_data, avg_ncsf_deriv_img, maps_names_ncsf)
@@ -160,7 +166,10 @@ if subject != 'template_avg':
                             
                                 # Save fit as derive 
                                 loo_ncsf_deriv_run_fn = loo_deriv_fn.replace('ncsf_fit', 'ncsf_deriv')
-                                loo_ncsf_deriv_run_fn = loo_deriv_fn.replace('ncsf/fit', 'ncsf/ncsf_derivatives')
+                                # [NCSF-PRFMODEL] second replace applied to loo_ncsf_deriv_run_fn (it restarted from loo_deriv_fn,
+                                # so the files were saved as *_ncsf_fit* in ncsf_derivatives)
+                                # AVANT : loo_ncsf_deriv_run_fn = loo_deriv_fn.replace('ncsf/fit', 'ncsf/ncsf_derivatives')
+                                loo_ncsf_deriv_run_fn = loo_ncsf_deriv_run_fn.replace('{}/fit'.format(output_folder), '{}/ncsf_derivatives'.format(output_folder))
                                 loo_ncsf_deriv_run_img = make_surface_image(loo_ncsf_deriv_run_data, loo_ncsf_deriv_run_img, maps_names_ncsf)
                                 nb.save(loo_ncsf_deriv_run_img, loo_ncsf_deriv_run_fn)
                                 print(f"Saving : {loo_ncsf_deriv_run_fn}")
@@ -192,8 +201,8 @@ elif subject == 'template_avg':
                 # find all the subject ncsf deriv
                 ncsf_deriv_fns = []
                 for subject in subjects:
-                    ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                        main_dir, project_dir, subject, averaging_template_format)
+                    ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/ncsf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format, output_folder)
                     ncsf_deriv_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf_deriv.dtseries.nii".format(
                         ncsf_deriv_dir, subject, ncsf_task_name,
                         preproc_prep, filtering, normalization, avg_method)]
@@ -202,8 +211,8 @@ elif subject == 'template_avg':
                 img, data_deriv_median = median_subject_template(fns=ncsf_deriv_fns)
             
                 # Export results
-                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                    main_dir, project_dir, averaging_template_name, averaging_template_format)
+                template_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/ncsf_derivatives".format(
+                    main_dir, project_dir, averaging_template_name, averaging_template_format, output_folder)
                 os.makedirs(template_deriv_dir, exist_ok=True)
 
                 template_deriv_fn = "{}/{}_task-{}_{}_{}_{}_{}_ncsf-css_deriv.dtseries.nii".format(
@@ -213,7 +222,7 @@ elif subject == 'template_avg':
                 print("save: {}".format(template_deriv_fn))
                 template_deriv_img = make_surface_image(data=data_deriv_median, 
                                                         source_img=img, 
-                                                        maps_names_ncsf=maps_names_ncsf)
+                                                        maps_names=maps_names_ncsf)   # [NCSF-PRFMODEL] AVANT : maps_names_ncsf=maps_names_ncsf (TypeError)
                 nb.save(template_deriv_img, template_deriv_fn)
 
 # # Define permission cmd

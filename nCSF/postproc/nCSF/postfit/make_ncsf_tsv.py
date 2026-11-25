@@ -85,7 +85,13 @@ normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 rois_methods = analysis_info['rois_methods']
 pycortex_subject_template = analysis_info['pycortex_subject_template']
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([nCSF_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 
 # Set pycortex db and colormaps
 cortex_dir = "{}/{}/derivatives/pp_data/cortex".format(main_dir, project_dir)
@@ -118,8 +124,8 @@ for normalization in normalizations:
                 elif rois_method_format == 'rois-group-mmp':
                     rois = list(analysis_info[rois_method_format].keys())
 
-                ncsf_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf".format(
-                    main_dir, project_dir, subject, format_)
+                ncsf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
+                    main_dir, project_dir, subject, format_, output_folder)
             
                 prf_dir = "{}/{}/derivatives/pp_data/{}/{}/prf".format(
                     main_dir, project_dir, subject, format_)

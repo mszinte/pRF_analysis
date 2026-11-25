@@ -226,9 +226,10 @@ print("All fitted!!")
 # Diagnostics: convergence, parameters at the bounds, negative amplitudes
 print("SGD loss:", [round(float(v), 5) for v in sgd_history.history["loss"][::max(1, sgd_steps // 10)]])
 for name, (lo, hi) in bounds.items():                                             # at a bound = not constrained by the data
-    eps = 0.01 * (hi - lo)
-    print(f"{name}: median {ncsf_params[name].median():.2f}; {100 * (ncsf_params[name] >= hi - eps).mean():.1f} % at "
-          f"the upper bound, {100 * (ncsf_params[name] <= lo + eps).mean():.1f} % at the lower bound")
+    at_lo = ncsf_params[name] <= lo * 1.01                                         # within 1 % of the bound (relative: the
+    at_hi = ncsf_params[name] >= hi * 0.99                                         # parameters span orders of magnitude)
+    print(f"{name}: median {ncsf_params[name].median():.2f}; {100 * at_hi.mean():.1f} % at "
+          f"the upper bound, {100 * at_lo.mean():.1f} % at the lower bound")
 print(f"amplitude <= 0: {100 * (ncsf_params['amplitude'] <= 0).mean():.1f} % of the vertices "
       "(response decreasing with contrast, exclude them in postfit)")
 

@@ -73,7 +73,13 @@ formats = analysis_info['formats']
 extensions = analysis_info['extensions']
 TRs = analysis_info['TRs']
 maps_names = analysis_info['maps_names_ncsf_stats']
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([nCSF_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 subjects = analysis_info['subjects']
 preproc_prep = analysis_info['preproc_prep']
 filtering = analysis_info['filtering']
@@ -103,13 +109,13 @@ if subject != 'template_avg':
             for format_, extension in zip(formats, extensions): 
             
                 # define/create folders
-                ncsf_fit_dir = '{}/{}/{}/ncsf/fit'.format(
-                        pp_dir, subject, format_)
+                ncsf_fit_dir = '{}/{}/{}/{}/fit'.format(
+                        pp_dir, subject, format_, output_folder)
                 ncsf_func_dir = '{}/{}/{}/func/{}_{}_{}_{}'.format(
                         pp_dir, subject, format_, 
                         preproc_prep, filtering, normalization, avg_method)
-                ncsf_deriv_dir = "{}/{}/{}/ncsf/ncsf_derivatives".format(
-                    pp_dir, subject, format_)
+                ncsf_deriv_dir = "{}/{}/{}/{}/ncsf_derivatives".format(
+                    pp_dir, subject, format_, output_folder)
                 os.makedirs(ncsf_deriv_dir, exist_ok=True)
             
                 # Find ncsf func/pred files
@@ -222,8 +228,8 @@ elif subject == 'template_avg':
                 # find all the subject ncsf stats
                 ncsf_stats_fns = []
                 for subject in subjects: 
-                    ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                        main_dir, project_dir, subject, averaging_template_format)
+                    ncsf_deriv_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/ncsf_derivatives".format(
+                        main_dir, project_dir, subject, averaging_template_format, output_folder)
                     ncsf_stats_fns += ["{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
                         ncsf_deriv_dir, subject, ncsf_task_name,
                         preproc_prep, filtering, normalization, avg_method)]
@@ -243,8 +249,8 @@ elif subject == 'template_avg':
                 data_stat_median[corr_pvalue_1pt_idx, :] = corrected_p_values[1,:]
                 
                 # Export results
-                template_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf/ncsf_derivatives".format(
-                        main_dir, project_dir, averaging_template_name, averaging_template_format)
+                template_stats_dir = "{}/{}/derivatives/pp_data/{}/{}/{}/ncsf_derivatives".format(
+                        main_dir, project_dir, averaging_template_name, averaging_template_format, output_folder)
                 os.makedirs(template_stats_dir, exist_ok=True)
             
                 template_stat_fn = "{}/{}_task-{}_{}_{}_{}_{}_ncsf_stats.dtseries.nii".format(
