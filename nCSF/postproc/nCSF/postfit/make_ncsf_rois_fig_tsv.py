@@ -78,7 +78,13 @@ filtering = analysis_info['filtering']
 normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
 stats_threshold = analysis_info['stats_th']
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([ncsf_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 ecc_SFp_num_bins = analysis_info['ecc_SFp_num_bins']
 ecc_SFp_max = analysis_info['ecc_size_max'][0]
 num_polar_SFp_bins = 8
@@ -109,8 +115,8 @@ for normalization in normalizations:
             
                 # Individual subject analysis
                 if 'group' not in subject:
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/ncsf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
+                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+                        main_dir, project_dir, subject, format_, output_folder)
                 
                     # Exception if no data for one format (e.g template subject)
                     if not os.path.isdir(tsv_dir):
@@ -389,8 +395,8 @@ for normalization in normalizations:
                 else :
                     print('group')
                     for i, subject_to_group in enumerate(subjects_to_group):
-                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/ncsf/tsv'.format(
-                            main_dir, project_dir, subject_to_group, format_)
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+                            main_dir, project_dir, subject_to_group, format_, output_folder)
 
                         fn_spec = "task-{}_{}_{}_{}_{}_{}".format(
                             ncsf_task_name, preproc_prep, filtering, normalization, avg_method, rois_method_format)
@@ -432,8 +438,8 @@ for normalization in normalizations:
                         else: df_ecc_auc = pd.concat([df_ecc_auc, df_ecc_auc_indiv])
               
                     # Median and saving tsv
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/ncsf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
+                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+                        main_dir, project_dir, subject, format_, output_folder)
                     os.makedirs(tsv_dir, exist_ok=True)
                 
                     # ROI surface areas 

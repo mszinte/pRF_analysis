@@ -77,7 +77,13 @@ filtering = analysis_info['filtering']
 # AVANT : normalization = analysis_info['normalization']
 normalizations = analysis_info['normalization']
 avg_methods = analysis_info['avg_methods']
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([ncsf_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 rois_methods = analysis_info['rois_methods']
 
 # Main loop
@@ -102,16 +108,16 @@ for normalization in normalizations:
                 print(f'{ncsf_task_name} - {avg_method} - {format_}')
 
                 # Define/create folders
-                tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/ncsf/tsv'.format(
-                    main_dir, project_dir, subject, format_)
+                tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/tsv'.format(
+                    main_dir, project_dir, subject, format_, output_folder)
             
                 # Exception if no data for one format (e.g template subject)
                 if not os.path.isdir(tsv_dir):
                     print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
                     continue
             
-                fig_dir = '{}/{}/derivatives/pp_data/{}/{}/ncsf/figures'.format(
-                    main_dir, project_dir, subject, format_)
+                fig_dir = '{}/{}/derivatives/pp_data/{}/{}/{}/figures'.format(
+                    main_dir, project_dir, subject, format_, output_folder)
                 os.makedirs(fig_dir, exist_ok=True)
 
                 fn_spec = "task-{}_{}_{}_{}_{}_{}".format(

@@ -1,9 +1,9 @@
 """
 -----------------------------------------------------------------------------------------
-css_stats_sbatch.py
+ncsf_stats_sbatch.py
 -----------------------------------------------------------------------------------------
 Goal of the script:
-Run computation of CSS pRF stats
+Run computation of nCSF stats (compute_ncsf_stats.py)
 -----------------------------------------------------------------------------------------
 Input(s):
 sys.argv[1]: main project directory
@@ -17,13 +17,13 @@ sh file for running batch command
 -----------------------------------------------------------------------------------------
 To run:
 1. cd to function
->> cd ~/projects/pRF_analysis/analysis_code/postproc/stats
+>> cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/postfit
 2. run python command
->> python css_stats_sbatch.py [main directory] [project] [subject] [group] [server]
+>> python ncsf_stats_sbatch.py [main directory] [project] [subject] [group] [server]
 -----------------------------------------------------------------------------------------
 Exemple:
-cd ~/projects/pRF_analysis/analysis_code/postproc/prf/postfit
-python css_stats_sbatch.py /scratch/mszinte/data RetinoMaps sub-01 327 b327
+cd ~/projects/pRF_analysis/nCSF/postproc/nCSF/postfit
+python ncsf_stats_sbatch.py /scratch/mszinte/data nCSF sub-01 327 b327
 -----------------------------------------------------------------------------------------
 Written by Martin Szinte (martin.szinte@gmail.com)
 Edited by Uriel Lascombes (uriel.lascombes@laposte.net)
@@ -91,18 +91,19 @@ slurm_cmd = """\
 #SBATCH --mem={memory_val}gb
 #SBATCH --cpus-per-task={nb_procs}
 #SBATCH --time={hour_proc}:00:00
-#SBATCH -e {log_dir}/{subject}_css_stats_%N_%j_%a.err
-#SBATCH -o {log_dir}/{subject}_css_stats_%N_%j_%a.out
-#SBATCH -J {subject}_css_stats
+#SBATCH -e {log_dir}/{subject}_ncsf_stats_%N_%j_%a.err
+#SBATCH -o {log_dir}/{subject}_ncsf_stats_%N_%j_%a.out
+#SBATCH -J {subject}_ncsf_stats
 """.format(server_project=server_project, cluster_name=cluster_name,
            nb_procs=nb_procs, hour_proc=hour_proc, 
            subject=subject, memory_val=memory_val, log_dir=log_dir)
 
-compute_stats_cmd = "python compute_css_stats.py {} {} {} {}".format(
+# [NCSF-PRFMODEL] AVANT : compute_stats_cmd = "python compute_css_stats.py {} {} {} {}".format(
+compute_stats_cmd = "python compute_ncsf_stats.py {} {} {} {}".format(
     main_dir, project_dir, subject, group)
 
 # Create sh fn
-sh_fn = "{}/{}_css_stats.sh".format(job_dir, subject)
+sh_fn = "{}/{}_ncsf_stats.sh".format(job_dir, subject)
 
 of = open(sh_fn, 'w')
 of.write("{} \n{} \n{} \n{}".format(slurm_cmd, compute_stats_cmd, 

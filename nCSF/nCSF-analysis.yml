@@ -9,8 +9,8 @@ TR:
   value: 1.6
 
 TRs: 
-  description: "Number of TR of the analysed task"
-  value: 156
+  description: "Number of TR of the analysed task (214 in the events files of sub-01)"
+  value: 214
 
 output_folder: 
   description: "Name of the folder created to save the outputs of the prfmodel nCSF fit (ncsf_fit_gpu.py); the prfpy_csenf fit (ncsf_fit.py) and the postfit scripts use 'ncsf' (hard-coded)"

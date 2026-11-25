@@ -72,7 +72,13 @@ analysis_info = settings[0]
 formats = [analysis_info['formats'][0]] #######################################
 extensions = [analysis_info['extensions'][0]]
 
-ncsf_task_name = analysis_info['nCSF_task_name']
+# [NCSF-PRFMODEL] 'nCSF_task_name' no longer exists in nCSF-analysis.yml. nCSF task and output folder are read
+# from nCSF-analysis.yml alone: prf-analysis.yml, loaded after it in some scripts, overrides analysis_task_names
+# and output_folder (output_folder = ncsf_prfmodel for the prfmodel fit, ncsf for the previous prfpy_csenf fit)
+# AVANT : ncsf_task_name = analysis_info['nCSF_task_name']
+ncsf_analysis_info = load_settings([nCSF_settings_path])[0]
+ncsf_task_name = ncsf_analysis_info['analysis_task_names'][0]
+output_folder = ncsf_analysis_info['output_folder']
 maps_names_ncsf = analysis_info['maps_names_ncsf']
 maps_names_ncsf_stats = analysis_info['maps_names_ncsf_stats']
 preproc_prep = analysis_info['preproc_prep']
@@ -134,8 +140,8 @@ for normalization in normalizations:
                 rois_method_format_txt = f"_{rois_method_format}"
     
                 # define directories and fn
-                ncsf_dir = "{}/{}/derivatives/pp_data/{}/{}/ncsf".format(
-                    main_dir, project_dir, subject, format_)
+                ncsf_dir = "{}/{}/derivatives/pp_data/{}/{}/{}".format(
+                    main_dir, project_dir, subject, format_, output_folder)
             
                 if not os.path.isdir(ncsf_dir):
                     print(f"[SKIP] ncsf_dir not found for format={format_}: {ncsf_dir}")

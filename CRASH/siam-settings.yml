@@ -35,5 +35,32 @@ siam_gpu_cluster_name:
   value: "hopper"
 
 siam_voxelsize:
-  description: "SIAM -voxelsize option: 0 to reslice to 0.75 mm and back (default), 0.75 to avoid interpolation for isotropic data in [0.6 1] mm"
-  value: 0
+  description: "SIAM -voxelsize option: 0 to reslice to 0.75 mm and back, 0.75 to avoid interpolation for isotropic data in [0.6 1] mm (recommended by SIAM, CRASH T1w is 0.8 mm iso)"
+  value: 0.75
+
+# SIAM brain mask (replace manual edition of freesurfer brainmask)
+siam_brainmask_labels:
+  description: "SIAM labels kept in the brain mask: GM 1, WM 2, CSF 3, CSFv 4, cerGM 5, Thal 6, Pal 7, Put 8, Caud 9, Accu 10, Amyg 11, Hippo 12, Anomalies 17 (excluded: Dura 13, vascular 14, Skull 15, Head 16)"
+  value: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 17]
+
+siam_tentorium_gap:
+  description: "Number of voxels of cerebellar GM removed where it touches cerebral GM (gap at the tentorium to avoid pial leaking in the cerebellum, 0 = off)"
+  value: 1
+
+siam_brainmask_fill_holes:
+  description: "Fill holes of the brain mask (e.g. vessels inside sulci)"
+  value: True
+  levels: [True, False]
+
+# Freesurfer pial with SIAM brain mask (freesurfer_siam_pial.py, fallback for subjects already processed by fMRIPrep without the SIAM mask)
+fs_pial_procs_hours:
+  description: "Time allocated to freesurfer pial steps"
+  value: '10:00:00'
+
+fs_pial_nb_procs:
+  description: "Number of cpus allocated to freesurfer pial steps"
+  value: 8
+
+fs_pial_memory_sbatch:
+  description: "RAM allocated to freesurfer pial steps in GB"
+  value: 48
