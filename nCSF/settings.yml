@@ -36,10 +36,6 @@ func_session:
   description: "Session containing the pRF tasks"
   value: ["ses-01"]
 
-prf_task_names:
-  description: "Names of the tasks analysed with pRF methods"
-  value: ["pRF"]
-
 partial_scan: 
   description: "Dataset including non whole-head recording"
   value: False

@@ -447,7 +447,7 @@ for normalization in normalizations:
                             else: mesh_group = np.vstack((mesh_group, np.expand_dims(mesh_indiv, axis=0)))
                        
                         # Median and saving tsv
-                        tsv_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{analysis_name}/tsv'
+                        tsv_dir = f'{main_dir}/{project_dir}/derivatives/pp_data/{subject}/{format_}/{output_folder}/tsv'
                         os.makedirs(tsv_dir, exist_ok=True)
                     
                         # ROI surface areas 

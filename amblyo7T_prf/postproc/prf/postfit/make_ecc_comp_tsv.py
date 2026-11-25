@@ -75,6 +75,7 @@ prf_settings_path    = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings             = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info        = settings[0]
+output_folder = analysis_info['output_folder']
 
 formats              = analysis_info['formats']
 extensions           = analysis_info['extensions']
@@ -170,8 +171,8 @@ for normalization in normalizations:
                         subject_group  = subject_groups[subj]
                         amblyopic_eye  = amblyopic_eyes[subj]
 
-                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subj, format_)
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                            main_dir, project_dir, subj, format_, of=output_folder)
                         if not os.path.isdir(tsv_dir):
                             print(f"[SKIP] {subj}: tsv_dir not found: {tsv_dir}")
                             continue
@@ -182,7 +183,7 @@ for normalization in normalizations:
                             fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
                                 prf_task_eye_name, preproc_prep, filtering,
                                 normalization, avg_method, rois_method_format)
-                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subj, fn_spec)
+                            tsv_fn = '{}/{}_{}_prf-css_deriv.tsv'.format(tsv_dir, subj, fn_spec)
                             if not os.path.isfile(tsv_fn):
                                 print(f"[SKIP] {subj}: file not found: {tsv_fn}")
                                 continue
@@ -315,8 +316,8 @@ for normalization in normalizations:
                             'control': controls,
                         }[run_group]
                         for subj in subjects_to_load:
-                            td = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subj, format_)
+                            td = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                                main_dir, project_dir, subj, format_, of=output_folder)
                             tf = '{}/{}_{}_ecc-comp.tsv'.format(td, subj, fn_spec_combined)
                             if os.path.isfile(tf):
                                 df_all_subjects.append(pd.read_table(tf, sep='\t'))
@@ -328,8 +329,8 @@ for normalization in normalizations:
                         continue
 
                     df_all = pd.concat(df_all_subjects, ignore_index=True)
-                    out_dir = '{}/{}/derivatives/pp_data/group-{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, run_group, format_)
+                    out_dir = '{}/{}/derivatives/pp_data/group-{}/{}/{of}/tsv'.format(
+                        main_dir, project_dir, run_group, format_, of=output_folder)
                     os.makedirs(out_dir, exist_ok=True)
 
                     def aggregate_group(df_in, group_cols):

@@ -84,6 +84,7 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
+output_folder = analysis_info['output_folder']
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -116,6 +117,13 @@ participants_path = os.path.join(main_dir, project_dir, 'participants.tsv')
 participants_df = pd.read_table(participants_path)
 amblyopic_eyes = dict(zip(participants_df['participant_id'], participants_df['amblyopic_eye']))
 subject_groups = dict(zip(participants_df['participant_id'], participants_df['group']))
+
+# Apply a function per eccentricity bin and return one value per bin (NaN for empty bins)
+def per_bin(groups, bins, func, fill_value=np.nan):
+    if len(groups.obj) == 0:
+        return np.full(len(bins), fill_value, dtype=float)
+    out = groups.apply(func) if func is not None else groups.size()
+    return out.reindex(bins, fill_value=fill_value).values
 
 # Determine if individual or group run
 if 'group' not in subject:
@@ -157,8 +165,8 @@ for normalization in normalizations:
 
                         print(f'Processing make_ecc_size_pcm_tsv.py for: {subject}')
 
-                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject, format_)
+                        tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                            main_dir, project_dir, subject, format_, of=output_folder)
 
                         if not os.path.isdir(tsv_dir):
                             print(f"[SKIP] tsv_dir not found for format={format_}: {tsv_dir}")
@@ -173,7 +181,7 @@ for normalization in normalizations:
                             fn_spec = "task-{}_{}_{}_{}_{}_{}" .format(
                                 prf_task_eye_name, preproc_prep, filtering,
                                 normalization, avg_method, rois_method_format)
-                            tsv_fn = '{}/{}_{}_prf-css-deriv.tsv'.format(tsv_dir, subject, fn_spec)
+                            tsv_fn = '{}/{}_{}_prf-css_deriv.tsv'.format(tsv_dir, subject, fn_spec)
 
                             data = pd.read_table(tsv_fn, sep="\t")
 
@@ -215,9 +223,13 @@ for normalization in normalizations:
                                 df_roi = data.loc[(data[rois_to_plot] == roi)]
 
                                 # Size bins
-                                df_size_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins))
+                                size_cut = pd.cut(df_roi['prf_ecc'], bins=ecc_size_bins)
+                                size_cats = size_cut.cat.categories
+                                df_size_bins = df_roi.groupby(size_cut, observed=True)
                                 # pCM bins
-                                df_pcm_bins = df_roi.groupby(pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins))
+                                pcm_cut = pd.cut(df_roi['prf_ecc'], bins=ecc_pcm_bins)
+                                pcm_cats = pcm_cut.cat.categories
+                                df_pcm_bins = df_roi.groupby(pcm_cut, observed=True)
 
                                 df_bin = pd.DataFrame()
                                 df_bin['roi'] = [roi] * ecc_size_num_bins
@@ -225,27 +237,27 @@ for normalization in normalizations:
                                 df_bin['num_bins'] = np.arange(ecc_size_num_bins)
                                 df_bin['subject'] = subject
 
-                                df_bin['prf_ecc_bins'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values)).values
-                                df_bin['prf_size_bins_median'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values)).values
-                                df_bin['prf_size_bins_ci_upper_bound'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75)).values
-                                df_bin['prf_size_bins_ci_lower_bound'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25)).values
-                                df_bin[f'{rsq2use}_bins_median'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_median(x[rsq2use].values, x[rsq2use].values)).values
-                                df_bin[f'{rsq2use}_bins_ci_upper_bound'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 75)).values
-                                df_bin[f'{rsq2use}_bins_ci_lower_bound'] = df_size_bins.apply(
-                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 25)).values
-                                df_bin['n_vert_bins'] = df_size_bins.size().values
-                                df_bin['prf_pcm_bins_median'] = df_pcm_bins.apply(
-                                    lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values)).values
-                                df_bin['prf_pcm_bins_ci_upper_bound'] = df_pcm_bins.apply(
-                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 75)).values
-                                df_bin['prf_pcm_bins_ci_lower_bound'] = df_pcm_bins.apply(
-                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 25)).values
+                                df_bin['prf_ecc_bins'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_median(x['prf_ecc'].values, x[rsq2use].values))
+                                df_bin['prf_size_bins_median'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_median(x['prf_size'].values, x[rsq2use].values))
+                                df_bin['prf_size_bins_ci_upper_bound'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 75))
+                                df_bin['prf_size_bins_ci_lower_bound'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_percentile(x['prf_size'].values, x[rsq2use].values, 25))
+                                df_bin[f'{rsq2use}_bins_median'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_median(x[rsq2use].values, x[rsq2use].values))
+                                df_bin[f'{rsq2use}_bins_ci_upper_bound'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 75))
+                                df_bin[f'{rsq2use}_bins_ci_lower_bound'] = per_bin(df_size_bins, size_cats,
+                                    lambda x: weighted_nan_percentile(x[rsq2use].values, x[rsq2use].values, 25))
+                                df_bin['n_vert_bins'] = per_bin(df_size_bins, size_cats, None, fill_value=0)
+                                df_bin['prf_pcm_bins_median'] = per_bin(df_pcm_bins, pcm_cats,
+                                    lambda x: weighted_nan_median(x['pcm_median'].values, x[rsq2use].values))
+                                df_bin['prf_pcm_bins_ci_upper_bound'] = per_bin(df_pcm_bins, pcm_cats,
+                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 75))
+                                df_bin['prf_pcm_bins_ci_lower_bound'] = per_bin(df_pcm_bins, pcm_cats,
+                                    lambda x: weighted_nan_percentile(x['pcm_median'].values, x[rsq2use].values, 25))
 
                                 if num_roi == 0: df_bins = df_bin
                                 else: df_bins = pd.concat([df_bins, df_bin])
@@ -283,8 +295,8 @@ for normalization in normalizations:
                         print(f'Group: {subject} - {avg_method} - {format_}')
 
                         for i, subject_to_group in enumerate(subjects_to_group):
-                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                                main_dir, project_dir, subject_to_group, format_)
+                            tsv_dir_indiv = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                                main_dir, project_dir, subject_to_group, format_, of=output_folder)
                             tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(
                                 tsv_dir_indiv, subject_to_group, fn_spec_combined)
                             df_indiv = pd.read_table(tsv_fn, sep="\t")
@@ -316,8 +328,8 @@ for normalization in normalizations:
                                 .reset_index()[col])
 
                         # Save group TSV
-                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                            main_dir, project_dir, subject, format_)
+                        tsv_dir_group = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                            main_dir, project_dir, subject, format_, of=output_folder)
                         os.makedirs(tsv_dir_group, exist_ok=True)
                         tsv_fn = '{}/{}_{}_ecc-size-pcm.tsv'.format(tsv_dir_group, subject, fn_spec_combined)
                         print('Saving tsv: {}'.format(tsv_fn))

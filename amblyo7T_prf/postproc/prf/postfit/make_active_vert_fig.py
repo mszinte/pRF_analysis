@@ -64,6 +64,7 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 figure_settings_path = os.path.join(base_dir, project_dir, "figure-settings.yml")
 settings = load_settings([settings_path, prf_settings_path, figure_settings_path])
 analysis_info = settings[0]
+output_folder = analysis_info['output_folder']
 
 formats = analysis_info['formats']
 extensions = analysis_info['extensions']
@@ -112,10 +113,10 @@ for normalization in normalizations:
                     print(f'{fn_spec_combined} - {subject}')
 
                     # Define dirs
-                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/tsv'.format(
-                        main_dir, project_dir, subject, format_)
-                    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
-                        main_dir, project_dir, subject, format_)
+                    tsv_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/tsv'.format(
+                        main_dir, project_dir, subject, format_, of=output_folder)
+                    fig_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/figures'.format(
+                        main_dir, project_dir, subject, format_, of=output_folder)
 
                     if not os.path.isdir(tsv_dir):
                         print(f"[SKIP] tsv_dir not found: {tsv_dir}")

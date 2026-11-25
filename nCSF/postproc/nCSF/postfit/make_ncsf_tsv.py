@@ -75,7 +75,9 @@ maps_names_ncsf_stats = analysis_info['maps_names_ncsf_stats']
 maps_names_pcm = analysis_info['maps_names_pcm']
 maps_names_css_stats = analysis_info['maps_names_css_stats']
 preproc_prep = analysis_info['preproc_prep']
-prf_task_name = analysis_info['prf_task_names'][0]
+# [PRF_TASK_NAMES] 'prf_task_names' removed from settings.yml (leftover): same values as 'analysis_task_names' of prf-analysis.yml
+# AVANT : prf_task_name = analysis_info['prf_task_names'][0]
+prf_task_name = analysis_info['analysis_task_names'][0]
 filtering = analysis_info['filtering']
 # [NORMALIZATION] list of normalizations, looped over below
 # AVANT : normalization = analysis_info['normalization']

@@ -63,7 +63,9 @@ prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
 
-prf_task_names = analysis_info['prf_task_names']
+# [PRF_TASK_NAMES] 'prf_task_names' removed from settings.yml (leftover): same values as 'analysis_task_names' of prf-analysis.yml
+# AVANT : prf_task_names = analysis_info['prf_task_names']
+prf_task_names = analysis_info['analysis_task_names']
 TR = analysis_info['TR']
 vdm_width = analysis_info['vdm_size_pix'][0]
 vdm_height = analysis_info['vdm_size_pix'][1]

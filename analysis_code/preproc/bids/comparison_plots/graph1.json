@@ -1,0 +1,21 @@
+{
+    "groups": [
+        {
+            "name": "Group_00001",
+            "procs": [
+                0
+            ],
+            "total": 1
+        }
+    ],
+    "links": [],
+    "maxN": 1,
+    "nodes": [
+        {
+            "group": 1,
+            "name": "0_plt_comparison",
+            "report": "/tmp/tmp9qmcipft/comparison_plots/plt_comparison/_report/report.rst",
+            "result": "/tmp/tmp9qmcipft/comparison_plots/plt_comparison/result_plt_comparison.pklz"
+        }
+    ]
+}

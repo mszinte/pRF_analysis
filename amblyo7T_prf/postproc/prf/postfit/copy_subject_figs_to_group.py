@@ -60,6 +60,7 @@ settings_path = os.path.join(base_dir, project_dir, "settings.yml")
 prf_settings_path = os.path.join(base_dir, project_dir, "prf-analysis.yml")
 settings = load_settings([settings_path, prf_settings_path])
 analysis_info = settings[0]
+output_folder = analysis_info['output_folder']
 
 # Get subjects for this group
 if 'patient' in group_label:
@@ -86,8 +87,8 @@ for format_ in formats:
     for subject in subjects_to_group:
         print(f'Processing figures for {subject} - {format_}')
 
-        subject_fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/figures'.format(
-            main_dir, project_dir, subject, format_)
+        subject_fig_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/figures'.format(
+            main_dir, project_dir, subject, format_, of=output_folder)
 
         if not os.path.isdir(subject_fig_dir):
             print(f"[SKIP] Figure directory not found: {subject_fig_dir}")
@@ -112,8 +113,8 @@ for format_ in formats:
                         task_name = 'no-task'
 
                     # Create task subfolder within figure type folder
-                    group_fig_dir = '{}/{}/derivatives/pp_data/{}/{}/prf/{}/{}'.format(
-                        main_dir, project_dir, group_label, format_, fig_subdir, task_name)
+                    group_fig_dir = '{}/{}/derivatives/pp_data/{}/{}/{of}/{}/{}'.format(
+                        main_dir, project_dir, group_label, format_, fig_subdir, task_name, of=output_folder)
                     os.makedirs(group_fig_dir, exist_ok=True)
 
                     src = os.path.join(subject_fig_dir, fn)
